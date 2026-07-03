@@ -80,7 +80,7 @@ export class World {
   private _entities_map = new Map<string, Entity[]>();
   readonly buffs = new Map<string, Buff>();
   private _game_time = new Times();
-  private _ground = new Ground();
+  readonly ground = new Ground(this);
   private _counts = new Map<string, number>()
   /** 待移除实体 */
   private _gones = new Set<Entity>();
@@ -364,6 +364,28 @@ export class World {
   }
 
   /**
+   * 地形阻挡（战士/波/武器 共用）
+   * 用速度方向反推闯入边界，按轴独立阻挡。
+   */
+  private restrict_terrain(e: Entity, x: number, z: number): { x: number, z: number } {
+    const seg = this.ground.find_segment(x, e.position.y, z);
+    if (!seg) return { x, z };
+
+    const { blockX, blockZ, pushX, pushZ } =
+      this.ground.block_axis(e.position.y, x, z, e.velocity.x, e.velocity.z, 15, seg);
+
+    if (blockX) {
+      x = pushX!;
+      e.set_velocity_x(0);
+    }
+    if (blockZ) {
+      z = pushZ!;
+      e.set_velocity_z(0);
+    }
+    return { x, z };
+  }
+
+  /**
    * 限制角色位置
    * 
    * @param {Entity} e 角色实体
@@ -372,17 +394,21 @@ export class World {
    */
   restrict_fighter(e: Entity): void {
     const { near, far, player_l, player_r, enemy_l, enemy_r, team } = this.stage;
-
     const is_player = e.team !== team;
     const l = is_player ? player_l : enemy_l;
     const r = is_player ? player_r : enemy_r;
 
-    const { x, z } = e.position;
-    if (x < l) e.set_position_x(l);
-    else if (x > r) e.set_position_x(r);
+    let { x, z } = e.position;
 
-    if (z < far) e.set_position_z(far);
-    else if (z > near) e.set_position_z(near);
+    if (x < l) x = l;
+    else if (x > r) x = r;
+    if (z < far) z = far;
+    else if (z > near) z = near;
+
+    ({ x, z } = this.restrict_terrain(e, x, z));
+
+    if (x !== e.position.x) e.set_position_x(x);
+    if (z !== e.position.z) e.set_position_z(z);
   }
 
   /**
@@ -396,14 +422,20 @@ export class World {
    */
   restrict_ball(e: Entity): void {
     const { left, right, near, far } = this.stage;
-    const { x, z } = e.position;
+    let { x, z } = e.position;
+
     if (x < left - 200 || x > right + 200) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
       return;
     }
 
-    if (z < far) e.set_position_z(far);
-    else if (z > near) e.set_position_z(near);
+    if (z < far) z = far;
+    else if (z > near) z = near;
+
+    ({ x, z } = this.restrict_terrain(e, x, z));
+
+    if (x !== e.position.x) e.set_position_x(x);
+    if (z !== e.position.z) e.set_position_z(z);
   }
 
   /**
@@ -420,16 +452,19 @@ export class World {
     let { x, z } = e.position;
 
     if (e.base_type === WeaponEnum.Drink) {
-      const l = drink_l;
-      const r = drink_r;
-      if (x < l) e.set_position_x(x = l);
-      else if (x > r) e.set_position_x(x = r);
+      if (x < drink_l) x = drink_l;
+      else if (x > drink_r) x = drink_r;
     }
 
-    if (x < left - 100) e.enter_frame(Defines.NEXT_FRAME_GONE);
-    else if (x > right + 100) e.enter_frame(Defines.NEXT_FRAME_GONE);
-    if (z < far) e.set_position_z(far);
-    else if (z > near) e.set_position_z(near);
+    if (x < left - 100) { e.enter_frame(Defines.NEXT_FRAME_GONE); return; }
+    if (x > right + 100) { e.enter_frame(Defines.NEXT_FRAME_GONE); return; }
+    if (z < far) z = far;
+    else if (z > near) z = near;
+
+    ({ x, z } = this.restrict_terrain(e, x, z));
+
+    if (x !== e.position.x) e.set_position_x(x);
+    if (z !== e.position.z) e.set_position_z(z);
   }
 
   /**
@@ -997,7 +1032,7 @@ export class World {
 
   get_ground(position: IVector3): number {
     const { x, y, z } = position;
-    return this._ground.get_y(x, y, z)
+    return this.ground.get_y(x, y, z)
   }
 
   add_count(key: string, o: number) {

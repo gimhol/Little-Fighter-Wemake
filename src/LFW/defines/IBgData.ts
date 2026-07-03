@@ -2,15 +2,16 @@ import { any, fields, str } from "../fields";
 import { make_schema } from "../utils/schema";
 import { bg_info_new, type IBgInfo } from "./IBgInfo";
 import type { IBgLayerInfo } from "./IBgLayerInfo";
+import type { ITerrainInfo } from "./ITerrainInfo";
 import { Schema_IWorldDataset_Partial, type IWorldDataset } from "./IWorldDataset";
-
 export interface IBgData {
   id: string;
   alias_id?: string;
   base: IBgInfo;
   type: "background";
   dataset?: Partial<IWorldDataset>;
-  layers: IBgLayerInfo[];
+  layers?: IBgLayerInfo[];
+  terrain?: ITerrainInfo[];
 }
 
 export const bg_data_info_fields = fields<IBgData>({
@@ -40,6 +41,7 @@ export const Schema_IBgData = make_schema<IBgData>({
     alias_id: { type: 'string', nullable: true },
     base: Schema_IWorldDataset_Partial,
     dataset: { type: 'object', nullable: true },
-    layers: { type: 'array', items: { type: 'object' } },
+    layers: { type: 'array', items: { type: 'object' }, nullable: true },
+    terrain: { type: 'array', items: { type: 'object' }, nullable: true },
   },
 });

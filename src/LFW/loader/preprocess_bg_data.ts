@@ -8,8 +8,10 @@ export function preprocess_bg_data(lfw: LFW, data: IBgData, jobs: Promise<ImageI
   const { layers, base: { shadow } } = data;
   data.base.height ??= Defines.MODERN_SCREEN_HEIGHT;
   is_non_blank_str(shadow) && jobs.push(lfw.images.load_img(shadow, shadow));
-  for (const { file } of layers)
-    is_non_blank_str(file) && jobs.push(lfw.images.load_img(file, file));
+  
+  if (layers?.length)
+    for (const { file } of layers)
+      is_non_blank_str(file) && jobs.push(lfw.images.load_img(file, file));
 
   const { shadowsize, zoom } = (data.base as any);
   if (Array.isArray(shadowsize)) {

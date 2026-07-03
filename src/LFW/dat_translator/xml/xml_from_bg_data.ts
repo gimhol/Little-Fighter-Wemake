@@ -41,28 +41,29 @@ export function xml_from_bg_data(xml: IXML, data: IBgData): string {
     root.insert(ds);
   }
 
-  // <layer>...
-  for (const l of data.layers) {
-    const layer = xml.create("layer");
-    layer.set_attr("width", l.width);
-    layer.set_attr("height", l.height);
-    layer.set_attr("x", l.x);
-    layer.set_attr("y", l.y);
-    layer.set_attr("z", l.z);
-    layer.set_attr("w", l.w);
-    layer.set_attr("h", l.h);
-    layer.set_attr("loop", l.loop);
-    layer.set_attr("absolute", l.absolute);
-    layer.set_attr("cc", l.cc);
-    layer.set_attr("c1", l.c1);
-    layer.set_attr("c2", l.c2);
-    layer.set_attr("offsetAnimX", l.offsetAnimX);
-    layer.set_attr("offsetAnimY", l.offsetAnimY);
-    layer.set_attr("id", l.id);
-    layer.set_attr("name", l.name);
-    layer.set_attr("file", l.file);
-    layer.set_attr("color", l.color);
-    root.insert(layer);
+  if (data.layers?.length) {
+    for (const l of data.layers) {
+      const layer = xml.create("layer");
+      layer.set_attr("width", l.width);
+      layer.set_attr("height", l.height);
+      layer.set_attr("x", l.x);
+      layer.set_attr("y", l.y);
+      layer.set_attr("z", l.z);
+      layer.set_attr("w", l.w);
+      layer.set_attr("h", l.h);
+      layer.set_attr("loop", l.loop);
+      layer.set_attr("absolute", l.absolute);
+      layer.set_attr("cc", l.cc);
+      layer.set_attr("c1", l.c1);
+      layer.set_attr("c2", l.c2);
+      layer.set_attr("offsetAnimX", l.offsetAnimX);
+      layer.set_attr("offsetAnimY", l.offsetAnimY);
+      layer.set_attr("id", l.id);
+      layer.set_attr("name", l.name);
+      layer.set_attr("file", l.file);
+      layer.set_attr("color", l.color);
+      root.insert(layer);
+    }
   }
   return root.stringify();
 }

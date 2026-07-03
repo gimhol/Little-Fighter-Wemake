@@ -41,8 +41,9 @@ export class Background {
       x: (this.right + this.left) / 2,
       z: (this.far + this.near) / 2,
     };
-    for (const info of data.layers)
-      this.add_layer(info);
+    if (data.layers)
+      for (const info of data.layers)
+        this.add_layer(info);
 
     this.zoom_x = info.zoom_x ?? 1;
     this.zoom_y = info.zoom_y ?? 1;

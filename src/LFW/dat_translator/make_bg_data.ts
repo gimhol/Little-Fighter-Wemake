@@ -1,5 +1,5 @@
-import { BackgroundGroup, BGG, type IBgInfo } from "../defines";
-import { bg_data_info_fields, type IBgData } from "../defines/IBgData";
+import { BackgroundGroup, BGG } from "../defines";
+import { bg_data_info_fields, bg_data_new, type IBgData } from "../defines/IBgData";
 import { bg_layer_info_fields, type IBgLayerInfo } from "../defines/IBgLayerInfo";
 import type { IDatIndex } from "../defines/IDatIndex";
 import { Defines } from "../defines/defines";
@@ -62,24 +62,24 @@ export function make_bg_data(
     .int_2("shadowsize")
     .read(full_str, {});
 
-  const info: IBgInfo = {
-    name: fields.name,
-    shadow: fields.shadow,
-    shadow_w: fields.shadowsize[0],
-    shadow_h: fields.shadowsize[1],
-    group: [BGG.Regular],
-    left: 0,
-    right: fields.width,
-    far: 2 * (fields.zboundary[0] - Defines.CLASSIC_SCREEN_HEIGHT), // 转为Z轴的远坐标
-    near: 2 * (fields.zboundary[1] - Defines.CLASSIC_SCREEN_HEIGHT), // 转为Z轴的近坐标,
-    height: 0
-  }
-  const ret: IBgData = {
-    type: "background",
-    id: datIndex.id ?? info.name,
-    base: info,
-    layers: [],
-  };
+  const ret: IBgData = bg_data_new();
+  const info = ret.base
+
+  info.name = fields.name
+  info.shadow = fields.shadow
+  info.shadow_w = fields.shadowsize[0]
+  info.shadow_h = fields.shadowsize[1]
+  info.group = [BGG.Regular]
+  info.left = 0
+  info.right = fields.width
+  info.far = 2 * (fields.zboundary[0] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的远坐标
+  info.near = 2 * (fields.zboundary[1] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的近坐标,
+  info.height = 0
+
+  ret.id = datIndex.id ?? info.name
+  ret.base = info
+  ret.layers = []
+
   ret.base.name = ret.base.name?.replace(/_/g, " ");
   ret.base.shadow = ret.base.shadow?.replace(/.bmp$/, ".png").replace(/\\/g, '/');
   const { blocks, remains } = take_blocks(full_str, "layer:", "layer_end");
