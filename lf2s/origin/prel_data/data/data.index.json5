@@ -25,7 +25,7 @@
     {
       id: "terrain_test",
       type: "bg",
-      file: "bg/terrain_test/bg.bg.json5",
+      file: "bg/terrain_test/terrain_test.bg.json5",
     },
   ],
   stages: [
