@@ -17,7 +17,7 @@ export class CharacterState_Walking extends CharacterState_Base {
       ) {
         e.wait = e.frame.wait;
       } else {
-        e.enter_frame_by_id(e.data.indexes?.default);
+        e.enter_frame_by_id(e.data.indexes?.default, true);
       }
     }
 

@@ -30,4 +30,6 @@ export function cook_wpoint(unsure_wpoint: IWpointInfo, frame: IFrameInfo) {
     const cover = take_not_zero_num(unsure_wpoint, "cover", n => n);
     unsure_wpoint.z = cover == 1 ? -2 : 2;
   }
+
+  unsure_wpoint.weaponact = '' + take(unsure_wpoint, "weaponact") || "";
 }
