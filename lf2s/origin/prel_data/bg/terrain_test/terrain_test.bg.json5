@@ -9,7 +9,7 @@
       9,
     ],
     left: 0,
-    right: 1300,
+    right: 800,
     far: -450,
     near: -40,
     group: [
@@ -21,7 +21,7 @@
       width: 800,
       x: 0,
       file: "!bg/terrain_test/ground.png",
-      y: 288,
+      y: 0,
       z: -1,
     },
   ],
