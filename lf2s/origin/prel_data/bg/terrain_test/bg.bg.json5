@@ -1,0 +1,28 @@
+{
+  type: "background",
+  id: "bg_terrain_test",
+  base: {
+    name: "Terrain Test",
+    shadow: "bg/sys/bc/s.png",
+    shadowsize: [
+      37,
+      9,
+    ],
+    left: 0,
+    right: 1300,
+    far: -450,
+    near: -40,
+    group: [
+      "hidden"
+    ],
+  },
+  layers: [
+    {
+      width: 800,
+      x: 0,
+      file: "!bg/terrain_test/ground.png",
+      y: 288,
+      z: -1,
+    },
+  ],
+}
