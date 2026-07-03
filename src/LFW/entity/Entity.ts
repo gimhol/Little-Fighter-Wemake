@@ -852,7 +852,7 @@ export class Entity {
   find_auto_frame(): IFrameInfo {
     return (
       this._state?.get_auto_frame?.(this) ?? this._data.frames["0"] ?? this.frame
-    ); // FIXME: fix this 'as'.
+    );
   }
 
   on_spawn(

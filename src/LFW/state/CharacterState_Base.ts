@@ -30,7 +30,7 @@ export class CharacterState_Base extends State_Base {
   override get_auto_frame(e: Entity): IFrameInfo | undefined {
     let fid: string | undefined;
     if (e.holding?.base_type === WeaponEnum.Heavy) {
-      fid = e.data.indexes?.heavy_obj_walk?.[0];
+      fid = e.data.indexes?.heavy_obj_walk;
     } else if (e.position.y > e.ground_y) {
       fid = e.data.indexes?.in_the_skys?.[0];
     } else if (e.hp > 0) {
