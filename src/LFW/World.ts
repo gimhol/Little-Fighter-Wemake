@@ -16,7 +16,7 @@ import {
   type IBdyInfo, type IBgData, type IBounding, type IEntityData,
   type IFrameInfo, type IItrInfo,
   type IVector2,
-  type IVector3,
+  type IVector3Like,
   O_ID,
   SE,
   WeaponEnum
@@ -363,27 +363,32 @@ export class World {
     return [l, r]
   }
 
-  /**
-   * 地形阻挡（战士/波/武器 共用）
-   * 用速度方向反推闯入边界，按轴独立阻挡。
-   */
-  private restrict_terrain(e: Entity, x: number, z: number): { x: number, z: number } {
-    const seg = this.ground.find_segment(x, e.position.y, z);
-    if (!seg) return { x, z };
+  private _restrict_result: IVector3Like = { x: 0, y: 0, z: 0 }
 
-    const { blockX, blockZ, pushX, pushZ } =
-      this.ground.block_axis(e.position.y, x, z, e.velocity.x, e.velocity.z, 15, seg);
-
-    if (blockX) {
-      x = pushX!;
+  private restrict_terrain(e: Entity, x: number, y: number, z: number): IVector3Like {
+    const seg = this.ground.segment(x, y, z);
+    if (!seg) {
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
+      return this._restrict_result;
+    }
+    const { block_x, block_z } = this.ground.block(seg, x, y, z, e.velocity.x, e.velocity.z);
+    if (block_x != null) {
+      x = block_x;
       e.set_velocity_x(0);
     }
-    if (blockZ) {
-      z = pushZ!;
+    if (block_z != null) {
+      z = block_z;
       e.set_velocity_z(0);
     }
-    return { x, z };
+    e.terrain = this.ground.segment(x, y, z)
+    this._restrict_result.x = x;
+    this._restrict_result.y = y;
+    this._restrict_result.z = z;
+    return this._restrict_result;
   }
+
 
   /**
    * 限制角色位置
@@ -392,23 +397,24 @@ export class World {
    * @return {void} 
    * @memberof World
    */
-  restrict_fighter(e: Entity): void {
+  restrict_fighter(e: Entity): IVector3Like {
     const { near, far, player_l, player_r, enemy_l, enemy_r, team } = this.stage;
     const is_player = e.team !== team;
     const l = is_player ? player_l : enemy_l;
     const r = is_player ? player_r : enemy_r;
 
-    let { x, z } = e.position;
+    let { x, z, y } = e.position;
 
     if (x < l) x = l;
     else if (x > r) x = r;
     if (z < far) z = far;
     else if (z > near) z = near;
+    ({ x, y, z } = this.restrict_terrain(e, x, y, z));
 
-    ({ x, z } = this.restrict_terrain(e, x, z));
-
-    if (x !== e.position.x) e.set_position_x(x);
-    if (z !== e.position.z) e.set_position_z(z);
+    this._restrict_result.x = x;
+    this._restrict_result.y = y;
+    this._restrict_result.z = z;
+    return this._restrict_result;
   }
 
   /**
@@ -420,22 +426,26 @@ export class World {
    * @return {void}
    * @memberof World
    */
-  restrict_ball(e: Entity): void {
+  restrict_ball(e: Entity): IVector3Like {
     const { left, right, near, far } = this.stage;
-    let { x, z } = e.position;
+    let { x, z, y } = e.position;
 
     if (x < left - 200 || x > right + 200) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
-      return;
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
+      return this._restrict_result;
     }
 
     if (z < far) z = far;
     else if (z > near) z = near;
 
-    ({ x, z } = this.restrict_terrain(e, x, z));
-
-    if (x !== e.position.x) e.set_position_x(x);
-    if (z !== e.position.z) e.set_position_z(z);
+    ({ x, y, z } = this.restrict_terrain(e, x, y, z));
+    this._restrict_result.x = x;
+    this._restrict_result.y = y;
+    this._restrict_result.z = z;
+    return this._restrict_result;
   }
 
   /**
@@ -447,40 +457,49 @@ export class World {
    * @return {void}
    * @memberof World
    */
-  restrict_weapon(e: Entity): void {
+  restrict_weapon(e: Entity): IVector3Like {
     const { left, right, near, far, drink_l, drink_r } = this.stage;
-    let { x, z } = e.position;
-
+    let { x, z, y } = e.position;
     if (e.base_type === WeaponEnum.Drink) {
       if (x < drink_l) x = drink_l;
       else if (x > drink_r) x = drink_r;
     }
-
-    if (x < left - 100) { e.enter_frame(Defines.NEXT_FRAME_GONE); return; }
-    if (x > right + 100) { e.enter_frame(Defines.NEXT_FRAME_GONE); return; }
+    if (x < left - 100 || x > right + 100) {
+      e.enter_frame(Defines.NEXT_FRAME_GONE);
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
+      return this._restrict_result;
+    }
     if (z < far) z = far;
     else if (z > near) z = near;
 
-    ({ x, z } = this.restrict_terrain(e, x, z));
+    ({ x, y, z } = this.restrict_terrain(e, x, y, z));
 
-    if (x !== e.position.x) e.set_position_x(x);
-    if (z !== e.position.z) e.set_position_z(z);
+    this._restrict_result.x = x;
+    this._restrict_result.y = y;
+    this._restrict_result.z = z;
+    return this._restrict_result;
   }
-
   /**
    * 限制“实体”位置
    *
    * @param {Entity} e
    * @memberof World
    */
-  restrict(e: Entity): void {
+  restrict(e: Entity): IVector3Like {
     if (is_fighter(e)) {
-      this.restrict_fighter(e);
+      return this.restrict_fighter(e);
     } else if (is_ball(e)) {
-      this.restrict_ball(e);
+      return this.restrict_ball(e);
     } else if (is_weapon(e)) {
-      this.restrict_weapon(e);
+      return this.restrict_weapon(e);
     }
+    const { x, z, y } = e.position;
+    this._restrict_result.x = x;
+    this._restrict_result.y = y;
+    this._restrict_result.z = z;
+    return this._restrict_result;
   }
 
   add_chaser(ctrl: BallController) {
@@ -1028,11 +1047,6 @@ export class World {
     this.del_entities(Array.from(this.entities));
     this.renderer.dispose();
     this.callbacks.clear()
-  }
-
-  get_ground(position: IVector3): number {
-    const { x, y, z } = position;
-    return this.ground.get_y(x, y, z)
   }
 
   add_count(key: string, o: number) {

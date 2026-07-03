@@ -44,6 +44,7 @@ import { is_fighter, is_human_ctrl } from "./type_check";
 
 import { sus_cases } from "../cases_instances";
 import { collision_clone } from "../collision/Collision";
+import type { ITerrainInfo } from "../defines/ITerrainInfo";
 import { EnterFrameResult } from "./EnterFrameResult";
 import { calc_v } from "./calc_v";
 import { is_ball_ctrl } from "./type_check";
@@ -242,7 +243,9 @@ export class Entity {
   renderer: any;
   puppet: boolean = false;
   jumping = { s: 0, x: 0, y: 0, z: 0, t: 0 }
+  terrain: ITerrainInfo | undefined;
   protected _atom_time: number; // 帧时间步长（被 Physics/Recovery/Spawn 子模块访问）
+
 
   get lifetime() {
     return this._lifetime
@@ -712,6 +715,7 @@ export class Entity {
     for (const buf of buffs) buf.del_victims(this.id)
     this.buffs.clear();
     const { world, lfw } = this;
+    this.terrain = void 0;
     this._data = data;
     this.id = lfw.new_id;
     this.wait = 0;
@@ -1711,7 +1715,6 @@ export class Entity {
         this.position.z + (vz + this._prev_velocity.z) * 0.5 * atom_time,
       );
     }
-    this.world.restrict(this);
     this._prev_velocity.set(vx, vy, vz);
   }
 
@@ -2313,37 +2316,34 @@ export class Entity {
     this._prev_velocity.set(x, y, z);
   }
   set_velocity_x(x: number) {
-    if (is_f_num(x)) debugger;
-    this._velocity.x = round_float(x)
+    this.set_velocity(x)
   }
   set_velocity_y(y: number) {
-    if (is_f_num(y)) debugger;
-    this._velocity.y = round_float(y)
+    this.set_velocity(null, y)
   }
   set_velocity_z(z: number) {
-    if (is_f_num(z)) debugger;
-    this._velocity.z = round_float(z)
+    this.set_velocity(null, null, z)
   }
-  set_position(x?: number | null, y?: number | null, z?: number | null) {
-    if (is_f_num(x) || is_f_num(y) || is_f_num(z)) debugger;
-    if (x !== null && x !== void 0) this._position.x = x ? round_float(x) : x
-    if (y !== null && y !== void 0) this._position.y = y ? round_float(y) : y
-    if (z !== null && z !== void 0) this._position.z = z ? round_float(z) : z
-    this._ground_y = this.world.get_ground(this._position)
+  set_position(_x?: number | null, _y?: number | null, _z?: number | null) {
+    if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
+    if (_x !== null && _x !== void 0) this._position.x = _x ? round_float(_x) : _x
+    if (_y !== null && _y !== void 0) this._position.y = _y ? round_float(_y) : _y
+    if (_z !== null && _z !== void 0) this._position.z = _z ? round_float(_z) : _z
+
+    const { x, y, z } = this.world.restrict(this);
+    this._position.x = x;
+    this._position.y = y;
+    this._position.z = z;
+    this._ground_y = this.terrain ? this.world.ground.ground(this.terrain, x, z) : 0;
   }
   set_position_x(x: number) {
-    if (is_f_num(x)) debugger;
-    this._position.x = x ? round_float(x) : x
+    this.set_position(x)
   }
   set_position_y(y: number) {
-    if (is_f_num(y)) debugger;
-    this._position.y = y ? round_float(y) : y
-    this._ground_y = this.world.get_ground(this._position)
+    this.set_position(null, y)
   }
   set_position_z(z: number) {
-    if (is_f_num(z)) debugger;
-    this._position.z = z ? round_float(z) : z;
-    this._ground_y = this.world.get_ground(this._position)
+    this.set_position(null, null, z)
   }
   transform(data: IEntityData) {
     if (!is_human_ctrl(this.ctrl))
