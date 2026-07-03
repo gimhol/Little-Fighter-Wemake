@@ -99,10 +99,10 @@ export class Ground {
     const diff_h = dist_y - y;
 
     // 平台不能从下方走上，只能从上方降落
-    if (seg.type === TerrainEnum.Platform && diff_h < 0) return null;
+    if (seg.type === TerrainEnum.Platform && diff_h > 0) return null;
 
     // 地形太高，上不去
-    if (-diff_h > this._step) return null;
+    if (diff_h > this._step) return null;
 
     return dist_y;
   }
