@@ -56,15 +56,15 @@ export class CharacterState_Base extends State_Base {
     return void 0;
   }
   override on_leave_ground(e: Entity): void {
+    e.is_on_ground = false;
     switch (e.state) {
       case StateEnum.Running:
       case StateEnum.Walking:
       case StateEnum.Standing:
       case StateEnum.Rowing:
-        if (e.holding?.base_type === WeaponEnum.Heavy) 
+        if (e.holding?.base_type === WeaponEnum.Heavy)
           e.drop_holding();
         e.enter_frame(Defines.NEXT_FRAME_AUTO);
-        e.is_on_ground = false;
         break;
     }
   }
