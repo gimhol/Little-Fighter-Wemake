@@ -1637,10 +1637,11 @@ export class Entity {
       /** 
        是否本帧落地.
 
-       TODO: 
-          其实会存在Y速度向上，但仍是落地的情况，例：45度斜坡，X轴速度比Y轴速度大。
+       注意：不能简单用 velocity.y <= 0 判断落地，因为存在Y速度向上但仍是落地的情况。
+       例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
+       此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
       */
-      const just_land = !_is_on_ground && this._position.y <= _ground_y && this._velocity.y <= 0
+      const just_land = !_is_on_ground && this._position.y <= _ground_y
 
       /** itr/bdy与地面的碰撞 */
       const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
