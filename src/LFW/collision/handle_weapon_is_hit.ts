@@ -30,6 +30,7 @@ export function handle_weapon_is_hit(collision: Collision): void {
   if (victim.base_type !== WT.Heavy || is_fly) {
     victim.set_velocity(vx, vy, vz);
     victim.set_position(null, 0.1 + victim.position.y);
+    victim.is_on_ground = false
     victim.lfw.mt.mark = 'hwih_1';
     let nid: string | undefined = void 0
     if (is_base_ball && (vx >= 6 || vx <= -6))

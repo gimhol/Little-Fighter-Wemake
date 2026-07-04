@@ -23,5 +23,6 @@ export class CharacterState_Dash extends CharacterState_Base {
     else next_vx = e.facing * dx;
     e.set_velocity(next_vx, vy, next_vz)
     e.set_position(null, 0.1 + e.ground_y)
+    e.is_on_ground = false
   }
 }

@@ -280,6 +280,7 @@ export class Entity {
   get ground_y(): number { return this._ground_y }
   /** 是否在地面上 */
   get is_on_ground(): boolean { return this._is_on_ground }
+  set is_on_ground(v: boolean) {  this._is_on_ground = v }
 
   get velocity(): Readonly<IVector3> { return this._velocity }
   get data(): IEntityData { return this._data };
