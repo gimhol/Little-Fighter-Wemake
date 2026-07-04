@@ -245,7 +245,7 @@ export class Entity {
 
   renderer: any;
   puppet: boolean = false;
-  jumping = { s: 0, x: 0, y: 0, z: 0, t: 0 }
+  jumping = { x: 0, y: 0, z: 0, t: 0 }
   terrain: ITerrainInfo | undefined;
   protected _atom_time: number; // 帧时间步长（被 Physics/Recovery/Spawn 子模块访问）
 
@@ -278,7 +278,6 @@ export class Entity {
   get prev_position(): Readonly<IVector3> { return this._prev_position }
 
   get ground_y(): number { return this._ground_y }
-  get prev_ground_y(): number { return this._prev_ground_y }
   /** 是否在地面上 */
   get is_on_ground(): boolean { return this._is_on_ground }
 
@@ -725,7 +724,6 @@ export class Entity {
     this.id = lfw.new_id;
     this.wait = 0;
     this._lifetime = 0;
-    this._prev_ground_y = 0;
     this.fallinjury = 0;
     this._ground_y = 0;
     this.variant = 0;
@@ -794,7 +792,6 @@ export class Entity {
     this._hp_max = this.dataset('hp_max');
     this._mp_max = this.dataset('mp_max');
     this._defend_ratio = data.base.defend_ratio ?? null
-    this.jumping.s = 0
     this.jumping.x = 0
     this.jumping.y = 0
     this.jumping.z = 0
@@ -1677,9 +1674,7 @@ export class Entity {
           this._prev_position.y = _ground_y;
         }
         if (this._landing_frame !== this.frame) this._landing_frame = null
-        this._prev_ground_y = _ground_y;
       }
-
     }
     this._holding?.follow_bearer();
     this.collision_list.length = 0;

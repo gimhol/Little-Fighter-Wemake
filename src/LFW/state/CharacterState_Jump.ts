@@ -1,7 +1,7 @@
 import { GK, type IFrameInfo, SpeedCtrl, StateEnum } from "../defines";
 import { is_bot_ctrl } from "../entity";
 import type { Entity } from "../entity/Entity";
-import { abs, round_float } from "../utils";
+import { abs, float_equal, round_float } from "../utils";
 import { CharacterState_Base } from "./CharacterState_Base";
 
 export class CharacterState_Jump extends CharacterState_Base {
@@ -9,17 +9,14 @@ export class CharacterState_Jump extends CharacterState_Base {
     super(state)
   }
   override enter(e: Entity, prev_frame: IFrameInfo): void {
-    if (e.position.y == 0) {
-      e.jumping.s = 0;
-      e.jumping.x = 0
-      e.jumping.y = 0
-      e.jumping.z = 0
-      e.jumping.t = 0
-    }
+    e.jumping.x = 0
+    e.jumping.y = 0
+    e.jumping.z = 0
+    e.jumping.t = 0
   }
   override update(e: Entity): void {
     e.handle_ground_velocity_decay();
-    if (e.jumping.s) return;
+    if (!float_equal(e.position.y, e.ground_y)) return;
     const rf = round_float;
     const { jump_flag } = e.get_prev_frame();
     if (is_bot_ctrl(e.ctrl)) {
@@ -41,7 +38,6 @@ export class CharacterState_Jump extends CharacterState_Base {
     const min = 4;
     vy = e.jumping.t ? min + (vy - min) * e.jumping.y / e.jumping.t : min;
     e.set_velocity(vx, vy, vz);
-    e.jumping.s = 1;
   }
   override on_landing(e: Entity): void {
     const { on_landing } = e.frame;

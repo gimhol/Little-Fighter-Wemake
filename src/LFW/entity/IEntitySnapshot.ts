@@ -90,5 +90,5 @@ export interface IEntitySnapshot {
   wakeup_invuln: boolean | null;
   dead_gone: boolean | null;
   ctrl_visible: boolean | null;
-  jumping: { s: number, x: number, y: number, z: number, t: number }
+  jumping: { x: number, y: number, z: number, t: number }
 }
