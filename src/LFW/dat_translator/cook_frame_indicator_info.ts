@@ -36,7 +36,7 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
       ...rect_1,
       x: f_qube_2.x + f_qube_1.w - w - o.x,
     };
-    o.indicator_info = { 1: rect_1, [-1]: rect_2 };
+    o.__indicator_info = { 1: rect_1, [-1]: rect_2 };
   });
   if (cpoint) {
     const { x: ox = 0, y: oy = 0, z: oz = 0 } = cpoint;
@@ -54,7 +54,7 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
       ...rect_1,
       x: f_qube_2.x + f_qube_1.w - w - ox,
     };
-    cpoint.indicator_info = { 1: rect_1, [-1]: rect_2 };
+    cpoint.__indicator_info = { 1: rect_1, [-1]: rect_2 };
   }
   if (bpoint) {
     const o = bpoint;
@@ -72,7 +72,7 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
       ...rect_1,
       x: f_qube_2.x + f_qube_1.w - w - o.x,
     };
-    o.indicator_info = { 1: rect_1, [-1]: rect_2 };
+    o.__indicator_info = { 1: rect_1, [-1]: rect_2 };
   }
   if (wpoint) {
     const o = wpoint;
@@ -89,7 +89,7 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
       ...rect_1,
       x: f_qube_2.x + f_qube_1.w - w - o.x,
     };
-    o.indicator_info = { 1: rect_1, [-1]: rect_2 };
+    o.__indicator_info = { 1: rect_1, [-1]: rect_2 };
   }
   bdy?.forEach((o) => {
     const { x = 0, y = 0, w = 0, h = 0, z = 0, l = 0 } = o
@@ -115,6 +115,6 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
       ...rect_1,
       x: f_qube_2.x + f_qube_1.w - w - x,
     };
-    o.indicator_info = { 1: rect_1, [-1]: rect_2 };
+    o.__indicator_info = { 1: rect_1, [-1]: rect_2 };
   });
 }

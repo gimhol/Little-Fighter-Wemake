@@ -1,10 +1,10 @@
+import { any, fields, flt, int, str } from "../fields";
 import type { FacingFlag } from "./FacingFlag";
 import type { TNextFrame } from "./INextFrame";
 import type { IQubePair } from "./IQubePair";
 import { OpointKind } from "./OpointKind";
 import { OpointMultiEnum } from "./OpointMultiEnum";
 import { OpointSpreading } from "./OpointSpreading";
-import { any, fields, flt, int, str } from "../fields";
 export type __KEEP_FacingFlag = FacingFlag;
 
 export interface IOpointMulti {
@@ -174,7 +174,6 @@ export interface IOpointInfo {
   interval?: number;
   interval_id?: string;
   interval_mode?: 1 | 0;
-  indicator_info?: IQubePair;
   motionless?: number;
 
   spreading_x?: number[];
@@ -184,17 +183,20 @@ export interface IOpointInfo {
   unimportant?: number;
   delay?: number;
 
+
+  /* 从发射者继承多少速度 */
+  inherit_speed_x?: number;
+  inherit_speed_y?: number;
+  inherit_speed_z?: number;
+
+  
+  __indicator_info?: IQubePair;
   /** 运行时生成 */
   __spreading_random_x?: { take(): number };
   /** 运行时生成 */
   __spreading_random_y?: { take(): number };
   /** 运行时生成 */
   __spreading_random_z?: { take(): number };
-
-  /* 从发射者继承多少速度 */
-  inherit_speed_x?: number;
-  inherit_speed_y?: number;
-  inherit_speed_z?: number;
 }
 
 const ALL_OPOINT_KIND = Object.values(OpointKind).filter(v => typeof v === 'number') as number[];
@@ -256,11 +258,13 @@ export const opoint_info_fields = fields<IOpointInfo>({
   spreading_z: any,
   unimportant: int("不重要标记"),
   delay: int("延迟帧数"),
-  __spreading_random_x: any,
-  __spreading_random_y: any,
-  __spreading_random_z: any,
   inherit_speed_x: flt("继承速度X"),
   inherit_speed_y: flt("继承速度Y"),
   inherit_speed_z: flt("继承速度Z"),
-  indicator_info: any,
+
+
+  __spreading_random_x: any,
+  __spreading_random_y: any,
+  __spreading_random_z: any,
+  __indicator_info: any,
 })

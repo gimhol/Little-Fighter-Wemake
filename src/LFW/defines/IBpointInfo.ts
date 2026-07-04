@@ -6,7 +6,7 @@ export interface IBpointInfo {
   y: number;
   z?: number;
   r?: number;
-  indicator_info?: IQubePair;
+  __indicator_info?: IQubePair;
 }
 
 export function bpoint_info_new(): IBpointInfo {
@@ -21,5 +21,5 @@ export const bpoint_info_fields = fields<IBpointInfo>({
   y: int("Y"),
   z: int("Z"),
   r: int("R"),
-  indicator_info: any,
+  __indicator_info: any,
 })

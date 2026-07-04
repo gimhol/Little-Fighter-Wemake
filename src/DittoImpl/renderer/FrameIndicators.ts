@@ -15,7 +15,7 @@ line_geometry.setPositions(line_vertices);
 
 const EMPTY_ARR = [] as const;
 const DOT = {
-  indicator_info: {
+  __indicator_info: {
     1: {
       z: 0,
       l: 0,
@@ -34,7 +34,7 @@ const DOT = {
     }
   }
 }
-type Indicatable = { indicator_info?: IQubePair }
+type Indicatable = { __indicator_info?: IQubePair }
 export type Indicating = 'frame' | 'bdy' | 'itr' | 'ft' | 'opoint' | 'wpoint' | 'cpoint' | 'bpoint' | 'ctrl';
 const geometry = new T.BufferGeometry();
 const vertices = new Float32Array([
@@ -134,7 +134,7 @@ export class FrameIndicators {
         this._del_indicator(name, i);
         continue;
       }
-      const info = data[i].indicator_info?.[this.face];
+      const info = data[i].__indicator_info?.[this.face];
       if (!info) {
         this._del_indicator(name, i);
         continue;

@@ -12,7 +12,7 @@ export interface IWpointInfo {
   dvx?: number;
   dvy?: number;
   dvz?: number;
-  indicator_info?: IQubePair;
+  __indicator_info?: IQubePair;
 }
 
 const ALL_WPOINT_KIND = Object.values(WpointKind).filter(v => typeof v === 'number') as number[];
@@ -43,5 +43,5 @@ export const wpoint_info_fields = fields<IWpointInfo>({
   dvx: flt("初速度X"),
   dvy: flt("初速度Y"),
   dvz: flt("初速度Z"),
-  indicator_info: any,
+  __indicator_info: any,
 })

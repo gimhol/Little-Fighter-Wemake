@@ -72,7 +72,7 @@ export interface IItrInfo extends Partial<IQube> {
   /** just for reading */
   effect_name?: string;
 
-  indicator_info?: IQubePair;
+  __indicator_info?: IQubePair;
 
 
   /**
@@ -183,6 +183,6 @@ export const itr_info_fields = fields<IItrInfo>({
   tester: any,
   code: str("Code"),
   ref: str("预制信息ID"),
-  indicator_info: any,
+  __indicator_info: any,
   prefab_id: str("预制信息ID"),
 })
