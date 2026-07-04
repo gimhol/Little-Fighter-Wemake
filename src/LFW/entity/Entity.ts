@@ -719,6 +719,7 @@ export class Entity {
     for (const buf of buffs) buf.del_victims(this.id)
     this.buffs.clear();
     const { world, lfw } = this;
+    this._is_on_ground = false;
     this.terrain = void 0;
     this._data = data;
     this.id = lfw.new_id;
@@ -1646,7 +1647,7 @@ export class Entity {
       if (__hit_ground_bdys) this.update_itr_bdy_hit_ground(__hit_ground_bdys);
       if (__hit_ground_itrs) this.update_itr_bdy_hit_ground(__hit_ground_itrs);
 
-      if (this.frame.landable) {
+      if (this.frame.landable && !this._bearer && !this._catcher) {
         // 落地
         if (just_land) {
           this._is_on_ground = true;
