@@ -280,7 +280,7 @@ export class Entity {
   get ground_y(): number { return this._ground_y }
   /** 是否在地面上 */
   get is_on_ground(): boolean { return this._is_on_ground }
-  set is_on_ground(v: boolean) {  this._is_on_ground = v }
+  set is_on_ground(v: boolean) { this._is_on_ground = v }
 
   get velocity(): Readonly<IVector3> { return this._velocity }
   get data(): IEntityData { return this._data };
@@ -1673,8 +1673,13 @@ export class Entity {
           }
           this._landing_frame = this.frame
         } else if (_is_on_ground) {
-          this._position.y = _ground_y;
-          this._prev_position.y = _ground_y;
+          if (this._position.y - _ground_y > this.world.ground.step) {
+            // 离地面太高
+            this._state?.on_leave_ground?.(this);
+          } else {
+            this._position.y = _ground_y;
+            this._prev_position.y = _ground_y;
+          }
         }
         if (this._landing_frame !== this.frame) this._landing_frame = null
       }

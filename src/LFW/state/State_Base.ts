@@ -35,4 +35,5 @@ export class State_Base {
   get_caught_end_frame?(e: Entity): INextFrame | undefined;
   get_auto_frame?(e: Entity): IFrameInfo | undefined;
   find_frame_by_id?(e: Entity, id: string | undefined): IFrameInfo | undefined;
+  on_leave_ground?(e: Entity): void
 }

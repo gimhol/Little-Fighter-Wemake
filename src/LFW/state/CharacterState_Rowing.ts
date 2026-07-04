@@ -1,14 +1,20 @@
-import { type IFrameInfo, SpeedMode, StateEnum } from "../defines";
+import { type IFrameInfo, SE, SpeedMode, StateEnum } from "../defines";
 import { calc_v } from "../entity/calc_v";
 import { Entity } from "../entity/Entity";
 import { CharacterState_Base } from "./CharacterState_Base";
 
+/** 
+ * mmp为什么要用同个state
+ * 
+ * - 跑滚
+ * - 受身
+ */
 export class CharacterState_Rowing extends CharacterState_Base {
   constructor(state: StateEnum = StateEnum.Rowing) {
     super(state)
   }
   override enter(e: Entity, prev_frame: IFrameInfo): void {
-    if (e.position.y <= e.ground_y) return;
+    if (prev_frame.state !== SE.Falling) return;
     const vx = e.dataset('rowing_distance') * e.dataset('bfall_x_f')
     const vy = e.dataset('rowing_height') * e.dataset('bfall_h_f')
     const { x: prev_vx, y: prev_vy } = e.velocity;

@@ -11,7 +11,7 @@ export class Ground {
   readonly world: World;
 
   private _blocked: IBlockResult = { block_x: null, block_z: null };
-  private _step: number = 15;
+  readonly step: number = 15;
 
   constructor(world: World) {
     this.world = world
@@ -30,7 +30,7 @@ export class Ground {
     if (!terrain?.length) return void 0;
 
     // 向上一步，“允许走楼梯”
-    y += this._step;
+    y += this.step;
 
     let best: ITerrainInfo | undefined;
     let best_y: number | undefined;
@@ -102,7 +102,7 @@ export class Ground {
     if (seg.type === TerrainEnum.Platform && diff_h > 0) return null;
 
     // 地形太高，上不去
-    if (diff_h > this._step) return null;
+    if (diff_h > this.step) return null;
 
     return dist_y;
   }

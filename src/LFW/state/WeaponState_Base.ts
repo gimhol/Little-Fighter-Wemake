@@ -90,4 +90,8 @@ export class WeaponState_Base extends State_Base {
       if (nf) e.enter_frame(nf);
     }
   }
+  override on_leave_ground(e: Entity): void {
+    e.enter_frame(Defines.NEXT_FRAME_AUTO);
+    e.is_on_ground = false;
+  }
 }

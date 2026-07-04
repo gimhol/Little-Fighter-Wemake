@@ -1,4 +1,4 @@
-import { type IFrameInfo, type INextFrame, type IVector3, StateEnum, WeaponEnum } from "../defines";
+import { Defines, type IFrameInfo, type INextFrame, type IVector3, StateEnum, WeaponEnum } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { State_Base } from "./State_Base";
 
@@ -54,5 +54,18 @@ export class CharacterState_Base extends State_Base {
     if (e.data.indexes?.falling)
       return { id: e.data.indexes.falling[-1][1] };
     return void 0;
+  }
+  override on_leave_ground(e: Entity): void {
+    switch (e.state) {
+      case StateEnum.Running:
+      case StateEnum.Walking:
+      case StateEnum.Standing:
+      case StateEnum.Rowing:
+        if (e.holding?.base_type === WeaponEnum.Heavy) 
+          e.drop_holding();
+        e.enter_frame(Defines.NEXT_FRAME_AUTO);
+        e.is_on_ground = false;
+        break;
+    }
   }
 }
