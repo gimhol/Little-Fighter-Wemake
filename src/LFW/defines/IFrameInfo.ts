@@ -226,7 +226,7 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
 
 
   /* 运行时使用，为Debug预留的玩意 */
-  indicator_info?: IQubePair;
+  __indicator_info?: IQubePair;
   /* 运行时使用，为渲染层预留的玩意 */
   __tex?: any;
   /* 运行时使用，为碰撞检测预留的玩意 */
@@ -235,7 +235,9 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
   __aabb_z1?: number;
   __aabb_z2?: number;
   /** 运行时使用，根据seqs生成 */
-  seq_map?: Map<string, TNextFrame>;
+  __seq_map?: Map<string, TNextFrame>;
+  __hit_ground_itrs?: IItrInfo[];
+  __hit_ground_bdys?: IBdyInfo[];
 }
 
 export function frame_info_new(): IFrameInfo {
@@ -331,13 +333,15 @@ export const frame_info_fields = fields<IFrameInfo>(
     ctrl_z: int("控制模式Z", { nullable: true }),
 
     // 内部/渲染用字段
-    seq_map: any,
-    indicator_info: any,
+    __seq_map: any,
+    __indicator_info: any,
     __tex: any,
     __aabb_x1: any,
     __aabb_x2: any,
     __aabb_z1: any,
     __aabb_z2: any,
+    __hit_ground_itrs: any,
+    __hit_ground_bdys: any,
   },
   world_dataset_fields
 );
@@ -395,13 +399,14 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     ctrl_z: { type: 'number', nullable: true },
 
     __tex: { type: 'object', nullable: true },
-    indicator_info: { type: 'object', nullable: true },
+    __indicator_info: { type: 'object', nullable: true },
     __aabb_x1: { type: 'number', nullable: true },
     __aabb_x2: { type: 'number', nullable: true },
     __aabb_z1: { type: 'number', nullable: true },
     __aabb_z2: { type: 'number', nullable: true },
-    seq_map: { type: 'object', nullable: true },
-
+    __seq_map: { type: 'object', nullable: true },
+    __hit_ground_itrs: { type: 'object', nullable: true },
+    __hit_ground_bdys: { type: 'object', nullable: true },
     ...Schema_IWorldDataset_Partial.properties!
   },
 });

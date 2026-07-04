@@ -16,7 +16,7 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
     ...f_qube_1,
     x: frame.centerx - f_qube_1.w,
   };
-  frame.indicator_info = {
+  frame.__indicator_info = {
     1: f_qube_1,
     [-1]: f_qube_2,
   };
@@ -102,7 +102,7 @@ export function cook_frame_indicator_info(frame: IFrameInfo) {
       ...rect_1,
       x: f_qube_2.x + f_qube_1.w - w - x,
     };
-    o.indicator_info = { 1: rect_1, [-1]: rect_2 };
+    o.__indicator_info = { 1: rect_1, [-1]: rect_2 };
   });
   itr?.forEach((o) => {
     const { x = 0, y = 0, w = 0, h = 0, z = 0, l = 0 } = o

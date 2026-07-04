@@ -310,7 +310,7 @@ export function collision_test(c: Collision): boolean {
     victim.spawn_time === attacker.spawn_time
   ) return false;
 
-  if (bdy.tester?.run(c) === false) return false;
+  if (bdy.__tester?.run(c) === false) return false;
   if (itr.tester?.run(c) === false) return false;
   return collisions_keeper.load_handlers(c);
 }

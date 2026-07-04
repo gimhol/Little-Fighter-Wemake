@@ -376,7 +376,7 @@ export class BaseController {
       if (this.dbc[name].fired)
         this.dbc[name].fired = false;
     }
-    frame?.seq_map && this.check_hit_seqs(frame.seq_map, ret);
+    frame?.__seq_map && this.check_hit_seqs(frame.__seq_map, ret);
     /** 这里不想支持过长的指令 */
     if (this._key_list && this._key_list.length >= 10) {
       this._key_list = '';

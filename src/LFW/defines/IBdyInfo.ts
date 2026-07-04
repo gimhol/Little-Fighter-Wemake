@@ -5,6 +5,7 @@ import type { IQube } from "./IQube";
 import type { IQubePair } from "./IQubePair";
 import type { TAction } from "./actions/TAction";
 import { any, fields, int, str } from "../fields";
+import type { TNextFrame } from "./INextFrame";
 
 export interface IBdyInfo extends Partial<IQube> {
   id?: string;
@@ -41,7 +42,6 @@ export interface IBdyInfo extends Partial<IQube> {
 
   test?: string;
 
-  tester?: IExpression<any>;
 
   /**
    * 目前用途:
@@ -57,6 +57,8 @@ export interface IBdyInfo extends Partial<IQube> {
 
   /** @deprecated 改用ref */
   prefab_id?: string;
+
+  on_hit_ground?: TNextFrame;
   
   /**
    * 代码生成，用于bdy碰撞盒显示
@@ -64,7 +66,8 @@ export interface IBdyInfo extends Partial<IQube> {
    * @type {?IQubePair}
    * @memberof IBdyInfo
    */
-  indicator_info?: IQubePair;
+  __indicator_info?: IQubePair;
+  __tester?: IExpression<any>;
 }
 
 export function bdy_info_new(): IBdyInfo {
@@ -106,6 +109,8 @@ export const bdy_info_fields = fields<IBdyInfo>({
   actions: any,
   test: str("测试表达式"),
   code: str("Code"),
-  tester: any,
-  indicator_info: any,
+  on_hit_ground: any,
+
+  __tester: any,
+  __indicator_info: any,
 })

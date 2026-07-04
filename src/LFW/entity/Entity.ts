@@ -30,7 +30,7 @@ import { Ditto } from "../ditto";
 import { States } from "../state";
 import { ENTITY_STATES } from "../state/ENTITY_STATES";
 import { State_Base } from "../state/State_Base";
-import { abs, clamp, clamp_add, find, float_equal, floor, is_num, max, min, pow, round, round_float } from "../utils";
+import { abs, clamp, clamp_add, find, floor, is_num, max, min, pow, round, round_float } from "../utils";
 import { Times } from "../utils/Times";
 import { cross_bounding } from "../utils/cross_bounding";
 import { is_f_num, is_positive, is_str } from "../utils/type_check";
@@ -238,6 +238,9 @@ export class Entity {
 
   protected _ground_y: number = 0;
   protected _prev_ground_y: number = 0;
+  /** 是否在地面上 */
+  protected _is_on_ground: boolean = false;
+
   readonly buffs = new Map<string, Buff>()
 
   renderer: any;
@@ -276,6 +279,8 @@ export class Entity {
 
   get ground_y(): number { return this._ground_y }
   get prev_ground_y(): number { return this._prev_ground_y }
+  /** 是否在地面上 */
+  get is_on_ground(): boolean { return this._is_on_ground }
 
   get velocity(): Readonly<IVector3> { return this._velocity }
   get data(): IEntityData { return this._data };
@@ -1629,30 +1634,32 @@ export class Entity {
     }
 
     if (!this.shaking && !this.motionless) {
-      const { prev_ground_y, ground_y } = this;
-      const on_ground = this._prev_position.y <= prev_ground_y;
-      const just_land = (this.velocity.y < 0 || !on_ground) && this._position.y <= ground_y
-      const itrs = this.itr;
+      const { _ground_y, _is_on_ground } = this;
 
-      if (itrs?.length && this.velocity.y < 0) for (const itr of itrs) {
-        if (!itr.on_hit_ground) continue;
-        const { y = 0, h = 0 } = itr;
-        if ((this._position.y + this.frame.centery - y - h) > ground_y)
-          continue;
-        this.enter_frame(itr.on_hit_ground);
-      }
+      /** 
+       是否本帧落地.
+
+       TODO: 
+          其实会存在Y速度向上，但仍是落地的情况，例：45度斜坡，X轴速度比Y轴速度大。
+      */
+      const just_land = !_is_on_ground && this._position.y <= _ground_y && this._velocity.y <= 0
+
+      /** itr/bdy与地面的碰撞 */
+      const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
+      if (__hit_ground_bdys) this.update_itr_bdy_hit_ground(__hit_ground_bdys);
+      if (__hit_ground_itrs) this.update_itr_bdy_hit_ground(__hit_ground_itrs);
 
       if (this.frame.landable) {
         // 落地
         if (just_land) {
-          this._position.y = this._prev_position.y = ground_y;
+          this._is_on_ground = true;
+          this._position.y = this._prev_position.y = _ground_y;
           this._temp_v.x = this._velocity.x
           this._temp_v.y = this._velocity.y
           this._temp_v.z = this._velocity.z
           this._velocity.y = 0;
           this._prev_velocity.y = 0;
           this._state?.on_landing?.(this, this._temp_v);
-
           this.play_sound(this._data.base.drop_sounds);
           if (this.throwinjury) {
             this.hp -= this.throwinjury;
@@ -1665,16 +1672,12 @@ export class Entity {
             this.fallinjury = 0;
           }
           this._landing_frame = this.frame
-        } else if (this.velocity.y == 0 && on_ground && !float_equal(prev_ground_y, ground_y)) {
-          this._position.y = ground_y;
-          this._prev_position.y = ground_y;
-        } else if (this._position.y < ground_y) {
-          // TODO: allow spawn under ground?
-          // this._position.y = ground_y;
-          // this._prev_position.y = ground_y;
+        } else if (_is_on_ground) {
+          this._position.y = _ground_y;
+          this._prev_position.y = _ground_y;
         }
         if (this._landing_frame !== this.frame) this._landing_frame = null
-        this._prev_ground_y = ground_y;
+        this._prev_ground_y = _ground_y;
       }
 
     }
@@ -1683,6 +1686,16 @@ export class Entity {
     this.collided_list.length = 0;
   }
 
+  update_itr_bdy_hit_ground(itrs: (IItrInfo | IBdyInfo)[]): void {
+    if (!itrs?.length) return;
+    for (const itr of itrs) {
+      if (!itr.on_hit_ground) continue;
+      const { y = 0, h = 0 } = itr;
+      if ((this._position.y + this.frame.centery - y - h) > this._ground_y)
+        continue;
+      this.enter_frame(itr.on_hit_ground);
+    }
+  }
   update_position(): void {
     if (this.bearer || this.catcher || this.shaking || this.motionless) return;
     let { x: vx, y: vy, z: vz } = this._velocity;
@@ -2314,6 +2327,7 @@ export class Entity {
     this.velocity.set(x, y, z);
     this._velocity.set(x, y, z);
     this._prev_velocity.set(x, y, z);
+    if (y > 0) this._is_on_ground = false;
   }
   set_velocity_x(x: number) {
     this.set_velocity(x)

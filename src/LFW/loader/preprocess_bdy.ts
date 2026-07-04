@@ -8,7 +8,7 @@ export function preprocess_bdy(lfw: LFW, bdy: IBdyInfo, data: IEntityData, jobs:
   const ref = bdy.ref ?? bdy.prefab_id;
   const prefab = ref ? data.bdy_prefabs?.[ref] : void 0;
   if (prefab) bdy = { ...prefab, ...bdy };
-  bdy.tester = bdy.test ? new Expression(
+  bdy.__tester = bdy.test ? new Expression(
     bdy.test,
     get_val_geter_from_collision
   ) : void 0;

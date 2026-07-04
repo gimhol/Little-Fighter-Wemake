@@ -70,11 +70,11 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
     jobs.push(lfw.sounds.load(frame.sound, frame.sound))
 
   if (frame.seqs) {
-    frame.seq_map = new Map();
+    frame.__seq_map = new Map();
     traversal(frame.seqs, (k, v, o) => {
       if (!v) return;
       const nf = preprocess_next_frame(v)
-      frame.seq_map!.set(k, o[k] = nf)
+      frame.__seq_map!.set(k, o[k] = nf)
     });
   }
 
@@ -105,8 +105,20 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
   if (frame.on_exhaustion) frame.on_exhaustion = preprocess_next_frame(frame.on_exhaustion);
   if (frame.on_landing) frame.on_landing = preprocess_next_frame(frame.on_landing);
 
-  frame.bdy?.forEach((n, i, l) => l[i] = preprocess_bdy(lfw, n, data, jobs))
-  frame.itr?.forEach((n, i, l) => l[i] = preprocess_itr(lfw, n, data, jobs))
+  frame.bdy?.forEach((n, i, l) => {
+    const bdy = l[i] = preprocess_bdy(lfw, n, data, jobs)
+    if (bdy.on_hit_ground) {
+      frame.__hit_ground_bdys = frame.__hit_ground_bdys || []
+      frame.__hit_ground_bdys?.push(bdy)
+    }
+  })
+  frame.itr?.forEach((n, i, l) => {
+    const itr = l[i] = preprocess_itr(lfw, n, data, jobs)
+    if (itr.on_hit_ground) {
+      frame.__hit_ground_itrs = frame.__hit_ground_itrs || []
+      frame.__hit_ground_itrs?.push(itr)
+    }
+  })
   frame.opoint?.forEach((n, i, l) => l[i] = preprocess_opoint(n, lfw))
 
   const unchecked_frame = frame as any;
