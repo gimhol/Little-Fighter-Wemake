@@ -29,6 +29,8 @@ export interface IArmorInfo {
    */
   toughness?: number;
 
+  toughness_resting?: number;
+
   /**
    * 护甲是否防火烧
    * 

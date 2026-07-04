@@ -834,7 +834,8 @@ export class Entity {
     const { armor } = this._data.base
     this.armor = armor || null;
     this.toughness = this.toughness_max = armor?.toughness || 0;
-    this.toughness_resting = this.toughness_resting_max = 0;
+    this.toughness_resting = 0;
+    this.toughness_resting_max = armor?.toughness_resting || 0;
     this._toughness_r_tick.max = 1;
   }
   set_bearer(v: Entity | null): this {
@@ -1368,57 +1369,46 @@ export class Entity {
       return this.find_auto_frame();
     }
   }
-
-  stat_recovering(): void {
-    if (this.resting > 0) {
-      this.resting = clamp_add(this.resting, -this._atom_time, 0, this.resting_max);
-      return;
-    }
-
-    if (
-      this.toughness_resting < this._toughness_resting_max
-    ) {
+  toughness_recovering(): void {
+    if (this.toughness_resting > 0) {
       this.toughness_resting = clamp_add(
         this.toughness_resting,
         -this._atom_time,
         0,
         this._toughness_resting_max,
       );
-    } else if (
-      this.toughness < this.toughness_max &&
-      this._toughness_r_tick.add(this._atom_time)
-    ) {
-      this.toughness = clamp_add(
-        this.toughness,
-        this._atom_time,
-        0,
-        this._toughness_max,
-      );
+      return;
     }
 
-    if (
-      this.fall_value < this.fall_value_max &&
-      this._fall_r_tick.add(this._atom_time)
-    ) {
-      this.fall_value = clamp_add(
-        this.fall_value,
-        this._fall_r_value,
-        0,
-        this.fall_value_max,
-      );
-    }
+    if (this.toughness >= this.toughness_max) return;
+    if (!this._toughness_r_tick.add(this._atom_time)) return;
+    this.toughness = clamp_add(this.toughness, this._atom_time, 0, this._toughness_max);
+  }
 
-    if (
-      this.defend_value < this.defend_value_max &&
-      this._defend_r_tick.add(this._atom_time)
-    ) {
-      this.defend_value = clamp_add(
-        this.defend_value,
-        this._defend_r_value,
-        0,
-        this.defend_value_max,
-      );
+  fall_value_recovering(): void {
+    if (this.fall_value >= this.fall_value_max) return;
+    if (!this._fall_r_tick.add(this._atom_time)) return;
+    this.fall_value = clamp_add(this.fall_value, this._fall_r_value, 0, this.fall_value_max,);
+  }
+  defend_value_recovering(): void {
+    if (this.defend_value >= this.defend_value_max) return;
+    if (!this._defend_r_tick.add(this._atom_time)) return;
+    this.defend_value = clamp_add(
+      this.defend_value,
+      this._defend_r_value,
+      0,
+      this.defend_value_max,
+    );
+  }
+
+  stat_recovering(): void {
+    if (this.resting > 0) {
+      this.resting = clamp_add(this.resting, -this._atom_time, 0, this.resting_max);
+      return;
     }
+    this.toughness_recovering();
+    this.fall_value_recovering();
+    this.defend_value_recovering();
   }
 
   drop_holding(): void {

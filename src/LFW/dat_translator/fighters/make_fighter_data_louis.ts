@@ -13,7 +13,8 @@ export function make_fighter_data_louis(data: IEntityData): IEntityData {
     hit_sounds: ["data/085.wav.mp3"],
     type: ArmorEnum.Times,
     fulltime: false,
-    toughness: 2,
+    toughness: 1,
+    toughness_resting: 90,
   };
 
   traversal(data.frames, (k, frame) => {
