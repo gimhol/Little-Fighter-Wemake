@@ -140,6 +140,9 @@ export class Ground {
     else
       block_z = null;
 
+    // TODO: 还要避免挤出地图外
+    // const { far, near, left, right } = this.world.bg
+
     this._blocked.block_x = block_x;
     this._blocked.block_z = block_z;
     return this._blocked;
