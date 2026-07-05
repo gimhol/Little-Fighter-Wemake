@@ -11,8 +11,8 @@ export interface ITerrainInfo {
   z1: number; // far
   z2: number; // near
   h00: number; // y at (x1, z1)
-  h10: number; // y at (x2, z1)
   h01: number; // y at (x1, z2)
+  h10: number; // y at (x2, z1)
   h11: number; // y at (x2, z2)
 }
 
