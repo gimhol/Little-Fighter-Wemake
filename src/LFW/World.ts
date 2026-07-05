@@ -377,11 +377,17 @@ export class World {
     const { block_x, block_z } = this.ground.block(seg, x, y, z);
     if (block_x != null) {
       x = block_x;
-      e.set_velocity_x(0);
+      if (e.velocity.x > 0.1)
+        e.set_velocity_x(0.1);
+      else if (e.velocity.x < -0.1)
+        e.set_velocity_x(-0.1);
     }
     if (block_z != null) {
       z = block_z;
-      e.set_velocity_z(0);
+      if (e.velocity.z > 0.1)
+        e.set_velocity_z(0.1);
+      else if (e.velocity.z < -0.1)
+        e.set_velocity_z(-0.1);
     }
     e.terrain = this.ground.segment(x, z)
     this._restrict_result.x = x;
