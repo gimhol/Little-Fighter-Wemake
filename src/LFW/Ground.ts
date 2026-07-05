@@ -1,6 +1,6 @@
 import type { World } from "./World";
 import { TerrainEnum, type ITerrainInfo } from "./defines/ITerrainInfo";
-import { clamp } from "./utils";
+import { abs, clamp } from "./utils";
 
 export interface IBlockResult {
   block_x: number | null;
@@ -96,29 +96,47 @@ export class Ground {
     return dist_y;
   }
 
-  block(seg: ITerrainInfo, x: number, y: number, z: number, vx: number, vz: number): IBlockResult {
+  block(seg: ITerrainInfo, x: number, y: number, z: number): IBlockResult {
     const stand_y = this.enterable(seg, x, y, z);
 
-    if (stand_y !== null) {
+    if (stand_y !== null && stand_y <= y + this.step) {
       this._blocked.block_x = null;
       this._blocked.block_z = null;
       return this._blocked;
     }
 
-    let push_x: number | null = null;
-    let push_z: number | null = null;
+    let block_x: number | null;
+    let block_z: number | null;
+    let xx: number;
+    let zz: number;
 
+    const dist_l = (x - seg.x1) - 1;
+    const dist_r = (seg.x2 - x) + 1;
+    const dist_f = (z - seg.z1) - 1;
+    const dist_n = (seg.z2 - z) + 1;
 
-    // Flat / Slope：仅挡有速度的轴
-    if (vx > 0) push_x = seg.x1 - 1;
-    else if (vx < 0) push_x = seg.x2 + 1;
+    if (dist_l < dist_r) {
+      block_x = seg.x1 - 1;
+      xx = abs(dist_l);
+    } else {
+      block_x = seg.x2 + 1;
+      xx = abs(dist_r);
+    }
 
-    if (vz > 0) push_z = seg.z1 - 1;
-    else if (vz < 0) push_z = seg.z2 + 1;
+    if (dist_f < dist_n) {
+      block_z = seg.z1 - 1;
+      zz = abs(dist_f);
+    } else {
+      block_z = seg.z2 + 1;
+      zz = abs(dist_n);
+    }
+    if (xx > zz)
+      block_x = null;
+    else
+      block_z = null;
 
-
-    this._blocked.block_x = push_x;
-    this._blocked.block_z = push_z;
+    this._blocked.block_x = block_x;
+    this._blocked.block_z = block_z;
     return this._blocked;
   }
 }

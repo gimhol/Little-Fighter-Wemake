@@ -374,7 +374,7 @@ export class World {
       this._restrict_result.z = z;
       return this._restrict_result;
     }
-    const { block_x, block_z } = this.ground.block(seg, x, y, z, e.velocity.x, e.velocity.z);
+    const { block_x, block_z } = this.ground.block(seg, x, y, z);
     if (block_x != null) {
       x = block_x;
       e.set_velocity_x(0);
