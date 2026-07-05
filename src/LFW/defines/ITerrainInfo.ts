@@ -1,8 +1,6 @@
 export const enum TerrainEnum {
   Flat = 0,
-  Slope = 1,
-  Platform = 2,
-  Pit = 3
+  Slope = 1
 }
 
 export interface ITerrainInfo {

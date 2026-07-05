@@ -366,7 +366,7 @@ export class World {
   private _restrict_result: IVector3Like = { x: 0, y: 0, z: 0 }
 
   private restrict_terrain(e: Entity, x: number, y: number, z: number): IVector3Like {
-    const seg = this.ground.segment(x, y, z);
+    const seg = this.ground.segment(x, z);
     if (!seg) {
       e.terrain = void 0;
       this._restrict_result.x = x;
@@ -383,7 +383,7 @@ export class World {
       z = block_z;
       e.set_velocity_z(0);
     }
-    e.terrain = this.ground.segment(x, y, z)
+    e.terrain = this.ground.segment(x, z)
     this._restrict_result.x = x;
     this._restrict_result.y = y;
     this._restrict_result.z = z;

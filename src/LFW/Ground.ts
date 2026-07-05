@@ -18,27 +18,22 @@ export class Ground {
   }
 
   /**
-   * 获得坐标点脚下的地形信息
+   * 获得坐标点地形信息
    * 
    * @param {number} x X坐标
-   * @param {number} y Y坐标
    * @param {number} z Z坐标
    * @returns {ITerrainInfo | undefined} 地形信息
    */
-  segment(x: number, y: number, z: number): ITerrainInfo | undefined {
+  segment(x: number, z: number): ITerrainInfo | undefined {
     const { terrain } = this.world.bg.data;
     if (!terrain?.length) return void 0;
-
-    // 向上一步，“允许走楼梯”
-    y += this.step;
 
     let best: ITerrainInfo | undefined;
     let best_y: number | undefined;
     for (const seg of terrain) {
       if (x < seg.x1 || x > seg.x2) continue;
       if (z < seg.z1 || z > seg.z2) continue;
-      const seg_y = this.ground(seg, x, z);
-      if (seg_y > y) continue;
+      const seg_y = this.y(seg, x, z);
       if (best_y === void 0 || seg_y > best_y) {
         best_y = seg_y;
         best = seg;
@@ -55,12 +50,9 @@ export class Ground {
    * @param {number} z Z坐标
    * @returns {number} Y坐标
    */
-  ground(seg: ITerrainInfo, x: number, z: number): number {
+  y(seg: ITerrainInfo, x: number, z: number): number {
     switch (seg.type) {
-      case TerrainEnum.Pit:
-        return -9999;
       case TerrainEnum.Flat:
-      case TerrainEnum.Platform:
         return seg.h00;
       case TerrainEnum.Slope:
         x = clamp(x, seg.x1, seg.x2)
@@ -95,11 +87,8 @@ export class Ground {
    * @returns {number | null} 新高度，当返回null，表示无法进入地点
    */
   enterable(seg: ITerrainInfo, x: number, y: number, z: number): number | null {
-    const dist_y = this.ground(seg, x, z);
+    const dist_y = this.y(seg, x, z);
     const diff_h = dist_y - y;
-
-    // 平台不能从下方走上，只能从上方降落
-    if (seg.type === TerrainEnum.Platform && diff_h > 0) return null;
 
     // 地形太高，上不去
     if (diff_h > this.step) return null;
@@ -111,30 +100,22 @@ export class Ground {
     const stand_y = this.enterable(seg, x, y, z);
 
     if (stand_y !== null) {
-      this._blocked.block_x = this._blocked.block_z = null;
+      this._blocked.block_x = null;
+      this._blocked.block_z = null;
       return this._blocked;
     }
 
     let push_x: number | null = null;
     let push_z: number | null = null;
 
-    if (seg.type === TerrainEnum.Platform) {
-      // 平台：挡所有有速度的轴
-      if (vx > 0) push_x = seg.x1 - 1;
-      else if (vx < 0) push_x = seg.x2 + 1;
-      else push_x = (x - seg.x1) < (seg.x2 - x) ? seg.x1 - 1 : seg.x2 + 1;
 
-      if (vz > 0) push_z = seg.z1 - 1;
-      else if (vz < 0) push_z = seg.z2 + 1;
-      else push_z = (z - seg.z1) < (seg.z2 - z) ? seg.z1 - 1 : seg.z2 + 1;
-    } else {
-      // Flat / Slope：仅挡有速度的轴
-      if (vx > 0) push_x = seg.x1 - 1;
-      else if (vx < 0) push_x = seg.x2 + 1;
+    // Flat / Slope：仅挡有速度的轴
+    if (vx > 0) push_x = seg.x1 - 1;
+    else if (vx < 0) push_x = seg.x2 + 1;
 
-      if (vz > 0) push_z = seg.z1 - 1;
-      else if (vz < 0) push_z = seg.z2 + 1;
-    }
+    if (vz > 0) push_z = seg.z1 - 1;
+    else if (vz < 0) push_z = seg.z2 + 1;
+
 
     this._blocked.block_x = push_x;
     this._blocked.block_z = push_z;

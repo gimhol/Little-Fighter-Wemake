@@ -2341,7 +2341,7 @@ export class Entity {
     this._position.x = x;
     this._position.y = y;
     this._position.z = z;
-    this._ground_y = this.terrain ? this.world.ground.ground(this.terrain, x, z) : 0;
+    this._ground_y = this.terrain ? this.world.ground.y(this.terrain, x, z) : 0;
   }
   set_position_x(x: number) {
     this.set_position(x)
