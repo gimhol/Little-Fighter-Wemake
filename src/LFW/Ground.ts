@@ -110,24 +110,29 @@ export class Ground {
     let xx: number;
     let zz: number;
 
-    const dist_l = (x - seg.x1) - 1;
-    const dist_r = (seg.x2 - x) + 1;
-    const dist_f = (z - seg.z1) - 1;
-    const dist_n = (seg.z2 - z) + 1;
+    const l = seg.x1 - 1
+    const r = seg.x2 + 1
+    const f = seg.z1 - 1
+    const n = seg.z2 + 1
+
+    const dist_l = (x - l);
+    const dist_r = (r - x);
+    const dist_f = (z - f);
+    const dist_n = (n - z);
 
     if (dist_l < dist_r) {
-      block_x = seg.x1 - 1;
+      block_x = l;
       xx = abs(dist_l);
     } else {
-      block_x = seg.x2 + 1;
+      block_x = r;
       xx = abs(dist_r);
     }
 
     if (dist_f < dist_n) {
-      block_z = seg.z1 - 1;
+      block_z = f;
       zz = abs(dist_f);
     } else {
-      block_z = seg.z2 + 1;
+      block_z = n;
       zz = abs(dist_n);
     }
     if (xx > zz)
