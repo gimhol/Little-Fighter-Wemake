@@ -96,7 +96,7 @@ export class Ground {
   ): IBlockResult {
     const stand_y = this.enterable(seg, x, y, z);
 
-    if (stand_y !== null && stand_y <= y + this.step) {
+    if (stand_y !== null) {
       this._blocked.block_x = null;
       this._blocked.block_z = null;
       this._blocked.block_y = null;
