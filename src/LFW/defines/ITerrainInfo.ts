@@ -1,6 +1,7 @@
 export const enum TerrainEnum {
   Flat = 0,
-  Slope = 1
+  SlopeH = 1,
+  SlopeV = 2,
 }
 
 export interface ITerrainInfo {
@@ -10,10 +11,8 @@ export interface ITerrainInfo {
   x2: number; // right
   z1: number; // far
   z2: number; // near
-  h00: number; // y at (x1, z1)
-  h01: number; // y at (x1, z2)
-  h10: number; // y at (x2, z1)
-  h11: number; // y at (x2, z2)
+  h1: number; // y
+  h2: number; // y
 }
 
 export function terrain_info_new(): ITerrainInfo {
@@ -24,9 +23,7 @@ export function terrain_info_new(): ITerrainInfo {
     x2: 0,
     z1: 0,
     z2: 0,
-    h00: 0,
-    h10: 0,
-    h01: 0,
-    h11: 0
+    h1: 0,
+    h2: 0
   };
 }

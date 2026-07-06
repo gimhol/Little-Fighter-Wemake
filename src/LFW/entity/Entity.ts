@@ -2309,18 +2309,15 @@ export class Entity {
     return this._prev_frame;
   }
   set_velocity(
-    x?: number | null,
-    y?: number | null,
-    z?: number | null,
+    _x?: number | null,
+    _y?: number | null,
+    _z?: number | null,
   ) {
-    if (is_f_num(x) || is_f_num(y) || is_f_num(z)) debugger;
-    x = (x === null || x === void 0) ? this.velocity.x : x ? round_float(x) : x
-    y = (y === null || y === void 0) ? this.velocity.y : y ? round_float(y) : y
-    z = (z === null || z === void 0) ? this.velocity.z : z ? round_float(z) : z
-    this.velocity.set(x, y, z);
-    this._velocity.set(x, y, z);
-    this._prev_velocity.set(x, y, z);
-    if (y > 0) this._is_on_ground = false;
+    if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
+    if (_x !== null && _x !== void 0) this._prev_velocity.x = this._velocity.x = round_float(_x)
+    if (_y !== null && _y !== void 0) this._prev_velocity.y = this._velocity.y = round_float(_y)
+    if (_z !== null && _z !== void 0) this._prev_velocity.x = this._velocity.z = round_float(_z)
+    if (this._velocity.y > 0) this._is_on_ground = false;
   }
   set_velocity_x(x: number) {
     this.set_velocity(x)
@@ -2333,9 +2330,9 @@ export class Entity {
   }
   set_position(_x?: number | null, _y?: number | null, _z?: number | null) {
     if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
-    if (_x !== null && _x !== void 0) this._position.x = _x ? round_float(_x) : _x
-    if (_y !== null && _y !== void 0) this._position.y = _y ? round_float(_y) : _y
-    if (_z !== null && _z !== void 0) this._position.z = _z ? round_float(_z) : _z
+    if (_x !== null && _x !== void 0) this._position.x = round_float(_x)
+    if (_y !== null && _y !== void 0) this._position.y = round_float(_y)
+    if (_z !== null && _z !== void 0) this._position.z = round_float(_z)
 
     const { x, y, z } = this.world.restrict(this);
     this._position.x = x;

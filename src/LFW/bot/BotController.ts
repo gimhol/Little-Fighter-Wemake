@@ -335,7 +335,7 @@ export class BotController extends BaseController {
     if (is_fighter(e) && e.team == this.team) return false;
 
     const e_state = e.state;
-    const [l, r] = this.world.fighter_bound(me)
+    const [l, r] = this.world.get_bound(me)
     /* 对方的位置，我方无法抵达，故不追之 */
     if (!between(en_x, l, r))
       return false;

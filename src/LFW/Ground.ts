@@ -5,12 +5,13 @@ import { abs, clamp } from "./utils";
 export interface IBlockResult {
   block_x: number | null;
   block_z: number | null;
+  block_y: number | null;
 }
 
 export class Ground {
   readonly world: World;
 
-  private _blocked: IBlockResult = { block_x: null, block_z: null };
+  private _blocked: IBlockResult = { block_x: null, block_z: null, block_y: null };
   readonly step: number = 15;
 
   constructor(world: World) {
@@ -53,26 +54,19 @@ export class Ground {
   y(seg: ITerrainInfo, x: number, z: number): number {
     switch (seg.type) {
       case TerrainEnum.Flat:
-        return seg.h00;
-      case TerrainEnum.Slope:
+        return seg.h1;
+      case TerrainEnum.SlopeH: {
         x = clamp(x, seg.x1, seg.x2)
         z = clamp(z, seg.z1, seg.z2)
-        if (seg.h00 === seg.h01 && seg.h10 === seg.h11) {
-          const t = (x - seg.x1) / (seg.x2 - seg.x1);
-          return seg.h00 + t * (seg.h10 - seg.h00);
-        }
-        if (seg.h00 === seg.h10 && seg.h01 === seg.h11) {
-          const t = (z - seg.z1) / (seg.z2 - seg.z1);
-          return seg.h00 + t * (seg.h01 - seg.h00);
-        }
-        const tx = (x - seg.x1) / (seg.x2 - seg.x1);
-        const tz = (z - seg.z1) / (seg.z2 - seg.z1);
-        return (
-          seg.h00 * (1 - tx) * (1 - tz)
-          + seg.h10 * tx * (1 - tz)
-          + seg.h01 * (1 - tx) * tz
-          + seg.h11 * tx * tz
-        )
+        const t = (x - seg.x1) / (seg.x2 - seg.x1);
+        return seg.h1 + t * (seg.h2 - seg.h1);
+      }
+      case TerrainEnum.SlopeV: {
+        x = clamp(x, seg.x1, seg.x2)
+        z = clamp(z, seg.z1, seg.z2)
+        const t = (z - seg.z1) / (seg.z2 - seg.z1);
+        return seg.h1 + t * (seg.h2 - seg.h1);
+      }
     }
     return 0;
   }
@@ -96,12 +90,16 @@ export class Ground {
     return dist_y;
   }
 
-  block(seg: ITerrainInfo, x: number, y: number, z: number): IBlockResult {
+  block(
+    seg: ITerrainInfo,
+    x: number, y: number, z: number
+  ): IBlockResult {
     const stand_y = this.enterable(seg, x, y, z);
 
     if (stand_y !== null && stand_y <= y + this.step) {
       this._blocked.block_x = null;
       this._blocked.block_z = null;
+      this._blocked.block_y = null;
       return this._blocked;
     }
 
@@ -135,13 +133,11 @@ export class Ground {
       block_z = n;
       zz = abs(dist_n);
     }
-    if (xx > zz)
-      block_x = null;
-    else
+    const { far, near } = this.world.bg
+    if (xx < zz || block_z <= far || block_z >= near)
       block_z = null;
-
-    // TODO: 还要避免挤出地图外
-    // const { far, near, left, right } = this.world.bg
+    else
+      block_x = null;
 
     this._blocked.block_x = block_x;
     this._blocked.block_z = block_z;
