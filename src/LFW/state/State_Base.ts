@@ -1,6 +1,6 @@
 import { Defines, StateEnum, type IFrameInfo, type INextFrame, type IVector3 } from "../defines";
 import type { Entity } from "../entity/Entity";
-import { round } from "../utils";
+import { clamp, round } from "../utils";
 import { spawn_buring_smoke } from "./spawn_buring_smoke";
 export class State_Base {
   readonly state: number | string;
@@ -40,6 +40,14 @@ export class State_Base {
   on_leave_ground?(e: Entity): void;
 
   on_restrict(e: Entity, x: number, y: number, z: number): void {
+    let vx: number | null = null;
+    let vz: number | null = null;
+    let vy: number | null = null;
+    if (x != e.position.x) vx = clamp(e.velocity.x, -0.1, 0.1);
+    if (y != e.position.y) vy = clamp(e.velocity.y, -0.1, 0.1);
+    if (z != e.position.z) vz = clamp(e.velocity.z, -0.1, 0.1);
+    if (vx !== null || vz !== null || vy !== null)
+      e.set_velocity(vx, vy, vz)
     e.position.x = x;
     e.position.y = y;
     e.position.z = z;

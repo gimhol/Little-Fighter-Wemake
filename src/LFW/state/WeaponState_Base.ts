@@ -94,16 +94,4 @@ export class WeaponState_Base extends State_Base {
     e.enter_frame(Defines.NEXT_FRAME_AUTO);
     e.is_on_ground = false;
   }
-
-  override on_restrict(e: Entity, x: number, y: number, z: number): void {
-    let vx: number | null = null;
-    let vz: number | null = null;
-    let vy: number | null = null;
-    if (x != e.position.x) vx = clamp(e.velocity.x, -0.1, 0.1);
-    if (y != e.position.x) vy = clamp(e.velocity.y, -0.1, 0.1);
-    if (z != e.position.x) vz = clamp(e.velocity.z, -0.1, 0.1);
-    if (vx !== null || vz !== null || vy !== null)
-      e.set_velocity(vx, vy, vz)
-    super.on_restrict?.(e, x, y, z);
-  }
 }

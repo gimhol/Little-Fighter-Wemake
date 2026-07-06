@@ -1,6 +1,6 @@
 import { type IFrameInfo, StateEnum } from "../defines";
 import { Entity } from "../entity/Entity";
-import { clamp } from "../utils/math/clamp";
+import { float_equal } from "../utils";
 import { State_Base } from "./State_Base";
 
 export class BallState_Base extends State_Base {
@@ -21,26 +21,24 @@ export class BallState_Base extends State_Base {
     let vx: number | null = null;
     let vz: number | null = null;
     let vy: number | null = null;
-    if (x != e.position.x) vx = 0;
-    if (y != e.position.x) vy = 0;
-    if (z != e.position.x) vz = 0;
+    if (!float_equal(x, e.position.x)) vx = 0;
+    if (!float_equal(y, e.position.y)) vy = 0;
+    if (!float_equal(z, e.position.z)) vz = 0;
+
     if (
-      e.position.x !== x &&
+      !float_equal(x, e.position.x) &&
       e.frame.state >= StateEnum.Ball_Flying &&
       e.frame.state <= StateEnum.Ball_3006
     ) {
       e.enter_frame({ id: "20" }) // stupid hard-code
       e.play_sound(e.data.base.hit_sounds)
-      e.set_position(
-        e.position.x - e.velocity.x,
-        e.position.y - e.velocity.y,
-        e.position.z - e.velocity.z
-      );
+      e.set_position(x - e.velocity.x, y, z);
     } else {
-      super.on_restrict?.(e, x, y, z);
+      e.position.x = x;
+      e.position.y = y;
+      e.position.z = z;
     }
-    if (vx !== null || vz !== null || vy !== null) {
+    if (vx !== null || vz !== null || vy !== null)
       e.set_velocity(vx, vy, vz)
-    }
   }
 }
