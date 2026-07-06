@@ -238,7 +238,7 @@ export class Entity {
   protected _ground_y: number = 0;
   protected _prev_ground_y: number = 0;
   /** 是否在地面上 */
-  protected is_on_ground: boolean = false;
+  is_on_ground: boolean = false;
 
   readonly buffs = new Map<string, Buff>()
 
@@ -2330,10 +2330,6 @@ export class Entity {
       this.position.y !== y ||
       this.position.z !== z
     ) this._state?.on_restrict?.(this, x, y, z);
-
-    this.position.x = x;
-    this.position.y = y;
-    this.position.z = z;
     this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
   }
   set_position_x(x: number) {

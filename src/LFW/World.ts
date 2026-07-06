@@ -41,7 +41,7 @@ import { Transform } from "./Transform";
 import { abs, between, floor, max, min, round, sign } from './utils/math/base';
 import { clamp } from './utils/math/clamp';
 import { Times } from './utils/Times';
-import { is_f_num, is_num } from './utils/type_check/is_num';
+import { is_num } from './utils/type_check/is_num';
 import { WorldDataset } from "./WorldDataset";
 const CHASING_UPDATE_INTERVAL = 8;
 const MAX_DEBUG_ENTITIES = 355
@@ -412,25 +412,10 @@ export class World {
       this._restrict_result.z = z;
       return this._restrict_result;
     }
-    let vx: number | null = null;
-    let vz: number | null = null;
-    let vy: number | null = null;
     const { block_x, block_z, block_y } = this.ground.block(seg, x, y, z);   
-
-    if (block_x != null) {
-      x = block_x;
-      vx = clamp(e.velocity.x, -0.1, 0.1);
-    }
-    if (block_z != null) {
-      z = block_z;
-      vz = clamp(e.velocity.z, -0.1, 0.1);
-    }
-    if (block_y != null) {
-      y = block_y;
-      vy = clamp(e.velocity.y, -0.1, 0.1);
-    }
-    if (vx !== null || vz !== null || vy !== null)
-      e.set_velocity(vx, vy, vz)
+    if (block_x != null) x = block_x;
+    if (block_z != null) z = block_z;
+    if (block_y != null) y = block_y;
     e.terrain = this.ground.segment(x, z)
     this._restrict_result.x = x;
     this._restrict_result.y = y;
