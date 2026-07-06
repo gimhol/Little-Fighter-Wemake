@@ -1,17 +1,32 @@
+import { Ditto } from "..";
 import { Defines, } from "../defines/defines";
 import type { IBgData } from "../defines/IBgData";
+import { terrain_info_schema } from "../defines/ITerrainInfo";
 import type { ImageInfo } from "../ditto/image/ImageInfo";
 import type { LFW } from "../LFW";
+import { SchemaValidator } from "../utils/schema/validate_schema";
 import { is_non_blank_str } from "../utils/type_check/is_str";
 
+
 export function preprocess_bg_data(lfw: LFW, data: IBgData, jobs: Promise<ImageInfo>[]): IBgData {
-  const { layers, base: { shadow } } = data;
+  const { layers, base: { shadow }, terrain } = data;
   data.base.height ??= Defines.MODERN_SCREEN_HEIGHT;
   is_non_blank_str(shadow) && jobs.push(lfw.images.load_img(shadow, shadow));
-  
+
   if (layers?.length)
     for (const { file } of layers)
       is_non_blank_str(file) && jobs.push(lfw.images.load_img(file, file));
+
+  if (terrain?.length) {
+    for (const t of terrain) {
+      SchemaValidator.Default.validate(t, terrain_info_schema)
+      if (SchemaValidator.Default.warnings.length)
+        Ditto.warn(SchemaValidator.Default.warnings)
+      if (SchemaValidator.Default.errors.length)
+        Ditto.error(SchemaValidator.Default.errors)
+      SchemaValidator.Default.reset()
+    }
+  }
 
   const { shadowsize, zoom } = (data.base as any);
   if (Array.isArray(shadowsize)) {

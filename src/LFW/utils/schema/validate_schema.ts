@@ -7,10 +7,11 @@ interface InstanceSetter<T> {
   (value: T | undefined | null, raw_value: any, clazz: IClazz<T>, schema: ISchema): void;
 }
 export class SchemaValidator {
+  static readonly Default = new SchemaValidator();
   protected _get_instance?: InstanceGetter<any>;
   protected _set_instance?: InstanceSetter<any>;
   protected _errors: string[] = [];
-  protected _warnings:string[] = [];
+  protected _warnings: string[] = [];
   get errors(): ReadonlyArray<string> { return this._errors }
   get warnings(): ReadonlyArray<string> { return this._warnings }
   instance_getter<T>(func: InstanceGetter<T>) {
@@ -139,6 +140,10 @@ export class SchemaValidator {
     if (schema.oneof?.some(v => v === value) === false)
       this._errors.push(`'${schema.path}' should be one of the options: ${JSON.stringify(schema.oneof)}, but got ${value}`);
     return !this._errors.length;
+  }
+  reset() {
+    this._errors.length = 0;
+    this._warnings.length = 0;
   }
 }
 

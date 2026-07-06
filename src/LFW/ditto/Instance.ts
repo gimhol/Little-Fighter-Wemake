@@ -51,6 +51,7 @@ export interface IDittoPack {
   UIInputHandle: new (lfw: LFW) => IUIInputHandle;
   XML: IXML;
   warn(...args: any[]): unknown;
+  error(...args: any[]): unknown;
   Log(...args: any[]): unknown;
   debug(...args: any[]): unknown;
   DEV: boolean;

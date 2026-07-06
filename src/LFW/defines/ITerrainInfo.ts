@@ -1,3 +1,6 @@
+import { fields, int } from "../fields";
+import { make_schema } from "../utils";
+
 export const enum TerrainEnum {
   Flat = 0,
   SlopeH = 1,
@@ -5,7 +8,6 @@ export const enum TerrainEnum {
 }
 
 export interface ITerrainInfo {
-  id: number; // 自动生成?
   type: number;
   x1: number; // left
   x2: number; // right
@@ -17,7 +19,6 @@ export interface ITerrainInfo {
 
 export function terrain_info_new(): ITerrainInfo {
   return {
-    id: 0,
     type: 0,
     x1: 0,
     x2: 0,
@@ -27,3 +28,42 @@ export function terrain_info_new(): ITerrainInfo {
     h2: 0
   };
 }
+
+export const terrain_info_fields = fields<ITerrainInfo>({
+  type: int({
+    options: [{
+      value: TerrainEnum.Flat, label: 'Flat'
+    }, {
+      value: TerrainEnum.SlopeH, label: 'SlopeH'
+    }, {
+      value: TerrainEnum.SlopeV, label: 'SlopeV'
+    }]
+  }),
+  x1: int,
+  x2: int,
+  z1: int,
+  z2: int,
+  h1: int,
+  h2: int,
+})
+export const terrain_info_schema = make_schema<ITerrainInfo>({
+  key: "ITerrainInfo",
+  type: "object",
+  properties: {
+    type: {
+      type: 'number',
+      nullable: false,
+      oneof: [
+        TerrainEnum.Flat,
+        TerrainEnum.SlopeH,
+        TerrainEnum.SlopeV
+      ]
+    },
+    x1: { type: "number", nullable: false, },
+    x2: { type: "number", nullable: false, },
+    z1: { type: "number", nullable: false, },
+    z2: { type: "number", nullable: false, },
+    h1: { type: "number", nullable: false, },
+    h2: { type: "number", nullable: false, }
+  },
+})

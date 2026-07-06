@@ -7,6 +7,7 @@ import { actor, Ditto, LFW, UIActionEnum } from "./LFW";
 import { Debug, Log, Warn } from "./Log";
 import { ewents } from './Utils/ewents';
 import './i18n';
+import { Err } from "@fimagine/logger";
 
 actor
   .add(UIActionEnum.Alert, (_, msg) => window.alert(msg))
@@ -33,6 +34,7 @@ Ditto.setup({
   ImageMgr: dom.ImageMgr,
   UIInputHandle: dom.UIInputHandle,
   warn: Warn.print,
+  error: Err.print,
   Log: Log.print,
   debug: Debug.print,
   XML: dom.XML,

@@ -9,12 +9,19 @@ export const Log = Object.assign(
     },
   },
 );
-
+export const Err = Object.assign(
+  L.Err.Clone({ showArgs: true, showRet: true, disabled: false }),
+  {
+    print(...args: any[]) {
+      return console.error(...args);
+    },
+  },
+);
 export const Warn = Object.assign(
   L.Warn.Clone({ showArgs: true, showRet: true, disabled: false }),
   {
     print(...args: any[]) {
-      return console.debug(...args);
+      return console.warn(...args);
     },
   },
 );
