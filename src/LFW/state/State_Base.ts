@@ -35,5 +35,13 @@ export class State_Base {
   get_caught_end_frame?(e: Entity): INextFrame | undefined;
   get_auto_frame?(e: Entity): IFrameInfo | undefined;
   find_frame_by_id?(e: Entity, id: string | undefined): IFrameInfo | undefined;
-  on_leave_ground?(e: Entity): void
+
+  /** "病毒就关闭了" */
+  on_leave_ground?(e: Entity): void;
+
+  on_restrict(e: Entity, x: number, y: number, z: number): void {
+    e.position.x = x;
+    e.position.y = y;
+    e.position.z = z;
+  }
 }

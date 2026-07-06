@@ -15,4 +15,16 @@ export class BallState_Base extends State_Base {
         break;
     }
   }
+  override on_restrict(e: Entity, x: number, y: number, z: number): void {
+    if (
+      e.position.x !== x &&
+      e.frame.state >= StateEnum.Ball_Flying &&
+      e.frame.state <= StateEnum.Ball_3006
+    ) {
+      e.enter_frame({ id: "20" })
+      e.play_sound(e.data.base.hit_sounds)
+    } else {
+      super.on_restrict?.(e, x, y, z);
+    }
+  }
 }

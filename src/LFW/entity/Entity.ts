@@ -2325,10 +2325,16 @@ export class Entity {
     if (_y !== null && _y !== void 0) this.position.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.position.z = round_float(_z)
     const { x, y, z } = this.world.restrict(this);
+    if (
+      this.position.x !== x ||
+      this.position.y !== y ||
+      this.position.z !== z
+    ) this._state?.on_restrict?.(this, x, y, z);
+
     this.position.x = x;
     this.position.y = y;
     this.position.z = z;
-    this._ground_y = this.terrain ? this.world.ground.y(this.terrain, x, z) : 0;
+    this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
   }
   set_position_x(x: number) {
     this.set_position(x)
