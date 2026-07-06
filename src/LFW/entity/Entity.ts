@@ -69,10 +69,9 @@ export class Entity {
   protected _mix_strength: number = 0;
   protected _greyscale: number = 0;
 
-  protected readonly _prev_position: IVector3 = Ditto.vec3(0, 0, 0);
-  protected readonly _position: IVector3 = Ditto.vec3(0, 0, 0);
-  protected readonly _prev_velocity: IVector3 = Ditto.vec3(0, 0, 0);
-  protected readonly _velocity: IVector3 = Ditto.vec3(0, 0, 0);
+  readonly position: IVector3 = Ditto.vec3(0, 0, 0);
+  readonly prev_velocity: IVector3 = Ditto.vec3(0, 0, 0);
+  readonly velocity: IVector3 = Ditto.vec3(0, 0, 0);
   protected readonly _temp_v: IVector3 = Ditto.vec3(0, 0, 0);
 
   /**
@@ -273,16 +272,11 @@ export class Entity {
   get greyscale(): number { return this._greyscale; }
   set greyscale(v: number) { this._greyscale = v; this._render_effect_time++; }
 
-
-  get position(): Readonly<IVector3> { return this._position }
-  get prev_position(): Readonly<IVector3> { return this._prev_position }
-
   get ground_y(): number { return this._ground_y }
   /** 是否在地面上 */
   get is_on_ground(): boolean { return this._is_on_ground }
   set is_on_ground(v: boolean) { this._is_on_ground = v }
 
-  get velocity(): Readonly<IVector3> { return this._velocity }
   get data(): IEntityData { return this._data };
   get group() { return this._data.base.group };
   get mounted() { return this._mounted }
@@ -733,8 +727,7 @@ export class Entity {
     this._reserve = 0
     this._mounted = 0;
     this._ghosted = 0;
-    this._position.set(0, 0, 0)
-    this._prev_position.set(0, 0, 0)
+    this.position.set(0, 0, 0)
     this.fuse_bys = null;
     this.dismiss_time = null;
     this.dismiss_data = null;
@@ -760,8 +753,8 @@ export class Entity {
     this._wakeup_invuln = null;
     this._name_visible = null;
     this._outline_alpha = 0.8;
-    this._velocity.set(0, 0, 0)
-    this._prev_velocity.set(0, 0, 0);
+    this.velocity.set(0, 0, 0)
+    this.prev_velocity.set(0, 0, 0);
     this.callbacks.clear();
     this._name = null
     this._team = world.lfw.new_team;
@@ -940,9 +933,9 @@ export class Entity {
     if (vym == SpeedMode.Extra && acc_y) vy += acc_y;
     if (vzm == SpeedMode.Extra && acc_z) vz += acc_z;
 
-    this._prev_velocity.x = this._velocity.x = round_float(vx);
-    this._prev_velocity.y = this._velocity.y = round_float(vy);
-    this._prev_velocity.z = this._velocity.z = round_float(vz);
+    this.prev_velocity.x = this.velocity.x = round_float(vx);
+    this.prev_velocity.y = this.velocity.y = round_float(vy);
+    this.prev_velocity.z = this.velocity.z = round_float(vz);
     if (sus_cases.debugging) {
       sus_cases.push("on_spawn::pos", pos_x, pos_y, pos_z);
       sus_cases.push("on_spawn::vec1", vx, vy, vz);
@@ -1233,8 +1226,8 @@ export class Entity {
     if (this.bearer || this.catcher || this.shaking || this.motionless) return;
     const { gravity_enabled = true } = this.frame;
     if (this.position.y <= this.ground_y || !gravity_enabled) return;
-    this._velocity.y = round_float(
-      this._velocity.y - this.gravity * this._atom_time,
+    this.velocity.y = round_float(
+      this.velocity.y - this.gravity * this._atom_time,
     );
   }
   get dvx(): number | undefined {
@@ -1291,7 +1284,7 @@ export class Entity {
     if (acc_y) acc_y = round_float(acc_y * atom_time);
     if (acc_z) acc_z = round_float(acc_z * atom_time);
 
-    let { x: vx, y: vy, z: vz } = this._velocity;
+    let { x: vx, y: vy, z: vz } = this.velocity;
     const { UD, LR, jd } = this._ctrl;
     const { facing } = this;
     if (dvx == void 0) {
@@ -1324,9 +1317,9 @@ export class Entity {
     else if (UD == 0 && SpeedCtrl.Disable == ctrl_z)
       vz = calc_v(vz, dvz, vzm, acc_z, 1);
 
-    this._velocity.x = round_float(vx);
-    this._velocity.y = round_float(vy);
-    this._velocity.z = round_float(vz);
+    this.velocity.x = round_float(vx);
+    this.velocity.y = round_float(vy);
+    this.velocity.z = round_float(vz);
   }
 
   dismiss_fusion(frame_id: string): void {
@@ -1469,7 +1462,7 @@ export class Entity {
   check_fusion_dismissing(): boolean {
     if (!this.fuse_bys?.length) return false;
 
-    const { x, y, z } = this._position;
+    const { x, y, z } = this.position;
     for (const fighter of this.fuse_bys) {
       fighter.position.set(x, y, z);
     }
@@ -1485,7 +1478,10 @@ export class Entity {
     if (should_dismiss) this.dismiss_fusion("112");
     return should_dismiss;
   }
-
+  // debug_step_check() {
+  //   if (is_f_num(this.position.x) || is_f_num(this.position.y) || is_f_num(this.position.z))
+  //     debugger;
+  // }
   update(): void {
     this._atom_time = this.world.dataset.atom_time;
     const rf = round_float;
@@ -1543,8 +1539,8 @@ export class Entity {
           for (const e of this.world.puppets.values()) {
             if (e.hp <= 0) continue;
             const d =
-              abs(round(e.position.x - this._position.x)) +
-              abs(round(e.position.z - this._position.z));
+              abs(round(e.position.x - this.position.x)) +
+              abs(round(e.position.z - this.position.z));
             if (d > max_distance) continue;
             max_distance = d;
             friend = e;
@@ -1598,7 +1594,6 @@ export class Entity {
     this.update_velocity(this.frame);
     this._state?.update(this);
     this.update_position();
-
     if (this.motionless > 0) {
       this.motionless = rf(this.motionless - this._atom_time);
       if (this.motionless < 0) this.motionless = 0
@@ -1614,7 +1609,7 @@ export class Entity {
       key_list === "dja" &&
       this.transforms &&
       this.transforms[1] === this._data.id &&
-      this._position.y === this.ground_y
+      this.position.y === this.ground_y
     ) {
       this.transfrom_to_another();
       this.ctrl.reset_key_list();
@@ -1632,7 +1627,12 @@ export class Entity {
        例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
        此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
       */
-      const just_land = !_is_on_ground && this._position.y <= _ground_y
+      const just_land = !_is_on_ground && (
+        this.position.y <= _ground_y
+      ) && (
+          // 有点糟
+          _ground_y <= 0 || this.velocity.y < 0
+        )
 
       /** itr/bdy与地面的碰撞 */
       const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
@@ -1643,12 +1643,12 @@ export class Entity {
         // 落地
         if (just_land) {
           this._is_on_ground = true;
-          this._position.y = this._prev_position.y = _ground_y;
-          this._temp_v.x = this._velocity.x
-          this._temp_v.y = this._velocity.y
-          this._temp_v.z = this._velocity.z
-          this._velocity.y = 0;
-          this._prev_velocity.y = 0;
+          this.position.y = _ground_y;
+          this._temp_v.x = this.velocity.x
+          this._temp_v.y = this.velocity.y
+          this._temp_v.z = this.velocity.z
+          this.velocity.y = 0;
+          this.prev_velocity.y = 0;
           this._state?.on_landing?.(this, this._temp_v);
           this.play_sound(this._data.base.drop_sounds);
           if (this.throwinjury) {
@@ -1663,12 +1663,11 @@ export class Entity {
           }
           this._landing_frame = this.frame
         } else if (_is_on_ground) {
-          if (this._position.y - _ground_y > this.world.ground.step) {
+          if (this.position.y - _ground_y > this.world.ground.step) {
             // 离地面太高
             this._state?.on_leave_ground?.(this);
           } else {
-            this._position.y = _ground_y;
-            this._prev_position.y = _ground_y;
+            this.position.y = _ground_y;
           }
         }
         if (this._landing_frame !== this.frame) this._landing_frame = null
@@ -1684,44 +1683,39 @@ export class Entity {
     for (const itr of itrs) {
       if (!itr.on_hit_ground) continue;
       const { y = 0, h = 0 } = itr;
-      if ((this._position.y + this.frame.centery - y - h) > this._ground_y)
+      if ((this.position.y + this.frame.centery - y - h) > this._ground_y)
         continue;
       this.enter_frame(itr.on_hit_ground);
     }
   }
   update_position(): void {
     if (this.bearer || this.catcher || this.shaking || this.motionless) return;
-    let { x: vx, y: vy, z: vz } = this._velocity;
-    const { atom_time } = this.world.dataset;
+    let { x: vx, y: vy, z: vz } = this.velocity;
+    const atom_time = this._atom_time;
     for (const [, v] of this.blockers) {
       if (
         (vx < 0 && v.attacker.position.x < this.position.x) ||
         (vx > 0 && v.attacker.position.x > this.position.x)
       ) {
         vx = 0;
-        this._prev_velocity.x = 0;
+        this.prev_velocity.x = 0;
       }
       if (
         (vz < 0 && v.attacker.position.z < this.position.z) ||
         (vz > 0 && v.attacker.position.z > this.position.z)
       ) {
         vz = 0;
-        this._prev_velocity.z = 0;
+        this.prev_velocity.z = 0;
       }
     }
     if (!this.shaking && !this.motionless) {
-      this._prev_position.set(
-        this.position.x,
-        this.position.y,
-        this.position.z,
-      );
-      this.set_position(
-        this.position.x + (vx + this._prev_velocity.x) * 0.5 * atom_time,
-        this.position.y + (vy + this._prev_velocity.y) * 0.5 * atom_time,
-        this.position.z + (vz + this._prev_velocity.z) * 0.5 * atom_time,
-      );
+      let { x, y, z } = this.position;
+      x += (vx + this.prev_velocity.x) * 0.5 * atom_time
+      y += (vy + this.prev_velocity.y) * 0.5 * atom_time;
+      z += (vz + this.prev_velocity.z) * 0.5 * atom_time;
+      this.set_position(x, y, z);
     }
-    this._prev_velocity.set(vx, vy, vz);
+    this.prev_velocity.set(vx, vy, vz);
   }
 
   /**
@@ -1741,7 +1735,7 @@ export class Entity {
    * @returns 下帧信息
    */
   get_caught_end_frame(): INextFrame {
-    if (this._position.y < this.ground_y) this._position.y = this.ground_y + 1;
+    if (this.position.y < this.ground_y) this.position.y = this.ground_y + 1;
     return this._state?.get_caught_end_frame?.(this) || Defines.NEXT_FRAME_AUTO
   }
 
@@ -1754,7 +1748,7 @@ export class Entity {
    * @returns 下帧信息
    */
   get_caught_cancel_frame(): INextFrame {
-    if (this._position.y < this.ground_y) this._position.y = this.ground_y + 1;
+    if (this.position.y < this.ground_y) this.position.y = this.ground_y + 1;
     return Defines.NEXT_FRAME_AUTO;
   }
 
@@ -1992,8 +1986,8 @@ export class Entity {
     return (
       is_fighter(this) &&
       is_fighter(target) && target.state === StateEnum.Tired &&
-      ((this.velocity.x > 0 && target.position.x > this._position.x) ||
-        (this.velocity.x < 0 && target.position.x < this._position.x))
+      ((this.velocity.x > 0 && target.position.x > this.position.x) ||
+        (this.velocity.x < 0 && target.position.x < this.position.x))
     );
   }
 
@@ -2147,7 +2141,7 @@ export class Entity {
     }
     if (frame) {
       if (frame.sound) {
-        let { x, y, z } = this._position;
+        let { x, y, z } = this.position;
         if (frame.state === StateEnum.Message) {
           let { centerx, width } = frame;
           let { current_cam_pos: { x: cam_x } } = this.world;
@@ -2314,10 +2308,10 @@ export class Entity {
     _z?: number | null,
   ) {
     if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
-    if (_x !== null && _x !== void 0) this._prev_velocity.x = this._velocity.x = round_float(_x)
-    if (_y !== null && _y !== void 0) this._prev_velocity.y = this._velocity.y = round_float(_y)
-    if (_z !== null && _z !== void 0) this._prev_velocity.x = this._velocity.z = round_float(_z)
-    if (this._velocity.y > 0) this._is_on_ground = false;
+    if (_x !== null && _x !== void 0) this.prev_velocity.x = this.velocity.x = round_float(_x)
+    if (_y !== null && _y !== void 0) this.prev_velocity.y = this.velocity.y = round_float(_y)
+    if (_z !== null && _z !== void 0) this.prev_velocity.z = this.velocity.z = round_float(_z)
+    if (this.velocity.y > 0) this._is_on_ground = false;
   }
   set_velocity_x(x: number) {
     this.set_velocity(x)
@@ -2330,14 +2324,13 @@ export class Entity {
   }
   set_position(_x?: number | null, _y?: number | null, _z?: number | null) {
     if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
-    if (_x !== null && _x !== void 0) this._position.x = round_float(_x)
-    if (_y !== null && _y !== void 0) this._position.y = round_float(_y)
-    if (_z !== null && _z !== void 0) this._position.z = round_float(_z)
-
+    if (_x !== null && _x !== void 0) this.position.x = round_float(_x)
+    if (_y !== null && _y !== void 0) this.position.y = round_float(_y)
+    if (_z !== null && _z !== void 0) this.position.z = round_float(_z)
     const { x, y, z } = this.world.restrict(this);
-    this._position.x = x;
-    this._position.y = y;
-    this._position.z = z;
+    this.position.x = x;
+    this.position.y = y;
+    this.position.z = z;
     this._ground_y = this.terrain ? this.world.ground.y(this.terrain, x, z) : 0;
   }
   set_position_x(x: number) {
@@ -2358,7 +2351,7 @@ export class Entity {
     this.callbacks.emit("on_data_changed")(this._data, prev, this)
   }
 
-  play_sound(sounds: string[] | undefined, pos: IVector3Like = this._position) {
+  play_sound(sounds: string[] | undefined, pos: IVector3Like = this.position) {
     if (!sounds?.length) return;
     this.lfw.mt.mark = 'ps_1'
     const sound = this.lfw.mt.pick(sounds);
@@ -2422,10 +2415,9 @@ export class Entity {
       mix_color: this._mix_color,
       mix_strength: this._mix_strength,
       greyscale: this._greyscale,
-      prev_position: { x: this._prev_position.x, y: this._prev_position.y, z: this._prev_position.z },
-      position: { x: this._position.x, y: this._position.y, z: this._position.z },
-      prev_velocity: { x: this._prev_velocity.x, y: this._prev_velocity.y, z: this._prev_velocity.z },
-      velocity: { x: this._velocity.x, y: this._velocity.y, z: this._velocity.z },
+      position: { x: this.position.x, y: this.position.y, z: this.position.z },
+      prev_velocity: { x: this.prev_velocity.x, y: this.prev_velocity.y, z: this.prev_velocity.z },
+      velocity: { x: this.velocity.x, y: this.velocity.y, z: this.velocity.z },
       copies: Array.from(this.copies),
       vrests,
       blockers,

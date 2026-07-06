@@ -1,6 +1,6 @@
 import type { World } from "./World";
 import { TerrainEnum, type ITerrainInfo } from "./defines/ITerrainInfo";
-import { abs, clamp } from "./utils";
+import { abs, clamp, is_f_num } from "./utils";
 
 export interface IBlockResult {
   block_x: number | null;
@@ -138,9 +138,9 @@ export class Ground {
       block_z = null;
     else
       block_x = null;
-
     this._blocked.block_x = block_x;
     this._blocked.block_z = block_z;
+    this._blocked.block_y = null;
     return this._blocked;
   }
 }

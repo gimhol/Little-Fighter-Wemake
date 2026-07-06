@@ -19,7 +19,6 @@ export interface IEntitySnapshot {
   mix_color: string;
   mix_strength: number;
   greyscale: number;
-  prev_position: IVector3Like,
   position: IVector3Like,
   prev_velocity: IVector3Like,
   velocity: IVector3Like,

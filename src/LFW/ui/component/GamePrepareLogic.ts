@@ -93,15 +93,13 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       } else {
         fighter.ctrl = new LocalController(player.id, fighter);
       }
-      const x = is_stage_mode ?
-        this.lfw.mt.range(
-          (cam_x + 40),
-          (cam_x + 80)
-        ) : this.lfw.mt.range(
-          (cam_x + 1 * Defines.MODERN_SCREEN_WIDTH / 3),
-          (cam_x + 2 * Defines.MODERN_SCREEN_WIDTH / 3)
-        )
-      fighter.set_position(x, void 0, this.lfw.mt.range(far, near))
+      const xx1 = is_stage_mode ? 40 : 1 * Defines.MODERN_SCREEN_WIDTH / 3;
+      const xx2 = is_stage_mode ? 80 : 2 * Defines.MODERN_SCREEN_WIDTH / 3;
+      const x = this.lfw.mt.range(xx1, xx2) + cam_x;
+      const z = this.lfw.mt.range(far, near)
+      const seg = this.world.ground.segment(x, z)
+      const y = seg ? this.world.ground.y(seg, x, z) : 0;
+      fighter.set_position(x, y, z);
       fighter.blinking = this.world.dataset.begin_blink_time;
       if (is_vs_mode) fighter.mp = (fighter.mp_max * 2 / 5)
       fighter.attach();

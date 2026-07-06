@@ -41,7 +41,7 @@ import { Transform } from "./Transform";
 import { abs, between, floor, max, min, round, sign } from './utils/math/base';
 import { clamp } from './utils/math/clamp';
 import { Times } from './utils/Times';
-import { is_num } from './utils/type_check/is_num';
+import { is_f_num, is_num } from './utils/type_check/is_num';
 import { WorldDataset } from "./WorldDataset";
 const CHASING_UPDATE_INTERVAL = 8;
 const MAX_DEBUG_ENTITIES = 355
@@ -369,9 +369,12 @@ export class World {
     } else if (is_weapon(e)) {
       this._bound[0] = left - 100;
       this._bound[1] = right + 100;
+    } else {
+      this._bound[0] = left;
+      this._bound[1] = right;
     }
-      this._bound[2] = near;
-      this._bound[3] = far;
+    this._bound[2] = near;
+    this._bound[3] = far;
     return this._bound;
   }
 
@@ -384,10 +387,6 @@ export class World {
   restrict(e: Entity): IVector3Like {
     const [left, right, near, far] = this.get_bound(e);
     let { x, z, y } = e.position;
-    this._restrict_result.x = x;
-    this._restrict_result.y = y;
-    this._restrict_result.z = z;
-
     z = clamp(z, far, near)
 
     if (e.base_type === WeaponEnum.Drink) {
@@ -399,34 +398,43 @@ export class World {
       x = clamp(x, left, right);
     } else if (x < left || x > right) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
       return this._restrict_result;
     }
 
     const seg = this.ground.segment(x, z);
     if (!seg) {
       e.terrain = void 0;
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
       return this._restrict_result;
     }
     let vx: number | null = null;
     let vz: number | null = null;
     let vy: number | null = null;
-    const { block_x, block_z, block_y } = this.ground.block(seg, x, y, z);
+    const { block_x, block_z, block_y } = this.ground.block(seg, x, y, z);   
+
     if (block_x != null) {
-      this._restrict_result.x = x = block_x;
+      x = block_x;
       vx = clamp(e.velocity.x, -0.1, 0.1);
     }
     if (block_z != null) {
-      this._restrict_result.z = z = block_z;
+      z = block_z;
       vz = clamp(e.velocity.z, -0.1, 0.1);
     }
     if (block_y != null) {
-      this._restrict_result.y = y = block_y;
+      y = block_y;
       vy = clamp(e.velocity.y, -0.1, 0.1);
     }
     if (vx !== null || vz !== null || vy !== null)
       e.set_velocity(vx, vy, vz)
-
     e.terrain = this.ground.segment(x, z)
+    this._restrict_result.x = x;
+    this._restrict_result.y = y;
+    this._restrict_result.z = z;
     return this._restrict_result;
   }
 
@@ -685,8 +693,8 @@ export class World {
 
       if (!this.has_players_alive && a.hp > 0 && is_human_ctrl(a.ctrl))
         this.has_players_alive = true;
-      a.update();
 
+      a.update();
       const { __aabb_x1: bx1 = 0, __aabb_x2: fx1 = 0, __aabb_z1: bz1 = -12, __aabb_z2: bz2 = 12 } = a.frame;
       a.aabb_min_x = round(a.position.x + (a.facing > 0 ? bx1 : -fx1))
       a.aabb_max_x = round(a.position.x + (a.facing > 0 ? fx1 : -bx1))
@@ -770,6 +778,7 @@ export class World {
       }
       temp_entities.push(a);
     }
+
     if (local_count) {
       this.target_cam_pos.x = round(local_x_sum / local_count);
       this.target_cam_pos.y = -0.5 * round(local_z_sum / local_count) - this.dataset.screen_h / 2;
