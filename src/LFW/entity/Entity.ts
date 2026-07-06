@@ -238,7 +238,7 @@ export class Entity {
   protected _ground_y: number = 0;
   protected _prev_ground_y: number = 0;
   /** 是否在地面上 */
-  protected _is_on_ground: boolean = false;
+  protected is_on_ground: boolean = false;
 
   readonly buffs = new Map<string, Buff>()
 
@@ -273,9 +273,6 @@ export class Entity {
   set greyscale(v: number) { this._greyscale = v; this._render_effect_time++; }
 
   get ground_y(): number { return this._ground_y }
-  /** 是否在地面上 */
-  get is_on_ground(): boolean { return this._is_on_ground }
-  set is_on_ground(v: boolean) { this._is_on_ground = v }
 
   get data(): IEntityData { return this._data };
   get group() { return this._data.base.group };
@@ -714,7 +711,7 @@ export class Entity {
     for (const buf of buffs) buf.del_victims(this.id)
     this.buffs.clear();
     const { world, lfw } = this;
-    this._is_on_ground = false;
+    this.is_on_ground = false;
     this.terrain = void 0;
     this._data = data;
     this.id = lfw.new_id;
@@ -1618,7 +1615,7 @@ export class Entity {
     }
 
     if (!this.shaking && !this.motionless) {
-      const { _ground_y, _is_on_ground } = this;
+      const { _ground_y, is_on_ground } = this;
 
       /** 
        是否本帧落地.
@@ -1627,11 +1624,11 @@ export class Entity {
        例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
        此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
       */
-      const just_land = !_is_on_ground && (
+      const just_land = !is_on_ground && (
         this.position.y <= _ground_y
       ) && (
           // 有点糟
-          _ground_y <= 0 || this.velocity.y < 0
+          _ground_y > 0 || this.velocity.y < 0
         )
 
       /** itr/bdy与地面的碰撞 */
@@ -1642,7 +1639,7 @@ export class Entity {
       if (this.frame.landable && !this._bearer && !this._catcher) {
         // 落地
         if (just_land) {
-          this._is_on_ground = true;
+          this.is_on_ground = true;
           this.position.y = _ground_y;
           this._temp_v.x = this.velocity.x
           this._temp_v.y = this.velocity.y
@@ -1662,7 +1659,7 @@ export class Entity {
             this.fallinjury = 0;
           }
           this._landing_frame = this.frame
-        } else if (_is_on_ground) {
+        } else if (is_on_ground) {
           if (this.position.y - _ground_y > this.world.ground.step) {
             // 离地面太高
             this._state?.on_leave_ground?.(this);
@@ -2311,7 +2308,7 @@ export class Entity {
     if (_x !== null && _x !== void 0) this.prev_velocity.x = this.velocity.x = round_float(_x)
     if (_y !== null && _y !== void 0) this.prev_velocity.y = this.velocity.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.prev_velocity.z = this.velocity.z = round_float(_z)
-    if (this.velocity.y > 0) this._is_on_ground = false;
+    if (this.velocity.y > 0) this.is_on_ground = false;
   }
   set_velocity_x(x: number) {
     this.set_velocity(x)

@@ -64,6 +64,6 @@ export const terrain_info_schema = make_schema<ITerrainInfo>({
     z1: { type: "number", nullable: false, },
     z2: { type: "number", nullable: false, },
     h1: { type: "number", nullable: false, },
-    h2: { type: "number", nullable: false, }
+    h2: { type: "number", nullable: false, },
   },
 })
