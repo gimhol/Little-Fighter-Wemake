@@ -133,6 +133,7 @@ export class Ground {
       block_z = n;
       zz = abs(dist_n);
     }
+    const { far, near } = this.world.bg
     if (xx < zz || block_z <= far || block_z >= near)
       block_z = null;
     else
