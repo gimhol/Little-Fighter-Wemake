@@ -25,6 +25,11 @@ export class ImageMgr implements IImageMgr {
   static readonly WHITE_TEXTURE: Readonly<T.Texture<HTMLImageElement>> = ImageMgr.TextureLoader.load(img_white);
   static readonly EMPTY_TEXTURE: Readonly<T.Texture<HTMLImageElement>> = ImageMgr.TextureLoader.load("");
 
+  /** Safari < 16.4 不支持 OffscreenCanvas.transferToImageBitmap */
+  private static readonly CAN_TRANSFER: boolean =
+    typeof OffscreenCanvas !== 'undefined' &&
+    typeof (OffscreenCanvas.prototype as any).transferToImageBitmap === 'function';
+
   protected pictures = new Map<string, IPicture>();
   protected infos = new AsyncValuesKeeper<RImageInfo>();
   protected disposables = new Map<string, RImageInfo>();
@@ -95,10 +100,8 @@ export class ImageMgr implements IImageMgr {
         let cvs: HTMLCanvasElement | null = null;
         for (const op of vaild_operations) cvs = this.edit_image(cvs || src_cvs, op);
 
-        // 转为 ImageBitmap，统一走 create_picture 的 bitmap 路径
-        const offscreen = new OffscreenCanvas(cvs!.width, cvs!.height);
-        offscreen.getContext('2d')!.drawImage(cvs!, 0, 0);
-        const result = offscreen.transferToImageBitmap();
+        // Canvas → ImageBitmap（Safari 15+ 支持 createImageBitmap）
+        const result = await createImageBitmap(cvs!);
 
         const ret = new RImageInfo({
           key, src, url: '', src_url, scale,
@@ -220,6 +223,28 @@ export class ImageMgr implements IImageMgr {
     }
   }
 
+  /** 翻转 ImageBitmap，兼容 Safari < 16.4 */
+  private flip_bitmap(bitmap: ImageBitmap): ImageBitmap | HTMLCanvasElement {
+    const w = bitmap.width, h = bitmap.height;
+    if (ImageMgr.CAN_TRANSFER) {
+      const off = new OffscreenCanvas(w, h);
+      const ctx = off.getContext('2d')!;
+      ctx.translate(0, h);
+      ctx.scale(1, -1);
+      ctx.drawImage(bitmap, 0, 0);
+      return off.transferToImageBitmap();
+    }
+    // Safari < 16.4：回退 DOM Canvas
+    const cvs = document.createElement('canvas');
+    cvs.width = w;
+    cvs.height = h;
+    const ctx = cvs.getContext('2d')!;
+    ctx.translate(0, h);
+    ctx.scale(1, -1);
+    ctx.drawImage(bitmap, 0, 0);
+    return cvs;
+  }
+
   create_picture(
     img_info: IImageInfo,
     onLoad?: (data: IPicture) => void,
@@ -243,20 +268,14 @@ export class ImageMgr implements IImageMgr {
 
     // ImageBitmap 路径：直接创建纹理，跳过 TextureLoader 和 DOM Image 元素
     if (bitmap) {
-      // OffscreenCanvas + transferToImageBitmap：零拷贝翻转，不创建 DOM 元素
-      const offscreen = new OffscreenCanvas(bitmap.width, bitmap.height);
-      const ctx = offscreen.getContext('2d')!;
-      ctx.translate(0, bitmap.height);
-      ctx.scale(1, -1);
-      ctx.drawImage(bitmap, 0, 0);
-      const flipped = offscreen.transferToImageBitmap();
+      const flipped = this.flip_bitmap(bitmap);
       bitmap.close();
 
-      // flipped 由 del() 统一 close
-      img_info.bitmap = flipped;
+      // ImageBitmap 由 del() 统一 close；Canvas 无需清理
+      img_info.bitmap = flipped instanceof ImageBitmap ? flipped : null;
 
-      // 已翻转的 ImageBitmap，不再依赖 UNPACK_FLIP_Y_WEBGL
-      ret.texture = new T.Texture(flipped);
+      // 已翻转，不再依赖 UNPACK_FLIP_Y_WEBGL
+      ret.texture = new T.Texture(flipped as any);
       ret.texture.flipY = false;
       ret.texture.needsUpdate = true;
       ret.texture.colorSpace = T.SRGBColorSpace;
