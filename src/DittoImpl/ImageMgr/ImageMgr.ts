@@ -77,39 +77,72 @@ export class ImageMgr implements IImageMgr {
       }
     }
 
-    const [blob_url, src_url] = await this.lfw.import_resource(src, exact);
-    const img = await create_img_ele(blob_url);
-    img.setAttribute('src-url', src_url)
+    // 有图片操作：也优先 ImageBitmap 作为源，最终产出 ImageBitmap
+    if (vaild_operations?.length) {
+      try {
+        const [bitmap, src_url] = await this.lfw.import_image_bitmap(src, exact);
+        const scale = this.get_img_scale(src_url);
 
-    const scale = this.get_img_scale(src_url);
-    img.setAttribute('scale', '' + scale)
+        // 将 ImageBitmap 转为带属性的 Canvas，供操作管线使用
+        const src_cvs = document.createElement('canvas');
+        src_cvs.width = bitmap.width;
+        src_cvs.height = bitmap.height;
+        src_cvs.setAttribute('src-url', src_url);
+        src_cvs.setAttribute('scale', '' + scale);
+        src_cvs.getContext('2d')!.drawImage(bitmap, 0, 0);
+        bitmap.close();
 
-    if (!vaild_operations?.length) {
-      const ret = new RImageInfo({
-        key,
-        src,
-        url: blob_url,
-        src_url,
-        scale,
-        w: img.width,
-        h: img.height,
-      });
-      if (disposable) this.add_disposable(ret)
-      return ret;
+        let cvs: HTMLCanvasElement | null = null;
+        for (const op of vaild_operations) cvs = this.edit_image(cvs || src_cvs, op);
+
+        // 转为 ImageBitmap，统一走 create_picture 的 bitmap 路径
+        const offscreen = new OffscreenCanvas(cvs!.width, cvs!.height);
+        offscreen.getContext('2d')!.drawImage(cvs!, 0, 0);
+        const result = offscreen.transferToImageBitmap();
+
+        const ret = new RImageInfo({
+          key, src, url: '', src_url, scale,
+          w: result.width, h: result.height, bitmap: result,
+        });
+        if (disposable) this.add_disposable(ret);
+        return ret;
+      } catch {
+        // ImageBitmap 解码失败时，回退到 blob URL + Image 元素路径
+      }
     }
 
-    let cvs: HTMLCanvasElement | null = null;
-    for (const op of vaild_operations) cvs = this.edit_image(cvs || img, op)
+    // 回退路径：blob URL + Image 元素（无操作或 ImageBitmap 失败时）
+    {
+      const [blob_url, src_url] = await this.lfw.import_resource(src, exact);
+      const img = await create_img_ele(blob_url);
+      img.setAttribute('src-url', src_url)
 
-    const blob = await get_blob(cvs!).catch((e) => {
-      const err = new Error(e.message + " key:" + key);
-      Object.assign(err, { cause: e.cause })
-      throw err
-    });
-    const url = URL.createObjectURL(blob);
-    const ret = new RImageInfo({ key, url, src_url, scale, w: cvs!.width, h: cvs!.height });
-    if (disposable) this.add_disposable(ret);
-    return ret;
+      const scale = this.get_img_scale(src_url);
+      img.setAttribute('scale', '' + scale)
+
+      if (!vaild_operations?.length) {
+        const ret = new RImageInfo({
+          key, src,
+          url: blob_url, src_url, scale,
+          w: img.width, h: img.height,
+        });
+        if (disposable) this.add_disposable(ret)
+        return ret;
+      }
+
+      let cvs: HTMLCanvasElement | null = null;
+      for (const op of vaild_operations) cvs = this.edit_image(cvs || img, op)
+
+      const blob = await get_blob(cvs!).catch((e) => {
+        const err = new Error(e.message + " key:" + key);
+        Object.assign(err, { cause: e.cause })
+        throw err
+      });
+      const url = URL.createObjectURL(blob);
+      const ret = new RImageInfo({ key, url, src_url, scale, w: cvs!.width, h: cvs!.height });
+      if (disposable) this.add_disposable(ret);
+      return ret;
+    }
   }
 
   private get_img_scale(src_url: string): number {
