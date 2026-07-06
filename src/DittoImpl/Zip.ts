@@ -31,6 +31,20 @@ export class ZipObject implements IZipObject {
   async uint8_array(): Promise<Uint8Array> {
     return this.inner.async('uint8array')
   }
+  async image_bitmap(): Promise<ImageBitmap> {
+    const buf = await this.array_buffer();
+    const ext = this.name.split('.').pop()?.toLowerCase();
+    const mimeMap: Record<string, string> = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      bmp: 'image/bmp',
+      webp: 'image/webp',
+      gif: 'image/gif',
+    };
+    const mime = mimeMap[ext || ''] || 'image/png';
+    return createImageBitmap(new Blob([buf], { type: mime }));
+  }
 }
 
 export class __Zip implements IZip {

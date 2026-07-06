@@ -244,6 +244,29 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     });
   }
 
+  /**
+   * 以 ImageBitmap 形式加载图片资源
+   * 比 import_resource 更高效：跳过 Blob URL 创建，直接解码为 GPU 可用的 ImageBitmap
+   *
+   * @param {string} path 资源路径
+   * @param {boolean} exact 准确匹配
+   * @return {Promise<[ImageBitmap, I.HitUrl, string?]>}
+   * @memberof LFW
+   */
+  async import_image_bitmap(path: string, exact: boolean): Promise<[ImageBitmap, I.HitUrl, string?]> {
+    const key = `LFW.import_image_bitmap.${path}.${exact}`;
+    return deduped(key, async () => {
+      const paths = exact ? [path] : get_import_fallbacks(path)[0];
+      const { file, origin: tag } = this.find_from_zips(paths, true).at(0) || {}
+      if (file && tag) return [await file.image_bitmap(), file.name, tag];
+      // 网络回退：fetch → Blob → ImageBitmap
+      const [blob_url] = await I.Ditto.Importer.import_as_blob_url(paths);
+      const resp = await fetch(blob_url);
+      const blob = await resp.blob();
+      return [await createImageBitmap(blob), paths[0], undefined];
+    });
+  }
+
   async import_array_buffer(path: string, exact: boolean): Promise<[ArrayBuffer, I.HitUrl, string?]> {
     const key = `LFW.import_array_buffer.${path}.${exact}`;
     return deduped(key, async () => {

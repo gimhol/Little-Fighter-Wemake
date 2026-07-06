@@ -34,4 +34,12 @@ export interface IZipObject {
   blob_url(): Promise<string>;
   array_buffer(): Promise<ArrayBuffer>
   uint8_array(): Promise<Uint8Array>
+
+  /**
+   * 直接从 zip 包中解码为 ImageBitmap
+   * 比 blob_url 路径更高效：减少一次 Blob 创建，支持零拷贝 GPU 上传
+   *
+   * @returns {Promise<ImageBitmap>}
+   */
+  image_bitmap(): Promise<ImageBitmap>;
 }

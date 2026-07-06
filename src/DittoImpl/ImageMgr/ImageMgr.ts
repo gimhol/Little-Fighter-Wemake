@@ -24,6 +24,7 @@ export class ImageMgr implements IImageMgr {
   static readonly ERROR_TEXTURE: Readonly<T.Texture<HTMLImageElement>> = ImageMgr.TextureLoader.load(img_error)
   static readonly WHITE_TEXTURE: Readonly<T.Texture<HTMLImageElement>> = ImageMgr.TextureLoader.load(img_white);
   static readonly EMPTY_TEXTURE: Readonly<T.Texture<HTMLImageElement>> = ImageMgr.TextureLoader.load("");
+
   protected pictures = new Map<string, IPicture>();
   protected infos = new AsyncValuesKeeper<RImageInfo>();
   protected disposables = new Map<string, RImageInfo>();
@@ -36,18 +37,6 @@ export class ImageMgr implements IImageMgr {
 
     const exact = src.startsWith('!');
     if (exact) src = src.substring(1)
-
-    const [blob_url, src_url] = await this.lfw.import_resource(src, exact);
-    const img = await create_img_ele(blob_url);
-    img.setAttribute('src-url', src_url)
-
-    const scale = max(1,
-      Number(
-        src_url.match(/@(\d)[x|X](.png|.webp)$/)?.[1] ??
-        src_url.match(/@(\d)[x|X]\/(.*)(.png|.webp)$/)?.[1]
-      ) || 1
-    )
-    img.setAttribute('scale', '' + scale)
 
     const vaild_operations = operations?.filter(v => {
       switch (v.type) {
@@ -65,6 +54,35 @@ export class ImageMgr implements IImageMgr {
           return v.x || v.y;
       }
     });
+
+    // 无图片操作：优先使用 ImageBitmap 路径（减少 Blob 创建，支持零拷贝 GPU 上传）
+    if (!vaild_operations?.length) {
+      try {
+        const [bitmap, src_url] = await this.lfw.import_image_bitmap(src, exact);
+        const scale = this.get_img_scale(src_url);
+        const ret = new RImageInfo({
+          key,
+          src,
+          url: '', // ImageBitmap 不需要 blob URL
+          src_url,
+          scale,
+          w: bitmap.width,
+          h: bitmap.height,
+          bitmap,
+        });
+        if (disposable) this.add_disposable(ret)
+        return ret;
+      } catch {
+        // ImageBitmap 解码失败时，回退到 blob URL + Image 元素路径
+      }
+    }
+
+    const [blob_url, src_url] = await this.lfw.import_resource(src, exact);
+    const img = await create_img_ele(blob_url);
+    img.setAttribute('src-url', src_url)
+
+    const scale = this.get_img_scale(src_url);
+    img.setAttribute('scale', '' + scale)
 
     if (!vaild_operations?.length) {
       const ret = new RImageInfo({
@@ -92,6 +110,15 @@ export class ImageMgr implements IImageMgr {
     const ret = new RImageInfo({ key, url, src_url, scale, w: cvs!.width, h: cvs!.height });
     if (disposable) this.add_disposable(ret);
     return ret;
+  }
+
+  private get_img_scale(src_url: string): number {
+    return max(1,
+      Number(
+        src_url.match(/@(\d)[x|X](.png|.webp)$/)?.[1] ??
+        src_url.match(/@(\d)[x|X]\/(.*)(.png|.webp)$/)?.[1]
+      ) || 1
+    )
   }
 
   private add_disposable(ret: RImageInfo) {
@@ -133,6 +160,7 @@ export class ImageMgr implements IImageMgr {
     const img = this.infos.del(key);
     if (!img) return;
     if (img.url.startsWith("blob:")) URL.revokeObjectURL(img.url);
+    if (img.bitmap) { img.bitmap.close(); img.bitmap = null; }
     return;
   }
 
@@ -165,7 +193,7 @@ export class ImageMgr implements IImageMgr {
     onProgress?: (event: ProgressEvent) => void,
     onError?: (err: unknown) => void): IPicture {
     const {
-      url, w, h,
+      url, w, h, bitmap,
       min_filter = MinificationTextureFilter.Nearest,
       mag_filter = MagnificationTextureFilter.Nearest,
       wrap_s = TextureWrapping.MirroredRepeat,
@@ -178,7 +206,35 @@ export class ImageMgr implements IImageMgr {
       w: w / scale,
       h: h / scale,
       texture: ImageMgr.EMPTY_TEXTURE.clone()
+    };
+
+    // ImageBitmap 路径：直接创建纹理，跳过 TextureLoader 和 DOM Image 元素
+    if (bitmap) {
+      // OffscreenCanvas + transferToImageBitmap：零拷贝翻转，不创建 DOM 元素
+      const offscreen = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = offscreen.getContext('2d')!;
+      ctx.translate(0, bitmap.height);
+      ctx.scale(1, -1);
+      ctx.drawImage(bitmap, 0, 0);
+      const flipped = offscreen.transferToImageBitmap();
+      bitmap.close();
+
+      // flipped 由 del() 统一 close
+      img_info.bitmap = flipped;
+
+      // 已翻转的 ImageBitmap，不再依赖 UNPACK_FLIP_Y_WEBGL
+      ret.texture = new T.Texture(flipped);
+      ret.texture.flipY = false;
+      ret.texture.needsUpdate = true;
+      ret.texture.colorSpace = T.SRGBColorSpace;
+      ret.texture.minFilter = min_filter;
+      ret.texture.magFilter = mag_filter;
+      ret.texture.wrapS = wrap_s;
+      ret.texture.wrapT = wrap_t;
+      onLoad?.(ret);
+      return ret;
     }
+
     ret.texture = ImageMgr.TextureLoader.load(url, (t) => {
       ret.texture = t
       t.needsUpdate = true;

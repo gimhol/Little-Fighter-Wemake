@@ -47,4 +47,10 @@ export interface IImageInfo {
   clip_y?: number;
   clip_w?: number;
   clip_h?: number;
+
+  /**
+   * ImageBitmap 源（优先于 url 用于创建纹理）
+   * 为 null 时回退到 url + TextureLoader 路径
+   */
+  bitmap?: ImageBitmap | null;
 }

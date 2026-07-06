@@ -23,6 +23,7 @@ export class ImageInfo<T = any> implements IImageInfo {
   clip_y?: number;
   clip_w?: number;
   clip_h?: number;
+  bitmap?: ImageBitmap | null;
   constructor(o?: Partial<IImageInfo>) {
     if (o) Object.assign(this, o)
     if (o?.pic) this.pic = Object.assign({}, o.pic)
