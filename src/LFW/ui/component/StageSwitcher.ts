@@ -37,10 +37,15 @@ export class StageSwitcher extends Label {
     this.lfw.callbacks.del(this);
   }
   override on_show(): void {
-    if (this._stage === Defines.VOID_STAGE) this.on_broadcast();
+    if (this._stage === Defines.VOID_STAGE) this.on_broadcast(Defines.BuiltIn_Broadcast.SwitchStage);
   }
-  on_broadcast(v: string = Defines.BuiltIn_Broadcast.SwitchStage) {
-    if (v !== Defines.BuiltIn_Broadcast.SwitchStage) return
+  on_broadcast(v: string) {
+    let dir = 1;
+    switch (v) {
+      case Defines.BuiltIn_Broadcast.SwitchStage: dir = 1; break;
+      case Defines.BuiltIn_Broadcast.SwitchStageR: dir = -1; break;
+      default: return;
+    }
     const { stages } = this;
     if (!stages.length) {
       this._stage = Defines.VOID_STAGE;
@@ -48,8 +53,8 @@ export class StageSwitcher extends Label {
     } else {
       const state_id = this.stage.id;
       const curr_idx = stages.findIndex((v) => v.id === state_id);
-      const next_idx = (curr_idx + 1) % stages.length;
-      this._stage = stages[next_idx]!;
+      const next_idx = (curr_idx + stages.length + dir) % stages.length;
+      this._stage = stages[next_idx];
       const bdt = this.world.lfw.datas.backgrounds.find(v => v.id === this._stage.bg);
       this.world.stage.change_bg(bdt ?? Defines.VOID_BG)
     }

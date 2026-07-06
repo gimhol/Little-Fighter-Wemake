@@ -89,6 +89,8 @@
               component: ["Reachable(menu)"],
               actions: {
                 click: ["broadcast(switch_background)", "sound(ok)"],
+                mclick: ["broadcast(reset_background)", "sound(ok)"],
+                rclick: ["broadcast(switch_background_r)", "sound(ok)"],
               },
             },
             {
@@ -135,6 +137,7 @@
               component: ["Reachable(menu)"],
               actions: {
                 click: ["broadcast(switch_stage)", "sound(ok)"],
+                rclick: ["broadcast(switch_stage_r)", "sound(ok)"],
               },
             },
             {

@@ -242,6 +242,19 @@
                 },
               ],
             },
+            rclick: {
+              anyOf: [
+                {
+                  $ref: "#/definitions/TUIAction",
+                },
+                {
+                  items: {
+                    $ref: "#/definitions/TUIAction",
+                  },
+                  type: "array",
+                },
+              ],
+            },
             pause: {
               anyOf: [
                 {

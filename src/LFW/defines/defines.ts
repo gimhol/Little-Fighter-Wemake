@@ -292,7 +292,10 @@ export namespace Defines {
     UpdateRandom = "update_random",
     StartGame = "start_game",
     SwitchStage = "switch_stage",
-    SwitchBackground = "switch_background"
+    SwitchStageR = "switch_stage_r",
+    SwitchBackground = "switch_background",
+    SwitchBackgroundR = "switch_background_r",
+    ResetBackground = "reset_background",
   }
   export enum BuiltIn_Sounds {
     Cancel = "cancel",

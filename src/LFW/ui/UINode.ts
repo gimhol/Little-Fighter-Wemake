@@ -553,9 +553,17 @@ export class UINode implements IDebugging {
   }
 
   on_click(e: LF2PointerEvent) {
-    const { click } = this.data.actions ?? {};
-    if (click) {
+    const { click, rclick, mclick } = this.data.actions ?? {};
+    if (click && e.button == 0) {
       actor.act(this, click);
+      e.stop_propagation();
+    }
+    if (mclick && e.button == 1) {
+      actor.act(this, mclick);
+      e.stop_propagation();
+    }
+    if (rclick && e.button == 2) {
+      actor.act(this, rclick);
       e.stop_propagation();
     }
     for (const c of this._components) {
@@ -640,12 +648,18 @@ export class UINode implements IDebugging {
       i.on_key_down(e);
       if (e.stopped === 2) return;
     }
-    if (this.focused && "a" === e.game_key) {
-      const { click } = this.data.actions ?? {};
-      if (click) {
-        actor.act(this, click);
-        e.stop_immediate_propagation();
-      }
+    const { click, rclick, mclick } = this.data.actions ?? {};
+    if (this.focused && "a" === e.game_key && click) {
+      actor.act(this, click);
+      e.stop_immediate_propagation();
+    }
+    if (this.focused && "j" === e.game_key && rclick) {
+      actor.act(this, rclick);
+      e.stop_immediate_propagation();
+    }
+    if (this.focused && "d" === e.game_key && mclick) {
+      actor.act(this, mclick);
+      e.stop_immediate_propagation();
     }
   }
 
