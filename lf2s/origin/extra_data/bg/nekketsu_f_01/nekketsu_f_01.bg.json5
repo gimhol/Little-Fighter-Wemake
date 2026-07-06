@@ -1,8 +1,8 @@
 {
   type: "background",
-  id: "bg_terrain_test",
+  id: "bg_nekketsu_f_01",
   base: {
-    name: "Terrain Test",
+    name: "Nekketsu F01",
     shadow: "bg/sys/bc/s.png",
     shadowsize: [
       37,

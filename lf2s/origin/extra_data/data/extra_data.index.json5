@@ -11,6 +11,11 @@
       file: "bg/moon/bg.bg.json5",
     },
     {
+      id: "nekketsu_f_01",
+      type: "bg",
+      file: "bg/nekketsu_f_01/nekketsu_f_01.bg.json5",
+    },
+    {
       id: "bg_octagon",
       type: "bg",
       file: "bg/octagon/bg.bg.json5",

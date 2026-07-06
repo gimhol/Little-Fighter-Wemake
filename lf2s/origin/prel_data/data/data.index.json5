@@ -21,12 +21,7 @@
       id: "football_field",
       type: "bg",
       file: "bg/football_field/football_field.bg.json5",
-    },
-    {
-      id: "terrain_test",
-      type: "bg",
-      file: "bg/terrain_test/terrain_test.bg.json5",
-    },
+    }
   ],
   stages: [
     {
