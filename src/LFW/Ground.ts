@@ -1,17 +1,16 @@
 import type { World } from "./World";
 import { TerrainEnum, type ITerrainInfo } from "./defines/ITerrainInfo";
-import { abs, clamp, is_f_num } from "./utils";
+import { abs, clamp } from "./utils";
 
 export interface IBlockResult {
   block_x: number | null;
   block_z: number | null;
-  block_y: number | null;
 }
 
 export class Ground {
   readonly world: World;
 
-  private _blocked: IBlockResult = { block_x: null, block_z: null, block_y: null };
+  private _blocked: IBlockResult = { block_x: null, block_z: null };
   readonly step: number = 15;
 
   constructor(world: World) {
@@ -99,7 +98,6 @@ export class Ground {
     if (stand_y !== null) {
       this._blocked.block_x = null;
       this._blocked.block_z = null;
-      this._blocked.block_y = null;
       return this._blocked;
     }
 
@@ -140,7 +138,6 @@ export class Ground {
       block_x = null;
     this._blocked.block_x = block_x;
     this._blocked.block_z = block_z;
-    this._blocked.block_y = null;
     return this._blocked;
   }
 }

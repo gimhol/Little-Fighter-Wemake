@@ -404,27 +404,19 @@ export class World {
       return this._restrict_result;
     }
 
-    let i = 2
-
-    let block_x: number | null = null;
-    let block_z: number | null = null;
-    let block_y: number | null = null;
-    do {
-      const seg = this.ground.segment(x, z);
-      if (!seg) {
-        e.terrain = void 0;
-        this._restrict_result.x = x;
-        this._restrict_result.y = y;
-        this._restrict_result.z = z;
-        return this._restrict_result;
-      }
-      ({ block_x, block_z, block_y } = this.ground.block(seg, x, y, z));
-      if (block_x != null) x = block_x;
-      if (block_z != null) z = block_z;
-      if (block_y != null) y = block_y;
-      e.terrain = seg
-    } while (--i && (block_x || block_z || block_y));
-
+    const seg = this.ground.segment(x, z);
+    if (!seg) {
+      e.terrain = void 0;
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
+      return this._restrict_result;
+    }
+    const { block_x, block_z } = this.ground.block(seg, x, y, z);   
+    if (block_x != null) x = block_x;
+    if (block_z != null) z = block_z;
+    // 此处有致命的bug, 会将角色挤到高处
+    e.terrain = this.ground.segment(x, z)
     this._restrict_result.x = x;
     this._restrict_result.y = y;
     this._restrict_result.z = z;
