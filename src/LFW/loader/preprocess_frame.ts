@@ -108,13 +108,14 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
 
   if (
     !frame.on_x_restrict &&
-    data.base.type == EntityEnum.Ball &&
+    data.type == EntityEnum.Ball &&
     (frame.itr?.length || frame.bdy?.length) && (
       frame.state == StateEnum.Ball_Flying ||
       frame.state == StateEnum.Ball_3005 ||
       frame.state == StateEnum.Ball_3006
     )
   ) {
+    debugger;
     // 拥有itr或bdy的ball在X轴被阻，破之
     frame.on_x_restrict = { id: '20', sounds: data.base.hit_sounds }
   }
