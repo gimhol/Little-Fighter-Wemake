@@ -2325,11 +2325,19 @@ export class Entity {
     if (_y !== null && _y !== void 0) this.position.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.position.z = round_float(_z)
     const { x, y, z } = this.world.restrict(this);
+    if (this.position.x !== x && this.frame.on_x_restrict)
+      this.enter_frame(this.frame.on_x_restrict)
+    if (this.position.z !== z && this.frame.on_z_restrict)
+      this.enter_frame(this.frame.on_z_restrict)
     if (
       this.position.x !== x ||
       this.position.y !== y ||
       this.position.z !== z
-    ) this._state?.on_restrict?.(this, x, y, z);
+    ) {
+      if (this.frame.on_restrict)
+        this.enter_frame(this.frame.on_restrict)
+      this._state?.on_restrict?.(this, x, y, z);
+    }
     this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
   }
 
@@ -2344,7 +2352,7 @@ export class Entity {
   set_position_z(z: number) {
     this.set_position(null, null, z)
   }
-  
+
   transform(data: IEntityData) {
     if (!is_human_ctrl(this.ctrl))
       this.ctrl = this.lfw.factory.create_ctrl(data.id, this.ctrl.player_id, this);

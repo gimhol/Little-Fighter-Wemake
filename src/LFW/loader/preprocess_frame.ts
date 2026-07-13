@@ -105,6 +105,24 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
   if (frame.on_exhaustion) frame.on_exhaustion = preprocess_next_frame(frame.on_exhaustion);
   if (frame.on_landing) frame.on_landing = preprocess_next_frame(frame.on_landing);
 
+
+  if (
+    !frame.on_x_restrict &&
+    data.base.type == EntityEnum.Ball &&
+    (frame.itr?.length || frame.bdy?.length) && (
+      frame.state == StateEnum.Ball_Flying ||
+      frame.state == StateEnum.Ball_3005 ||
+      frame.state == StateEnum.Ball_3006
+    )
+  ) {
+    // 拥有itr或bdy的ball在X轴被阻，破之
+    frame.on_x_restrict = { id: '20', sounds: data.base.hit_sounds }
+  }
+
+  if (frame.on_restrict) frame.on_restrict = preprocess_next_frame(frame.on_restrict);
+  if (frame.on_x_restrict) frame.on_x_restrict = preprocess_next_frame(frame.on_x_restrict);
+  if (frame.on_z_restrict) frame.on_z_restrict = preprocess_next_frame(frame.on_z_restrict);
+
   frame.bdy?.forEach((n, i, l) => {
     const bdy = l[i] = preprocess_bdy(lfw, n, data, jobs)
     if (bdy.on_hit_ground) {

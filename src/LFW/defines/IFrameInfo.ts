@@ -1,5 +1,6 @@
 import { any, fields, flt, int, str } from "../fields";
 import { make_schema } from "../utils/schema";
+import type { TAction } from "./actions";
 import { ALL_FACING_FLAG, FACING_FLAG_DESC_MAP, FACING_FLAG_LABEL_MAP, FacingFlag } from "./FacingFlag";
 import { ALL_FRAME_BEHAVIOR, FRAME_BEHAVIOR_DESC_MAP, FRAME_BEHAVIOR_LABEL_MAP, FrameBehavior } from "./FrameBehavior";
 import type { IBdyInfo } from "./IBdyInfo";
@@ -224,6 +225,9 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
    */
   landable?: number;
 
+  on_restrict?: TNextFrame;
+  on_x_restrict?: TNextFrame;
+  on_z_restrict?: TNextFrame;
 
   /* 运行时使用，为Debug预留的玩意 */
   __indicator_info?: IQubePair;
@@ -387,6 +391,9 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     on_dead: { type: 'object', nullable: true },// TODO!
     on_exhaustion: { type: 'object', nullable: true },// TODO!
     on_landing: { type: 'object', nullable: true },// TODO!
+    on_restrict: { type: 'object', nullable: true },// TODO!
+    on_x_restrict: { type: 'object', nullable: true },// TODO!
+    on_z_restrict: { type: 'object', nullable: true },// TODO!
     behavior: { type: 'number', nullable: true },
     chase: { type: 'object', nullable: true },// TODO!
     gravity_enabled: { type: 'boolean', nullable: true },
