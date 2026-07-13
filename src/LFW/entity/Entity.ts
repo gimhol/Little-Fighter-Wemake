@@ -1138,7 +1138,7 @@ export class Entity {
     for (const [, v] of this.vrests) entity.add_v_rest(collision_clone(v));
 
 
-    this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
+    entity._ground_y = entity.terrain ? this.world.ground.y(entity.terrain, entity.position.x, entity.position.z) : 0;
     entity.is_on_ground = this.position.y <= this._ground_y
     return entity;
   }
@@ -2333,6 +2333,8 @@ export class Entity {
       this.enter_frame(this.frame.on_x_restrict)
     if (this.position.z !== z && this.frame.on_z_restrict)
       this.enter_frame(this.frame.on_z_restrict)
+    if (this.position.y !== y && this.frame.on_y_restrict)
+      this.enter_frame(this.frame.on_y_restrict)
     if (
       this.position.x !== x ||
       this.position.y !== y ||

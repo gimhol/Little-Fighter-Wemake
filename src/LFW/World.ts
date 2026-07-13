@@ -416,10 +416,18 @@ export class World {
     if (pos?.length) {
       for (let i = 0; i < pos.length; i++) {
         const p = pos[i];
-        const seg = this.ground.segment(p.x, p.z);
-        if (seg && this.ground.block(seg, p.x, y, p.z))
+        const test_seg = this.ground.segment(p.x, p.z);
+        if (test_seg && this.ground.block(test_seg, p.x, y, p.z)) {
+          if (i == pos.length - 1) {
+            // 无法挤出，直接抬上去算了
+            e.terrain = seg;
+            y = this.ground.y(seg, x, z);
+
+          }
           continue;
-        e.terrain = seg;
+        }
+        // 成功挤出
+        e.terrain = test_seg;
         x = p.x;
         z = p.z;
         break;

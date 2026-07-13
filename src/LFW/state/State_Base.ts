@@ -52,12 +52,16 @@ export class State_Base {
     let vx: number | null = null;
     let vz: number | null = null;
     let vy: number | null = null;
+    // 留点速度，方便贴着地形的角色能跳上高台
     if (!float_equal(x, e.position.x))
       vx = clamp(e.velocity.x, -0.1, 0.1);
-    if (!float_equal(y, e.position.y))
-      vy = clamp(e.velocity.y, -0.1, 0.1);
     if (!float_equal(z, e.position.z))
       vz = clamp(e.velocity.z, -0.1, 0.1);
+    if (!float_equal(y, e.position.y)) {
+      vy = clamp(e.velocity.y, -0.1, 0.1);
+      vx = clamp(e.velocity.x, -0.1, 0.1);
+      vz = clamp(e.velocity.z, -0.1, 0.1);
+    }
     if (vx !== null || vz !== null || vy !== null)
       e.set_velocity(vx, vy, vz);
     e.position.x = x;

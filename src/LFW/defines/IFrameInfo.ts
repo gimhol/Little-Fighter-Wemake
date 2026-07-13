@@ -227,6 +227,7 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
 
   on_restrict?: TNextFrame;
   on_x_restrict?: TNextFrame;
+  on_y_restrict?: TNextFrame;
   on_z_restrict?: TNextFrame;
 
   /* 运行时使用，为Debug预留的玩意 */
@@ -393,6 +394,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     on_landing: { type: 'object', nullable: true },// TODO!
     on_restrict: { type: 'object', nullable: true },// TODO!
     on_x_restrict: { type: 'object', nullable: true },// TODO!
+    on_y_restrict: { type: 'object', nullable: true },// TODO!
     on_z_restrict: { type: 'object', nullable: true },// TODO!
     behavior: { type: 'number', nullable: true },
     chase: { type: 'object', nullable: true },// TODO!

@@ -115,12 +115,14 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
       frame.state == StateEnum.Ball_3006
     )
   ) {
-    // 拥有itr或bdy的ball在X轴被阻，破之
+    // 拥有itr或bdy的ball在X轴或Y轴被阻，破之
     frame.on_x_restrict = { id: '20', sounds: data.base.hit_sounds }
+    frame.on_y_restrict = { id: '20', sounds: data.base.hit_sounds }
   }
 
   if (frame.on_restrict) frame.on_restrict = preprocess_next_frame(frame.on_restrict);
   if (frame.on_x_restrict) frame.on_x_restrict = preprocess_next_frame(frame.on_x_restrict);
+  if (frame.on_y_restrict) frame.on_y_restrict = preprocess_next_frame(frame.on_y_restrict);
   if (frame.on_z_restrict) frame.on_z_restrict = preprocess_next_frame(frame.on_z_restrict);
 
   frame.bdy?.forEach((n, i, l) => {
