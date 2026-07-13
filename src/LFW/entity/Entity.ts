@@ -1136,6 +1136,10 @@ export class Entity {
     entity.key_role = false;
     entity.dead_gone = true;
     for (const [, v] of this.vrests) entity.add_v_rest(collision_clone(v));
+
+
+    this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
+    entity.is_on_ground = this.position.y <= this._ground_y
     return entity;
   }
 
