@@ -17,7 +17,6 @@ export class BallState_Base extends State_Base {
     }
   }
   override on_restrict(e: Entity, x: number, y: number, z: number): void {
-
     let vx: number | null = null;
     let vy: number | null = null;
     let vz: number | null = null;
@@ -32,7 +31,7 @@ export class BallState_Base extends State_Base {
         e.frame.state == StateEnum.Ball_3006
       )
     ) {
-      e.position.x = e.position.x - e.velocity.x;
+      e.position.x = x;
       e.position.y = y;
       e.position.z = z;
       e.enter_frame({ id: "20" }) // stupid hard-code

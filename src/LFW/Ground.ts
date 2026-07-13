@@ -2,16 +2,12 @@ import type { World } from "./World";
 import { TerrainEnum, type ITerrainInfo } from "./defines/ITerrainInfo";
 import { abs, clamp } from "./utils";
 
-export interface IBlockResult {
-  block_x: number | null;
-  block_z: number | null;
-}
+export type IBlockResult = { x: number, z: number }[];
 
 export class Ground {
   readonly world: World;
 
-  private _blocked: IBlockResult = { block_x: null, block_z: null };
-  readonly step: number = 15;
+  readonly step: number = 10;
 
   constructor(world: World) {
     this.world = world
@@ -22,9 +18,9 @@ export class Ground {
    * 
    * @param {number} x X坐标
    * @param {number} z Z坐标
-   * @returns {ITerrainInfo | undefined} 地形信息
+   * @returns {Readonly<ITerrainInfo> | undefined} 地形信息
    */
-  segment(x: number, z: number): ITerrainInfo | undefined {
+  segment(x: number, z: number): Readonly<ITerrainInfo> | undefined {
     const { terrain } = this.world.bg.data;
     if (!terrain?.length) return void 0;
 
@@ -50,7 +46,7 @@ export class Ground {
    * @param {number} z Z坐标
    * @returns {number} Y坐标
    */
-  y(seg: ITerrainInfo, x: number, z: number): number {
+  y(seg: Readonly<ITerrainInfo>, x: number, z: number): number {
     switch (seg.type) {
       case TerrainEnum.Flat:
         return seg.h1;
@@ -73,13 +69,13 @@ export class Ground {
   /**
    * 能否进入地点
    * 
-   * @param {ITerrainInfo} seg 地形信息
+   * @param {Readonly<ITerrainInfo>} seg 地形信息
    * @param {number} x X坐标
    * @param {number} y Z坐标
    * @param {number} z Z坐标
    * @returns {number | null} 新高度，当返回null，表示无法进入地点
    */
-  enterable(seg: ITerrainInfo, x: number, y: number, z: number): number | null {
+  enterable(seg: Readonly<ITerrainInfo>, x: number, y: number, z: number): number | null {
     const dist_y = this.y(seg, x, z);
     const diff_h = dist_y - y;
 
@@ -89,22 +85,29 @@ export class Ground {
     return dist_y;
   }
 
+  /**
+   * 计算被地形阻挡后的替代位置。当角色无法进入目标坐标时，
+   * 返回最近的可通行边界点（优先沿 X 轴或 Z 轴方向推挤）。
+   *
+   * @param {Readonly<ITerrainInfo>} seg 地形信息
+   * @param {number} x   目标 X 坐标
+   * @param {number} y   当前 Y 坐标（高度）
+   * @param {number} z   目标 Z 坐标
+   * @returns {{ x: number, z: number }[]} 替代位置数组（按优先级排序），若可直接进入则返回 null
+   */
   block(
-    seg: ITerrainInfo,
+    seg: Readonly<ITerrainInfo>,
     x: number, y: number, z: number
-  ): IBlockResult {
+  ): IBlockResult | null {
     const stand_y = this.enterable(seg, x, y, z);
 
-    if (stand_y !== null) {
-      this._blocked.block_x = null;
-      this._blocked.block_z = null;
-      return this._blocked;
-    }
+    if (stand_y !== null) return null;
+
 
     let block_x: number | null;
     let block_z: number | null;
-    let xx: number;
-    let zz: number;
+    let x_len: number;
+    let z_len: number;
 
     const l = seg.x1 - 1
     const r = seg.x2 + 1
@@ -118,26 +121,33 @@ export class Ground {
 
     if (dist_l < dist_r) {
       block_x = l;
-      xx = abs(dist_l);
+      x_len = abs(dist_l);
     } else {
       block_x = r;
-      xx = abs(dist_r);
+      x_len = abs(dist_r);
     }
 
     if (dist_f < dist_n) {
       block_z = f;
-      zz = abs(dist_f);
+      z_len = abs(dist_f);
     } else {
       block_z = n;
-      zz = abs(dist_n);
+      z_len = abs(dist_n);
     }
     const { far, near } = this.world.bg
-    if (xx < zz || block_z <= far || block_z >= near)
+    if (block_z <= far || block_z >= near)
       block_z = null;
-    else
-      block_x = null;
-    this._blocked.block_x = block_x;
-    this._blocked.block_z = block_z;
-    return this._blocked;
+
+    const x_pos = { x: block_x, z };
+    const z_pos = block_z == null ? null : { x, z: block_z };
+    const ret: IBlockResult = []
+    if (x_len < z_len) {
+      ret.push(x_pos)
+      if (z_pos) ret.push(z_pos)
+    } else {
+      if (z_pos) ret.push(z_pos)
+      ret.push(x_pos)
+    }
+    return ret;
   }
 }

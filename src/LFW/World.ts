@@ -412,11 +412,21 @@ export class World {
       this._restrict_result.z = z;
       return this._restrict_result;
     }
-    const { block_x, block_z } = this.ground.block(seg, x, y, z);   
-    if (block_x != null) x = block_x;
-    if (block_z != null) z = block_z;
-    // 此处有致命的bug, 会将角色挤到高处
-    e.terrain = this.ground.segment(x, z)
+    const pos = this.ground.block(seg, x, y, z);
+    if (pos?.length) {
+      for (let i = 0; i < pos.length; i++) {
+        const p = pos[i];
+        const seg = this.ground.segment(p.x, p.z);
+        if (seg && this.ground.block(seg, p.x, y, p.z))
+          continue;
+        e.terrain = seg;
+        x = p.x;
+        z = p.z;
+        break;
+      }
+    } else {
+      e.terrain = seg;
+    }
     this._restrict_result.x = x;
     this._restrict_result.y = y;
     this._restrict_result.z = z;

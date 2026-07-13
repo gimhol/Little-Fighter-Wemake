@@ -46,7 +46,7 @@ export const terrain_info_fields = fields<ITerrainInfo>({
   h1: int,
   h2: int,
 })
-export const terrain_info_schema = make_schema<ITerrainInfo>({
+export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
   key: "ITerrainInfo",
   type: "object",
   properties: {

@@ -1,7 +1,7 @@
 import { Ditto } from "..";
 import { Defines, } from "../defines/defines";
 import type { IBgData } from "../defines/IBgData";
-import { terrain_info_schema } from "../defines/ITerrainInfo";
+import { Schema_ITerrainInfo } from "../defines/ITerrainInfo";
 import type { ImageInfo } from "../ditto/image/ImageInfo";
 import type { LFW } from "../LFW";
 import { SchemaValidator as SV } from "../utils/schema/validate_schema";
@@ -19,7 +19,7 @@ export function preprocess_bg_data(lfw: LFW, data: IBgData, jobs: Promise<ImageI
 
   if (terrain?.length) {
     for (const t of terrain) {
-      SV.Default.validate(t, terrain_info_schema)
+      SV.Default.validate(t, Schema_ITerrainInfo)
       if (SV.Default.warnings.length)
         Ditto.warn(SV.Default.warnings)
       if (SV.Default.errors.length)
