@@ -2,8 +2,11 @@ import { fields, int } from "../fields";
 import { make_schema } from "../utils";
 
 export const enum TerrainEnum {
+  /** 平地 */
   Flat = 0,
+  /* X 轴方向的斜坡 */
   SlopeH = 1,
+  /* Z 轴方向斜坡 */
   SlopeV = 2,
 }
 
