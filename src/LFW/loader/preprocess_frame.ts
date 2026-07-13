@@ -115,7 +115,6 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
       frame.state == StateEnum.Ball_3006
     )
   ) {
-    debugger;
     // 拥有itr或bdy的ball在X轴被阻，破之
     frame.on_x_restrict = { id: '20', sounds: data.base.hit_sounds }
   }
