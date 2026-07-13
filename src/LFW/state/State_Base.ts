@@ -1,6 +1,6 @@
 import { Defines, StateEnum, type IFrameInfo, type INextFrame, type IVector3 } from "../defines";
 import type { Entity } from "../entity/Entity";
-import { clamp, round } from "../utils";
+import { clamp, float_equal, round } from "../utils";
 import { spawn_buring_smoke } from "./spawn_buring_smoke";
 export class State_Base {
   readonly state: number | string;
@@ -39,15 +39,27 @@ export class State_Base {
   /** "病毒就关闭了" */
   on_leave_ground?(e: Entity): void;
 
+  /**
+   * 实体将被被地形限制位置
+   *
+   * @param {Entity} e 实体
+   * @param {number} x 新位置 X
+   * @param {number} y 新位置 Y
+   * @param {number} z 新位置 Z
+   * @memberof State_Base
+   */
   on_restrict(e: Entity, x: number, y: number, z: number): void {
     let vx: number | null = null;
     let vz: number | null = null;
     let vy: number | null = null;
-    if (x != e.position.x) vx = clamp(e.velocity.x, -0.1, 0.1);
-    if (y != e.position.y) vy = clamp(e.velocity.y, -0.1, 0.1);
-    if (z != e.position.z) vz = clamp(e.velocity.z, -0.1, 0.1);
+    if (!float_equal(x, e.position.x))
+      vx = clamp(e.velocity.x, -0.1, 0.1);
+    if (!float_equal(y, e.position.y))
+      vy = clamp(e.velocity.y, -0.1, 0.1);
+    if (!float_equal(z, e.position.z))
+      vz = clamp(e.velocity.z, -0.1, 0.1);
     if (vx !== null || vz !== null || vy !== null)
-      e.set_velocity(vx, vy, vz)
+      e.set_velocity(vx, vy, vz);
     e.position.x = x;
     e.position.y = y;
     e.position.z = z;

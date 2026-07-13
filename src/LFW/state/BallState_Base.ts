@@ -17,13 +17,10 @@ export class BallState_Base extends State_Base {
     }
   }
   override on_restrict(e: Entity, x: number, y: number, z: number): void {
-    let vx: number | null = null;
-    let vy: number | null = null;
-    let vz: number | null = null;
-    if (!float_equal(x, e.position.x)) vx = 0;
-    if (!float_equal(y, e.position.y)) vy = 0;
-    if (!float_equal(z, e.position.z)) vz = 0;
-
+    /*
+    目前只限制 X 轴
+    Z 轴限制则
+    */
     if (
       !float_equal(x, e.position.x) && (
         e.frame.state == StateEnum.Ball_Flying ||
@@ -31,18 +28,9 @@ export class BallState_Base extends State_Base {
         e.frame.state == StateEnum.Ball_3006
       )
     ) {
-      e.position.x = x;
-      e.position.y = y;
-      e.position.z = z;
       e.enter_frame({ id: "20" }) // stupid hard-code
       e.play_sound(e.data.base.hit_sounds)
-      e.world.restrict(e);
-    } else {
-      e.position.x = x;
-      e.position.y = y;
-      e.position.z = z;
     }
-    if (vx !== null || vz !== null || vy !== null)
-      e.set_velocity(vx, vy, vz)
+    super.on_restrict(e, x, y, z);
   }
 }

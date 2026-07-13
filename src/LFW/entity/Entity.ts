@@ -2332,15 +2332,19 @@ export class Entity {
     ) this._state?.on_restrict?.(this, x, y, z);
     this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
   }
+
   set_position_x(x: number) {
     this.set_position(x)
   }
+
   set_position_y(y: number) {
     this.set_position(null, y)
   }
+
   set_position_z(z: number) {
     this.set_position(null, null, z)
   }
+  
   transform(data: IEntityData) {
     if (!is_human_ctrl(this.ctrl))
       this.ctrl = this.lfw.factory.create_ctrl(data.id, this.ctrl.player_id, this);
