@@ -89,6 +89,8 @@ export class Ground {
    * 计算被地形阻挡后的替代位置。当角色无法进入目标坐标时，
    * 返回最近的可通行边界点（优先沿 X 轴或 Z 轴方向推挤）。
    *
+   * [斜坡与碰撞](../../docs/dev/terrain_slope_and_block/terrain_slope_and_block.md)
+   * 
    * @param {Readonly<ITerrainInfo>} seg 地形信息
    * @param {number} x   目标 X 坐标
    * @param {number} y   当前 Y 坐标（高度）
@@ -103,16 +105,26 @@ export class Ground {
 
     if (stand_y !== null) return null;
 
-
     let block_x: number | null;
     let block_z: number | null;
     let x_len: number;
     let z_len: number;
 
-    const l = seg.x1 - 1
-    const r = seg.x2 + 1
-    const f = seg.z1 - 1
-    const n = seg.z2 + 1
+    let l = seg.x1 - 1;
+    let r = seg.x2 + 1;
+    let f = seg.z1 - 1;
+    let n = seg.z2 + 1;
+    if (seg.type == TerrainEnum.SlopeH) {
+      const t = (y - seg.h1) / (seg.h2 - seg.h1);
+      const slope_x = clamp(seg.x1 + t * (seg.x2 - seg.x1), l, r);
+      if (slope_x > x) r = slope_x + 1;
+      else l = slope_x - 1;
+    } else if (seg.type == TerrainEnum.SlopeV) {
+      const t = (y - seg.h1) / (seg.h2 - seg.h1);
+      const slope_z = clamp(seg.z1 + t * (seg.z2 - seg.z1), f, n);
+      if (slope_z > z) n = slope_z + 1;
+      else f = slope_z - 1;
+    }
 
     const dist_l = (x - l);
     const dist_r = (r - x);

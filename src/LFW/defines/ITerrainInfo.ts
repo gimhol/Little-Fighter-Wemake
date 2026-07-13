@@ -16,8 +16,8 @@ export interface ITerrainInfo {
   x2: number; // right
   z1: number; // far
   z2: number; // near
-  h1: number; // y
-  h2: number; // y
+  h1: number; // left-y or far-y
+  h2: number; // right-y or near-y
 }
 
 export function terrain_info_new(): ITerrainInfo {
