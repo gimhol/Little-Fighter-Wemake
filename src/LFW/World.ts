@@ -385,19 +385,24 @@ export class World {
    * @memberof World
    */
   restrict(e: Entity): IVector3Like {
-    const [left, right, near, far] = this.get_bound(e);
     let { x, z, y } = e.position;
+    if (e.bearer || e.catcher) {
+      e.terrain = void 0;
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
+      return this._restrict_result;
+    }
+    const [left, right, near, far] = this.get_bound(e);
     z = clamp(z, far, near)
-
     if (e.base_type === WeaponEnum.Drink) {
       const { drink_l, drink_r } = this.stage;
       x = clamp(x, drink_l, drink_r);
-    }
-
-    if (is_fighter(e)) {
+    } else if (is_fighter(e)) {
       x = clamp(x, left, right);
     } else if (x < left || x > right) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
+      e.terrain = void 0;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
       this._restrict_result.z = z;
