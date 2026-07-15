@@ -425,6 +425,7 @@ export class World {
         if (test_seg && this.ground.block(test_seg, p.x, y, p.z)) {
           if (i == pos.length - 1) {
             // 无法挤出，直接抬上去算了
+            // TODO: 物体被丢出时, 由于被丢者位置由丢者决定，被丢者会有很大概率无法被地形挤出。
             e.terrain = seg;
             y = this.ground.y(seg, x, z);
 
