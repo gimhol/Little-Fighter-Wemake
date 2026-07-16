@@ -1420,8 +1420,11 @@ export class Entity {
       id: holding.data.indexes?.in_the_skys?.[0] ?? Builtin_FrameId.Auto,
     };
     holding.enter_frame(nf);
-    holding.set_position_y(holding.ground_y);
-
+    holding.set_position(
+      holding.position.x,
+      holding.position.y,
+      holding.position.z
+    );
   }
 
   hp_recovering(): void {
