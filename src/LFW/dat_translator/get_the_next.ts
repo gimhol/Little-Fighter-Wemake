@@ -1,4 +1,4 @@
-import { Builtin_FrameId, Defines, FacingFlag, type INextFrame } from "../defines";
+import { FrameId, Defines, FacingFlag, type INextFrame } from "../defines";
 import { cook_next_frame_cost as cook_next_frame_cost } from "./cook_next_frame_cost";
 
 export const get_next_frame_by_raw_id = (

@@ -6,7 +6,7 @@ import { type Collision, collision_get } from "./collision/Collision";
 import { collisions_keeper } from "./collision/CollisionKeeper";
 import { BallController } from "./controller/BallController";
 import {
-  BFID,
+  FID,
   BGG,
   CheatEnum,
   Defines,
@@ -681,7 +681,7 @@ export class World {
     for (let i = 0; i < this.entities.length; i++) {
       const a = this.entities[i];
       if (offset) this.entities[i - offset] = a;
-      if (a.frame.id === BFID.Gone || a.state === SE.Gone) {
+      if (a.frame.id === FID.Gone || a.state === SE.Gone) {
         a.hp = a.hp_r = 0;
         this._gones.add(a);
         ++offset

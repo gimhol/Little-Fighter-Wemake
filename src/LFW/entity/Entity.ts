@@ -7,7 +7,7 @@ import type { Collision } from "../collision/Collision";
 import { BaseController } from "../controller/BaseController";
 import { InvalidController } from "../controller/InvalidController";
 import {
-  Builtin_FrameId,
+  FrameId,
   Defines,
   EMPTY_FRAME_INFO,
   EntityEnum, EntityGroup, FacingFlag,
@@ -503,7 +503,7 @@ export class Entity {
       this._state?.on_dead?.(this);
       if (
         this.state !== StateEnum.Gone &&
-        this.frame.id !== Builtin_FrameId.Gone &&
+        this.frame.id !== FrameId.Gone &&
         this._data.base.brokens?.length
       ) {
         this.apply_opoints(this._data.base.brokens);
@@ -1412,12 +1412,15 @@ export class Entity {
     holding.bearer = null;
     this.holding = null;
 
+    const on_hands = holding.data.indexes?.on_hands;
+    const in_the_skys = holding.data.indexes?.in_the_skys
+
     const nf = this.find_align_frame(
       holding.frame.id,
-      holding.data.indexes?.on_hands,
-      holding.data.indexes?.in_the_skys,
+      on_hands,
+      in_the_skys,
     ) ?? {
-      id: holding.data.indexes?.in_the_skys?.[0] ?? Builtin_FrameId.Auto,
+      id: FrameId.Auto,
     };
     holding.enter_frame(nf);
     holding.set_position(
@@ -1533,10 +1536,10 @@ export class Entity {
       this._blinking_duration = rf(this._blinking_duration - this._atom_time);
       if (this._blinking_duration <= 0) {
         this._blinking_duration = 0;
-        if (this._after_blink === Builtin_FrameId.Gone) {
+        if (this._after_blink === FrameId.Gone) {
           this.frame = GONE_FRAME_INFO;
           this.arest = 0;
-        } else if (this._after_blink === Builtin_FrameId.Respawn) {
+        } else if (this._after_blink === FrameId.Respawn) {
           this.hp = this.hp_r = this.hp_max;
 
           let max_distance = Number.MAX_SAFE_INTEGER
@@ -2012,11 +2015,11 @@ export class Entity {
    */
   blink_and_gone(duration: number) {
     this._blinking_duration = duration;
-    this._after_blink = Builtin_FrameId.Gone;
+    this._after_blink = FrameId.Gone;
   }
   blink_and_respawn(duration: number) {
     this._blinking_duration = duration;
-    this._after_blink = Builtin_FrameId.Respawn;
+    this._after_blink = FrameId.Respawn;
   }
 
   /**
@@ -2125,7 +2128,7 @@ export class Entity {
   }
 
   enter_frame(which: TNextFrame, fallback = false): EnterFrameResult {
-    if (this.frame.id === Builtin_FrameId.Gone)
+    if (this.frame.id === FrameId.Gone)
       return EnterFrameResult.Gone;
 
     const result = this.get_next_frame(which);
@@ -2285,12 +2288,12 @@ export class Entity {
 
     switch (id) {
       case void 0:
-      case Builtin_FrameId.None:
-      case Builtin_FrameId.Self:
+      case FrameId.None:
+      case FrameId.Self:
         return this.frame;
-      case Builtin_FrameId.Auto:
+      case FrameId.Auto:
         return this.find_auto_frame();
-      case Builtin_FrameId.Gone:
+      case FrameId.Gone:
         return GONE_FRAME_INFO;
     }
     if (!this._data.frames[id]) {

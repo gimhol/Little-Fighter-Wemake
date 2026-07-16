@@ -1,4 +1,4 @@
-import { BdyKind, Builtin_FrameId, OID, Defines, EntityEnum, EntityGroup, type IOpointInfo, StateEnum } from "../defines";
+import { BdyKind, FrameId, OID, Defines, EntityEnum, EntityGroup, type IOpointInfo, StateEnum } from "../defines";
 import { ActionType } from "../defines/actions/ActionType";
 import { CollisionVal as C_Val } from "../defines/CollisionVal";
 import type { IEntityData } from "../defines/IEntityData";

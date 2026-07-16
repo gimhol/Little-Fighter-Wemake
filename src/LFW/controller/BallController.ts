@@ -1,5 +1,5 @@
 
-import { BFID, ChaseStratedy, EMPTY_FRAME_INFO, FrameBehavior, GK, type IChaseInfo } from "../defines";
+import { FID, ChaseStratedy, EMPTY_FRAME_INFO, FrameBehavior, GK, type IChaseInfo } from "../defines";
 import { ChaseLost } from "../defines/ChaseLost";
 import type { Entity } from "../entity/Entity";
 import { closer_one } from "../helper";
@@ -44,8 +44,8 @@ export class BallController extends BaseController {
   should_chase(other: Entity | null): boolean {
     if (!other) return false;
     if (
-      other.frame.id === BFID.Gone ||
-      other.frame.id === BFID.None
+      other.frame.id === FID.Gone ||
+      other.frame.id === FID.None
     ) return false;
     const { chase } = this.entity.frame;
     if (!chase) return false;

@@ -1,6 +1,6 @@
 import { CMD } from "../../defines/CMD";
 import { StatBarType } from "../../entity/StatBarType";
-import { Builtin_FrameId, OID as OID, Defines } from "../../defines";
+import { FrameId, OID as OID, Defines } from "../../defines";
 import { TeamEnum as TE } from "../../defines/TeamEnum";
 import { Entity } from "../../entity/Entity";
 import { Times } from "../../utils/Times";

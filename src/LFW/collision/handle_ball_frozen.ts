@@ -1,4 +1,4 @@
-import { OID, Builtin_FrameId, Defines, EntityGroup, GONE_FRAME_INFO, type IItrInfo, type IOpointInfo, ItrKind, StateEnum } from "../defines";
+import { OID, FrameId, Defines, EntityGroup, GONE_FRAME_INFO, type IItrInfo, type IOpointInfo, ItrKind, StateEnum } from "../defines";
 import { Entity, is_ball, is_fighter, turn_face } from "../entity";
 import { round } from "../utils";
 

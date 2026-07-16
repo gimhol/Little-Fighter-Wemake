@@ -1,4 +1,4 @@
-import { Builtin_FrameId, Defines, FrameBehavior, SpeedMode, WeaponEnum } from "../defines";
+import { FrameId, Defines, FrameBehavior, SpeedMode, WeaponEnum } from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
 import type { IDatContext } from "../defines/IDatContext";
 import type { IEntityData } from "../defines/IEntityData";

@@ -5,7 +5,7 @@ export * from "./BdyKind";
 export * from "./BinOp";
 export * from "./BotStateEnum";
 export * from "./BotVal";
-export * from "./Builtin_FrameId";
+export * from "./FrameId";
 export * from "./CMD";
 export * from "./CPointKind";
 export * from "./ChaseLost";

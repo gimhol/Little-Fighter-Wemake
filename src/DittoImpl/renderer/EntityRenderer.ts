@@ -1,4 +1,4 @@
-import { BFID, is_fighter, OID, SE, type Entity, type LFW, type World } from "@/LFW";
+import { FID, is_fighter, OID, SE, type Entity, type LFW, type World } from "@/LFW";
 import { Vector3 } from "../_t";
 import { EntityCtrlRender } from "./EntityCtrlRender";
 import { EntityMainRender } from "./EntityMainRender";
@@ -26,7 +26,7 @@ export class EntityRenderer {
   readonly position = new Vector3();
   get invisible() {
     const { invisible, frame } = this.entity;
-    if (frame.id == BFID.Gone) return true
+    if (frame.id == FID.Gone) return true
     if (frame.state == SE.Gone) return true
     return invisible;
   }

@@ -1,6 +1,6 @@
 import { round } from "../utils";
 import { range } from "../utils/math/range";
-import { Builtin_FrameId } from "./Builtin_FrameId";
+import { FrameId } from "./FrameId";
 import { CheatEnum } from "./CheatType";
 import { Difficulty } from "./Difficulty";
 import { FacingFlag } from "./FacingFlag";
@@ -167,16 +167,16 @@ export namespace Defines {
   };
 
   export const NEXT_FRAME_GONE: Readonly<INextFrame> = {
-    id: Builtin_FrameId.Gone,
+    id: FrameId.Gone,
   };
   export const NEXT_FRAME_AUTO: Readonly<INextFrame> = {
-    id: Builtin_FrameId.Auto,
+    id: FrameId.Auto,
   };
   export const NEXT_FRAME_SELF: Readonly<INextFrame> = {
-    id: Builtin_FrameId.Self,
+    id: FrameId.Self,
   };
   export const NEXT_FRAME_AUTO_BACKWARD: Readonly<INextFrame> = {
-    id: Builtin_FrameId.Auto,
+    id: FrameId.Auto,
     facing: FacingFlag.Backward,
   };
   export interface ICheatInfo {
