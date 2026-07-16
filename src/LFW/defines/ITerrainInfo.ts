@@ -11,6 +11,8 @@ export const enum TerrainEnum {
 }
 
 export interface ITerrainInfo {
+  id?: string,
+  name?: string,
   type: number;
   x1: number; // left
   x2: number; // right
@@ -62,6 +64,8 @@ export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
         TerrainEnum.SlopeV
       ]
     },
+    name: { type: "string" },
+    id: { type: "string" },
     x1: { type: "number", nullable: false, },
     x2: { type: "number", nullable: false, },
     z1: { type: "number", nullable: false, },

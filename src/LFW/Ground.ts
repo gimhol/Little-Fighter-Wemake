@@ -8,6 +8,17 @@ export class Ground {
   readonly world: World;
 
   readonly step: number = 10;
+  private _land: Readonly<ITerrainInfo> = {
+    id: 'GROUND_0',
+    name: 'GROUND_0',
+    type: TerrainEnum.Flat,
+    x1: Number.MIN_SAFE_INTEGER,
+    x2: Number.MAX_SAFE_INTEGER,
+    z1: Number.MIN_SAFE_INTEGER,
+    z2: Number.MAX_SAFE_INTEGER,
+    h1: 0,
+    h2: 0,
+  };
 
   constructor(world: World) {
     this.world = world
@@ -18,24 +29,26 @@ export class Ground {
    * 
    * @param {number} x X坐标
    * @param {number} z Z坐标
-   * @returns {Readonly<ITerrainInfo> | undefined} 地形信息
+   * @returns {Readonly<ITerrainInfo>} 地形信息，找不到时返回默认平台
    */
-  segment(x: number, z: number): Readonly<ITerrainInfo> | undefined {
+  segment(x: number, z: number): Readonly<ITerrainInfo> {
     const { terrain } = this.world.bg.data;
-    if (!terrain?.length) return void 0;
-
-    let best: ITerrainInfo | undefined;
-    let best_y: number | undefined;
-    for (const seg of terrain) {
-      if (x < seg.x1 || x > seg.x2) continue;
-      if (z < seg.z1 || z > seg.z2) continue;
-      const seg_y = this.y(seg, x, z);
-      if (best_y === void 0 || seg_y > best_y) {
-        best_y = seg_y;
-        best = seg;
+    if (terrain?.length) {
+      let best: ITerrainInfo | undefined;
+      let best_y: number | undefined;
+      for (const seg of terrain) {
+        if (x < seg.x1 || x > seg.x2) continue;
+        if (z < seg.z1 || z > seg.z2) continue;
+        const seg_y = this.y(seg, x, z);
+        if (best_y === void 0 || seg_y > best_y) {
+          best_y = seg_y;
+          best = seg;
+        }
       }
+      if (best) return best;
     }
-    return best;
+    // 找不到地形时返回默认平台
+    return this._land;
   }
 
   /**
@@ -95,15 +108,21 @@ export class Ground {
    * @param {number} x   目标 X 坐标
    * @param {number} y   当前 Y 坐标（高度）
    * @param {number} z   目标 Z 坐标
-   * @returns {{ x: number, z: number }[]} 替代位置数组（按优先级排序），若可直接进入则返回 null
+   * @returns {{ x: number, z: number }[]} 
+   *    替代位置数组（按优先级排序)，
+   *    若可直接进入则返回 null, 若无法替代，返回空数组
    */
   block(
     seg: Readonly<ITerrainInfo>,
-    x: number, y: number, z: number
+    x: number,
+    y: number,
+    z: number
   ): IBlockResult | null {
     const stand_y = this.enterable(seg, x, y, z);
 
     if (stand_y !== null) return null;
+
+    if (seg.id == this._land.id) return [];
 
     let block_x: number | null;
     let block_z: number | null;

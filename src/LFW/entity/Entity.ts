@@ -1408,19 +1408,20 @@ export class Entity {
   drop_holding(): void {
     if (!this.holding) return;
     this.lfw.mt.mark = "dh_1";
-    const w = this.holding;
-    const nf =
-      this.find_align_frame(
-        w.frame.id,
-        w.data.indexes?.on_hands,
-        w.data.indexes?.in_the_skys,
-      ) ?? {
-        id: w.data.indexes?.in_the_skys?.[0] ?? Builtin_FrameId.Auto,
-      };
-    w.enter_frame(nf);
-    if (w.position.y < w.ground_y) w.set_position_y(w.ground_y);
-    w.bearer = null;
+    const { holding } = this;
+    holding.bearer = null;
     this.holding = null;
+
+    const nf = this.find_align_frame(
+      holding.frame.id,
+      holding.data.indexes?.on_hands,
+      holding.data.indexes?.in_the_skys,
+    ) ?? {
+      id: holding.data.indexes?.in_the_skys?.[0] ?? Builtin_FrameId.Auto,
+    };
+    holding.enter_frame(nf);
+    holding.set_position_y(holding.ground_y);
+
   }
 
   hp_recovering(): void {
@@ -2038,8 +2039,7 @@ export class Entity {
     const bearer = this.bearer;
     if (!bearer) return;
     if (this.hp <= 0 && this.bearer) {
-      bearer.holding = null;
-      this.bearer = null;
+      this.drop_holding()
       return;
     }
     const {

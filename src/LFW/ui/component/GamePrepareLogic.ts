@@ -98,7 +98,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       const x = this.lfw.mt.range(xx1, xx2) + cam_x;
       const z = this.lfw.mt.range(far, near)
       const seg = this.world.ground.segment(x, z)
-      const y = seg ? this.world.ground.y(seg, x, z) : 0;
+      const y = this.world.ground.y(seg, x, z);
       fighter.set_position(x, y, z);
       fighter.blinking = this.world.dataset.begin_blink_time;
       if (is_vs_mode) fighter.mp = (fighter.mp_max * 2 / 5)

@@ -410,33 +410,25 @@ export class World {
     }
 
     const seg = this.ground.segment(x, z);
-    if (!seg) {
-      e.terrain = void 0;
-      this._restrict_result.x = x;
-      this._restrict_result.y = y;
-      this._restrict_result.z = z;
-      return this._restrict_result;
-    }
     const pos = this.ground.block(seg, x, y, z);
-    if (pos?.length) {
-      for (let i = 0; i < pos.length; i++) {
-        const p = pos[i];
-        const test_seg = this.ground.segment(p.x, p.z);
-        if (test_seg && this.ground.block(test_seg, p.x, y, p.z)) {
-          if (i == pos.length - 1) {
-            // 无法挤出，直接抬上去算了
-            // TODO: 物体被丢出时, 由于被丢者位置由丢者决定，被丢者会有很大概率无法被地形挤出。
-            e.terrain = seg;
-            y = this.ground.y(seg, x, z);
-
-          }
+    if (pos) { // 被挡了，需要放到新位置;
+      let index = 0
+      for (; index < pos.length; ++index) {
+        const p = pos[index];
+        const seg = this.ground.segment(p.x, p.z);
+        if (this.ground.block(seg, p.x, y, p.z))
           continue;
-        }
         // 成功挤出
-        e.terrain = test_seg;
+        e.terrain = seg;
         x = p.x;
         z = p.z;
         break;
+      }
+      if (index >= pos.length) {
+        // 无法挤出，直接抬上去算了
+        // TODO: 物体被丢出时, 由于被丢者位置由丢者决定，被丢者会有很大概率无法被地形挤出。
+        e.terrain = seg;
+        y = this.ground.y(seg, x, z);
       }
     } else {
       e.terrain = seg;
