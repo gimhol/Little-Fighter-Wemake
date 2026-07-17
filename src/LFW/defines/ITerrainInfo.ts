@@ -64,8 +64,8 @@ export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
         TerrainEnum.SlopeV
       ]
     },
-    name: { type: "string" },
-    id: { type: "string" },
+    name: { type: "string", nullable: true, },
+    id: { type: "string", nullable: true, },
     x1: { type: "number", nullable: false, },
     x2: { type: "number", nullable: false, },
     z1: { type: "number", nullable: false, },

@@ -30,6 +30,18 @@ export interface IBgLayerInfo {
   /** UV偏移动画，纵轴(像素/秒) */
   offsetAnimY?: number;
 }
+export function bg_layer_info_new(): IBgLayerInfo {
+  return {
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    z: 0,
+    w: 0,
+    h: 0
+  }
+}
+
 export const bg_layer_info_fields = fields<IBgLayerInfo>({
   id: str("预留ID"),
   name: str("预留名称"),
@@ -50,7 +62,6 @@ export const bg_layer_info_fields = fields<IBgLayerInfo>({
   offsetAnimX: flt("UV动画X"),
   offsetAnimY: flt("UV动画Y"),
 })
-
 export const Schema_IBgLayerInfo = make_schema<IBgLayerInfo>({
   key: "IBgLayerInfo",
   type: "object",

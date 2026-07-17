@@ -20,9 +20,8 @@ export function xml_to_bg_data(el: IXMLElement): IBgData {
 
   // <layer> 子元素
   for (const child of el.children_by_tag("layer")) {
-    if (ret.layers?.length) {
-      ret.layers.push(xml_to_bg_layer(child, ret.layers.length));
-    }
+    ret.layers ??= [];
+    ret.layers.push(xml_to_bg_layer(child, ret.layers.length));
   }
 
   reorder_keys(ret, bg_data_info_fields);
