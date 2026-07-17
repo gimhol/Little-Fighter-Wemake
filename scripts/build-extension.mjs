@@ -90,7 +90,7 @@ if (process.argv.includes('--zip')) {
   const ZIP_PATH = join(ROOT, `release/lfw-extension-v${pkg.version}.zip`);
   mkdirSync(dirname(ZIP_PATH), { recursive: true });
   try {
-    execSync(`npx bestzip "${ZIP_PATH}" dist-extension/`, { cwd: ROOT, stdio: 'inherit' });
+    execSync(`npx bestzip "${ZIP_PATH}" .`, { cwd: EXT_DIST, stdio: 'inherit' });
     console.log(`[ext] ✅ Zip: ${ZIP_PATH}`);
   } catch {
     console.log('[ext] Hint: npm i -D bestzip');

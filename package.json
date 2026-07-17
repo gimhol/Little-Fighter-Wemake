@@ -41,6 +41,8 @@
     "pack:ext": "node scripts/package-extension.mjs",
     "pack:ext:crx": "node scripts/package-extension.mjs --crx",
     "pack:ext:key": "node scripts/package-extension.mjs --key-gen",
+    "build:ext:firefox": "node scripts/package-extension-firefox.mjs",
+    "build:ext:firefox:only": "node scripts/package-extension-firefox.mjs --no-build",
     "json2": "ts-json-schema-generator --path src/LFW/defines/IBgData.ts > .vscode/schema/bg.schema.json5",
     "json3": "ts-json-schema-generator --path src/LFW/defines/IDataLists.ts > .vscode/schema/idx.schema.json5",
     "json4": "ts-json-schema-generator --path src/LFW/defines/IEntityData.ts --type IEntityData > .vscode/schema/obj.schema.json5",
