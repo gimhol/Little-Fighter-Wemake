@@ -7,10 +7,10 @@ import type { Collision } from "../collision/Collision";
 import { BaseController } from "../controller/BaseController";
 import { InvalidController } from "../controller/InvalidController";
 import {
-  FrameId,
   Defines,
   EMPTY_FRAME_INFO,
   EntityEnum, EntityGroup, FacingFlag,
+  FrameId,
   GK,
   GONE_FRAME_INFO,
   HitFlag,
@@ -870,14 +870,19 @@ export class Entity {
     }
     const { origin_type } = opoint;
     let { x: pos_x, y: pos_y, z: pos_z } = emitter.position;
+    const opoint_y = (opoint.__gen_y ? opoint.__gen_y.get(emitter) : opoint.y) ?? 0;
+    const opoint_x = (opoint.__gen_x ? opoint.__gen_x.get(emitter) : opoint.x) ?? 0;
+    const opoint_z = (opoint.__gen_z ? opoint.__gen_z.get(emitter) : opoint.z) ?? 2;
+
+
     if (origin_type === 1) {
-      pos_y = pos_y - opoint.y;
-      pos_x = pos_x + emitter.facing * opoint.x;
+      pos_y = pos_y - opoint_y;
+      pos_x = pos_x + emitter.facing * opoint_x;
     } else {
-      pos_y = pos_y + emitter_frame.centery - opoint.y;
-      pos_x = pos_x - emitter.facing * (emitter_frame.centerx - opoint.x);
+      pos_y = pos_y + emitter_frame.centery - opoint_y;
+      pos_x = pos_x - emitter.facing * (emitter_frame.centerx - opoint_x);
     }
-    this.set_position(pos_x, pos_y, pos_z + (opoint.z ?? 2));
+    this.set_position(pos_x, pos_y, pos_z + opoint_z);
 
     const result = this.get_next_frame(opoint.action);
     facing = result?.which.facing
@@ -887,12 +892,10 @@ export class Entity {
     if (result) this.enter_frame(result.which);
     else this.enter_frame(this.find_auto_frame());
 
-    let {
-      dvx: o_dvx = 0,
-      dvy: o_dvy = 0,
-      dvz: o_dvz = 0,
-      speedz: o_speedz = this.get_opoint_speed_z(emitter, opoint),
-    } = opoint;
+    let { speedz: o_speedz = this.get_opoint_speed_z(emitter, opoint) } = opoint;
+    let o_dvx = (opoint.__gen_dvx ? opoint.__gen_dvx.get(emitter) : opoint.dvx) ?? 0
+    let o_dvy = (opoint.__gen_dvy ? opoint.__gen_dvy.get(emitter) : opoint.dvy) ?? 0
+    let o_dvz = (opoint.__gen_dvz ? opoint.__gen_dvz.get(emitter) : opoint.dvz) ?? 0
 
     const { weight } = this;
     o_dvy = o_dvy / weight;
@@ -1047,11 +1050,11 @@ export class Entity {
             break;
           case OpointSpreading.Spreading:
             if (opoint.__spreading_random_x)
-              v.x = opoint.__spreading_random_x.take();
+              v.x = opoint.__spreading_random_x.get();
             if (opoint.__spreading_random_y)
-              v.y = opoint.__spreading_random_y.take();
+              v.y = opoint.__spreading_random_y.get();
             if (opoint.__spreading_random_z)
-              v.z = opoint.__spreading_random_z.take();
+              v.z = opoint.__spreading_random_z.get();
             facing = v.x < 0 ? -1 : v.x > 0 ? 1 : facing;
             break;
         }
@@ -1061,11 +1064,11 @@ export class Entity {
           case OpointSpreading.FloatRange: {
             const { x, y, z } = e.velocity;
             this.lfw.mt.mark = "ao_x";
-            const xx = opoint.__spreading_random_x?.take() ?? x;
+            const xx = opoint.__spreading_random_x?.get() ?? x;
             this.lfw.mt.mark = "ao_y";
-            const yy = opoint.__spreading_random_y?.take() ?? y;
+            const yy = opoint.__spreading_random_y?.get() ?? y;
             this.lfw.mt.mark = "ao_z";
-            const zz = opoint.__spreading_random_z?.take() ?? z;
+            const zz = opoint.__spreading_random_z?.get() ?? z;
             e.set_velocity(xx, yy, zz);
             break;
           }
@@ -1137,9 +1140,6 @@ export class Entity {
     entity.dead_gone = true;
     for (const [, v] of this.vrests) entity.add_v_rest(collision_clone(v));
 
-
-    entity._ground_y = entity.terrain ? this.world.ground.y(entity.terrain, entity.position.x, entity.position.z) : 0;
-    entity.is_on_ground = this.position.y <= this._ground_y
     return entity;
   }
 
@@ -1628,26 +1628,27 @@ export class Entity {
     if (!this.shaking && !this.motionless) {
       const { _ground_y, is_on_ground } = this;
 
-      /** 
-       是否本帧落地.
-
-       注意：不能简单用 velocity.y <= 0 判断落地，因为存在Y速度向上但仍是落地的情况。
-       例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
-       此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
-      */
-      const just_land = !is_on_ground && (
-        this.position.y <= _ground_y
-      ) && (
-          // 有点糟
-          _ground_y > 0 || this.velocity.y < 0
-        )
-
       /** itr/bdy与地面的碰撞 */
       const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
       if (__hit_ground_bdys) this.update_itr_bdy_hit_ground(__hit_ground_bdys);
       if (__hit_ground_itrs) this.update_itr_bdy_hit_ground(__hit_ground_itrs);
 
       if (this.frame.landable && !this._bearer && !this._catcher) {
+
+        /** 
+         是否本帧落地.
+  
+         注意：不能简单用 velocity.y <= 0 判断落地，因为存在Y速度向上但仍是落地的情况。
+         例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
+         此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
+        */
+        const just_land = !is_on_ground && (
+          this.position.y <= _ground_y
+        ) && (
+            // 有点糟
+            _ground_y > 0 || this.velocity.y < 0
+          )
+
         // 落地
         if (just_land) {
           this.is_on_ground = true;

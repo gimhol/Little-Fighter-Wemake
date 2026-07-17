@@ -54,8 +54,8 @@ class Inner {
   alias_map = new Map<string, IEntityData>();
   stages: IStageInfo[] = [Defines.VOID_STAGE];
   bot_map = new Map<string, IBotData>();
-  randomings = new Map<string, Randoming<IEntityData>>();
-  bg_randomings = new Map<string, Randoming<IBgData>>();
+  randomings = new Map<string, Randoming<IEntityData | undefined>>();
+  bg_randomings = new Map<string, Randoming<IBgData | undefined>>();
 
   constructor(mgr: DatMgr, id: number) {
     this.id = id;
@@ -233,7 +233,7 @@ export class DatMgr {
   get inner_id(): number {
     return this._inner_id;
   }
-  
+
   constructor(lfw: LFW) {
     this.lfw = lfw;
     this._inner = new Inner(this, ++this._inner_id);
@@ -293,7 +293,7 @@ export class DatMgr {
     const { entity } = this.find_group(group);
     this._inner.randomings.set(
       group,
-      ret = new Randoming([...entity], this.lfw)
+      ret = new Randoming([...entity], this.lfw.mt)
     );
     return ret
   }
@@ -370,12 +370,12 @@ export class DatMgr {
         bg_set.add(bg)
       }
     }
-    this._inner.bg_randomings.set(key, ret = new Randoming(Array.from(bg_set), this.lfw));
+    this._inner.bg_randomings.set(key, ret = new Randoming(Array.from(bg_set), this.lfw.mt));
     return ret
   }
   /** @deprecated 我突然觉得这玩意不该由DatMgr负责... */
   get_random_bg(groups: string[]) {
-    return this.get_bg_randoming_of_group(groups).take();
+    return this.get_bg_randoming_of_group(groups).get();
   }
 }
 interface IFindPredicate<T> {

@@ -189,14 +189,22 @@ export interface IOpointInfo {
   inherit_speed_y?: number;
   inherit_speed_z?: number;
 
-  
+
   __indicator_info?: IQubePair;
   /** 运行时生成 */
-  __spreading_random_x?: { take(): number };
+  __spreading_random_x?: { get(): number };
   /** 运行时生成 */
-  __spreading_random_y?: { take(): number };
+  __spreading_random_y?: { get(): number };
   /** 运行时生成 */
-  __spreading_random_z?: { take(): number };
+  __spreading_random_z?: { get(): number };
+
+  __gen_dvx?: { get(emitter: unknown): number };
+  __gen_dvy?: { get(emitter: unknown): number };
+  __gen_dvz?: { get(emitter: unknown): number };
+
+  __gen_x?: { get(emitter: unknown): number };
+  __gen_y?: { get(emitter: unknown): number };
+  __gen_z?: { get(emitter: unknown): number };
 }
 
 const ALL_OPOINT_KIND = Object.values(OpointKind).filter(v => typeof v === 'number') as number[];
@@ -267,4 +275,10 @@ export const opoint_info_fields = fields<IOpointInfo>({
   __spreading_random_y: any,
   __spreading_random_z: any,
   __indicator_info: any,
+  __gen_x: any,
+  __gen_y: any,
+  __gen_z: any,
+  __gen_dvx: any,
+  __gen_dvy: any,
+  __gen_dvz: any,
 })

@@ -17,7 +17,7 @@ export * from "./CharacterState_Caught";
 export * from "./CharacterState_Dash";
 export * from "./CharacterState_Drink";
 export * from "./CharacterState_Falling";
-export * from "./CharacterState_Frozen";
+export * from "./State_Frozen";
 export * from "./CharacterState_Injured";
 export * from "./CharacterState_Jump";
 export * from "./CharacterState_Lying";

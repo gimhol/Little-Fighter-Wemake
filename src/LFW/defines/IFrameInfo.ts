@@ -241,7 +241,10 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
   __aabb_z2?: number;
   /** 运行时使用，根据seqs生成 */
   __seq_map?: Map<string, TNextFrame>;
+
+  /** 加载时生成，当itr存在on_hit_ground，会加到此 */
   __hit_ground_itrs?: IItrInfo[];
+  /** 加载时生成，当bdy存在on_hit_ground，会加到此 */
   __hit_ground_bdys?: IBdyInfo[];
 }
 

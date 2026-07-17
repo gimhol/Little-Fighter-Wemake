@@ -169,11 +169,11 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
 
       /* 四队交战 */
       { title: "4 Teams, 6 Players, VS Mode", stage_mode: false, teams: ['1', '1', '2', '2', '3', '3', '4', '4'] },
-    ], lfw)
+    ], lfw.mt)
   }
   protected static get_situation(lfw: LFW) {
     if (this._situation) return this._situation;
-    return this._situation = this.get_situations(lfw).take();
+    return this._situation = this.get_situations(lfw).get();
   }
   protected static clear_situation() {
     this._situation = null
@@ -188,7 +188,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
           v.is_starting
         )
       }),
-      lfw
+      lfw.mt
     )
   }
   get is_stage_mode(): boolean { return DemoModeLogic.get_situation(this.lfw).stage_mode }
@@ -242,7 +242,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     this.props.focus_text_node?.set_visible(false)
     let stage: IStageInfo | undefined
     if (this.is_stage_mode) {
-      stage = DemoModeLogic.get_stages(this.lfw).take()
+      stage = DemoModeLogic.get_stages(this.lfw).get()
       this.lfw.change_bg(stage?.bg ?? '?');
     } else {
       const bg = this.lfw.mt.pick(this.lfw.datas.backgrounds)

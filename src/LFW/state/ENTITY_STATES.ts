@@ -4,7 +4,7 @@ import { CharacterState_Caught } from "./CharacterState_Caught";
 import { CharacterState_Dash } from "./CharacterState_Dash";
 import { CharacterState_Drink } from "./CharacterState_Drink";
 import { CharacterState_Falling } from "./CharacterState_Falling";
-import { CharacterState_Frozen } from "./CharacterState_Frozen";
+import { State_Frozen } from "./State_Frozen";
 import { CharacterState_Injured } from "./CharacterState_Injured";
 import { CharacterState_Jump } from "./CharacterState_Jump";
 import { CharacterState_Lying } from "./CharacterState_Lying";
@@ -68,7 +68,7 @@ ENTITY_STATES.add(
   new CharacterState_Dash(),
   new CharacterState_Falling(),
   new State_Burning(),
-  new CharacterState_Frozen(),
+  new State_Frozen(),
   new CharacterState_Lying(),
   new CharacterState_Caught(),
   new CharacterState_Injured(),

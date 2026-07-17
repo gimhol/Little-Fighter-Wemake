@@ -86,7 +86,8 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
   slots: ISlotPack[] = []
   override on_start(): void {
     super.on_start?.();
-    this._randoming = new Randoming(this.lfw.datas.find_group(EG.Regular).characters, this.lfw)
+    const { characters } = this.lfw.datas.find_group(EG.Regular)
+    this._randoming = new Randoming(characters, this.lfw.mt)
     this.lfw.callbacks.add(this._lf2_callbacks)
     const heads = this.node.search_components(CharMenuHead)
     const p_nam = this.node.search_components(CharMenuPlayerName)
@@ -127,7 +128,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
   update_random() {
     for (const [_, state] of this.players) {
       if (!state.random) continue;
-      state.fighter = this._randoming?.take() ?? null
+      state.fighter = this._randoming?.get() ?? null
     }
     this.update_slots()
   }
@@ -177,7 +178,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
     if (!state) {
       const slot_state = this.prev_players.get(player) ?? new SlotState({
         team: this.teams[0] ?? TeamEnum.Independent,
-        fighter: this._randoming?.take() ?? null
+        fighter: this._randoming?.get() ?? null
       })
       slot_state.step = SlotStep.FighterSel;
       this.prev_players.delete(player)
@@ -220,7 +221,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
           state.fighter = fighters[next_idx];
         } else {
           state.random = true;
-          state.fighter = this._randoming?.take() ?? null;
+          state.fighter = this._randoming?.get() ?? null;
         }
       }
     } else if (state.step === SlotStep.TeamSel) {
@@ -236,7 +237,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
     const state = this.players.get(player)
     if (state?.step !== SlotStep.FighterSel) return
     state.random = true;
-    state.fighter = this._randoming?.take() ?? null;
+    state.fighter = this._randoming?.get() ?? null;
     this.update_slots();
 
   }
@@ -278,7 +279,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
   }
   add_com() {
     if (this.max_player <= this.players.size) return;
-    
+
     let com: PlayerInfo | null = null
     for (const [_, p] of this.lfw.players) {
       if (!p.is_com) continue;

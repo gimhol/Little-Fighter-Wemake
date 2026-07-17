@@ -62,12 +62,12 @@ export class Item {
     if (data_list.length === 1 && !randoming_list.length) {
       this.data = data_list[0]
     } else if (data_list.length && !randoming_list.length) {
-      randoming_list.push(new Randoming(data_list, this.lfw))
+      randoming_list.push(new Randoming(data_list, this.lfw.mt))
     } else if (!data_list.length && randoming_list.length) {
-      this.randoming = new Randoming(randoming_list, this.lfw)
+      this.randoming = new Randoming(randoming_list, this.lfw.mt)
     } else if (data_list.length && randoming_list.length) {
-      randoming_list.push(new Randoming(data_list, this.lfw))
-      this.randoming = new Randoming(randoming_list, this.lfw)
+      randoming_list.push(new Randoming(data_list, this.lfw.mt))
+      this.randoming = new Randoming(randoming_list, this.lfw.mt)
     } else {
       debugger;
     }
@@ -100,7 +100,7 @@ export class Item {
     range_y: number = 0,
     range_z: number = 0,
   ): boolean {
-    const data = this.data || this.randoming?.take().take();
+    const data = this.data || this.randoming?.get().get();
     if (!data) { debugger; return false; }
     const e = this.lfw.factory.create_entity(this.world, data);
     if (!e) { debugger; return false; }

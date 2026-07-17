@@ -1,6 +1,5 @@
 import { Defines, type IFrameInfo, type INextFrame, type IVector3, StateEnum, WeaponEnum } from "../defines";
 import type { Entity } from "../entity/Entity";
-import { clamp } from "../utils/math/clamp";
 import { State_Base } from "./State_Base";
 
 export class CharacterState_Base extends State_Base {

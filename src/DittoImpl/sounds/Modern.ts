@@ -40,7 +40,7 @@ export class __Modern extends BaseSounds {
   protected _sound_volume: number = 1;
   protected _bgm_muted: boolean = false;
   protected _sound_muted: boolean = false;
-  protected _bgms: Randoming<string>
+  protected _bgms: Randoming<string | undefined>
   protected _is_random: boolean = false;
   override get is_random() { return this._is_random; }
   override set is_random(v: boolean) {
@@ -164,7 +164,7 @@ export class __Modern extends BaseSounds {
   }
   constructor(lfw: LFW) {
     super(lfw);
-    this._bgms = new Randoming(this.lfw.bgms, this.lfw)
+    this._bgms = new Randoming(this.lfw.bgms, this.lfw.mt)
   }
   private _stop_bgm(): void {
     if (!this._bgm_node) return;
@@ -183,12 +183,12 @@ export class __Modern extends BaseSounds {
   _random_next = () => this.play_bgm('?')
   override play_bgm(name: string, restart?: boolean | undefined): () => void {
     if (!restart && this._prev_bgm_url === name) return () => { };
-
     const prev = this.bgm();
     const real_name = name === '?' ?
-      this._bgms.set_src(this.lfw.bgms).take() :
+      this._bgms.set_src(this.lfw.bgms).get() :
       name;
     this._stop_bgm();
+    if (!real_name) return () => { };
     this._bgm_name = real_name;
     this._prev_bgm_url = real_name;
     this._is_random = name === '?'

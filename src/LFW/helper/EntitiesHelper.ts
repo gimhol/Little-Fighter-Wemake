@@ -15,7 +15,7 @@ export class EntitiesHelper {
       TeamEnum.Team_2,
       TeamEnum.Team_3,
       TeamEnum.Team_4,
-    ], this.lfw)
+    ], this.lfw.mt)
   }
 
   get all(): Entity[] {
@@ -33,7 +33,7 @@ export class EntitiesHelper {
       const entity = this.lfw.factory.create_entity(this.lfw.world, data);
       if (!entity) continue;
       entity.ctrl = this.lfw.factory.create_ctrl(entity.data.id, "", entity)
-      entity.team = team === '?' ? this.team_randoming.take() : (team || this.lfw.new_team)
+      entity.team = team === '?' ? this.team_randoming.get() : (team || this.lfw.new_team)
       this.lfw.random_entity_info(entity)
       entity.attach();
       ret.push(entity);
