@@ -54,8 +54,8 @@ class Inner {
   alias_map = new Map<string, IEntityData>();
   stages: IStageInfo[] = [Defines.VOID_STAGE];
   bot_map = new Map<string, IBotData>();
-  randomings = new Map<string, Randoming<IEntityData | undefined>>();
-  bg_randomings = new Map<string, Randoming<IBgData | undefined>>();
+  randomings = new Map<string, Randoming<IEntityData>>();
+  bg_randomings = new Map<string, Randoming<IBgData>>();
 
   constructor(mgr: DatMgr, id: number) {
     this.id = id;
@@ -293,7 +293,7 @@ export class DatMgr {
     const { entity } = this.find_group(group);
     this._inner.randomings.set(
       group,
-      ret = new Randoming([...entity], this.lfw.mt)
+      ret = new Randoming(entity, this.lfw.mt)
     );
     return ret
   }
