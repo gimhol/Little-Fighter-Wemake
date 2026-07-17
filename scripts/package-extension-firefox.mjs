@@ -42,12 +42,16 @@ if (manifest.background?.service_worker) {
   console.log(`[firefox] ✅ 已切换 background.service_worker → scripts: ["${sw}"]`);
 }
 
-// 确保 browser_specific_settings 存在并添加 Firefox 要求的数据收集声明
+// 确保 browser_specific_settings 存在
 if (!manifest.browser_specific_settings?.gecko?.id) {
   manifest.browser_specific_settings = { gecko: {} };
 }
 manifest.browser_specific_settings.gecko.id = manifest.browser_specific_settings.gecko.id || 'little-fighter-wemake@example.com';
-manifest.browser_specific_settings.gecko.strict_min_version = manifest.browser_specific_settings.gecko.strict_min_version || '115.0';
+// data_collection_permissions 需要 Firefox 140+
+manifest.browser_specific_settings.gecko.strict_min_version = '140.0';
+manifest.browser_specific_settings.gecko.data_collection_permissions = {
+  required: ['none'],
+};
 
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
