@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Little Fighter Wemake",
-  "version": "0.1.44",
+  "version": "0.1.45",
   "description": "Little Fighter Wemake",
   "icons": {
     "16": "icon16.png",
