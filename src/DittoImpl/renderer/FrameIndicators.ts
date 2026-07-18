@@ -127,6 +127,13 @@ export class FrameIndicators {
         data = EMPTY_ARR;
         break;
     }
+
+    if (name === 'ft') {
+      if (data.length) this._show_ft();
+      else this.hide_indicators(name);
+      return;
+    }
+
     const data_len = data.length;
     const indicator_len = Math.max(this._indicators_map[name].length, data_len);
     for (let i = 0; i < indicator_len; ++i) {
@@ -144,14 +151,6 @@ export class FrameIndicators {
       let y = this._y + info.y;
       let x = this._x + info.x;
       let { w, h } = info;
-      if (name == 'ft' && i == 1) {
-        y = -this._z / 2;
-        w *= 3;
-      } else if (name === 'ft' && i == 2) {
-        y = -this._z / 2;
-        h = this._y + this._z / 2;
-        w /= 2
-      }
       indicator.userData.info = info;
       indicator.position.set(x, y, this._z);
       indicator.scale.set(w, h, 1);
@@ -165,6 +164,78 @@ export class FrameIndicators {
     indicators.length = 0;
   }
 
+  private _show_ft(): void {
+    this.hide_indicators('ft');
+
+    const info = DOT.__indicator_info?.[this.face];
+    if (!info) return;
+
+    const foot_x = this._x + info.x;
+    const foot_y = this._y + info.y;
+    const foot_z = this._z;
+    const ground_ty = this._entity.ground_y - this._z / 2;
+
+    const mp = INDICATORS_INFO.ft!;
+
+    // 脚点：小十字
+    const dot_geo = new T.LineGeometry();
+    dot_geo.setPositions([
+      -3, 0, 0, 3, 0, 0,
+      0, -3, 0, 0, 3, 0,
+    ]);
+    const dot = new T.Line2(dot_geo, new T.LineMaterial({ ...mp, linewidth: 4 }));
+    dot.position.set(foot_x, foot_y, foot_z);
+
+    // 竖线：脚点 → 地面
+    const vline_geo = new T.LineGeometry();
+    vline_geo.setPositions([0, 0, 0, 0, -1, 0]);
+    const vline = new T.Line2(vline_geo, new T.LineMaterial({ ...mp, linewidth: 2 }));
+    vline.position.set(foot_x, foot_y, foot_z);
+    vline.scale.set(1, foot_y - ground_ty, 1);
+
+    // 地面圆
+    const CIRCLE_R = 10;
+    const CIRCLE_SEG = 16;
+    const cp: number[] = [];
+    for (let i = 0; i < CIRCLE_SEG; i++) {
+      const a0 = (2 * Math.PI * i) / CIRCLE_SEG;
+      const a1 = (2 * Math.PI * (i + 1)) / CIRCLE_SEG;
+      cp.push(
+        CIRCLE_R * Math.cos(a0), CIRCLE_R * Math.sin(a0), 0,
+        CIRCLE_R * Math.cos(a1), CIRCLE_R * Math.sin(a1), 0,
+      );
+    }
+    const circle_geo = new T.LineGeometry();
+    circle_geo.setPositions(cp);
+    const circle = new T.Line2(circle_geo, new T.LineMaterial({ ...mp, linewidth: 2 }));
+    circle.position.set(foot_x, ground_ty, foot_z);
+
+    const group = new T.Object3D();
+    group.name = 'ft_indicator';
+    group.add(dot, vline, circle);
+    this.world_node.add(group);
+    this._indicators_map.ft[0] = group;
+  }
+
+  private _update_ft(): void {
+    const group = this._indicators_map.ft[0];
+    if (!group || group.children.length < 3) return;
+
+    const info = DOT.__indicator_info?.[this.face];
+    if (!info) return;
+
+    const foot_x = this._x + info.x;
+    const foot_y = this._y + info.y;
+    const foot_z = this._z;
+    const ground_ty = this._entity.ground_y - this._z / 2;
+
+    const [dot, vline, circle] = group.children;
+    dot.position.set(foot_x, foot_y, foot_z);
+    vline.position.set(foot_x, foot_y, foot_z);
+    vline.scale.set(1, foot_y - ground_ty, 1);
+    circle.position.set(foot_x, ground_ty, foot_z);
+  }
+
   on_mount(): void { }
 
   on_unmount() {
@@ -174,20 +245,17 @@ export class FrameIndicators {
     });
   }
   update_indicators() {
+    if (this._indicators_map.ft.length) {
+      this._update_ft();
+    }
+
     foreach(this._indicators_map, (indicators, name) => {
+      if (name === 'ft') return;
       foreach(indicators, (indicator, i) => {
         const info = indicator.userData.info as IQube
         let y = this._y + info.y;
         let x = this._x + info.x;
         let { w, h } = info;
-        if (name == 'ft' && i == 1) {
-          y = -this._z / 2;
-          w *= 3;
-        } else if (name === 'ft' && i == 2) {
-          y = -this._z / 2;
-          h = this._y + this._z / 2;
-          w /= 2
-        }
         indicator.userData.info = info;
         indicator.position.set(x, y, this._z);
         indicator.scale.set(w, h, 1);
