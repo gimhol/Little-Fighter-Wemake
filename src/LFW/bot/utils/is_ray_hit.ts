@@ -1,7 +1,6 @@
 import { Defines, type IBotRay } from "../../defines";
 import type { Entity } from "../../entity";
 import { abs, between } from '../../utils/math/base';
-import { project_to_line } from '../../utils/math/project_to_line';
 import { round_float } from '../../utils/math/round_float';
 
 export function is_ray_hit(a: Entity, b: Entity, ray: IBotRay) {
@@ -24,8 +23,12 @@ export function is_ray_hit(a: Entity, b: Entity, ray: IBotRay) {
   if (!between(abs(dz), min_z, max_z))
     return reverse;
 
-  const [px, pz] = project_to_line(dx, dz, x * a.facing, z)
-  const dist = round_float((dx - px) ** 2 + (dz - pz) ** 2)
-  const hit = round_float(dist) < max_d
+  const rx = x * a.facing;
+  const rz = z;
+  const d_sq = round_float(rx * rx + rz * rz);
+  if (d_sq === 0) return reverse;
+
+  const cross = rx * dz - rz * dx;
+  const hit = round_float((cross * cross) / d_sq) < max_d;
   return reverse ? !hit : hit;
 }

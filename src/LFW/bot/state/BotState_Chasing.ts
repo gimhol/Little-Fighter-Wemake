@@ -1,6 +1,6 @@
-import { is_fighter, is_weapon } from "../../entity";
 import { AGK, Defines, GK, StateEnum, WeaponEnum, WT } from "../../defines";
 import { BotStateEnum, BSE } from "../../defines/BotStateEnum";
+import { is_fighter, is_weapon } from "../../entity";
 import { abs, between, round } from '../../utils/math/base';
 import { round_float } from '../../utils/math/round_float';
 import { BotBehavior } from "../BotController";
@@ -258,8 +258,6 @@ export class BotState_Chasing extends BotState_Base {
      */
     const rx = round(me_facing * (en_x - my_x))
 
-    this.hold_UD(rz, -40, 40)
-    this.hold_LR(rx, -80, 80)
     /** 
      * 敌人与自己的距离y
      * 敌人在高时为正数
@@ -267,23 +265,13 @@ export class BotState_Chasing extends BotState_Base {
      */
     const ry = round(en_y - my_y)
 
-    const GK_F = me_facing > 0 ? GK.R : GK.L;
-    const GK_B = me_facing > 0 ? GK.L : GK.R;
-    const x_ok = between(rx, 0, c.j_atk_x)
-    const z_ok = between(rz, c.dataset.j_atk_min_z, c.dataset.j_atk_max_z);
-    const y_ok = between(ry, c.dataset.j_atk_min_y, c.dataset.j_atk_max_y);
-
-
-    if (my_y > 0 && x_ok && z_ok && y_ok && c.desire('ja') < c.dataset.j_atk_desire) {
-      c.click(GK.a)
+    if (me.is_on_ground) { // 地面上，控制跳越方向
+      this.hold_UD(rz, -30, 30)
+      this.hold_LR(rx, -60, 60)
       return;
     }
 
-    if (rx < 0) c.key_down(GK_B).key_up(GK_F);
-    else c.key_up(GK_B, GK_F);
-
-    this.hold_UD(rz, c.dataset.j_atk_min_z, c.dataset.j_atk_max_z)
-
+    const GK_F = me_facing > 0 ? GK.R : GK.L;
     /* 
       概率丢武器
       这里暂时不考虑X距离
@@ -297,6 +285,19 @@ export class BotState_Chasing extends BotState_Base {
       );
       if (t_ok) c.click(GK_F).click(GK.a)
     }
+
+    const x_ok = between(rx, 0, c.j_atk_x)
+    const z_ok = between(rz, c.dataset.j_atk_min_z, c.dataset.j_atk_max_z);
+    const y_ok = between(ry, c.dataset.j_atk_min_y, c.dataset.j_atk_max_y);
+    if (x_ok && z_ok && y_ok) {
+      c.click(GK.a)
+      return;
+    }
+
+
+    c.key_up(GK.R, GK.L, GK.U, GK.D)
+
+
   }
 }
 

@@ -163,16 +163,15 @@ export class BotController extends BaseController {
     const chasing = this.chasings.get()?.entity;
     if (!chasing) return 0;
     const wt = this.entity.holding?.base_type;
-    const sp = this.entity.facing * this.entity.velocity.x * 8
     if (
       wt === WT.Baseball ||
       wt === WT.Drink
-    ) return sp * 200 * this.entity.strength;
+    ) return 200 * this.entity.strength;
     if (
       wt === WT.Stick ||
       wt === WT.Knife
-    ) return sp * 110;
-    return sp * this.dataset.j_atk_x;
+    ) return 110 * this.entity.strength;
+    return this.dataset.j_atk_x;
   }
   /** 最近站立攻击距离 */
   get atk_m_x() {
@@ -324,14 +323,18 @@ export class BotController extends BaseController {
     const { entity: me } = this;
     if (!me.mounted) return false
     if (!e.mounted) return false
+    if (me.hp <= 0) return false;
+    if (e.hp <= 0) return false;
+    if (e == me.holding) return false;
+    if (e == me.catching) return true;
+    if (me.catching && me.catching.hp > 0) return false;
+
 
     const { x: en_x } = e.position;
     const { player_l, player_r } = this.world;
     if (en_x < player_l || en_x > player_r) return false
 
-    if (me.hp <= 0) return false;
     if (me.holding?.base_type == WT.Drink) return false;
-    if (e.hp <= 0) return false;
     if (is_fighter(e) && e.team == this.team) return false;
 
     const e_state = e.state;
@@ -402,7 +405,8 @@ export class BotController extends BaseController {
     if (!av.mounted) return false
     if (me.hp <= 0) return false
     if (av.hp <= 0) return false;
-
+    if (av == me.holding) return false;
+    if (av == me.catching) return false;
     const { bot_state } = this
     const ret = bot_state === BSE.Avoiding ?
       !this.is_leave_avoid_zone(av) :

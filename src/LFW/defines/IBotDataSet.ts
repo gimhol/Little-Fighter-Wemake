@@ -1,4 +1,5 @@
 import { fields, int } from "../fields";
+import { Defines } from "./defines";
 
 export interface IBotDataSet {
   /** 走攻触发范围X(敌人正对) */
@@ -118,8 +119,9 @@ export class BotDataSet implements Required<IBotDataSet> {
   w_atk_min_z = -15;
   w_atk_max_z = 15;
   /** 跑攻欲望值 */
-  r_atk_desire = 10000;
-  j_atk_desire = 10000;
+  r_atk_desire = Defines.MAX_AI_DESIRE;
+  /** 跳攻欲望值 */
+  j_atk_desire = Defines.MAX_AI_DESIRE;
   /** 跑攻触发范围X(敌人正对) */
   r_atk_x = 100;
   /** 跑攻触发范围Z */
@@ -132,7 +134,7 @@ export class BotDataSet implements Required<IBotDataSet> {
   d_atk_min_z = -60;
   d_atk_max_z = 60;
   /** 跳攻触发范围X(敌人正对) */
-  j_atk_x = 80;
+  j_atk_x = 180;
   /** 跳攻触发范围Z */
   j_atk_min_z = -60;
   j_atk_max_z = 60;
