@@ -262,6 +262,7 @@ export interface IWorldDataset {
   whirlwind_acc_z: number;
   outline_enabled: number;
   indicator_flags: number;
+  terrain_indicator: number;
   UPS: number;
   playrate: number;
   atom_time: number;
@@ -362,6 +363,7 @@ export const world_dataset_fields = fields<IWorldDataset>({
   itr_fall: int,
   outline_enabled: int({ min: 0, max: 1 }),
   indicator_flags: int,
+  terrain_indicator: int({ min: 0, max: 1 }),
   UPS: int({ min: 1, max: 120 }),
   playrate: flt({ min: 0.01, max: 1000 }),
   atom_time: flt,
@@ -466,6 +468,7 @@ const params: ISchemaMeta<IWorldDataset> = {
     whirlwind_acc_z: { type: 'number' },
     outline_enabled: { type: 'number' },
     indicator_flags: { type: 'number' },
+    terrain_indicator: { type: 'number' },
     UPS: { type: 'number' },
     playrate: { type: 'number' },
     atom_time: { type: 'number' },

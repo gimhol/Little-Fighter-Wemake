@@ -169,6 +169,7 @@ export class WorldRenderer implements IWorldRenderer {
     if (indicator_flags != this.indicators)
       this.indicators = indicator_flags;
     this.bg_render.render(dt);
+    this.terrain_indicator.set_visible(!!this.world.dataset.terrain_indicator);
     this.terrain_indicator.render();
     for (const renderer of this.entity_renderers) {
       if (renderer.entity.bearer || renderer.entity.catcher)

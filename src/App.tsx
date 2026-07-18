@@ -188,12 +188,18 @@ function App() {
   const [is_maximised, set_is_maximised] = useState(false);
   const [is_fullscreen, _set_is_fullscreen] = useState(false);
   const [indicator_flags, set_indicator_flags] = useState<number>(0);
+  const [terrain_indicator, set_terrain_indicator] = useState<boolean>(true);
 
 
   useEffect(() => {
     if (!lfw) return;
     lfw.world.dataset.indicator_flags = indicator_flags;
   }, [indicator_flags]);
+
+  useEffect(() => {
+    if (!lfw) return;
+    lfw.world.dataset.terrain_indicator = terrain_indicator ? 1 : 0;
+  }, [terrain_indicator]);
 
   const [fast_forward, set_fast_forward] = useState(false);
   useEffect(() => {
@@ -894,6 +900,14 @@ function App() {
               )
             })
           }
+        </Combine>
+        <Combine>
+          <ToggleButton
+            value={terrain_indicator}
+            onClick={() => set_terrain_indicator(v => !v)}>
+            <>地形</>
+            <>地形✓</>
+          </ToggleButton>
         </Combine>
         <Combine>
           <ToggleButton
