@@ -10,6 +10,7 @@ export * from "./EntityShadowRender";
 export * from "./EntityStatRender";
 export * from "./FrameIndicators";
 export * from "./GeometryKeeper";
+export * from "./TerrainIndicator";
 export * from "./INDICATINGS";
 export * from "./INDICATORS_INFO";
 export * from "./Keeper";

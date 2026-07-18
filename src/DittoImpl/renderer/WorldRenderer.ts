@@ -6,12 +6,14 @@ import type { World } from "@/LFW/World";
 import { CSS2DRenderer, Camera, Object3D, OrthographicCamera, Scene, Vector3, WebGLRenderer } from "../_t";
 import { BgRender } from "./BgRender";
 import { EntityRenderer } from "./EntityRenderer";
+import { TerrainIndicator } from "./TerrainIndicator";
 import csses from "./styles.module.scss";
 
 export class WorldRenderer implements IWorldRenderer {
   readonly lfw: LFW;
   readonly world: World;
   readonly bg_render: BgRender;
+  readonly terrain_indicator: TerrainIndicator;
   readonly camera: Camera;
   readonly ui_container: Object3D;
   readonly ui_offset = new Vector3(0, 0, 0);
@@ -64,6 +66,7 @@ export class WorldRenderer implements IWorldRenderer {
     const h = world.dataset.screen_h;
 
     this.bg_render = new BgRender(this);
+    this.terrain_indicator = new TerrainIndicator(this);
     this.set_renderer_size(w * 4, h * 4);
     this.scene.add(this.world_node);
 
@@ -166,6 +169,7 @@ export class WorldRenderer implements IWorldRenderer {
     if (indicator_flags != this.indicators)
       this.indicators = indicator_flags;
     this.bg_render.render(dt);
+    this.terrain_indicator.render();
     for (const renderer of this.entity_renderers) {
       if (renderer.entity.bearer || renderer.entity.catcher)
         continue;
@@ -219,5 +223,6 @@ export class WorldRenderer implements IWorldRenderer {
     this._renderer?.dispose();
     this._renderer = void 0;
     this.bg_render.release();
+    this.terrain_indicator.release();
   }
 }
