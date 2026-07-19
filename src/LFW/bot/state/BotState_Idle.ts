@@ -5,8 +5,19 @@ import { BotState_Base } from "./BotState";
 
 export class BotState_Idle extends BotState_Base {
   readonly key = BSE.Idle;
+  min_x: number = Number.MIN_SAFE_INTEGER;
+  max_x: number = Number.MAX_SAFE_INTEGER;
+  min_z: number = Number.MIN_SAFE_INTEGER;
+  max_z: number = Number.MAX_SAFE_INTEGER;
   override enter(): void {
     this.ctrl.key_up(...AGK);
+    const { player_l, player_r, near, far } = this.stage;
+    const midx = (player_l + player_r) * 0.5
+    const midz = (near + far) * 0.5
+    this.min_x = round(this.me.lfw.mt.range(player_l, midx))
+    this.max_x = round(this.me.lfw.mt.range(midx, player_r))
+    this.min_z = round(this.me.lfw.mt.range(far, midz))
+    this.max_z = round(this.me.lfw.mt.range(midz, near))
   }
   override leave(): void {
     const { c, me } = this;
@@ -22,19 +33,22 @@ export class BotState_Idle extends BotState_Base {
     if (this.handle_bot_actions()) return;
     if (this.handle_defends()) return;
 
-    const { x: my_x } = me.position;
-    const { player_l, player_r } = this.stage;
-    const pw = player_r - player_l;
+    const { x: my_x, z: my_z } = me.position;
     // 空闲时远离边界
-    const mid = round((player_l + player_r) * 0.5)
-    const min_x = round(min(player_l + min(300, pw / 3), mid))
-    const max_x = round(max(player_r - min(300, pw / 3), mid))
-    if (my_x < min_x) {
+    if (my_x < this.min_x) {
       c.key_down(GK.R).key_up(GK.L)
-    } else if (my_x > max_x) {
+    } else if (my_x > this.max_x) {
       c.key_down(GK.L).key_up(GK.R)
     } else {
       c.key_up(GK.L, GK.R)
+    }
+
+    if (my_z < this.min_z) {
+      c.key_down(GK.D).key_up(GK.U)
+    } else if (my_z > this.max_z) {
+      c.key_down(GK.U).key_up(GK.D)
+    } else {
+      c.key_up(GK.U, GK.D)
     }
 
     /* 概率停跑 */
