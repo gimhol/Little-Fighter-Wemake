@@ -121,13 +121,12 @@ export class Ground {
     const stand_y = this.enterable(seg, x, y, z);
 
     if (stand_y !== null) return null;
-
     if (seg.id == this._land.id) return [];
 
-    let block_x: number | null;
-    let block_z: number | null;
-    let x_len: number;
-    let z_len: number;
+    let x_len1: number;
+    let z_len1: number;
+    let x_len2: number;
+    let z_len2: number;
 
     let l = seg.x1 - 1;
     let r = seg.x2 + 1;
@@ -150,34 +149,53 @@ export class Ground {
     const dist_f = (z - f);
     const dist_n = (n - z);
 
+    let block_x1: number;
+    let block_z1: number;
+    let block_x2: number;
+    let block_z2: number;
+
     if (dist_l < dist_r) {
-      block_x = l;
-      x_len = abs(dist_l);
+      block_x1 = l;
+      x_len1 = abs(dist_l);
+      block_x2 = r;
+      x_len2 = abs(dist_r);
     } else {
-      block_x = r;
-      x_len = abs(dist_r);
+      block_x1 = r;
+      x_len1 = abs(dist_r);
+      block_x2 = l;
+      x_len2 = abs(dist_l);
     }
 
     if (dist_f < dist_n) {
-      block_z = f;
-      z_len = abs(dist_f);
+      block_z1 = f;
+      z_len1 = abs(dist_f);
+      block_z2 = n;
+      z_len2 = abs(dist_n);
     } else {
-      block_z = n;
-      z_len = abs(dist_n);
+      block_z1 = n;
+      z_len1 = abs(dist_n);
+      block_z2 = f;
+      z_len2 = abs(dist_f);
     }
-    const { far, near } = this.world.bg
-    if (block_z <= far || block_z >= near)
-      block_z = null;
 
-    const x_pos = { x: block_x, z };
-    const z_pos = block_z == null ? null : { x, z: block_z };
+    const x_pos1 = { x: block_x1, z };
+    const z_pos1 = { x, z: block_z1 };
+    const x_pos2 = { x: block_x2, z };
+    const z_pos2 = { x, z: block_z2 };
     const ret: IBlockResult = []
-    if (x_len < z_len) {
-      ret.push(x_pos)
-      if (z_pos) ret.push(z_pos)
+    if (x_len1 < z_len1) {
+      ret.push(x_pos1)
+      ret.push(z_pos1)
     } else {
-      if (z_pos) ret.push(z_pos)
-      ret.push(x_pos)
+      ret.push(z_pos1)
+      ret.push(x_pos1)
+    }
+    if (x_len2 < z_len2) {
+      ret.push(x_pos2)
+      ret.push(z_pos2)
+    } else {
+      ret.push(z_pos2)
+      ret.push(x_pos2)
     }
     return ret;
   }
