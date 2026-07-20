@@ -410,33 +410,41 @@ export class World {
     }
 
     const seg = this.ground.segment(x, z);
-    const pos = this.ground.block(seg, x, y, z);
-    if (pos) { // 被挡了，需要放到新位置;
-      let index = 0
-      for (; index < pos.length; ++index) {
-        const p = pos[index];
-        if (p.z < far || p.z > near) continue;
-        if (p.x < left || p.x > right) continue;
-        const seg = this.ground.segment(p.x, p.z);
-        if (this.ground.block(seg, p.x, y, p.z))
-          continue;
-        // 成功挤出
-        e.terrain = seg;
-        x = p.x;
-        z = p.z;
-        break;
-      }
-      if (index >= pos.length) {
-        // 无法挤出，直接抬上去算了
-        // TODO: 物体被丢出时, 由于被丢者位置由丢者决定，被丢者会有很大概率无法被地形挤出。
-        e.terrain = seg;
-        y = this.ground.y(seg, x, z);
-      }
-    } else {
+
+    // 可进入，直接进入
+    if (null != this.ground.enterable(seg, x, y, z)) {
       e.terrain = seg;
+      this._restrict_result.x = x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = z;
+      return this._restrict_result;
     }
+
+    // 被挡了，需要放到可能的新位置;
+    const pushs = this.ground.block(seg, x, y, z, e.prev_position.x, e.prev_position.y, e.prev_position.y);
+
+    for (const push of pushs) {
+      // 不能挤出地图外
+      if (push.z < far || push.z > near || push.x < left || push.x > right) continue;
+
+
+      const seg = this.ground.segment(push.x, push.z);
+      // 不能挤到其他地形中
+      if (null == this.ground.enterable(seg, push.x, y, push.z))
+        continue;
+
+      // 成功挤出
+      e.terrain = seg;
+      this._restrict_result.x = push.x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = push.z;
+      return this._restrict_result;
+    }
+
+    // 无法挤出，直接抬上去
+    e.terrain = seg;
     this._restrict_result.x = x;
-    this._restrict_result.y = y;
+    this._restrict_result.y = this.ground.y(seg, x, z);
     this._restrict_result.z = z;
     return this._restrict_result;
   }

@@ -2,12 +2,22 @@ import type { World } from "./World";
 import { TerrainEnum, type ITerrainInfo } from "./defines/ITerrainInfo";
 import { abs, clamp } from "./utils";
 
-export type IBlockResult = { x: number, z: number }[];
+export type IBlockResult = ReadonlyArray<{
+  readonly x: number,
+  readonly z: number
+}>;
 
 export class Ground {
   readonly world: World;
 
   readonly step: number = 10;
+  private readonly _ret = [
+    { x: 0, z: 0 },
+    { x: 0, z: 0 },
+    { x: 0, z: 0 },
+    { x: 0, z: 0 },
+  ];
+  private readonly _empty = [];
   private _land: Readonly<ITerrainInfo> = {
     id: 'GROUND_0',
     name: 'GROUND_0',
@@ -101,6 +111,8 @@ export class Ground {
   /**
    * 计算被地形阻挡后的替代位置。当角色无法进入目标坐标时，
    * 返回最近的可通行边界点（优先沿 X 轴或 Z 轴方向推挤）。
+   * 
+   * 注意：该函数返回的
    *
    * [斜坡与碰撞](../../docs/dev/terrain_slope_and_block/terrain_slope_and_block.md)
    * 
@@ -116,87 +128,75 @@ export class Ground {
     seg: Readonly<ITerrainInfo>,
     x: number,
     y: number,
-    z: number
-  ): IBlockResult | null {
-    const stand_y = this.enterable(seg, x, y, z);
+    z: number,
+    prev_x: number = x,
+    prev_y: number = y,
+    prev_z: number = z,
+  ): Readonly<IBlockResult> {
 
-    if (stand_y !== null) return null;
-    if (seg.id == this._land.id) return [];
-
-    let x_len1: number;
-    let z_len1: number;
-    let x_len2: number;
-    let z_len2: number;
+    if (seg.id == this._land.id) return this._empty;
 
     let l = seg.x1 - 1;
     let r = seg.x2 + 1;
     let f = seg.z1 - 1;
     let n = seg.z2 + 1;
-    if (seg.type == TerrainEnum.SlopeH) {
-      const t = (y - seg.h1) / (seg.h2 - seg.h1);
-      const slope_x = clamp(seg.x1 + t * (seg.x2 - seg.x1), l, r);
-      if (slope_x > x) r = slope_x + 1;
-      else l = slope_x - 1;
-    } else if (seg.type == TerrainEnum.SlopeV) {
-      const t = (y - seg.h1) / (seg.h2 - seg.h1);
-      const slope_z = clamp(seg.z1 + t * (seg.z2 - seg.z1), f, n);
-      if (slope_z > z) n = slope_z + 1;
-      else f = slope_z - 1;
+
+    const mid_x = (seg.x1 + seg.x2) / 2;
+    const mid_z = (seg.z1 + seg.z2) / 2;
+    let slope_x: number | undefined;
+    let slope_z: number | undefined;
+
+    switch (seg.type) {
+      case TerrainEnum.SlopeH: {
+        const dh = seg.h2 - seg.h1;
+        if (dh === 0) break;
+        const t = (y - seg.h1) / dh;
+        slope_x = seg.x1 + clamp(t, 0, 1) * (seg.x2 - seg.x1);
+        const sx = clamp(seg.x1 + t * (seg.x2 - seg.x1), l, r);
+        if (sx > x) r = sx + 1; else l = sx - 1;
+        break;
+      }
+      case TerrainEnum.SlopeV: {
+        const dh = seg.h2 - seg.h1;
+        if (dh === 0) break;
+        const t = (y - seg.h1) / dh;
+        slope_z = seg.z1 + clamp(t, 0, 1) * (seg.z2 - seg.z1);
+        const sz = clamp(seg.z1 + t * (seg.z2 - seg.z1), f, n);
+        if (sz > z) n = sz + 1; else f = sz - 1;
+        break;
+      }
     }
-
-    const dist_l = (x - l);
-    const dist_r = (r - x);
-    const dist_f = (z - f);
-    const dist_n = (n - z);
-
-    let block_x1: number;
-    let block_z1: number;
-    let block_x2: number;
-    let block_z2: number;
-
-    if (dist_l < dist_r) {
-      block_x1 = l;
-      x_len1 = abs(dist_l);
-      block_x2 = r;
-      x_len2 = abs(dist_r);
+    const from_l = prev_x <= (slope_x ?? mid_x);
+    const from_f = prev_z <= (slope_z ?? mid_z);
+    const fx = from_l ? l : r;
+    const ox = from_l ? r : l;
+    const fz = from_f ? f : n;
+    const oz = from_f ? n : f;
+    // 近侧
+    if (abs(fx - x) < abs(fz - z)) {
+      this._ret[0].x = fx;
+      this._ret[0].z = z;
+      this._ret[1].x = x;
+      this._ret[1].z = fz;
     } else {
-      block_x1 = r;
-      x_len1 = abs(dist_r);
-      block_x2 = l;
-      x_len2 = abs(dist_l);
+      this._ret[0].x = x;
+      this._ret[0].z = fz;
+      this._ret[1].x = fx;
+      this._ret[1].z = z;
     }
 
-    if (dist_f < dist_n) {
-      block_z1 = f;
-      z_len1 = abs(dist_f);
-      block_z2 = n;
-      z_len2 = abs(dist_n);
+    // 远侧
+    if (abs(ox - x) < abs(oz - z)) {
+      this._ret[2].x = ox;
+      this._ret[2].z = z;
+      this._ret[3].x = x;
+      this._ret[3].z = oz;
     } else {
-      block_z1 = n;
-      z_len1 = abs(dist_n);
-      block_z2 = f;
-      z_len2 = abs(dist_f);
+      this._ret[2].x = x;
+      this._ret[2].z = oz;
+      this._ret[3].x = ox;
+      this._ret[3].z = z;
     }
-
-    const x_pos1 = { x: block_x1, z };
-    const z_pos1 = { x, z: block_z1 };
-    const x_pos2 = { x: block_x2, z };
-    const z_pos2 = { x, z: block_z2 };
-    const ret: IBlockResult = []
-    if (x_len1 < z_len1) {
-      ret.push(x_pos1)
-      ret.push(z_pos1)
-    } else {
-      ret.push(z_pos1)
-      ret.push(x_pos1)
-    }
-    if (x_len2 < z_len2) {
-      ret.push(x_pos2)
-      ret.push(z_pos2)
-    } else {
-      ret.push(z_pos2)
-      ret.push(x_pos2)
-    }
-    return ret;
+    return this._ret;
   }
 }
