@@ -69,6 +69,7 @@ export class Entity {
   protected _mix_strength: number = 0;
   protected _greyscale: number = 0;
 
+  readonly prev_position: IVector3 = Ditto.vec3(0, 0, 0);
   readonly position: IVector3 = Ditto.vec3(0, 0, 0);
   readonly prev_velocity: IVector3 = Ditto.vec3(0, 0, 0);
   readonly velocity: IVector3 = Ditto.vec3(0, 0, 0);
@@ -724,6 +725,7 @@ export class Entity {
     this._reserve = 0
     this._mounted = 0;
     this._ghosted = 0;
+    this.prev_position.set(0, 0, 0)
     this.position.set(0, 0, 0)
     this.fuse_bys = null;
     this.dismiss_time = null;
@@ -1625,66 +1627,73 @@ export class Entity {
       this.enter_frame(next_frame);
     }
 
-    if (!this.shaking && !this.motionless) {
-      const { _ground_y, is_on_ground } = this;
-
-      /** itr/bdy与地面的碰撞 */
-      const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
-      if (__hit_ground_bdys) this.update_itr_bdy_hit_ground(__hit_ground_bdys);
-      if (__hit_ground_itrs) this.update_itr_bdy_hit_ground(__hit_ground_itrs);
-
-      if (this.frame.landable && !this._bearer && !this._catcher) {
-
-        /** 
-         是否本帧落地.
-  
-         注意：不能简单用 velocity.y <= 0 判断落地，因为存在Y速度向上但仍是落地的情况。
-         例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
-         此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
-        */
-        const just_land = !is_on_ground && (
-          this.position.y <= _ground_y
-        ) && (
-            // 有点糟
-            _ground_y > 0 || this.velocity.y < 0
-          )
-
-        // 落地
-        if (just_land) {
-          this.is_on_ground = true;
-          this.position.y = _ground_y;
-          this._temp_v.x = this.velocity.x
-          this._temp_v.y = this.velocity.y
-          this._temp_v.z = this.velocity.z
-          this.velocity.y = 0;
-          this.prev_velocity.y = 0;
-          this._state?.on_landing?.(this, this._temp_v);
-          this.play_sound(this._data.base.drop_sounds);
-          if (this.throwinjury) {
-            this.hp -= this.throwinjury;
-            this.hp_r -= round(this.throwinjury * (1 - this.dataset('hp_recoverability')))
-            this.throwinjury = 0;
-          }
-          if (this.fallinjury) {
-            this.hp -= this.fallinjury;
-            this.hp_r -= round(this.fallinjury * (1 - this.dataset('hp_recoverability')))
-            this.fallinjury = 0;
-          }
-          this._landing_frame = this.frame
-        } else if (is_on_ground) {
-          if (this.position.y - _ground_y > this.world.ground.step) {
-            // 离地面太高
-            this._state?.on_leave_ground?.(this);
-          } else {
-            this.position.y = _ground_y;
-          }
-        }
-        if (this._landing_frame !== this.frame) this._landing_frame = null
-      }
-    }
+    if (!this.shaking && !this.motionless && !this._bearer && !this._catcher)
+      this.update_landable();
     this._holding?.follow_bearer();
     this.collision_list.length = 0;
     this.collided_list.length = 0;
+    this.prev_position.x = this.position.x;
+    this.prev_position.y = this.position.y;
+    this.prev_position.z = this.position.z;
+  }
+
+  /**
+   * 处理与地面的交互
+   */
+  protected update_landable() {
+    const { _ground_y, is_on_ground } = this;
+
+    /** itr/bdy与地面的碰撞 */
+    const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
+    if (__hit_ground_bdys) this.update_itr_bdy_hit_ground(__hit_ground_bdys);
+    if (__hit_ground_itrs) this.update_itr_bdy_hit_ground(__hit_ground_itrs);
+
+    if (!this.frame.landable) return;
+
+    /** 
+     是否本帧落地.
+ 
+     注意：不能简单用 velocity.y <= 0 判断落地，因为存在Y速度向上但仍是落地的情况。
+     例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
+     此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
+    */
+    const just_land = !is_on_ground && (
+      this.position.y <= _ground_y
+    ) && (
+        // 有点糟
+        _ground_y > 0 || this.velocity.y < 0
+      )
+
+    // 落地
+    if (just_land) {
+      this.is_on_ground = true;
+      this.position.y = _ground_y;
+      this._temp_v.x = this.velocity.x
+      this._temp_v.y = this.velocity.y
+      this._temp_v.z = this.velocity.z
+      this.velocity.y = 0;
+      this.prev_velocity.y = 0;
+      this._state?.on_landing?.(this, this._temp_v);
+      this.play_sound(this._data.base.drop_sounds);
+      if (this.throwinjury) {
+        this.hp -= this.throwinjury;
+        this.hp_r -= round(this.throwinjury * (1 - this.dataset('hp_recoverability')))
+        this.throwinjury = 0;
+      }
+      if (this.fallinjury) {
+        this.hp -= this.fallinjury;
+        this.hp_r -= round(this.fallinjury * (1 - this.dataset('hp_recoverability')))
+        this.fallinjury = 0;
+      }
+      this._landing_frame = this.frame
+    } else if (is_on_ground) {
+      if (this.position.y - _ground_y > this.world.ground.step) {
+        // 离地面太高
+        this._state?.on_leave_ground?.(this);
+      } else {
+        this.position.y = _ground_y;
+      }
+    }
   }
 
   update_itr_bdy_hit_ground(itrs: (IItrInfo | IBdyInfo)[]): void {
