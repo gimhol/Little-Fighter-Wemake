@@ -6,12 +6,12 @@ import { type Collision, collision_get } from "./collision/Collision";
 import { collisions_keeper } from "./collision/CollisionKeeper";
 import { BallController } from "./controller/BallController";
 import {
-  FID,
   BGG,
   CheatEnum,
   Defines,
   Difficulty,
   EntityGroup,
+  FID,
   GONE_FRAME_INFO,
   type IBdyInfo, type IBgData, type IBounding, type IEntityData,
   type IFrameInfo, type IItrInfo,
@@ -415,6 +415,8 @@ export class World {
       let index = 0
       for (; index < pos.length; ++index) {
         const p = pos[index];
+        if (p.z < far || p.z > near) continue;
+        if (p.x < left || p.x > right) continue;
         const seg = this.ground.segment(p.x, p.z);
         if (this.ground.block(seg, p.x, y, p.z))
           continue;
