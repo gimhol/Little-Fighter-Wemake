@@ -13,7 +13,7 @@ export class WorldRenderer implements IWorldRenderer {
   readonly lfw: LFW;
   readonly world: World;
   readonly bg_render: BgRender;
-  readonly bg_indicator: TerrainIndicator;
+  readonly bg_flags: TerrainIndicator;
   readonly camera: Camera;
   readonly ui_container: Object3D;
   readonly ui_offset = new Vector3(0, 0, 0);
@@ -66,7 +66,7 @@ export class WorldRenderer implements IWorldRenderer {
     const h = world.dataset.screen_h;
 
     this.bg_render = new BgRender(this);
-    this.bg_indicator = new TerrainIndicator(this);
+    this.bg_flags = new TerrainIndicator(this);
     this.set_renderer_size(w * 4, h * 4);
     this.scene.add(this.world_node);
 
@@ -157,7 +157,7 @@ export class WorldRenderer implements IWorldRenderer {
       this.camera.position.y + this.world.dataset.screen_h + this.ui_offset.y,
       this.ui_offset.z
     )
-    const { dataset: { entity_indicator }, transform } = this.world;
+    const { dataset: { entity_flags }, transform } = this.world;
     let { x, y, z, earthquake, earthquake_level, scale_x, scale_y, scale_z } = transform
     if (earthquake) x += Math.floor(Math.random() * (earthquake_level * 2 + 1)) - earthquake_level
     this.world_node.position.set(
@@ -166,11 +166,11 @@ export class WorldRenderer implements IWorldRenderer {
       z + this.world_offset.z
     );
     this.world_node.scale.set(scale_x, scale_y, scale_z);
-    if (entity_indicator != this.indicators)
-      this.indicators = entity_indicator;
+    if (entity_flags != this.indicators)
+      this.indicators = entity_flags;
     this.bg_render.render(dt);
-    this.bg_indicator.set_visible(!!this.world.dataset.bg_indicator);
-    this.bg_indicator.render();
+    this.bg_flags.set_visible(!!this.world.dataset.bg_flags);
+    this.bg_flags.render();
     for (const renderer of this.entity_renderers) {
       if (renderer.entity.bearer || renderer.entity.catcher)
         continue;
@@ -224,6 +224,6 @@ export class WorldRenderer implements IWorldRenderer {
     this._renderer?.dispose();
     this._renderer = void 0;
     this.bg_render.release();
-    this.bg_indicator.release();
+    this.bg_flags.release();
   }
 }

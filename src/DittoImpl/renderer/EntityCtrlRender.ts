@@ -75,7 +75,7 @@ export class EntityCtrlRender {
       lfw: lf2, world, ctrl_visible, frame: { centery }
     } = this.entity;
 
-    const _ctrl_visible = ctrl_visible || world.dataset.entity_indicator & ENTITY_INDICATINGS.ctrl;
+    const _ctrl_visible = ctrl_visible || world.dataset.entity_flags & ENTITY_INDICATINGS.ctrl;
     if (!_ctrl_visible) {
       this.clear();
       return;

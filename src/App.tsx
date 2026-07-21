@@ -127,8 +127,8 @@ const init_world_dataset = (): IWorldDataset => {
   ret.sync_render = SyncRenderEnum.FPS_60;
   ret.UPS = low_device ? 30 : 60;
   ret.atom_time = low_device ? 3 : 1;
-  ret.bg_indicator = 0;
-  ret.entity_indicator = 0;
+  ret.bg_flags = 0;
+  ret.entity_flags = 0;
   return ret;
 }
 const world_dataset_version = md5(JSON.stringify(init_world_dataset()))
@@ -182,25 +182,25 @@ function App() {
       v.LF2_NET = 0;
       v.HERO_FT = 0;
       v.difficulty = Difficulty.Difficult;
-      v.bg_indicator = 0;
-      v.entity_indicator = 0;
+      v.bg_flags = 0;
+      v.entity_flags = 0;
       return v;
     }
   })
 
   const [is_maximised, set_is_maximised] = useState(false);
   const [is_fullscreen, _set_is_fullscreen] = useState(false);
-  const { entity_indicator, bg_indicator } = world_dataset;
+  const { entity_flags, bg_flags } = world_dataset;
 
   useEffect(() => {
     if (!lfw) return;
-    lfw.world.dataset.entity_indicator = entity_indicator;
-  }, [entity_indicator]);
+    lfw.world.dataset.entity_flags = entity_flags;
+  }, [entity_flags]);
 
   useEffect(() => {
     if (!lfw) return;
-    lfw.world.dataset.bg_indicator = bg_indicator ? 1 : 0;
-  }, [bg_indicator]);
+    lfw.world.dataset.bg_flags = bg_flags ? 1 : 0;
+  }, [bg_flags]);
 
   const [fast_forward, set_fast_forward] = useState(false);
   useEffect(() => {
@@ -892,9 +892,9 @@ function App() {
               return (
                 <ToggleButton
                   key={k}
-                  value={!!(entity_indicator & num)}
+                  value={!!(entity_flags & num)}
                   onClick={() => set_world_dataset(v => {
-                    v.entity_indicator = toggle_bit(v.entity_indicator, num)
+                    v.entity_flags = toggle_bit(v.entity_flags, num)
                   })}>
                   <>{k}</>
                   <>{k}✓</>
@@ -911,9 +911,9 @@ function App() {
               return (
                 <ToggleButton
                   key={k}
-                  value={!!(entity_indicator & num)}
+                  value={!!(bg_flags & num)}
                   onClick={() => set_world_dataset(v => {
-                    v.bg_indicator = toggle_bit(v.bg_indicator, num)
+                    v.bg_flags = toggle_bit(v.bg_flags, num)
                   })}>
                   <>{k}</>
                   <>{k}✓</>
@@ -921,14 +921,6 @@ function App() {
               )
             })
           }
-          <ToggleButton
-            value={!!(bg_indicator & 0b1)}
-            onClick={() => set_world_dataset(v => {
-              v.bg_indicator = toggle_bit(v.bg_indicator, 0b1)
-            })}>
-            <>地形</>
-            <>地形✓</>
-          </ToggleButton>
         </Combine>
         <Combine>
           <ToggleButton

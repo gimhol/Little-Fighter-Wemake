@@ -261,8 +261,8 @@ export interface IWorldDataset {
   whirlwind_acc_x: number;
   whirlwind_acc_z: number;
   outline_enabled: number;
-  entity_indicator: number;
-  bg_indicator: number;
+  entity_flags: number;
+  bg_flags: number;
   UPS: number;
   playrate: number;
   atom_time: number;
@@ -362,8 +362,8 @@ export const world_dataset_fields = fields<IWorldDataset>({
   whirlwind_acc_z: flt('旋风加速度Z'),
   itr_fall: int,
   outline_enabled: int({ min: 0, max: 1 }),
-  entity_indicator: int,
-  bg_indicator: int({ min: 0, max: 1 }),
+  entity_flags: int,
+  bg_flags: int({ min: 0, max: 1 }),
   UPS: int({ min: 1, max: 120 }),
   playrate: flt({ min: 0.01, max: 1000 }),
   atom_time: flt,
@@ -467,8 +467,8 @@ const params: ISchemaMeta<IWorldDataset> = {
     whirlwind_acc_x: { type: 'number' },
     whirlwind_acc_z: { type: 'number' },
     outline_enabled: { type: 'number' },
-    entity_indicator: { type: 'number' },
-    bg_indicator: { type: 'number' },
+    entity_flags: { type: 'number' },
+    bg_flags: { type: 'number' },
     UPS: { type: 'number' },
     playrate: { type: 'number' },
     atom_time: { type: 'number' },
