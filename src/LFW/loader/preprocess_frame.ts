@@ -86,13 +86,12 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
         但目前就这样吧
         - Gim 2026年6月4日
   */
-  if (
-    frame.state === SE.Falling &&
-    frame.hit?.j &&
-    !Array.isArray(frame.hit.j) &&
-    !frame.hit.j.expression
-  ) {
-    frame.hit.j.expression = breakfall_j_expression;
+  if (frame.state === SE.Falling && frame.hit?.j) {
+    const j = Array.isArray(frame.hit.j) ? frame.hit.j : [frame.hit.j];
+    for (const v of j) {
+      if (('' + v.id) == '100' || ('' + v.id) == '108')
+        v.expression = breakfall_j_expression
+    }
   }
 
   traversal(frame.hit, (k, v, o) => { if (v) o[k] = preprocess_next_frame(o[k]!) });
