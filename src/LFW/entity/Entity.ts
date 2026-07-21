@@ -129,9 +129,9 @@ export class Entity {
   aabb_max_x: number = 0;
   aabb_min_z: number = 0;
   aabb_max_z: number = 0;
-  /** 左侧长度 */
+  /** 在world中运算，左侧可见长度，用于判断出界 */
   l_len: number = 0;
-  /** 右侧长度 */
+  /** 在world中运算，右侧可见长度，用于判断出界 */
   r_len: number = 0;
   /**
    * 实体名称
