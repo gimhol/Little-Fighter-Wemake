@@ -129,6 +129,10 @@ export class Entity {
   aabb_max_x: number = 0;
   aabb_min_z: number = 0;
   aabb_max_z: number = 0;
+  /** 左侧长度 */
+  l_len: number = 0;
+  /** 右侧长度 */
+  r_len: number = 0;
   /**
    * 实体名称
    *
@@ -1632,9 +1636,7 @@ export class Entity {
     this._holding?.follow_bearer();
     this.collision_list.length = 0;
     this.collided_list.length = 0;
-    this.prev_position.x = this.position.x;
-    this.prev_position.y = this.position.y;
-    this.prev_position.z = this.position.z;
+    this.prev_position.copy(this.position);
   }
 
   /**
@@ -2105,7 +2107,10 @@ export class Entity {
       )
     }
 
+    // 武器被丢
     if (dvx !== void 0 || dvy !== void 0 || dvz !== void 0) {
+      bearer.holding = null;
+      this.bearer = null;
       dvx = dvx ? dvx * this.dataset('wvx_f') : 0
       dvy = dvy ? dvy * this.dataset('wvy_f') : 0
       dvz = dvz ? dvz * this.dataset('wvz_f') : 0
@@ -2114,6 +2119,7 @@ export class Entity {
         this.data.indexes?.on_hands,
         this.data.indexes?.throwings
       )
+      this.prev_position.copy(this.position)
       this.set_position(
         round(x + this.facing * (wa_x - cx_a)),
         round(y + cy_a - wa_y),
@@ -2125,8 +2131,6 @@ export class Entity {
       dvy = strength * dvy / weight;
       const vx = (dvx - abs(vz / 2)) * this.facing;
       this.set_velocity(vx, dvy, vz);
-      bearer.holding = null;
-      this.bearer = null;
       return;
     }
 

@@ -363,12 +363,6 @@ export class World {
       const is_player = e.team !== team;
       this._bound[0] = is_player ? player_l : enemy_l;
       this._bound[1] = is_player ? player_r : enemy_r;
-    } else if (is_ball(e)) {
-      this._bound[0] = left - 200;
-      this._bound[1] = right + 200;
-    } else if (is_weapon(e)) {
-      this._bound[0] = left - 100;
-      this._bound[1] = right + 100;
     } else {
       this._bound[0] = left;
       this._bound[1] = right;
@@ -400,7 +394,7 @@ export class World {
       x = clamp(x, drink_l, drink_r);
     } else if (is_fighter(e)) {
       x = clamp(x, left, right);
-    } else if (x < left || x > right) {
+    } else if (x < left - e.l_len || x > right + e.r_len) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
       e.terrain = void 0;
       this._restrict_result.x = x;
@@ -421,12 +415,14 @@ export class World {
     }
 
     // 被挡了，需要放到可能的新位置;
-    const pushs = this.ground.block(seg, x, y, z, e.prev_position.x, e.prev_position.y, e.prev_position.y);
+    const pushs = this.ground.block(
+      seg, x, y, z, e.prev_position.x, e.prev_position.y, e.prev_position.y
+    );
 
     for (const push of pushs) {
       // 不能挤出地图外
-      if (push.z < far || push.z > near || push.x < left || push.x > right) continue;
-
+      if (push.z < far || push.z > near || push.x < left || push.x > right)
+        continue;
 
       const seg = this.ground.segment(push.x, push.z);
       // 不能挤到其他地形中
@@ -706,19 +702,24 @@ export class World {
         this.has_players_alive = true;
 
       a.update();
-      const { __aabb_x1: bx1 = 0, __aabb_x2: fx1 = 0, __aabb_z1: bz1 = -12, __aabb_z2: bz2 = 12 } = a.frame;
+      const {
+        __aabb_x1: bx1 = 0, __aabb_x2: fx1 = 0,
+        __aabb_z1: bz1 = -12, __aabb_z2: bz2 = 12,
+        width, centerx
+      } = a.frame;
       a.aabb_min_x = round(a.position.x + (a.facing > 0 ? bx1 : -fx1))
       a.aabb_max_x = round(a.position.x + (a.facing > 0 ? fx1 : -bx1))
       a.aabb_min_z = round(a.position.z + bz1)
       a.aabb_max_z = round(a.position.z + bz2)
-
+      a.l_len = a.facing > 0 ? centerx : width - centerx;
+      a.r_len = a.facing > 0 ? width - centerx : centerx;
       if (a.ghosted) continue;
 
       if (is_fighter(a)) {
         const x = a.position.x - this.dataset.screen_w / 2 + (a.facing * this.dataset.screen_w) / 6;
         const z = a.position.z;
         fighter_x_sum += x;
-        fighter_z_sum += x;
+        fighter_z_sum += z;
         fighter_count++;
         if (is_human_ctrl(a.ctrl) && a.hp > 0) {
           if (a.ctrl.player.mine) {
