@@ -729,7 +729,11 @@ export class Entity {
     this._reserve = 0
     this._mounted = 0;
     this._ghosted = 0;
-    this.prev_position.set(0, 0, 0)
+    this.prev_position.set(
+      Number.MIN_SAFE_INTEGER,
+      Number.MIN_SAFE_INTEGER,
+      Number.MIN_SAFE_INTEGER
+    )
     this.position.set(0, 0, 0)
     this.fuse_bys = null;
     this.dismiss_time = null;
@@ -888,6 +892,7 @@ export class Entity {
       pos_y = pos_y + emitter_frame.centery - opoint_y;
       pos_x = pos_x - emitter.facing * (emitter_frame.centerx - opoint_x);
     }
+    this.prev_position.copy(emitter.position);
     this.set_position(pos_x, pos_y, pos_z + opoint_z);
 
     const result = this.get_next_frame(opoint.action);
@@ -2094,6 +2099,7 @@ export class Entity {
     const { x: wb_x = 0, y: wb_y = 0, z: wb_z = 0 } = wp_b
 
     if (wp_a.kind) {
+      this.prev_position.copy(bearer.position)
       this.set_position(
         x + this.facing * (wa_x - cx_a + cx_b - wb_x),
         y + cy_a - wa_y - cy_b + wb_y,
@@ -2348,6 +2354,8 @@ export class Entity {
     if (_x !== null && _x !== void 0) this.position.x = round_float(_x)
     if (_y !== null && _y !== void 0) this.position.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.position.z = round_float(_z)
+    if (this.prev_position.x === Number.MIN_SAFE_INTEGER)
+      this.prev_position.copy(this.position);
     const { x, y, z } = this.world.restrict(this);
     if (this.position.x !== x && this.frame.on_x_restrict)
       this.enter_frame(this.frame.on_x_restrict)

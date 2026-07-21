@@ -381,7 +381,7 @@ export class World {
   restrict(e: Entity): IVector3Like {
     let { x, z, y } = e.position;
     if (e.bearer || e.catcher) {
-      e.terrain = void 0;
+      e.terrain = this.ground.land;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
       this._restrict_result.z = z;
@@ -400,6 +400,19 @@ export class World {
       this._restrict_result.x = x;
       this._restrict_result.y = y;
       this._restrict_result.z = z;
+      return this._restrict_result;
+    }
+
+    // 检查路径是否穿过阻挡地形（处理超快速移动穿墙）
+    const wall_hit = this.ground.intersect_wall(
+      e.prev_position.x, e.prev_position.y, e.prev_position.z,
+      x, y, z,
+    );
+    if (wall_hit) {
+      e.terrain = this.ground.segment(wall_hit.x, wall_hit.z);
+      this._restrict_result.x = wall_hit.x;
+      this._restrict_result.y = y;
+      this._restrict_result.z = wall_hit.z;
       return this._restrict_result;
     }
 
@@ -424,13 +437,13 @@ export class World {
       if (push.z < far || push.z > near || push.x < left || push.x > right)
         continue;
 
-      const seg = this.ground.segment(push.x, push.z);
+      const seg2 = this.ground.segment(push.x, push.z);
       // 不能挤到其他地形中
-      if (null == this.ground.enterable(seg, push.x, y, push.z))
+      if (null == this.ground.enterable(seg2, push.x, y, push.z))
         continue;
 
       // 成功挤出
-      e.terrain = seg;
+      e.terrain = seg2;
       this._restrict_result.x = push.x;
       this._restrict_result.y = y;
       this._restrict_result.z = push.z;

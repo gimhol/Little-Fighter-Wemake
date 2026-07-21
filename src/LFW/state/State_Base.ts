@@ -2,6 +2,8 @@ import { Defines, StateEnum, type IFrameInfo, type INextFrame, type IVector3 } f
 import type { Entity } from "../entity/Entity";
 import { clamp, float_equal, round } from "../utils";
 import { spawn_buring_smoke } from "./spawn_buring_smoke";
+
+const MIN_V = 0.5
 export class State_Base {
   readonly state: number | string;
   constructor(state: number | string) {
@@ -54,13 +56,13 @@ export class State_Base {
     let vy: number | null = null;
     // 留点速度，方便贴着地形的角色能跳上高台
     if (!float_equal(x, e.position.x))
-      vx = clamp(e.velocity.x, -0.1, 0.1);
+      vx = clamp(e.velocity.x, -MIN_V, MIN_V);
     if (!float_equal(z, e.position.z))
-      vz = clamp(e.velocity.z, -0.1, 0.1);
+      vz = clamp(e.velocity.z, -MIN_V, MIN_V);
     if (!float_equal(y, e.position.y)) {
-      vy = clamp(e.velocity.y, -0.1, 0.1);
-      vx = clamp(e.velocity.x, -0.1, 0.1);
-      vz = clamp(e.velocity.z, -0.1, 0.1);
+      vy = clamp(e.velocity.y, -MIN_V, MIN_V);
+      vx = clamp(e.velocity.x, -MIN_V, MIN_V);
+      vz = clamp(e.velocity.z, -MIN_V, MIN_V);
     }
     if (vx !== null || vz !== null || vy !== null)
       e.set_velocity(vx, vy, vz);
