@@ -2,7 +2,7 @@ import { clamp, type Entity, GameKey, GKLabels, is_bot_ctrl, type IVector3Like, 
 import { Object3D } from "three";
 import * as T from "../_t";
 import { BAR_BG_W } from "./EntityStatRender";
-import { INDICATINGS } from "./INDICATINGS";
+import { ENTITY_INDICATINGS } from "./INDICATINGS";
 import { SmallTextMesh } from "./meshs";
 import { WorldRenderer } from "./WorldRenderer";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -75,7 +75,7 @@ export class EntityCtrlRender {
       lfw: lf2, world, ctrl_visible, frame: { centery }
     } = this.entity;
 
-    const _ctrl_visible = ctrl_visible || world.dataset.indicator_flags & INDICATINGS.ctrl;
+    const _ctrl_visible = ctrl_visible || world.dataset.entity_indicator & ENTITY_INDICATINGS.ctrl;
     if (!_ctrl_visible) {
       this.clear();
       return;

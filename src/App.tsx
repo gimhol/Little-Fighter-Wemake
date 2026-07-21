@@ -21,8 +21,7 @@ import Titled from "./Component/Titled";
 import { DanmuOverlay } from "./DanmuOverlay";
 import { DevStatsView } from "./DevStatsView";
 import { __Pointings, md5 } from "./DittoImpl";
-import type { Indicating } from "./DittoImpl/renderer/FrameIndicators";
-import { INDICATINGS } from "./DittoImpl/renderer/INDICATINGS";
+import { BG_INDICATINGS, ENTITY_INDICATINGS } from "./DittoImpl/renderer/INDICATINGS";
 import { WorldRenderer } from "./DittoImpl/renderer/WorldRenderer";
 import EditorView from "./EditorView";
 import GamePad from "./GamePad";
@@ -127,7 +126,9 @@ const init_world_dataset = (): IWorldDataset => {
   const ret = new WorldDataset(true).dump_dataset();
   ret.sync_render = SyncRenderEnum.FPS_60;
   ret.UPS = low_device ? 30 : 60;
-  ret.atom_time= low_device ? 3 : 1;
+  ret.atom_time = low_device ? 3 : 1;
+  ret.bg_indicator = 0;
+  ret.entity_indicator = 0;
   return ret;
 }
 const world_dataset_version = md5(JSON.stringify(init_world_dataset()))
@@ -181,25 +182,25 @@ function App() {
       v.LF2_NET = 0;
       v.HERO_FT = 0;
       v.difficulty = Difficulty.Difficult;
+      v.bg_indicator = 0;
+      v.entity_indicator = 0;
       return v;
     }
   })
 
   const [is_maximised, set_is_maximised] = useState(false);
   const [is_fullscreen, _set_is_fullscreen] = useState(false);
-  const [indicator_flags, set_indicator_flags] = useState<number>(0);
-  const [terrain_indicator, set_terrain_indicator] = useState<boolean>(true);
-
+  const { entity_indicator, bg_indicator } = world_dataset;
 
   useEffect(() => {
     if (!lfw) return;
-    lfw.world.dataset.indicator_flags = indicator_flags;
-  }, [indicator_flags]);
+    lfw.world.dataset.entity_indicator = entity_indicator;
+  }, [entity_indicator]);
 
   useEffect(() => {
     if (!lfw) return;
-    lfw.world.dataset.terrain_indicator = terrain_indicator ? 1 : 0;
-  }, [terrain_indicator]);
+    lfw.world.dataset.bg_indicator = bg_indicator ? 1 : 0;
+  }, [bg_indicator]);
 
   const [fast_forward, set_fast_forward] = useState(false);
   useEffect(() => {
@@ -886,14 +887,15 @@ function App() {
         </Combine>
         <Combine>
           {
-            Object.keys(INDICATINGS).map(k => {
-              const key = k as Indicating;
-              const num = INDICATINGS[key]
+            Object.keys(ENTITY_INDICATINGS).map(k => {
+              const num = ENTITY_INDICATINGS[k as keyof typeof ENTITY_INDICATINGS]
               return (
                 <ToggleButton
-                  key={key}
-                  value={!!(indicator_flags & num)}
-                  onClick={() => set_indicator_flags(v => toggle_bit(v, num))}>
+                  key={k}
+                  value={!!(entity_indicator & num)}
+                  onClick={() => set_world_dataset(v => {
+                    v.entity_indicator = toggle_bit(v.entity_indicator, num)
+                  })}>
                   <>{k}</>
                   <>{k}✓</>
                 </ToggleButton>
@@ -901,10 +903,29 @@ function App() {
             })
           }
         </Combine>
+
         <Combine>
+          {
+            Object.keys(BG_INDICATINGS).map(k => {
+              const num = BG_INDICATINGS[k as keyof typeof BG_INDICATINGS]
+              return (
+                <ToggleButton
+                  key={k}
+                  value={!!(entity_indicator & num)}
+                  onClick={() => set_world_dataset(v => {
+                    v.bg_indicator = toggle_bit(v.bg_indicator, num)
+                  })}>
+                  <>{k}</>
+                  <>{k}✓</>
+                </ToggleButton>
+              )
+            })
+          }
           <ToggleButton
-            value={terrain_indicator}
-            onClick={() => set_terrain_indicator(v => !v)}>
+            value={!!(bg_indicator & 0b1)}
+            onClick={() => set_world_dataset(v => {
+              v.bg_indicator = toggle_bit(v.bg_indicator, 0b1)
+            })}>
             <>地形</>
             <>地形✓</>
           </ToggleButton>

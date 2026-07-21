@@ -6,7 +6,7 @@ import { EntityNameRender } from "./EntityNameRender";
 import { EntityShadowRender } from "./EntityShadowRender";
 import { EntityStatRender } from "./EntityStatRender";
 import { FrameIndicators } from "./FrameIndicators";
-import { INDICATINGS } from "./INDICATINGS";
+import { ENTITY_INDICATINGS } from "./INDICATINGS";
 import type { WorldRenderer } from "./WorldRenderer";
 
 export class EntityRenderer {
@@ -41,7 +41,7 @@ export class EntityRenderer {
     this.name = new EntityNameRender(this);
   }
   ensure_ctrl() {
-    if (!this.ctrl && this._indicators & INDICATINGS.ctrl) {
+    if (!this.ctrl && this._indicators & ENTITY_INDICATINGS.ctrl) {
       this.ctrl = new EntityCtrlRender(this)
       this.ctrl.on_mount();
     } else if (this.ctrl) {
@@ -65,7 +65,7 @@ export class EntityRenderer {
     }
   }
   ensure_indi() {
-    if (this._indicators ^ INDICATINGS.ctrl) {
+    if (this._indicators ^ ENTITY_INDICATINGS.ctrl) {
       if (!this.indi) this.indi = new FrameIndicators(this.entity);
       this.indi.flags = this._indicators
     } else if (this.indi) {

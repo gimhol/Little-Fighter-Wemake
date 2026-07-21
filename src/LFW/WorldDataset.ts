@@ -111,8 +111,8 @@ export class WorldDataset implements IWorldDataset {
   whirlwind_acc_x: number = 0.5;
   whirlwind_acc_z: number = 0.5;
   outline_enabled: number = 1;
-  indicator_flags: number = 0;
-  terrain_indicator: number = 1;
+  entity_indicator: number = 0;
+  bg_indicator: number = 1;
   UPS: number = 60;
   playrate: number = 1;
   atom_time: number = 1;

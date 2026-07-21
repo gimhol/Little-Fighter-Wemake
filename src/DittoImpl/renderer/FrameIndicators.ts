@@ -4,7 +4,7 @@ import type { IQubePair } from "@/LFW/defines/IQubePair";
 import type { Entity } from "@/LFW/entity/Entity";
 import { foreach } from "@/LFW/utils/container_help/foreach";
 import * as T from "../_t";
-import { INDICATINGS } from "./INDICATINGS";
+import { ENTITY_INDICATINGS } from "./INDICATINGS";
 import { INDICATORS_INFO } from "./INDICATORS_INFO";
 import type { WorldRenderer } from "./WorldRenderer";
 const line_geometry = new T.LineGeometry();
@@ -36,6 +36,8 @@ const DOT = {
 }
 type Indicatable = { __indicator_info?: IQubePair }
 export type Indicating = 'frame' | 'bdy' | 'itr' | 'ft' | 'opoint' | 'wpoint' | 'cpoint' | 'bpoint' | 'ctrl';
+
+
 const geometry = new T.BufferGeometry();
 const vertices = new Float32Array([
   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1,
@@ -280,7 +282,7 @@ export class FrameIndicators {
       return;
     }
 
-    foreach(INDICATINGS, (n, k) => {
+    foreach(ENTITY_INDICATINGS, (n, k) => {
       if (this._flags & n) this.show_indicators(k);
       else this.hide_indicators(k);
     })

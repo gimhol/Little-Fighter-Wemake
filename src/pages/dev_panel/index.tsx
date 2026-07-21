@@ -247,8 +247,8 @@
 //               return (
 //                 <ToggleButton
 //                   key={key}
-//                   value={!!(indicator_flags & num)}
-//                   onClick={() => set_indicator_flags(v => toggle_bit(v, num))}>
+//                   value={!!(entity_indicator & num)}
+//                   onClick={() => set_entity_indicator(v => toggle_bit(v, num))}>
 //                   <>{k}</>
 //                   <>{k}✓</>
 //                 </ToggleButton>
