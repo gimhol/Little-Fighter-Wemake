@@ -1,5 +1,5 @@
 import type { Entity, IEntityData, IFrameInfo, IPictureInfo, TFace } from "@/LFW";
-import { Buff_Electroshock, clamp, floor, LFW, StateEnum, World } from "@/LFW";
+import { Buff_Electroshock, clamp, cos, floor, LFW, sin, StateEnum, World } from "@/LFW";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
@@ -172,11 +172,27 @@ export class EntityMainRender {
     const { blinking } = entity;
 
     main_mesh.visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0);
-    main_mesh.position.set(this.centerx + this.shaking_x, this.centery, 0);
 
+    const { pic } = this.frame
+    if (pic?.r) {
+      const ox = pic?.ox ?? pic.w / 2;
+      const oy = pic?.oy ?? pic.h / 2;
+      const px = this.centerx + this.shaking_x + ox;
+      const py = this.centery - oy;
+      const dx = main_mesh.position.x - px;
+      const dy = main_mesh.position.y - py;
+      const _cos = pic.__cos_r ?? cos(pic.r);
+      const _sin = pic.__sin_r ?? sin(pic.r);
+      main_mesh.position.x = px + dx * _cos - dy * _sin;
+      main_mesh.position.y = py + dx * _sin + dy * _cos;
+      main_mesh.rotation.z = pic.r;
+    } else {
+      main_mesh.position.set(this.centerx + this.shaking_x, this.centery, 0);
+      main_mesh.rotation.z = 0;
+    }
 
     if (sub_meshs.length) for (let i = 0; i < sub_meshs.length; i++) {
-      sub_meshs[i].position.copy(main_mesh.position);
+      sub_meshs[i].position.set(this.centerx + this.shaking_x, this.centery, 0);
       sub_meshs[i].visible = main_mesh.visible;
     }
 

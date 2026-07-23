@@ -2,6 +2,7 @@ import type { LFW } from "../LFW";
 import type { IEntityData, IFramePictureInfo } from "../defines";
 import { Ditto } from "../ditto/Instance";
 import type { ImageInfo } from "../ditto/image/ImageInfo";
+import { cos, sin } from "../utils";
 import { find } from "../utils/container_help/find";
 const cache_key = (a: IFramePictureInfo, b: ImageInfo): string => {
   return [a.tex, a.x, a.y, a.w, a.h, b.w, b.h, b.scale].join();
@@ -11,6 +12,10 @@ const cache_map = new Map<string, IFramePictureInfo>();
 export function preprocess_pic(lfw: LFW, data: IEntityData, pic: IFramePictureInfo): IFramePictureInfo {
   if (!pic) return pic;
 
+  if (typeof pic.r == 'number') {
+    pic.__cos_r = cos(pic.r)
+    pic.__sin_r = sin(pic.r)
+  }
   const pic_info = find(data.base.files, ([, v]) => v.id === pic.tex)?.[1];
   if (!pic_info) {
     Ditto.warn(preprocess_pic.TAG, "file info not found, pic:", pic);
@@ -21,6 +26,7 @@ export function preprocess_pic(lfw: LFW, data: IEntityData, pic: IFramePictureIn
     Ditto.warn(preprocess_pic.TAG, "img info not found", pic_info);
     return pic;
   };
+
 
   const ck = cache_key(pic, p)
   let ret = cache_map.get(ck);
