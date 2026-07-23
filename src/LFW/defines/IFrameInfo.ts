@@ -64,7 +64,7 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
    * @type {?IFramePictureInfo}
    */
   pic?: IFramePictureInfo;
-
+  pics?: IFramePictureInfo[];
   /**
    *
    * @see {StateEnum}
@@ -393,6 +393,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     no_shadow: { type: 'number', oneof: [0, 1], nullable: true },
     jump_flag: { type: 'number', oneof: [0, 1], nullable: true },
     pic: { type: 'object', nullable: true },// TODO!
+    pics: { type: 'array', items: 'object', nullable: true },
     next: { type: 'object' },// TODO!
     width: { type: 'number' },
     height: { type: 'number' },

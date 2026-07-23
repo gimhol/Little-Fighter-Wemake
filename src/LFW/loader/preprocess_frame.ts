@@ -15,6 +15,7 @@ import { preprocess_frame_pic } from "./preprocess_frame_pic";
 import { preprocess_itr } from "./preprocess_itr";
 import { preprocess_next_frame } from "./preprocess_next_frame";
 import { preprocess_opoint } from "./preprocess_opoint";
+import { preprocess_pic } from "./preprocess_pic";
 
 
 const breakfall_j_expression = new CondMaker<EV>()
@@ -149,7 +150,9 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
     }
   }
   frame.pic = preprocess_frame_pic(lfw, data, frame);
+  frame.pics?.forEach((pic, i, arr) => arr[i] = preprocess_pic(lfw, data, pic));
 
+  
   if (frame.landable === void 0)
     frame.landable = data.type === EntityEnum.Ball ? 0 : 1;
 

@@ -4,7 +4,7 @@ import type { IEntityData } from "../defines";
 import { Ditto } from "../ditto";
 import { is_ball_data, is_fighter_data, is_weapon_data } from "../entity";
 import { LFW } from "../LFW";
-import { is_non_blank_str } from "../utils";
+import { is_non_blank_str, max } from "../utils";
 import { traversal } from "../utils/container_help/traversal";
 import { check_frame } from "./check_frame";
 import { preprocess_bot_data } from "./preprocess_bot_data";
@@ -13,6 +13,7 @@ import { preprocess_next_frame } from "./preprocess_next_frame";
 import { preprocess_pic } from "./preprocess_pic";
 
 export async function preprocess_entity_data(lfw: LFW, data: IEntityData, jobs: Promise<any>[]): Promise<IEntityData> {
+  const errors: string[] = []
   const { images, sounds } = lfw;
   const { small, head } = data.base;
   is_non_blank_str(small) && jobs.push(images.load_img(small, small));
@@ -35,21 +36,17 @@ export async function preprocess_entity_data(lfw: LFW, data: IEntityData, jobs: 
   else if (is_weapon_data(data)) make_weapon_special(data)
   else if (is_fighter_data(data)) make_fighter_special(data)
 
-  traversal(frames, (k, v, o) => o[k] = preprocess_frame(lfw, data, v, jobs));
-  traversal(frames, (_, v) => {
-    const errors: string[] = []
-    check_frame(data, v, errors)
-    if (errors.length) Ditto.warn(errors)
+  traversal(frames, (fid, frame, o) => {
+    o[fid] = preprocess_frame(lfw, data, frame, jobs)
+    check_frame(data, frame, errors);
+    const pics = frame.pics?.length;
+    if (pics) data.__pics = max(pics, data.__pics || 0);
   });
   if (data.base.bot)
     data.base.bot = preprocess_bot_data(data.base.bot)
-
-
-
-
-
   else make_entity_special(data);
   data.processed = true;
+  if (errors.length) Ditto.warn(errors)
   return data;
 }
 

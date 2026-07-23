@@ -29,6 +29,7 @@ export class EntityMainRender {
   protected entity: Entity;
   protected node = new Object3D();
   protected main_mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
+  protected sub_meshs: Mesh<BufferGeometry, OutlineMaterial>[] = [];
   protected blood_mesh = MeshFactory.get(MeshKind.Blood, Mesh<BufferGeometry, MeshBasicMaterial>);
   protected file_variants = new Map<string, string[]>();
   protected shaking = 0;
@@ -93,6 +94,17 @@ export class EntityMainRender {
 
     this.blood_mesh.visible = false;
     this.blood_mesh.name = `Blood: ${this.entity.name}`;
+
+    this.sub_meshs.length = 0;
+    if (this.data.__pics) {
+      for (let i = 0; i < this.data.__pics; i++) {
+        const sub_mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
+        sub_mesh.name = `Entity: ${this.entity.name} SubMesh[${i}]`
+        sub_mesh.visible = false;
+        this.sub_meshs[i] = sub_mesh;
+        this.node.add(sub_mesh)
+      }
+    }
   }
 
   on_mount(): void {
@@ -125,7 +137,7 @@ export class EntityMainRender {
   }
 
   render(): void {
-    const { entity, main_mesh } = this;
+    const { entity, main_mesh, sub_meshs } = this;
     if (this.world_renderer.dirty) {
       const { frame, facing, data, variant } = entity;
       if (data != this.data) {
@@ -156,11 +168,17 @@ export class EntityMainRender {
       this.node.position.y -= holder.main.p1.y - holder.main.node.position.y;
       this.node.position.z -= holder.main.p1.z - holder.main.node.position.z;
     }
-    main_mesh.position.set(this.centerx + this.shaking_x, this.centery, 0);
     const { invisible } = this.owner;
     const { blinking } = entity;
 
     main_mesh.visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0);
+    main_mesh.position.set(this.centerx + this.shaking_x, this.centery, 0);
+
+
+    if (sub_meshs.length) for (let i = 0; i < sub_meshs.length; i++) {
+      sub_meshs[i].position.copy(main_mesh.position);
+      sub_meshs[i].visible = main_mesh.visible;
+    }
 
     this.render_bpoint();
     this.update_outline();

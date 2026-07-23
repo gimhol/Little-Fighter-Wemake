@@ -16,7 +16,7 @@ export interface IEntityData {
   type: TEntityEnum;
   alias_id?: string;
   base: IEntityInfo;
-  
+
   on_dead?: TNextFrame;
   on_exhaustion?: TNextFrame;
   indexes?: IFrameIndexes;
@@ -35,6 +35,7 @@ export interface IEntityData {
    * @type {?boolean} 默认值: true
    */
   processed?: boolean;
+  __pics?: number
 }
 
 export function entity_data_new(): IEntityData {

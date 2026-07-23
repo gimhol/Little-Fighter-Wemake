@@ -25,21 +25,6 @@ export function preprocess_pic(lfw: LFW, data: IEntityData, pic: IFramePictureIn
   const ck = cache_key(pic, p)
   let ret = cache_map.get(ck);
   if (ret) return ret;
-  // const scale_img_w = p.w / p.scale;
-  // const scale_img_h = p.h / p.scale;
-  // const f_i_1: ITexturePieceInfo = {
-  //   tex: pic.tex!,
-  //   x: pic.x / scale_img_w,
-  //   y: 1 - (pic.y + pic.h) / scale_img_h,
-  //   w: pic.w / scale_img_w,
-  //   h: pic.h / scale_img_h,
-  //   pixel_w: pic.w,
-  //   pixel_h: pic.h,
-  // };
-  // const f_i_2: ITexturePieceInfo = {
-  //   ...f_i_1, x: -f_i_1.x - f_i_1.w,
-  // };
-  // ret = { ...pic, 1: f_i_1, [-1]: f_i_2 };
   cache_map.set(ck, pic)
   return pic;
 }
