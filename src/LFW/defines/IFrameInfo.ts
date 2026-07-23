@@ -110,7 +110,22 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
    */
   centery: number;
 
+  /** 
+   * 帧宽度 
+   * 
+   * 会有: frame.width ??= frame.pic?.w ?? 0
+   * 
+   * @type {number}
+   */
   width: number;
+
+  /** 
+   * 帧高度 
+   * 
+   * 会有: frame.height ??= frame.pic?.h ?? 0
+   * 
+   * @type {number}
+   */
   height: number;
 
   /**

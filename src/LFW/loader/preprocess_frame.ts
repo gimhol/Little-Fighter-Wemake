@@ -59,8 +59,8 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
     if (on_hands.length) data.indexes.on_hands = on_hands
   }
 
-  frame.width = frame.width ?? frame.pic?.w ?? 0
-  frame.height = frame.height ?? frame.pic?.h ?? 0
+  frame.width ??= frame.pic?.w ?? 0
+  frame.height ??= frame.pic?.h ?? 0
 
   cook_frame_indicator_info(frame);
   if (is_weapon_data(data) || is_ball_data(data))

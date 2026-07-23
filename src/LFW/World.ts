@@ -27,7 +27,6 @@ import { Ditto } from './ditto/Instance';
 import type { IWorldRenderer } from "./ditto/render/IWorldRenderer";
 import {
   Entity,
-  is_ball,
   is_bot_ctrl,
   is_fighter,
   is_human_ctrl,
@@ -404,17 +403,17 @@ export class World {
     }
 
     // 检查路径是否穿过阻挡地形（处理超快速移动穿墙）
-    const wall_hit = this.ground.intersect_wall(
-      e.prev_position.x, e.prev_position.y, e.prev_position.z,
-      x, y, z,
-    );
-    if (wall_hit) {
-      e.terrain = this.ground.segment(wall_hit.x, wall_hit.z);
-      this._restrict_result.x = wall_hit.x;
-      this._restrict_result.y = y;
-      this._restrict_result.z = wall_hit.z;
-      return this._restrict_result;
-    }
+    // const wall_hit = this.ground.intersect_wall(
+    //   e.prev_position.x, e.prev_position.y, e.prev_position.z,
+    //   x, y, z,
+    // );
+    // if (wall_hit) {
+    //   e.terrain = this.ground.segment(wall_hit.x, wall_hit.z);
+    //   this._restrict_result.x = wall_hit.x;
+    //   this._restrict_result.y = y;
+    //   this._restrict_result.z = wall_hit.z;
+    //   return this._restrict_result;
+    // }
 
     const seg = this.ground.segment(x, z);
 
