@@ -1,13 +1,6 @@
-import { type IBgLayerInfo, bg_layer_info_fields, bg_layer_info_new } from "../../defines";
+import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../../defines";
 import type { IXMLElement } from "../../ditto";
 import { reorder_keys } from "../../fields";
-
-/**
- * 解析 `<layer>` 元素为 IBgLayerInfo
- * @param {IXMLElement} el - layer 元素
- * @param {number} defaultZ - 默认 z 坐标
- * @return {IBgLayerInfo}
- */
 
 export function xml_to_bg_layer(el: IXMLElement, defaultZ: number | undefined): IBgLayerInfo {
   const ret = bg_layer_info_new();
@@ -38,3 +31,4 @@ export function xml_to_bg_layer(el: IXMLElement, defaultZ: number | undefined): 
   reorder_keys(ret, bg_layer_info_fields);
   return ret;
 }
+

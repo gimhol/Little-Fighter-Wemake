@@ -13,7 +13,7 @@
     {
       id: "nekketsu_f_01",
       type: "bg",
-      file: "bg/nekketsu_f_01/nekketsu_f_01.bg.json5",
+      file: "bg/nekketsu_f_01/nekketsu_f_01.bg.xml",
     },
     {
       id: "bg_octagon",

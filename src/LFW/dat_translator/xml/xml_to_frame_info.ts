@@ -100,8 +100,17 @@ export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
   if (gravity !== void 0) ret.gravity_enabled = !!gravity;
   xml_to_velocity_info(el, ret as any);
 
-  // nested elements (多个同名 tag 时以后者覆盖前者)
   ret.pic = merge_by_tag(el, "pic", xml_to_pic);
+  const pic = el.children_by_tag('pic')
+  for (let i = 0; i < pic.length; i++) {
+    const p = xml_to_pic(pic[i])
+    if (!i) {
+      ret.pic = p
+      continue;
+    }
+    ret.pics ||= []
+    ret.pics[i - 1] = p
+  }
 
   const mergedNext = merge_array_by_tag(el, "next", xml_to_next_frame);
   ret.next = mergedNext.length === 1 ? mergedNext[0] : mergedNext.length ? mergedNext : { id: "" };
