@@ -1,4 +1,5 @@
 import type { IFramePictureInfo } from "../../defines";
+import type { IXML } from "../../ditto/xml/IXML";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
 
 /**
@@ -20,4 +21,15 @@ export function xml_to_pic(el: IXMLElement): IFramePictureInfo {
     cx: el.get_num("cx"),
     cy: el.get_num("cy"),
   };
+}
+export function xml_from_pic(xml: IXML, pic: IFramePictureInfo, tag = 'pic'): IXMLElement {
+  const el = xml.create(tag);
+  el.set_attr("tex", pic.tex);
+  el.set_arr_attr("rect", [pic.x, pic.y, pic.w, pic.h]);
+  el.set_attr("r", pic.r);
+  el.set_attr("ox", pic.ox);
+  el.set_attr("oy", pic.oy);
+  el.set_attr("cx", pic.cx);
+  el.set_attr("cy", pic.cy);
+  return el;
 }

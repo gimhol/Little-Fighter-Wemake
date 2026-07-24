@@ -1,6 +1,5 @@
 import { any, fields, flt, int, str } from "../fields";
 import { make_schema } from "../utils/schema";
-import type { TAction } from "./actions";
 import { ALL_FACING_FLAG, FACING_FLAG_DESC_MAP, FACING_FLAG_LABEL_MAP, FacingFlag } from "./FacingFlag";
 import { ALL_FRAME_BEHAVIOR, FRAME_BEHAVIOR_DESC_MAP, FRAME_BEHAVIOR_LABEL_MAP, FrameBehavior } from "./FrameBehavior";
 import type { IBdyInfo } from "./IBdyInfo";
@@ -86,7 +85,7 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
    *
    * @type {TNextFrame}
    */
-  next: TNextFrame;
+  next?: TNextFrame;
 
   /**
    * 脚点x坐标（相对帧切图的x）
@@ -142,7 +141,8 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
    *
    * @see {INextFrame}
    */
-  hp_max?: number;
+  hp?: number;
+  mp?: number;
 
   hold?: IHoldKeyCollection;
   hit?: IHitKeyCollection;
@@ -421,6 +421,8 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     broadcasts: { type: 'array', nullable: true, items: { type: 'string' } },
     facing: { type: 'number', nullable: true },
     landable: { type: 'number', nullable: true },
+    hp: { type: 'number', nullable: true },
+    mp: { type: 'number', nullable: true },
 
     ctrl_x: { type: 'number', nullable: true },
     ctrl_y: { type: 'number', nullable: true },

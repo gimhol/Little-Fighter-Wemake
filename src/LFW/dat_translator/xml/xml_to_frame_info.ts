@@ -2,7 +2,7 @@ import { frame_info_new, type IFrameInfo } from "../../defines/IFrameInfo";
 import type { IHitKeyCollection } from "../../defines/IHitKeyCollection";
 import type { IHoldKeyCollection } from "../../defines/IHoldKeyCollection";
 import type { IQube } from "../../defines/IQube";
-import type { IXMLElement } from "../../ditto/xml";
+import type { IXML, IXMLElement } from "../../ditto/xml";
 import { xml_to_bdy_info } from "./xml_to_bdy_info";
 import { xml_to_bpoint } from "./xml_to_bpoint";
 import { xml_to_chase } from "./xml_to_chase";
@@ -56,95 +56,75 @@ export function merge_by_tag<T extends Record<string, any>>(
 /**
  * 按标签名合并解析数组（用于 bdy/itr/opoint 等）
  */
-function merge_array_by_tag<T>(
+function single_or_array<T>(
   el: IXMLElement,
   tag: string,
   parser: (child: IXMLElement) => T,
-): T[] {
+): T | T[] {
+  return el.children_by_tag(tag).map(parser);
+}
+function non_emptpy_array<T>(
+  el: IXMLElement,
+  tag: string,
+  parser: (child: IXMLElement) => T,
+): T[] | undefined {
   return el.children_by_tag(tag).map(parser);
 }
 
+
 export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
   const ret = frame_info_new();
-
-  // 基础属性
   ret.id = el.get_str("id", ret.id);
   ret.name = el.get_str("name", ret.name);
+
+  const pics = el.children_by_tag('pic').map(v => xml_to_pic(v))
+  if (pics.length > 0) ret.pic = pics[0]
+  if (pics.length > 1) ret.pics = pics.slice(1)
   ret.state = el.get_num("state", ret.state);
   ret.wait = el.get_num("wait", ret.wait);
 
-  // center="x,y" 快捷属性
   const center = el.nums_attr("center");
-  ret.centerx = el.num_attr("centerx") ?? center?.[0] ?? 0;
-  ret.centery = el.num_attr("centery") ?? center?.[1] ?? 0;
-  ret.width = el.num_attr("width") ?? 0;
-  ret.height = el.num_attr("height") ?? 0;
+  ret.centerx = el.get_num("centerx") ?? center?.[0] ?? 0;
+  ret.centery = el.get_num("centery") ?? center?.[1] ?? 0;
 
-  // 可选属性
-  const sound = el.str_attr("sound");
-  if (sound !== void 0) ret.sound = sound;
-  ret.hp_max = el.num_attr("hp_max");
-  const invisible = el.num_attr("invisible");
-  if (invisible !== void 0) ret.invisible = invisible;
-  const noShadow = el.num_attr("no_shadow");
-  if (noShadow !== void 0) ret.no_shadow = noShadow;
-  const jumpFlag = el.num_attr("jump_flag");
-  if (jumpFlag !== void 0) ret.jump_flag = jumpFlag;
-  const behavior = el.num_attr("behavior");
-  if (behavior !== void 0) ret.behavior = behavior;
-  const landable = el.num_attr("landable");
-  if (landable !== void 0) ret.landable = landable;
-  const facing = el.num_attr("facing");
-  if (facing !== void 0) ret.facing = facing;
-  const gravity = el.num_attr("gravity_enabled") ?? el.num_attr("gravity");
-  if (gravity !== void 0) ret.gravity_enabled = !!gravity;
+  const size = el.nums_attr("size");
+  ret.width = el.get_num("width") ?? size?.[0] ?? 0;
+  ret.height = el.get_num("height") ?? size?.[1] ?? 0;
+  ret.sound = el.str_attr("sound");
+
+  ret.hp = el.get_num("hp");
+  ret.mp = el.get_num("mp");
+  ret.invisible = el.get_num("invisible");
+  ret.no_shadow = el.get_num("no_shadow");
+  ret.jump_flag = el.get_num("jump_flag");
+  ret.behavior = el.get_num("behavior");
+  ret.landable = el.get_num("landable");
+  ret.facing = el.get_num("facing");
+
+  ret.gravity_enabled = el.get_bool("gravity_enabled");
+
+
+
   xml_to_velocity_info(el, ret as any);
 
-  ret.pic = merge_by_tag(el, "pic", xml_to_pic);
-  const pic = el.children_by_tag('pic')
-  for (let i = 0; i < pic.length; i++) {
-    const p = xml_to_pic(pic[i])
-    if (!i) {
-      ret.pic = p
-      continue;
-    }
-    ret.pics ||= []
-    ret.pics[i - 1] = p
-  }
+  ret.next          /**/ = single_or_array(el, "next", xml_to_next_frame)
+  ret.on_dead       /**/ = single_or_array(el, "on_dead", xml_to_next_frame);
+  ret.on_landing    /**/ = single_or_array(el, "on_landing", xml_to_next_frame);
+  ret.on_exhaustion /**/ = single_or_array(el, "on_exhaustion", xml_to_next_frame);
+  ret.bdy           /**/ = non_emptpy_array(el, "bdy", xml_to_bdy_info);
+  ret.itr           /**/ = non_emptpy_array(el, "itr", xml_to_itr_info);
+  ret.opoint        /**/ = non_emptpy_array(el, "opoint", xml_to_opoint);
+  ret.wpoint        /**/ = merge_by_tag(el, "wpoint", xml_to_wpoint);
+  ret.bpoint        /**/ = merge_by_tag(el, "bpoint", xml_to_bpoint);
+  ret.cpoint        /**/ = merge_by_tag(el, "cpoint", xml_to_cpoint);
+  ret.chase         /**/ = merge_by_tag(el, "chase", xml_to_chase);
+  ret.hit           /**/ = merge_by_tag(el, "hit", xml_to_key_collection) as IHitKeyCollection;
+  ret.hold          /**/ = merge_by_tag(el, "hold", xml_to_key_collection) as IHoldKeyCollection;
+  ret.key_down      /**/ = merge_by_tag(el, "key_down", xml_to_key_collection) as IHoldKeyCollection;
+  ret.key_up        /**/ = merge_by_tag(el, "key_up", xml_to_key_collection) as IHoldKeyCollection;
+  ret.seqs          /**/ = merge_by_tag(el, "seqs", xml_to_key_collection);
 
-  const mergedNext = merge_array_by_tag(el, "next", xml_to_next_frame);
-  ret.next = mergedNext.length === 1 ? mergedNext[0] : mergedNext.length ? mergedNext : { id: "" };
-  const onDead = merge_array_by_tag(el, "on_dead", xml_to_next_frame);
-  ret.on_dead = onDead.length === 1 ? onDead[0] : onDead.length ? onDead : void 0;
-  const onLanding = merge_array_by_tag(el, "on_landing", xml_to_next_frame);
-  ret.on_landing = onLanding.length === 1 ? onLanding[0] : onLanding.length ? onLanding : void 0;
-  const onExhaustion = merge_array_by_tag(el, "on_exhaustion", xml_to_next_frame);
-  ret.on_exhaustion = onExhaustion.length === 1 ? onExhaustion[0] : onExhaustion.length ? onExhaustion : void 0;
-
-  // arrays (仅非空时覆盖)
-  const bdys = merge_array_by_tag(el, "bdy", xml_to_bdy_info);
-  if (bdys.length) ret.bdy = bdys;
-  const itrs = merge_array_by_tag(el, "itr", xml_to_itr_info);
-  if (itrs.length) ret.itr = itrs;
-  const opoints = merge_array_by_tag(el, "opoint", xml_to_opoint);
-  if (opoints.length) ret.opoint = opoints;
-
-  // single nested elements
-  ret.wpoint = merge_by_tag(el, "wpoint", xml_to_wpoint);
-  ret.bpoint = merge_by_tag(el, "bpoint", xml_to_bpoint);
-  ret.cpoint = merge_by_tag(el, "cpoint", xml_to_cpoint);
-  ret.chase = merge_by_tag(el, "chase", xml_to_chase);
-
-  // key collections
-  ret.hit = merge_by_tag(el, "hit", xml_to_key_collection) as IHitKeyCollection;
-  ret.hold = merge_by_tag(el, "hold", xml_to_key_collection) as IHoldKeyCollection;
-  ret.key_down = merge_by_tag(el, "key_down", xml_to_key_collection) as IHoldKeyCollection;
-  ret.key_up = merge_by_tag(el, "key_up", xml_to_key_collection) as IHoldKeyCollection;
-  ret.seqs = merge_by_tag(el, "seqs", xml_to_key_collection);
-
-  // dataset overrides
-  const ds = xml_to_world_dataset(el.child_by_tag("dataset"));
-  for (const k of Object.keys(ds)) (ret as any)[k] = (ds as any)[k];
+  Object.assign(ret, xml_to_world_dataset(el.child_by_tag("dataset")))
 
   return ret;
 }

@@ -1510,7 +1510,8 @@ export class Entity {
     this.hp_recovering()
     this.mp_recovering();
 
-    if (this.frame.hp_max) this.hp -= this.frame.hp_max * this._atom_time;
+    if (this.frame.hp) this.hp -= this.frame.hp * this._atom_time;
+    if (this.frame.mp) this.mp -= this.frame.mp * this._atom_time;
 
     if (this.shaking <= 0 || 0 == this.dataset('vrest_after_shaking'))
       for (const [k, v] of this.vrests) {
@@ -1604,7 +1605,8 @@ export class Entity {
         if (this.wait < 0) this.wait = 0;
       }
     } else {
-      let nf = this.get_next_frame(this.frame.next)?.which;
+      const { next } = this.frame;
+      let nf = next ? this.get_next_frame(next)?.which : void 0;
       if (nf) nf = { ...nf, judger: void 0 }
       else nf = { id: this.find_auto_frame().id }
       this.enter_frame(nf)
