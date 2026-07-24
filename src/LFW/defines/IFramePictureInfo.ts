@@ -20,6 +20,9 @@ export interface IFramePictureInfo {
   /** 变换中心y */
   oy?: number;
 
+  cx?: number;
+  cy?: number;
+
   __cos_r?: number;
   __sin_r?: number;
 }
@@ -33,6 +36,8 @@ export const frame_picture_info_fields = fields<IFramePictureInfo>({
   r: int({ nullable: true }),
   ox: int({ nullable: true }),
   oy: int({ nullable: true }),
+  cx: int({ nullable: true }),
+  cy: int({ nullable: true }),
 });
 
 export const Schema_IFramePictureInfo = make_schema<IFramePictureInfo>({
@@ -47,6 +52,8 @@ export const Schema_IFramePictureInfo = make_schema<IFramePictureInfo>({
     r: { type: "number", nullable: true },
     ox: { type: "number", nullable: true },
     oy: { type: "number", nullable: true },
+    cx: { type: "number", nullable: true },
+    cy: { type: "number", nullable: true },
     __cos_r: { type: "number", nullable: true },
     __sin_r: { type: "number", nullable: true },
   },

@@ -1,4 +1,4 @@
-import type { Entity, IEntityData, IFrameInfo, IPictureInfo, TFace } from "@/LFW";
+import type { Entity, IEntityData, IFrameInfo, IFramePictureInfo, IPictureInfo, TFace } from "@/LFW";
 import { Buff_Electroshock, clamp, cos, floor, LFW, sin, StateEnum, World } from "@/LFW";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "../_t";
@@ -28,8 +28,9 @@ export class EntityMainRender {
   protected images = new Map<string, RImageInfo>();
   protected entity: Entity;
   protected node = new Object3D();
-  protected main_mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
-  protected sub_meshs: Mesh<BufferGeometry, OutlineMaterial>[] = [];
+  protected meshs: Mesh<BufferGeometry, OutlineMaterial>[] = [
+    MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>)
+  ];
   protected blood_mesh = MeshFactory.get(MeshKind.Blood, Mesh<BufferGeometry, MeshBasicMaterial>);
   protected file_variants = new Map<string, string[]>();
   protected shaking = 0;
@@ -58,7 +59,7 @@ export class EntityMainRender {
     this.data = entity.data;
     this.frame = entity.frame;
     this.facing = entity.facing;
-    this.node.add(this.main_mesh, this.blood_mesh)
+    this.node.add(this.meshs[0], this.blood_mesh)
   }
 
   reset(): void {
@@ -89,19 +90,19 @@ export class EntityMainRender {
       img.pic?.texture && (img.pic.texture.needsUpdate = true);
     }
 
-    this.main_mesh.visible = false;
-    this.main_mesh.name = `Entity: ${this.entity.name}`;
+    this.meshs[0].visible = false;
+    this.meshs[0].name = `Entity: ${this.entity.name}`;
 
     this.blood_mesh.visible = false;
     this.blood_mesh.name = `Blood: ${this.entity.name}`;
 
-    this.sub_meshs.length = 0;
+    this.meshs.length = 1;
     if (this.data.__pics) {
       for (let i = 0; i < this.data.__pics; i++) {
         const sub_mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
-        sub_mesh.name = `Entity: ${this.entity.name} SubMesh[${i}]`
+        sub_mesh.name = `Entity: ${this.entity.name} Mesh[${i}]`
         sub_mesh.visible = false;
-        this.sub_meshs[i] = sub_mesh;
+        this.meshs[i + 1] = sub_mesh;
         this.node.add(sub_mesh)
       }
     }
@@ -137,7 +138,7 @@ export class EntityMainRender {
   }
 
   render(): void {
-    const { entity, main_mesh, sub_meshs } = this;
+    const { entity, meshs } = this;
     if (this.world_renderer.dirty) {
       const { frame, facing, data, variant } = entity;
       if (data != this.data) {
@@ -169,16 +170,21 @@ export class EntityMainRender {
       this.node.position.z -= holder.main.p1.z - holder.main.node.position.z;
     }
     const { invisible } = this.owner;
-    const { blinking } = entity;
-
+    const { blinking, facing } = entity;
+    const main_mesh = meshs[0]
     main_mesh.visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0);
 
-    const { pic } = this.frame
-    if (pic?.r) {
+    const { pic } = this.frame;
+    const cx = this.centerx + this.shaking_x;
+    const cy = this.centery;
+    if (!pic?.r) {
+      main_mesh.position.set(cx, cy, 0);
+      main_mesh.rotation.z = 0;
+    } else {
       const ox = pic?.ox ?? pic.w / 2;
       const oy = pic?.oy ?? pic.h / 2;
-      const px = this.centerx + this.shaking_x + ox;
-      const py = this.centery - oy;
+      const px = cx + ox;
+      const py = cy - oy;
       const dx = main_mesh.position.x - px;
       const dy = main_mesh.position.y - py;
       const _cos = pic.__cos_r ?? cos(pic.r);
@@ -186,33 +192,54 @@ export class EntityMainRender {
       main_mesh.position.x = px + dx * _cos - dy * _sin;
       main_mesh.position.y = py + dx * _sin + dy * _cos;
       main_mesh.rotation.z = pic.r;
-    } else {
-      main_mesh.position.set(this.centerx + this.shaking_x, this.centery, 0);
-      main_mesh.rotation.z = 0;
     }
 
-    if (sub_meshs.length) for (let i = 0; i < sub_meshs.length; i++) {
-      sub_meshs[i].position.set(this.centerx + this.shaking_x, this.centery, 0);
-      sub_meshs[i].visible = main_mesh.visible;
+    for (let i = 0; i < meshs.length; i++) {
+      const mesh = meshs[i];
+      if (!mesh) continue;
+      const pic = this.frame.pics?.[i]
+      if (!pic) {
+        mesh.visible = false;
+        continue;
+      }
+      mesh.visible = main_mesh.visible;
+      if (!mesh.visible) continue;
+      let cx: number = this.shaking_x;
+      if (pic.cx != void 0) {
+        cx += (facing === 1 ? -pic.cx : pic.cx - pic.w)
+      } else {
+        cx += this.centerx;
+      }
+      const cy = pic.cy ?? this.centery;
+      if (!pic.r) {
+        mesh.position.set(cx, cy, 0);
+        mesh.rotation.z = 0;
+        continue;
+      }
+      const ox = pic?.ox ?? pic.w / 2;
+      const oy = pic?.oy ?? pic.h / 2;
+      const px = cx + ox;
+      const py = cy - oy;
+      const dx = mesh.position.x - px;
+      const dy = mesh.position.y - py;
+      const _cos = pic.__cos_r ?? cos(pic.r);
+      const _sin = pic.__sin_r ?? sin(pic.r);
+      mesh.position.x = px + dx * _cos - dy * _sin;
+      mesh.position.y = py + dx * _sin + dy * _cos;
+      mesh.rotation.z = pic.r;
     }
 
     this.render_bpoint();
     this.update_outline();
   }
-
-  private update_texture() {
-    const { main_mesh, entity } = this;
-    const { frame, facing, variant } = entity;
-    const { centerx, centery, width, height } = frame;
-    this.centerx = facing === 1 ? -centerx : centerx - width;
-    this.centery = centery;
-    const { pic } = frame;
-    const { images } = this;
-    main_mesh.scale.set(width, height, 0);
-    if (!pic) return;
-    const { material: m } = main_mesh;
+  private apply_pic_to_mesh(pic: IFramePictureInfo, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
+    mesh.scale.set(pic.w, pic.h, 0);
+    const { entity } = this;
+    const { variant } = entity;
+    const { material: m } = mesh;
     let { tex } = pic;
     if (variant) tex = this.file_variants.get(tex)?.at(variant) ?? tex;
+    const { images } = this;
     const img = this.img = images.get(tex);
     if (img?.pic) {
       m.texture = img.pic.texture;
@@ -222,6 +249,22 @@ export class EntityMainRender {
     }
     m.set_clip(pic.x, pic.y, pic.w, pic.h)
     m.flip_x = entity.facing;
+  }
+
+  private update_texture() {
+    const { meshs: meshs, entity } = this;
+    const { frame, facing } = entity;
+    const { centerx, centery, width } = frame;
+    const { pic, pics } = frame;
+    this.centerx = facing === 1 ? -centerx : centerx - width;
+    this.centery = centery;
+    if (pic) this.apply_pic_to_mesh(pic, this.meshs[0])
+    for (let i = 0; pics && i < pics?.length; ++i) {
+      const pic = pics[i];
+      const mesh = meshs[i + 1];
+      if (!pic || !mesh) continue;
+      this.apply_pic_to_mesh(pic, mesh);
+    }
   }
 
   update_position(immediate = false): void {
@@ -249,7 +292,7 @@ export class EntityMainRender {
 
     if (this.render_effect_time == render_effect_time) return;
     this.render_effect_time = render_effect_time;
-    const { main_mesh } = this;
+    const main_mesh = this.meshs[0];
     const { material: m } = main_mesh;
     const {
       outline_color,
@@ -279,9 +322,9 @@ export class EntityMainRender {
   }
 
   private render_bpoint(): void {
-    const { entity, main_mesh } = this;
+    const { entity } = this;
     const { bpoint } = entity.frame;
-
+    const main_mesh = this.meshs[0]
     const visible = !!bpoint && main_mesh.visible && entity.hp < entity.hp_max * 0.33;
     this.blood_mesh.visible = visible;
 
