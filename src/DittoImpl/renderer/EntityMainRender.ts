@@ -179,68 +179,53 @@ export class EntityMainRender {
     }
     const { invisible } = this.owner;
     const { blinking, facing } = entity;
-    const mesh0 = meshs[0]
-    mesh0.visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0);
-
     const { pic } = this.frame;
-    const cx = this.centerx + this.shaking_x;
-    const cy = this.centery;
-    if (!pic?.r) {
-      mesh0.position.set(cx, cy, 0);
-      mesh0.rotation.z = 0;
-    } else {
-      const ox = pic?.ox ?? pic.w / 2;
-      const oy = pic?.oy ?? pic.h / 2;
-      const px = cx + ox;
-      const py = cy - oy;
-      const dx = mesh0.position.x - px;
-      const dy = mesh0.position.y - py;
-      const _cos = pic.__cos_r ?? cos(pic.r);
-      const _sin = pic.__sin_r ?? sin(pic.r);
-      mesh0.position.x = px + dx * _cos - dy * _sin;
-      mesh0.position.y = py + dx * _sin + dy * _cos;
-      mesh0.rotation.z = pic.r;
-    }
+    const mesh0 = meshs[0]
+    const visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0)
+    mesh0.visible = visible;
+
+    if (pic)
+      this.update_mesh_position(pic, mesh0, this.centerx + this.shaking_x, this.centery)
 
     for (let i = 1; i < meshs.length; i++) {
       const mesh = meshs[i];
       if (!mesh) continue;
+      mesh.visible = visible;
+      if (!visible) continue;
       const pic = this.frame.pics?.[i - 1]
-      if (!pic) {
-        mesh.visible = false;
-        continue;
-      }
-      mesh.visible = mesh0.visible;
-      if (!mesh.visible) continue;
-      let cx: number = this.shaking_x;
-      if (pic.cx != void 0) {
-        cx += (facing === 1 ? -pic.cx : pic.cx - pic.w)
-      } else {
-        cx += this.centerx;
-      }
+      if (!pic) mesh.visible = false;
+      if (!pic) continue;
+      const cx: number = (
+        (pic?.cx === void 0) ? this.centerx :
+          (facing === 1 ? -pic.cx : pic.cx - pic.w)
+      ) + this.shaking_x;
       const cy = pic.cy ?? this.centery;
-      if (!pic.r) {
-        mesh.position.set(cx, cy, 0);
-        mesh.rotation.z = 0;
-        continue;
-      }
-      const ox = pic?.ox ?? pic.w / 2;
-      const oy = pic?.oy ?? pic.h / 2;
-      const px = cx + ox;
-      const py = cy - oy;
-      const dx = mesh.position.x - px;
-      const dy = mesh.position.y - py;
-      const _cos = pic.__cos_r ?? cos(pic.r);
-      const _sin = pic.__sin_r ?? sin(pic.r);
-      mesh.position.x = px + dx * _cos - dy * _sin;
-      mesh.position.y = py + dx * _sin + dy * _cos;
-      mesh.rotation.z = pic.r;
+      this.update_mesh_position(pic, mesh, cx, cy)
     }
 
     this.render_bpoint();
     this.update_outline();
   }
-  private apply_pic_to_mesh(pic: IFramePictureInfo, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
+  private update_mesh_position(pic: IFramePictureInfo, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number) {
+
+    if (!pic?.r) {
+      mesh.position.set(cx, cy, 0);
+      mesh.rotation.z = 0;
+      return;
+    }
+    const ox = pic?.ox ?? pic.w / 2;
+    const oy = pic?.oy ?? pic.h / 2;
+    const px = cx + ox;
+    const py = cy - oy;
+    const dx = mesh.position.x - px;
+    const dy = mesh.position.y - py;
+    const _cos = pic.__cos_r ?? cos(pic.r);
+    const _sin = pic.__sin_r ?? sin(pic.r);
+    mesh.position.x = px + dx * _cos - dy * _sin;
+    mesh.position.y = py + dx * _sin + dy * _cos;
+    mesh.rotation.z = pic.r;
+  }
+  private update_mesh_material(pic: IFramePictureInfo, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
     mesh.scale.set(pic.w, pic.h, 0);
     const { entity } = this;
     const { variant } = entity;
@@ -266,12 +251,12 @@ export class EntityMainRender {
     const { pic, pics } = frame;
     this.centerx = facing === 1 ? -centerx : centerx - width;
     this.centery = centery;
-    if (pic) this.apply_pic_to_mesh(pic, this.meshs[0])
+    if (pic) this.update_mesh_material(pic, this.meshs[0])
     for (let i = 0; pics && i < pics?.length; ++i) {
       const pic = pics[i];
       const mesh = meshs[i + 1];
       if (!pic || !mesh) continue;
-      this.apply_pic_to_mesh(pic, mesh);
+      this.update_mesh_material(pic, mesh);
     }
   }
 
