@@ -1,5 +1,5 @@
 import type { Entity, IEntityData, IFrameInfo, IFramePictureInfo, IPictureInfo, TFace } from "@/LFW";
-import { Buff_Electroshock, clamp, cos, floor, LFW, sin, StateEnum, World } from "@/LFW";
+import { Buff_Electroshock, clamp, cos, floor, LFW, max, sin, StateEnum, World } from "@/LFW";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
@@ -91,21 +91,29 @@ export class EntityMainRender {
     }
 
     this.meshs[0].visible = false;
-    this.meshs[0].name = `Entity: ${this.entity.name}`;
+    this.meshs[0].name = `Entity Mesh 0: ${this.entity.name}`;
+
+    const mesh_count = this.meshs.length;
+    const pics_count = this.data.__pics || 0;
+    const count = max(mesh_count, pics_count)
+    for (let i = 0; i < count; ++i) {
+      let mesh = this.meshs[i + 1];
+      if (i <= pics_count) {
+        if (!mesh) {
+          mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
+          this.meshs[i + 1] = mesh;
+          this.node.add(mesh)
+        }
+        mesh.name = `Entity Mesh ${i}: ${this.entity.name}`
+        mesh.visible = false;
+      } else if (mesh) {
+        mesh.removeFromParent();
+      }
+    }
+    this.meshs.length = (pics_count + 1);
 
     this.blood_mesh.visible = false;
     this.blood_mesh.name = `Blood: ${this.entity.name}`;
-
-    this.meshs.length = 1;
-    if (this.data.__pics) {
-      for (let i = 0; i < this.data.__pics; i++) {
-        const sub_mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
-        sub_mesh.name = `Entity: ${this.entity.name} Mesh[${i}]`
-        sub_mesh.visible = false;
-        this.meshs[i + 1] = sub_mesh;
-        this.node.add(sub_mesh)
-      }
-    }
   }
 
   on_mount(): void {
@@ -171,38 +179,38 @@ export class EntityMainRender {
     }
     const { invisible } = this.owner;
     const { blinking, facing } = entity;
-    const main_mesh = meshs[0]
-    main_mesh.visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0);
+    const mesh0 = meshs[0]
+    mesh0.visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0);
 
     const { pic } = this.frame;
     const cx = this.centerx + this.shaking_x;
     const cy = this.centery;
     if (!pic?.r) {
-      main_mesh.position.set(cx, cy, 0);
-      main_mesh.rotation.z = 0;
+      mesh0.position.set(cx, cy, 0);
+      mesh0.rotation.z = 0;
     } else {
       const ox = pic?.ox ?? pic.w / 2;
       const oy = pic?.oy ?? pic.h / 2;
       const px = cx + ox;
       const py = cy - oy;
-      const dx = main_mesh.position.x - px;
-      const dy = main_mesh.position.y - py;
+      const dx = mesh0.position.x - px;
+      const dy = mesh0.position.y - py;
       const _cos = pic.__cos_r ?? cos(pic.r);
       const _sin = pic.__sin_r ?? sin(pic.r);
-      main_mesh.position.x = px + dx * _cos - dy * _sin;
-      main_mesh.position.y = py + dx * _sin + dy * _cos;
-      main_mesh.rotation.z = pic.r;
+      mesh0.position.x = px + dx * _cos - dy * _sin;
+      mesh0.position.y = py + dx * _sin + dy * _cos;
+      mesh0.rotation.z = pic.r;
     }
 
-    for (let i = 0; i < meshs.length; i++) {
+    for (let i = 1; i < meshs.length; i++) {
       const mesh = meshs[i];
       if (!mesh) continue;
-      const pic = this.frame.pics?.[i]
+      const pic = this.frame.pics?.[i - 1]
       if (!pic) {
         mesh.visible = false;
         continue;
       }
-      mesh.visible = main_mesh.visible;
+      mesh.visible = mesh0.visible;
       if (!mesh.visible) continue;
       let cx: number = this.shaking_x;
       if (pic.cx != void 0) {
@@ -252,7 +260,7 @@ export class EntityMainRender {
   }
 
   private update_texture() {
-    const { meshs: meshs, entity } = this;
+    const { meshs, entity } = this;
     const { frame, facing } = entity;
     const { centerx, centery, width } = frame;
     const { pic, pics } = frame;
@@ -292,8 +300,8 @@ export class EntityMainRender {
 
     if (this.render_effect_time == render_effect_time) return;
     this.render_effect_time = render_effect_time;
-    const main_mesh = this.meshs[0];
-    const { material: m } = main_mesh;
+    const mesh0 = this.meshs[0];
+    const { material: m } = mesh0;
     const {
       outline_color,
       outline_alpha,
@@ -324,14 +332,14 @@ export class EntityMainRender {
   private render_bpoint(): void {
     const { entity } = this;
     const { bpoint } = entity.frame;
-    const main_mesh = this.meshs[0]
-    const visible = !!bpoint && main_mesh.visible && entity.hp < entity.hp_max * 0.33;
+    const mesh0 = this.meshs[0]
+    const visible = !!bpoint && mesh0.visible && entity.hp < entity.hp_max * 0.33;
     this.blood_mesh.visible = visible;
 
     if (!visible) return;
 
     let { x: bx, y: by, z: bz = 0.1, r = 0 } = bpoint;
-    bx = entity.facing === 1 ? bx : main_mesh.scale.x - bx;
+    bx = entity.facing === 1 ? bx : mesh0.scale.x - bx;
     this.blood_mesh.position.set(this.centerx + bx, this.centery - by, bz);
   }
 }
