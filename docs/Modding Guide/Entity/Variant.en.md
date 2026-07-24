@@ -1,5 +1,7 @@
 # Entity Variants
 
+[中文](Variant.md) | [English](Variant.en.md)
+
 ## Entity Variants in the Original LF2
 
 LF2 adopts an implicit mechanism to render different sprite variants for entities.
