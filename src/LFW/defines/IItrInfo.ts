@@ -104,6 +104,8 @@ export interface IItrInfo extends Partial<IQube> {
    */
   test?: string;
 
+  code?: number,
+
   /**
    * 测试碰撞是否满足条件
    * 
@@ -115,8 +117,8 @@ export interface IItrInfo extends Partial<IQube> {
    * @type {?IExpression<any>['run']}
    * @see {IItrInfo.test}
    */
-  tester?: IExpression<any>;
-  code?: number,
+  __tester?: IExpression<any>;
+  
   /** @deprecated 改用ref */
   prefab_id?: string;
 }
@@ -180,7 +182,7 @@ export const itr_info_fields = fields<IItrInfo>({
   on_hit_ground: any,
   actions: any,
   test: str("测试表达式"),
-  tester: any,
+  __tester: any,
   code: str("Code"),
   ref: str("预制信息ID"),
   __indicator_info: any,

@@ -311,6 +311,6 @@ export function collision_test(c: Collision): boolean {
   ) return false;
 
   if (bdy.__tester?.run(c) === false) return false;
-  if (itr.tester?.run(c) === false) return false;
+  if (itr.__tester?.run(c) === false) return false;
   return collisions_keeper.load_handlers(c);
 }

@@ -1,6 +1,6 @@
 import type { IFrameInfo } from "../../defines/IFrameInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
-import { xml_from_itr_info as xml_x_itr } from "./xml_from_itr_info";
+import { xml_x_itr as xml_x_itr } from "./xml_x_itr";
 import { xml_from_key_collection } from "./xml_from_key_collection";
 import { xml_from_t_next_frame } from "./xml_from_next_frame";
 import { xml_x_bdy } from "./xml_x_bdy";

@@ -12,7 +12,7 @@ export * from "./xml_from_drink_info";
 export * from "./xml_from_entity_data";
 export * from "./xml_from_entity_info";
 export * from "./xml_from_frame_indexes";
-export * from "./xml_from_itr_info";
+export * from "./xml_x_itr";
 export * from "./xml_from_json";
 export * from "./xml_from_key_collection";
 export * from "./xml_from_next_frame";

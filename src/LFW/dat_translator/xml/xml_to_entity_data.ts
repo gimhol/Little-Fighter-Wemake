@@ -6,7 +6,7 @@ import { xml_2_bdy } from "./xml_x_bdy";
 import { xml_to_entity_info } from "./xml_to_entity_info";
 import { xml_to_frame_indexes } from "./xml_to_frame_indexes";
 import { xml_2_frame } from "./xml_2_frame";
-import { xml_to_itr_info } from "./xml_to_itr_info";
+import { xml_2_itr } from "./xml_x_itr";
 import { xml_to_t_next_frame } from "./xml_to_next_frame";
 
 
@@ -47,7 +47,7 @@ export function xml_to_entity_data(el: IXMLElement | undefined): IEntityData {
   const itr: TItrPrefabs = {};
   for (const tag of ["itr_prefab", "itr"]) {
     for (const child of el.children_by_tag(tag)) {
-      const prefab = xml_to_itr_info(child);
+      const prefab = xml_2_itr(child);
       prefab.id = child.get_str("id", "");
       itr[prefab.id] = prefab;
     }

@@ -215,7 +215,7 @@ export function preprocess_itr(lfw: LFW, itr: IItrInfo, data: IEntityData, jobs:
     }
   }
   if (itr.test)
-    itr.tester = new Expression(itr.test, get_val_geter_from_collision);
+    itr.__tester = new Expression(itr.test, get_val_geter_from_collision);
   return itr;
 }
 

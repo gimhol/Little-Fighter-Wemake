@@ -4,7 +4,7 @@ import { xml_x_bdy } from "./xml_x_bdy";
 import { xml_from_entity_info } from "./xml_from_entity_info";
 import { xml_from_frame_indexes } from "./xml_from_frame_indexes";
 import { xml_x_frame } from "./xml_x_frame";
-import { xml_from_itr_info } from "./xml_from_itr_info";
+import { xml_x_itr } from "./xml_x_itr";
 import { xml_from_next_frame } from "./xml_from_next_frame";
 export { xml_from_entity_info };
 
@@ -38,7 +38,7 @@ export function xml_from_entity_data(xml: IXML, data: IEntityData): string {
   if (data.itr_prefabs && Object.keys(data.itr_prefabs).length) {
     for (const [k, v] of Object.entries(data.itr_prefabs)) {
       if (!v) continue;
-      el.insert(xml_from_itr_info(xml, v, "itr_prefab"));
+      el.insert(xml_x_itr(xml, v, "itr_prefab"));
     }
   }
 
