@@ -15,7 +15,7 @@ export function xml_to_entity_info(el: IXMLElement | undefined): IEntityInfo {
   ret.small = el.get_str("small", ret.small);
 
   // type
-  const type = el.num_attr("type") ?? el.str_attr("type") as any;
+  const type = el.get_num("type") ?? el.get_str("type") as any;
   if (type !== void 0) ret.type = type;
 
   ret.ce = el.get_num("ce", ret.ce);
@@ -34,17 +34,17 @@ export function xml_to_entity_info(el: IXMLElement | undefined): IEntityInfo {
   apply3("bounce", "bounce_x", "bounce_y", "bounce_z");
   apply3("bounce_min", "bounce_min_x", "bounce_min_y", "bounce_min_z");
   apply3("fast", "fast_vx", "fast_vy", "fast_vz");
-  ret.bounce_y = el.num_attr("bounce_y") ?? ret.bounce_y;
-  ret.bounce_x = el.num_attr("bounce_x") ?? ret.bounce_x;
-  ret.bounce_z = el.num_attr("bounce_z") ?? ret.bounce_z;
-  ret.bounce_min_y = el.num_attr("bounce_min_y") ?? ret.bounce_min_y;
-  ret.bounce_min_x = el.num_attr("bounce_min_x") ?? ret.bounce_min_x;
-  ret.bounce_min_z = el.num_attr("bounce_min_z") ?? ret.bounce_min_z;
-  ret.fast_vy = el.num_attr("fast_vy") ?? ret.fast_vy;
-  ret.fast_vx = el.num_attr("fast_vx") ?? ret.fast_vx;
-  ret.fast_vz = el.num_attr("fast_vz") ?? ret.fast_vz;
-  ret.drop_hurt = el.num_attr("drop_hurt");
-  ret.resting_max = el.num_attr("resting_max");
+  ret.bounce_y = el.get_num("bounce_y") ?? ret.bounce_y;
+  ret.bounce_x = el.get_num("bounce_x") ?? ret.bounce_x;
+  ret.bounce_z = el.get_num("bounce_z") ?? ret.bounce_z;
+  ret.bounce_min_y = el.get_num("bounce_min_y") ?? ret.bounce_min_y;
+  ret.bounce_min_x = el.get_num("bounce_min_x") ?? ret.bounce_min_x;
+  ret.bounce_min_z = el.get_num("bounce_min_z") ?? ret.bounce_min_z;
+  ret.fast_vy = el.get_num("fast_vy") ?? ret.fast_vy;
+  ret.fast_vx = el.get_num("fast_vx") ?? ret.fast_vx;
+  ret.fast_vz = el.get_num("fast_vz") ?? ret.fast_vz;
+  ret.drop_hurt = el.get_num("drop_hurt");
+  ret.resting_max = el.get_num("resting_max");
 
   // string arrays
   ret.group = el.strs_attr("group");
@@ -53,37 +53,39 @@ export function xml_to_entity_info(el: IXMLElement | undefined): IEntityInfo {
   ret.dead_sounds = el.strs_attr("dead_sounds");
 
   // bot_id (text attr or child element)
-  ret.bot_id = el.str_attr("bot_id") ?? el.child_by_tag("bot")?.str_attr("id");
+  ret.bot_id = el.get_str("bot_id") ?? el.child_by_tag("bot")?.get_str("id");
 
   // files
-  const filesEl = el.child_by_tag("files");
-  if (filesEl) {
-    const files: Record<string, any> = {};
-    for (const f of filesEl.children_by_tag("file")) {
-      const name = f.str_attr("name") ?? f.str_attr("id") ?? "";
-      files[name] = {
-        id: f.str_attr("id") ?? name,
-        path: f.str_attr("path") ?? f.str_attr("src") ?? "",
-        row: f.num_attr("row"),
-        col: f.num_attr("col"),
-        cell_w: f.num_attr("cell_w"),
-        cell_h: f.num_attr("cell_h"),
-        variants: f.strs_attr("variants"),
-      };
-    }
-    if (Object.keys(files).length) ret.files = files as any;
+  const files: Record<string, any> = {};
+  for (const f of el.children_by_tag("file")) {
+    const name = f.get_str("name") ?? f.get_str("id") ?? "";
+    files[name] = {
+      id: f.get_str("id") ?? name,
+      path: f.get_str("path") ?? f.get_str("src") ?? "",
+      row: f.get_num("row"),
+      col: f.get_num("col"),
+      cell_w: f.get_num("cell_w"),
+      cell_h: f.get_num("cell_h"),
+      variants: f.get_str_arr("variants"),
+    };
   }
+  if (Object.keys(files).length) ret.files = files as any;
+
 
   // portraits
-  const portraitsEl = el.child_by_tag("portraits");
-  if (portraitsEl) {
-    const portraits: Record<string, any> = {};
-    for (const p of portraitsEl.children_by_tag("portrait")) {
-      const name = p.str_attr("name") ?? "";
-      portraits[name] = { tex: p.str_attr("tex") ?? "0", x: p.num_attr("x") ?? 0, y: p.num_attr("y") ?? 0, w: p.num_attr("w") ?? 0, h: p.num_attr("h") ?? 0 };
-    }
-    if (Object.keys(portraits).length) ret.portraits = portraits as any;
+  const portraits: Record<string, any> = {};
+  for (const p of el.children_by_tag("portrait")) {
+    const name = p.get_str("name") ?? "";
+    portraits[name] = {
+      tex: p.get_str("tex") ?? "0",
+      x: p.get_num("x") ?? 0,
+      y: p.get_num("y") ?? 0,
+      w: p.get_num("w") ?? 0,
+      h: p.get_num("h") ?? 0
+    };
   }
+  if (Object.keys(portraits).length) ret.portraits = portraits as any;
+
 
   // drink / armor
   const drinkEl = el.child_by_tag("drink");
@@ -92,24 +94,23 @@ export function xml_to_entity_info(el: IXMLElement | undefined): IEntityInfo {
   if (armorEl) ret.armor = xml_to_armor_info(armorEl);
 
   // models
-  const modelsEl = el.child_by_tag("models");
-  if (modelsEl) {
-    const models: Record<string, any> = {};
-    for (const m of modelsEl.children_by_tag("model")) {
-      const name = m.str_attr("name") ?? m.str_attr("id") ?? "";
-      const model: any = {
-        id: m.str_attr("id") ?? name,
-        path: m.str_attr("path") ?? "",
-        variants: m.strs_attr("variants"),
-      };
-      const scale = m.nums_attr_soft("scale");
-      if (scale?.some(v => v !== void 0)) model.scale = { x: scale[0], y: scale[1], z: scale[2] };
-      const quat = m.nums_attr_soft("quaternion");
-      if (quat?.some(v => v !== void 0)) model.quaternion = { x: quat[0], y: quat[1], z: quat[2], w: quat[3] };
-      models[name] = model;
-    }
-    if (Object.keys(models).length) ret.models = models as any;
+
+  const models: Record<string, any> = {};
+  for (const m of el.children_by_tag("model")) {
+    const name = m.get_str("name") ?? m.get_str("id") ?? "";
+    const model: any = {
+      id: m.get_str("id") ?? name,
+      path: m.get_str("path") ?? "",
+      variants: m.strs_attr("variants"),
+    };
+    const scale = m.nums_attr_soft("scale");
+    if (scale?.some(v => v !== void 0)) model.scale = { x: scale[0], y: scale[1], z: scale[2] };
+    const quat = m.nums_attr_soft("quaternion");
+    if (quat?.some(v => v !== void 0)) model.quaternion = { x: quat[0], y: quat[1], z: quat[2], w: quat[3] };
+    models[name] = model;
   }
+  if (Object.keys(models).length) ret.models = models as any;
+
 
   // brokens (<opoint> children)
   const opointEls = el.children_by_tag("opoint");

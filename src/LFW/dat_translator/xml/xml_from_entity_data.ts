@@ -51,6 +51,6 @@ export function xml_from_entity_data(xml: IXML, data: IEntityData): string {
   // indexes
   const indexes = xml_from_frame_indexes(xml, data.indexes);
   if (indexes) el.insert(indexes);
-  console.log(el)
+
   return el.stringify();
 }
