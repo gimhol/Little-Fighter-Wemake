@@ -144,6 +144,8 @@ export interface IFrameInfo extends IVelocityInfo {
   hp?: number;
   mp?: number;
 
+  
+
   hold?: IHoldKeyCollection;
   hit?: IHitKeyCollection;
   key_down?: IHoldKeyCollection;

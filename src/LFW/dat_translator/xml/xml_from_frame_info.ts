@@ -2,10 +2,10 @@ import type { IFrameInfo } from "../../defines/IFrameInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { xml_from_bdy_info } from "./xml_from_bdy_info";
 import { xml_from_itr_info } from "./xml_from_itr_info";
-import { xml_from_hit_key, xml_from_hold_key } from "./xml_from_key_collection";
+import { xml_from_key_collection } from "./xml_from_key_collection";
 import { xml_from_t_next_frame } from "./xml_from_next_frame";
 import { xml_from_opoint } from "./xml_from_opoint";
-import { xml_from_pic, xml_to_pic } from "./xml_to_pic";
+import { xml_from_pic } from "./xml_to_pic";
 
 /**
  * 序列化 <frame>
@@ -18,32 +18,27 @@ export function xml_from_frame_info(xml: IXML, id: string, f: IFrameInfo): IXMLE
   if (f.pics) f.pics.forEach(pic => el.insert(xml_from_pic(xml, pic)))
   el.set_attr("state", f.state)
   el.set_attr("wait", f.wait)
-  
-  el.set_arr_attr("center", [f.centerx, f.centery])
-  el.set_arr_attr("size", [f.width, f.height])
-  el.set_attr("sound", f.hp)
+
+  xml_from_t_next_frame(xml, f.next, 'next').forEach(v => el.insert(v))
+
+  el.set_attr("center", [f.centerx, f.centery].join())
+  el.set_attr("size", [f.width, f.height].join())
+  el.set_attr("sound", f.sound)
+  el.set_attr("hp", f.hp)
+  el.set_attr("mp", f.mp)
+
+  el.set_attr("invisible", f.invisible)
+  el.set_attr("no_shadow", f.no_shadow)
+  el.set_attr("jump_flag", f.jump_flag)
+  el.set_attr("behavior", f.behavior)
+  el.set_attr("landable", f.landable)
+  el.set_attr("facing", f.facing)
 
 
-
-
-
-  xml_from_t_next_frame(xml, f.next, 'next')?.forEach(v => {
-    el.insert(v);
-  })
-
-  // hit / hold / key_down / key_up
-  if (f.hit) {
-    el.insert(xml_from_hit_key(xml, f.hit));
-  }
-  if (f.hold) {
-    el.insert(xml_from_hold_key(xml, f.hold));
-  }
-  if (f.key_down) {
-    el.insert(xml_from_hold_key(xml, f.key_down));
-  }
-  if (f.key_up) {
-    el.insert(xml_from_hold_key(xml, f.key_up));
-  }
+  if (f.hit) xml_from_key_collection(xml, f.hit, 'hit').forEach(v => el.insert(v))
+  if (f.hold) xml_from_key_collection(xml, f.hold, 'hold').forEach(v => el.insert(v))
+  if (f.key_down) xml_from_key_collection(xml, f.key_down, 'key_down').forEach(v => el.insert(v))
+  if (f.key_up) xml_from_key_collection(xml, f.key_up, 'key_up').forEach(v => el.insert(v))
 
   // bpoint / wpoint / cpoint (single)
   if (f.bpoint) {

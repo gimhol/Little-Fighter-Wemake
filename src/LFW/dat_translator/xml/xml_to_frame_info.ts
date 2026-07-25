@@ -2,7 +2,7 @@ import { frame_info_new, type IFrameInfo } from "../../defines/IFrameInfo";
 import type { IHitKeyCollection } from "../../defines/IHitKeyCollection";
 import type { IHoldKeyCollection } from "../../defines/IHoldKeyCollection";
 import type { IQube } from "../../defines/IQube";
-import type { IXML, IXMLElement } from "../../ditto/xml";
+import type { IXMLElement } from "../../ditto/xml";
 import { xml_to_bdy_info } from "./xml_to_bdy_info";
 import { xml_to_bpoint } from "./xml_to_bpoint";
 import { xml_to_chase } from "./xml_to_chase";
@@ -118,13 +118,11 @@ export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
   ret.bpoint        /**/ = merge_by_tag(el, "bpoint", xml_to_bpoint);
   ret.cpoint        /**/ = merge_by_tag(el, "cpoint", xml_to_cpoint);
   ret.chase         /**/ = merge_by_tag(el, "chase", xml_to_chase);
-  ret.hit           /**/ = merge_by_tag(el, "hit", xml_to_key_collection) as IHitKeyCollection;
-  ret.hold          /**/ = merge_by_tag(el, "hold", xml_to_key_collection) as IHoldKeyCollection;
-  ret.key_down      /**/ = merge_by_tag(el, "key_down", xml_to_key_collection) as IHoldKeyCollection;
-  ret.key_up        /**/ = merge_by_tag(el, "key_up", xml_to_key_collection) as IHoldKeyCollection;
-  ret.seqs          /**/ = merge_by_tag(el, "seqs", xml_to_key_collection);
-
-  Object.assign(ret, xml_to_world_dataset(el.child_by_tag("dataset")))
-
+  ret.hit           /**/ = xml_to_key_collection(el, "hit") as IHitKeyCollection;
+  ret.hold          /**/ = xml_to_key_collection(el, "hold") as IHoldKeyCollection;
+  ret.key_down      /**/ = xml_to_key_collection(el, "key_down") as IHoldKeyCollection;
+  ret.key_up        /**/ = xml_to_key_collection(el, "key_up") as IHoldKeyCollection;
+  ret.seqs          /**/ = xml_to_key_collection(el, "seqs");
+  ret.dataset       /**/ = xml_to_world_dataset(el.child_by_tag("dataset"))
   return ret;
 }

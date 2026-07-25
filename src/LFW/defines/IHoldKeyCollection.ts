@@ -1,5 +1,5 @@
 import type { TNextFrame } from './INextFrame';
-export interface IHoldKeyCollection {
+export interface  IHoldKeyCollection {
   a?: TNextFrame;
   d?: TNextFrame;
   j?: TNextFrame;
