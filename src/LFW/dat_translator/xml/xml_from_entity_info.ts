@@ -1,45 +1,38 @@
 import type { IEntityInfo } from "../../defines/IEntityInfo";
-import type { IXMLElement, IXML } from "../../ditto/xml";
-import { xml_from_drink_info } from "./xml_from_drink_info";
+import type { IXML, IXMLElement } from "../../ditto/xml";
 import { xml_from_armor_info } from "./xml_from_armor_info";
+import { xml_from_drink_info } from "./xml_from_drink_info";
 import { xml_from_opoint } from "./xml_from_opoint";
 import { xml_from_world_dataset } from "./xml_from_world_dataset";
+import { xml_x_model_info_map } from "./xml_x_model_info";
+import { xml_x_picture_info_map } from "./xml_x_picture_info";
 
 /**
  * 序列化 <base>
  */
 export function xml_from_entity_info(xml: IXML, info: IEntityInfo, tag: string = "base"): IXMLElement {
   const ret = xml.create(tag);
+  ret.set_attr("type", info.type);
   ret.set_attr("name", info.name);
   ret.set_attr("head", info.head);
   ret.set_attr("small", info.small);
-  ret.set_attr("bot_id", info.bot_id);
-  ret.set_attr("type", info.type);
   ret.set_attr("ce", info.ce);
   ret.set_attr("weight", info.weight);
   ret.set_attr("strength", info.strength);
+  ret.set_attr("group", info.group?.join());
+  xml_x_picture_info_map(xml, info.files, "file")?.forEach(v => ret.insert(v))
+  xml_x_model_info_map(xml, info.models, "model")?.forEach(v => ret.insert(v))
   ret.set_arr_attr_soft("bounce", [info.bounce_x, info.bounce_y, info.bounce_z]);
   ret.set_arr_attr_soft("bounce_min", [info.bounce_min_x, info.bounce_min_y, info.bounce_min_z]);
   ret.set_arr_attr_soft("fast", [info.fast_vx, info.fast_vy, info.fast_vz]);
+
   ret.set_attr("drop_hurt", info.drop_hurt);
-  ret.set_attr("resting_max", info.resting_max);
-  ret.set_arr_attr("group", info.group);
   ret.set_arr_attr("hit_sounds", info.hit_sounds);
   ret.set_arr_attr("drop_sounds", info.drop_sounds);
   ret.set_arr_attr("dead_sounds", info.dead_sounds);
 
+  ret.set_attr("bot_id", info.bot_id);
 
-  for (const [name, f] of Object.entries(info.files ?? {})) {
-    const el = xml.create("file");
-    el.set_attr("name", name);
-    el.set_attr("path", f.path);
-    el.set_attr("row", f.row);
-    el.set_attr("col", f.col);
-    el.set_attr("cell_w", f.cell_w);
-    el.set_attr("cell_h", f.cell_h);
-    el.set_arr_attr("variants", (f as any).variants);
-    ret.insert(el);
-  }
   for (const [name, p] of Object.entries(info.portraits ?? {})) {
     const el = xml.create("portrait");
     el.set_attr("name", name);
@@ -62,8 +55,6 @@ export function xml_from_entity_info(xml: IXML, info: IEntityInfo, tag: string =
     el.set_attr("id", m.id);
     el.set_attr("path", m.path);
     el.set_arr_attr("variants", m.variants);
-    if (m.scale) el.set_arr_attr_soft("scale", [m.scale.x, m.scale.y, m.scale.z]);
-    if (m.quaternion) el.set_arr_attr_soft("quaternion", [m.quaternion.x, m.quaternion.y, m.quaternion.z, m.quaternion.w]);
     ret.insert(el);
   }
   if (info.brokens?.length) {

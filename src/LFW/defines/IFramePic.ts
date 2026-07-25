@@ -1,7 +1,7 @@
 import { fields, int, str } from "../fields";
 import { make_schema } from "../utils/schema/make_schema";
 
-export interface IFramePictureInfo {
+export interface IFramePic {
   /** 图片ID */
   tex: string;
   /** 裁剪起点X坐标（像素） */
@@ -26,8 +26,16 @@ export interface IFramePictureInfo {
   __cos_r?: number;
   __sin_r?: number;
 }
-
-export const frame_picture_info_fields = fields<IFramePictureInfo>({
+export function frame_pic_new(): IFramePic {
+  return {
+    tex: "",
+    x: 0,
+    y: 0,
+    w: 0,
+    h: 0
+  }
+}
+export const frame_pic_fields = fields<IFramePic>({
   tex: str('图片ID'),
   x: int('裁剪起点X坐标（像素）'),
   y: int('裁剪起点Y坐标（像素）'),
@@ -40,8 +48,8 @@ export const frame_picture_info_fields = fields<IFramePictureInfo>({
   cy: int({ nullable: true }),
 });
 
-export const Schema_IFramePictureInfo = make_schema<IFramePictureInfo>({
-  key: 'IFramePictureInfo',
+export const Schema_IFramePic = make_schema<IFramePic>({
+  key: 'IFramePic',
   type: 'object',
   properties: {
     tex: { type: "string", description: "图片ID" },

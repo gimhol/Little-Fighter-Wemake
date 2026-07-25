@@ -1,5 +1,5 @@
 import { type IRect, Resizable, Shape, ShapeData } from "@fimagine/writeboard";
-import { type IBdyInfo, type ICpointInfo, type IFrameInfo, type IFramePictureInfo, type IItrInfo, type IOpointInfo, type IWpointInfo } from "../LFW/defines";
+import { type IBdyInfo, type ICpointInfo, type IFrameInfo, type IFramePic, type IItrInfo, type IOpointInfo, type IWpointInfo } from "../LFW/defines";
 import type { IEntityData } from "../LFW/defines/IEntityData";
 import type { IZip } from "../LFW/ditto";
 import { loop_arr } from "../LFW/utils/array/loop_arr";
@@ -159,7 +159,7 @@ export class FrameDrawer extends Shape<FrameDrawerData> {
     ctx.strokeText('' + point.oid, x + 2, y - 5)
     ctx.fillText('' + point.oid, x + 2, y - 5)
   }
-  draw_frame_bound(ctx: CanvasRenderingContext2D, pic: IFramePictureInfo) {
+  draw_frame_bound(ctx: CanvasRenderingContext2D, pic: IFramePic) {
     ctx.strokeStyle = '#FFFFFFaa';
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 2]);

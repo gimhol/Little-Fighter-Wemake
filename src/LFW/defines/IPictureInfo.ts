@@ -33,7 +33,13 @@ export interface IPictureInfo {
   /** @deprecated LF2中的h，LFW不再使用，但LFW-TOOL转换的数据会保留此值 */
   cell_h?: number;
 }
-
+export function picture_info_new() {
+  const ret: IPictureInfo = {
+    id: "",
+    path: ""
+  }
+  return ret;
+}
 export const picture_info_fields = fields<Partial<IPictureInfo>>({
   id: str('图片ID'),
   path: str('路径'),

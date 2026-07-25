@@ -4,72 +4,45 @@ import { xml_to_armor_info } from "./xml_to_armor_info";
 import { xml_to_drink_info } from "./xml_to_drink_info";
 import { xml_to_opoint } from "./xml_to_opoint";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
+import { xml_2_model_info_map } from "./xml_x_model_info";
+import { xml_2_picture_info_map } from "./xml_x_picture_info";
 
 
-export function xml_to_entity_info(el: IXMLElement | undefined): IEntityInfo {
+export function xml_to_entity_info(el: IXMLElement): IEntityInfo {
   const ret = entity_info_new();
-  if (!el) return ret;
 
-  ret.name = el.get_str("name", ret.name);
-  ret.head = el.get_str("head", ret.head);
-  ret.small = el.get_str("small", ret.small);
+  ret.type     /**/ = el.get_num("type", ret.type);
+  ret.name     /**/ = el.get_str("name", ret.name);
+  ret.head     /**/ = el.get_str("head", ret.head);
+  ret.small    /**/ = el.get_str("small", ret.small);
+  ret.ce       /**/ = el.get_num("ce", ret.ce);
+  ret.weight   /**/ = el.get_num("weight", ret.weight);
+  ret.strength /**/ = el.get_num("strength", ret.strength);
+  ret.group    /**/ = el.get_str_arr("group");
+  ret.files    /**/ = xml_2_picture_info_map(el, 'file');
+  ret.models   /**/ = xml_2_model_info_map(el, 'model');
 
-  // type
-  const type = el.get_num("type") ?? el.get_str("type") as any;
-  if (type !== void 0) ret.type = type;
+  const bounce = el.nums_attr_soft("bounce")
+  ret.bounce_x = el.get_num("bounce_x", bounce?.[0] ?? ret.bounce_x)
+  ret.bounce_y = el.get_num("bounce_y", bounce?.[1] ?? ret.bounce_y)
+  ret.bounce_z = el.get_num("bounce_z", bounce?.[2] ?? ret.bounce_z)
 
-  ret.ce = el.get_num("ce", ret.ce);
-  ret.weight = el.get_num("weight", ret.weight);
-  ret.strength = el.get_num("strength", ret.strength);
+  const bounce_min = el.nums_attr_soft("bounce_min")
+  ret.bounce_min_y = el.get_num("bounce_min_y", bounce_min?.[0] ?? ret.bounce_min_y);
+  ret.bounce_min_x = el.get_num("bounce_min_x", bounce_min?.[1] ?? ret.bounce_min_x);
+  ret.bounce_min_z = el.get_num("bounce_min_z", bounce_min?.[2] ?? ret.bounce_min_z);
 
-  // bounce / bounce_min / fast 支持 nums_attr_soft 快捷属性 (x,y,z 顺序)
-  const apply3 = (prefix: string, keyX: keyof IEntityInfo, keyY: keyof IEntityInfo, keyZ: keyof IEntityInfo) => {
-    const nums = el.nums_attr_soft(prefix);
-    if (nums) {
-      if (nums[0] !== void 0) (ret as any)[keyX] = nums[0];
-      if (nums[1] !== void 0) (ret as any)[keyY] = nums[1];
-      if (nums[2] !== void 0) (ret as any)[keyZ] = nums[2];
-    }
-  };
-  apply3("bounce", "bounce_x", "bounce_y", "bounce_z");
-  apply3("bounce_min", "bounce_min_x", "bounce_min_y", "bounce_min_z");
-  apply3("fast", "fast_vx", "fast_vy", "fast_vz");
-  ret.bounce_y = el.get_num("bounce_y") ?? ret.bounce_y;
-  ret.bounce_x = el.get_num("bounce_x") ?? ret.bounce_x;
-  ret.bounce_z = el.get_num("bounce_z") ?? ret.bounce_z;
-  ret.bounce_min_y = el.get_num("bounce_min_y") ?? ret.bounce_min_y;
-  ret.bounce_min_x = el.get_num("bounce_min_x") ?? ret.bounce_min_x;
-  ret.bounce_min_z = el.get_num("bounce_min_z") ?? ret.bounce_min_z;
-  ret.fast_vy = el.get_num("fast_vy") ?? ret.fast_vy;
-  ret.fast_vx = el.get_num("fast_vx") ?? ret.fast_vx;
-  ret.fast_vz = el.get_num("fast_vz") ?? ret.fast_vz;
-  ret.drop_hurt = el.get_num("drop_hurt");
-  ret.resting_max = el.get_num("resting_max");
+  const fast_v = el.nums_attr_soft("fast_v")
+  ret.fast_vy = el.get_num("fast_vy", fast_v?.[0] ?? ret.fast_vy);
+  ret.fast_vx = el.get_num("fast_vx", fast_v?.[1] ?? ret.fast_vx);
+  ret.fast_vz = el.get_num("fast_vz", fast_v?.[2] ?? ret.fast_vz);
 
-  // string arrays
-  ret.group = el.strs_attr("group");
-  ret.hit_sounds = el.strs_attr("hit_sounds");
-  ret.drop_sounds = el.strs_attr("drop_sounds");
-  ret.dead_sounds = el.strs_attr("dead_sounds");
+  ret.drop_hurt   /**/ = el.get_num("drop_hurt");
+  ret.hit_sounds  /**/ = el.get_str_arr("hit_sounds");
+  ret.drop_sounds /**/ = el.get_str_arr("drop_sounds");
+  ret.dead_sounds /**/ = el.get_str_arr("dead_sounds");
 
-  // bot_id (text attr or child element)
   ret.bot_id = el.get_str("bot_id") ?? el.child_by_tag("bot")?.get_str("id");
-
-  // files
-  const files: Record<string, any> = {};
-  for (const f of el.children_by_tag("file")) {
-    const name = f.get_str("name") ?? f.get_str("id") ?? "";
-    files[name] = {
-      id: f.get_str("id") ?? name,
-      path: f.get_str("path") ?? f.get_str("src") ?? "",
-      row: f.get_num("row"),
-      col: f.get_num("col"),
-      cell_w: f.get_num("cell_w"),
-      cell_h: f.get_num("cell_h"),
-      variants: f.get_str_arr("variants"),
-    };
-  }
-  if (Object.keys(files).length) ret.files = files as any;
 
 
   // portraits

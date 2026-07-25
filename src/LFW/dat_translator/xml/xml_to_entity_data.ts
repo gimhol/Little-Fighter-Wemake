@@ -17,7 +17,7 @@ export function xml_to_entity_data(el: IXMLElement | undefined): IEntityData {
   ret.id = el.get_str("id", ret.id);
   ret.type = el.get_num("type", ret.type) as EntityEnum;
   ret.alias_id = el.get_str("alias_id", ret.alias_id);
-  ret.base = xml_to_entity_info(el.child_by_tag("base"));
+  ret.base = xml_to_entity_info(el.child_by_tag("base")!);
 
   ret.on_dead = xml_to_t_next_frame(el.children_by_tag("on_dead"));
   if (!ret.on_dead) delete ret.on_dead;

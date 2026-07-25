@@ -6,7 +6,7 @@ import type { IBdyInfo } from "./IBdyInfo";
 import type { IBpointInfo } from "./IBpointInfo";
 import type { IChaseInfo } from "./IChaseInfo";
 import type { ICpointInfo } from "./ICpointInfo";
-import type { IFramePictureInfo } from "./IFramePictureInfo";
+import type { IFramePic } from "./IFramePic";
 import type { IHitKeyCollection } from "./IHitKeyCollection";
 import type { IHoldKeyCollection } from "./IHoldKeyCollection";
 import type { IItrInfo } from "./IItrInfo";
@@ -60,10 +60,10 @@ export interface IFrameInfo extends IVelocityInfo {
    * 
    * LFW中，已改为通过图片ID+切图矩形表示；
    * 
-   * @type {?IFramePictureInfo}
+   * @type {?IFramePic}
    */
-  pic?: IFramePictureInfo;
-  pics?: IFramePictureInfo[];
+  pic?: IFramePic;
+  pics?: IFramePic[];
   /**
    *
    * @see {StateEnum}

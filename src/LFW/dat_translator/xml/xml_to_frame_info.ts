@@ -11,7 +11,7 @@ import { xml_to_itr_info } from "./xml_to_itr_info";
 import { xml_to_key_collection } from "./xml_to_key_collection";
 import { xml_to_next_frame } from "./xml_to_next_frame";
 import { xml_to_opoint } from "./xml_to_opoint";
-import { xml_to_pic } from "./xml_to_pic";
+import { xml_2_frame_pic } from "./xml_x_frame_pic";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
 import { xml_to_wpoint } from "./xml_to_wpoint";
@@ -77,7 +77,7 @@ export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
   ret.id = el.get_str("id", ret.id);
   ret.name = el.get_str("name", ret.name);
 
-  const pics = el.children_by_tag('pic').map(v => xml_to_pic(v))
+  const pics = el.children_by_tag('pic').map(v => xml_2_frame_pic(v))
   if (pics.length > 0) ret.pic = pics[0]
   if (pics.length > 1) ret.pics = pics.slice(1)
   ret.state = el.get_num("state", ret.state);

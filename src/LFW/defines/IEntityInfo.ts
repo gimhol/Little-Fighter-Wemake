@@ -4,8 +4,7 @@ import { ALL_ENTITY_GROUP, ENTITY_GROUP_DESC_MAP, ENTITY_GROUP_LABEL_MAP } from 
 import type { IArmorInfo } from "./IArmorInfo";
 import type { IBotData } from "./IBotData";
 import type { IDrinkInfo } from "./IDrinkInfo";
-import type { IFramePictureInfo } from "./IFramePictureInfo";
-import type { ILegacyPictureInfo } from "./ILegacyPictureInfo";
+import type { IFramePic } from "./IFramePic";
 import type { IModelInfo } from "./IModelInfo";
 import type { IOpointInfo } from "./IOpointInfo";
 import type { IPictureInfo } from "./IPictureInfo";
@@ -20,6 +19,19 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
   name: string;
 
   /**
+   * 头像
+   * @type {string}
+   */
+  head?: string;
+
+  /**
+   * 缩略图
+   * @type {string}
+   */
+  small?: string;
+
+
+  /**
    * 强度
    *
    * 用于闯关模式
@@ -32,17 +44,16 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
   ce?: number;
 
   /**
-   * 头像
-   * @type {string}
+   * 武器重量
+   * （也许角色也可以考虑用这个属性？）
    */
-  head?: string;
+  weight?: number
 
   /**
-   * 缩略图
-   * @type {string}
+   * 角色力气，决定能丢多远
    */
-  small?: string;
-
+  strength?: number
+  
   /**
    * 所属组
    *
@@ -50,11 +61,9 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
    */
   group?: string[];
 
-  files?: Record<string, IPictureInfo | ILegacyPictureInfo>;
+  files?: Record<string, IPictureInfo>;
 
   models?: Record<string, IModelInfo>;
-
-  resting_max?: number;
 
   /**
    * 物体的弹性
@@ -145,16 +154,6 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
 
   armor?: IArmorInfo;
 
-  /**
-   * 武器重量
-   * （也许角色也可以考虑用这个属性？）
-   */
-  weight?: number
-
-  /**
-   * 角色力气，决定能丢多远
-   */
-  strength?: number
 
   /**
    * BOT数据ID
@@ -170,13 +169,12 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
    */
   bot?: IBotData;
 
-
   /**
    * 似乎有点想法，但不多
    *
-   * @type {?Record<string, IFramePictureInfo>}
+   * @type {?Record<string, IFramePic>}
    */
-  portraits?: Record<string, IFramePictureInfo>;
+  portraits?: Record<string, IFramePic>;
 }
 export function entity_info_new(): IEntityInfo {
   const ret: IEntityInfo = {

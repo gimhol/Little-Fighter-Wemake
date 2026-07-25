@@ -1,4 +1,4 @@
-import type { Entity, IEntityData, IFrameInfo, IFramePictureInfo, IPictureInfo, TFace } from "@/LFW";
+import type { Entity, IEntityData, IFrameInfo, IFramePic, IPictureInfo, TFace } from "@/LFW";
 import { Buff_Electroshock, clamp, cos, floor, LFW, max, sin, StateEnum, World } from "@/LFW";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "../_t";
@@ -206,7 +206,7 @@ export class EntityMainRender {
     this.render_bpoint();
     this.update_outline();
   }
-  private update_mesh_position(pic: IFramePictureInfo, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number) {
+  private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number) {
 
     if (!pic?.r) {
       mesh.position.set(cx, cy, 0);
@@ -225,7 +225,7 @@ export class EntityMainRender {
     mesh.position.y = py + dx * _sin + dy * _cos;
     mesh.rotation.z = pic.r;
   }
-  private update_mesh_material(pic: IFramePictureInfo, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
+  private update_mesh_material(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
     mesh.scale.set(pic.w, pic.h, 0);
     const { entity } = this;
     const { variant } = entity;

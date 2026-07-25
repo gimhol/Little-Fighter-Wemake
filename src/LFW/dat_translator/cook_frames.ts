@@ -3,7 +3,7 @@ import {
   type IBdyInfo,
   type IBpointInfo,
   type ICpointInfo,
-  type IFramePictureInfo,
+  type IFramePic,
   type IItrInfo,
   type IOpointInfo,
   ItrKind,
@@ -73,7 +73,7 @@ export function cook_frames(ctx: IDatContext): Record<string, IFrameInfo> {
     const raw_next = take(fields, "next");
     const next = get_next_frame_by_raw_id(raw_next, 'repeat');
     const pic_idx = take(fields, "pic");
-    let frame_pic_info: IFramePictureInfo | undefined = void 0;
+    let frame_pic_info: IFramePic | undefined = void 0;
     let entity_pic_info: ILegacyPictureInfo | undefined = void 0;
 
     let pic = pic_idx;

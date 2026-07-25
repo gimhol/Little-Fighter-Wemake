@@ -41,7 +41,7 @@ export * from "./xml_to_key_collection";
 export * from "./xml_to_next_frame";
 export * from "./xml_to_opoint";
 export * from "./xml_to_opoint_multi";
-export * from "./xml_to_pic";
+export * from "./xml_x_frame_pic";
 export * from "./xml_to_qube";
 export * from "./xml_to_stage_info";
 export * from "./xml_to_stage_object_info";

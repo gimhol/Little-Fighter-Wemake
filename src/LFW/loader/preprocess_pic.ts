@@ -1,15 +1,15 @@
 import type { LFW } from "../LFW";
-import type { IEntityData, IFramePictureInfo } from "../defines";
+import type { IEntityData, IFramePic } from "../defines";
 import { Ditto } from "../ditto/Instance";
 import type { ImageInfo } from "../ditto/image/ImageInfo";
 import { cos, sin } from "../utils";
 import { find } from "../utils/container_help/find";
-const cache_key = (a: IFramePictureInfo, b: ImageInfo): string => {
+const cache_key = (a: IFramePic, b: ImageInfo): string => {
   return [a.tex, a.x, a.y, a.w, a.h, b.w, b.h, b.scale].join();
 }
-const cache_map = new Map<string, IFramePictureInfo>();
+const cache_map = new Map<string, IFramePic>();
 
-export function preprocess_pic(lfw: LFW, data: IEntityData, pic: IFramePictureInfo): IFramePictureInfo {
+export function preprocess_pic(lfw: LFW, data: IEntityData, pic: IFramePic): IFramePic {
   if (!pic) return pic;
 
   if (typeof pic.r == 'number') {

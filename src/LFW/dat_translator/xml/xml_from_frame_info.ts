@@ -5,7 +5,7 @@ import { xml_from_itr_info } from "./xml_from_itr_info";
 import { xml_from_key_collection } from "./xml_from_key_collection";
 import { xml_from_t_next_frame } from "./xml_from_next_frame";
 import { xml_from_opoint } from "./xml_from_opoint";
-import { xml_from_pic } from "./xml_to_pic";
+import { xml_x_frame_pic } from "./xml_x_frame_pic";
 
 /**
  * 序列化 <frame>
@@ -14,8 +14,8 @@ export function xml_from_frame_info(xml: IXML, id: string, f: IFrameInfo): IXMLE
   const el = xml.create("frame");
   el.set_attr("id", id);
   el.set_attr("name", f.name)
-  if (f.pic) el.insert(xml_from_pic(xml, f.pic))
-  if (f.pics) f.pics.forEach(pic => el.insert(xml_from_pic(xml, pic)))
+  if (f.pic) el.insert(xml_x_frame_pic(xml, f.pic, 'pic'))
+  if (f.pics) f.pics.forEach(pic => el.insert(xml_x_frame_pic(xml, pic, 'pic')))
   el.set_attr("state", f.state)
   el.set_attr("wait", f.wait)
 
