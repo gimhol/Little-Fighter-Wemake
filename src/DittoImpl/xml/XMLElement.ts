@@ -43,12 +43,14 @@ export class XMLElement implements IXMLElement {
     return this.inner.getAttribute(name) ?? undefined;
   }
   set_attr(name: string, value: Voidable<string | number | boolean>): void {
+    this._attrs = null;
     if (value === void 0 || value === null)
       this.del_attr(name);
     else
       this.inner.setAttribute(name, String(value));
   }
   del_attr(name: string): void {
+    this._attrs = null;
     this.inner.removeAttribute(name)
   }
   str_attr(name: string): string | undefined {
@@ -96,12 +98,10 @@ export class XMLElement implements IXMLElement {
     if (!Array.isArray(value))
       return this.set_arr_attr(name, value, sep)
     const arr = [...value];
-    while (0) {
-      if (!arr.length) break;
+    while (arr.length) {
       const t = arr[arr.length - 1];
-      if (t === void 0 || t === null) break;
+      if (t !== void 0 && t !== null) break;
       arr.pop();
-      continue;
     }
     if (!arr.length) return this.del_attr(name);
     this.set_attr(name, arr.map(n => (n === void 0 || n === null) ? '' : String(n)).join(sep));
@@ -176,10 +176,14 @@ export class XMLElement implements IXMLElement {
    * @memberof XMLElement
    */
   stringify(): string {
-    return this.inner.outerHTML;
+    return new XMLSerializer().serializeToString(this.inner);
   }
 
   insert(child: XMLElement, index?: number): void {
+    // 如果 child 已有父节点，先从旧父节点的缓存中移除
+    if (child._parent) {
+      child._parent.remove(child);
+    }
     child._parent = this;
     if (index === void 0 || index >= this.inner.children.length) {
       this.inner.appendChild(child.inner);
@@ -272,7 +276,7 @@ export class XMLElement implements IXMLElement {
       ret ||= [];
       ret.push(...b);
     }
-    return ret
+    return ret ?? or
   }
 
   get_num_arr(name: string, or: number[]): number[];
@@ -291,6 +295,6 @@ export class XMLElement implements IXMLElement {
       ret ||= [];
       ret.push(...b);
     }
-    return ret
+    return ret ?? or
   }
 }
