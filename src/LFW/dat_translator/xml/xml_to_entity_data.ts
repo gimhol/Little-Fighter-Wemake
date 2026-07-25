@@ -2,10 +2,10 @@ import { EntityEnum } from "../../defines/EntityEnum";
 import { entity_data_new, type IEntityData, type TBdyPrefabs, type TItrPrefabs } from "../../defines/IEntityData";
 import type { IFrameInfo } from "../../defines/IFrameInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { xml_to_bdy_info } from "./xml_to_bdy_info";
+import { xml_2_bdy } from "./xml_x_bdy";
 import { xml_to_entity_info } from "./xml_to_entity_info";
 import { xml_to_frame_indexes } from "./xml_to_frame_indexes";
-import { xml_to_frame_info } from "./xml_to_frame_info";
+import { xml_2_frame } from "./xml_2_frame";
 import { xml_to_itr_info } from "./xml_to_itr_info";
 import { xml_to_t_next_frame } from "./xml_to_next_frame";
 
@@ -30,14 +30,14 @@ export function xml_to_entity_data(el: IXMLElement | undefined): IEntityData {
 
   const frames: Record<string, IFrameInfo> = {};
   for (const child of el.children_by_tag("frame")) {
-    const fi = xml_to_frame_info(child);
+    const fi = xml_2_frame(child);
     frames[fi.id] = fi;
   }
 
   const bdy: TBdyPrefabs = {};
   for (const tag of ["bdy_prefab", "bdy"]) {
     for (const child of el.children_by_tag(tag)) {
-      const prefab = xml_to_bdy_info(child);
+      const prefab = xml_2_bdy(child);
       prefab.id = child.get_str("id", "");
       bdy[prefab.id] = prefab;
     }

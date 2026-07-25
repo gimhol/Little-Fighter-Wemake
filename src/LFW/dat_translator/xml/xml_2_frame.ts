@@ -3,18 +3,18 @@ import type { IHitKeyCollection } from "../../defines/IHitKeyCollection";
 import type { IHoldKeyCollection } from "../../defines/IHoldKeyCollection";
 import type { IQube } from "../../defines/IQube";
 import type { IXMLElement } from "../../ditto/xml";
-import { xml_to_bdy_info } from "./xml_to_bdy_info";
-import { xml_to_bpoint } from "./xml_to_bpoint";
 import { xml_to_chase } from "./xml_to_chase";
 import { xml_to_cpoint } from "./xml_to_cpoint";
 import { xml_to_itr_info } from "./xml_to_itr_info";
 import { xml_to_key_collection } from "./xml_to_key_collection";
-import { xml_to_next_frame } from "./xml_to_next_frame";
-import { xml_2_opoint } from "./xml_x_opoint";
-import { xml_2_frame_pic } from "./xml_x_frame_pic";
+import { xml_to_t_next_frame } from "./xml_to_next_frame";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
 import { xml_to_wpoint } from "./xml_to_wpoint";
+import { xml_2_bdy } from "./xml_x_bdy";
+import { xml_2_bpoint } from "./xml_x_bpoint";
+import { xml_2_frame_pic } from "./xml_x_frame_pic";
+import { xml_2_opoint } from "./xml_x_opoint";
 
 /**
  * 解析快捷属性：rect="x,y,w,h" 或 qube="x,y,w,h" 或 qube="x,y,w,h,z,l"
@@ -53,17 +53,7 @@ export function merge_by_tag<T extends Record<string, any>>(
   return ret;
 }
 
-/**
- * 按标签名合并解析数组（用于 bdy/itr/opoint 等）
- */
-function single_or_array<T>(
-  el: IXMLElement,
-  tag: string,
-  parser: (child: IXMLElement) => T,
-): T | T[] {
-  return el.children_by_tag(tag).map(parser);
-}
-function non_emptpy_array<T>(
+function non_empty<T>(
   el: IXMLElement,
   tag: string,
   parser: (child: IXMLElement) => T,
@@ -72,7 +62,7 @@ function non_emptpy_array<T>(
 }
 
 
-export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
+export function xml_2_frame(el: IXMLElement): IFrameInfo {
   const ret = frame_info_new();
   ret.id = el.get_str("id", ret.id);
   ret.name = el.get_str("name", ret.name);
@@ -90,7 +80,7 @@ export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
   const size = el.nums_attr("size");
   ret.width = el.get_num("width") ?? size?.[0] ?? 0;
   ret.height = el.get_num("height") ?? size?.[1] ?? 0;
-  ret.sound = el.str_attr("sound");
+  ret.sound = el.get_str("sound");
 
   ret.hp = el.get_num("hp");
   ret.mp = el.get_num("mp");
@@ -103,19 +93,17 @@ export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
 
   ret.gravity_enabled = el.get_bool("gravity_enabled");
 
-
-
   xml_to_velocity_info(el, ret as any);
 
-  ret.next          /**/ = single_or_array(el, "next", xml_to_next_frame)
-  ret.on_dead       /**/ = single_or_array(el, "on_dead", xml_to_next_frame);
-  ret.on_landing    /**/ = single_or_array(el, "on_landing", xml_to_next_frame);
-  ret.on_exhaustion /**/ = single_or_array(el, "on_exhaustion", xml_to_next_frame);
-  ret.bdy           /**/ = non_emptpy_array(el, "bdy", xml_to_bdy_info);
-  ret.itr           /**/ = non_emptpy_array(el, "itr", xml_to_itr_info);
-  ret.opoint        /**/ = non_emptpy_array(el, "opoint", xml_2_opoint);
+  ret.next          /**/ = xml_to_t_next_frame(el.children_by_tag("next"));
+  ret.on_dead       /**/ = xml_to_t_next_frame(el.children_by_tag("on_dead"));
+  ret.on_landing    /**/ = xml_to_t_next_frame(el.children_by_tag("on_landing"));
+  ret.on_exhaustion /**/ = xml_to_t_next_frame(el.children_by_tag("on_exhaustion"));
+  ret.bdy           /**/ = non_empty(el, "bdy", xml_2_bdy);
+  ret.itr           /**/ = non_empty(el, "itr", xml_to_itr_info);
+  ret.opoint        /**/ = non_empty(el, "opoint", xml_2_opoint);
   ret.wpoint        /**/ = merge_by_tag(el, "wpoint", xml_to_wpoint);
-  ret.bpoint        /**/ = merge_by_tag(el, "bpoint", xml_to_bpoint);
+  ret.bpoint        /**/ = merge_by_tag(el, "bpoint", xml_2_bpoint);
   ret.cpoint        /**/ = merge_by_tag(el, "cpoint", xml_to_cpoint);
   ret.chase         /**/ = merge_by_tag(el, "chase", xml_to_chase);
   ret.hit           /**/ = xml_to_key_collection(el, "hit") as IHitKeyCollection;

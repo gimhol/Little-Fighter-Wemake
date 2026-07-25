@@ -5,6 +5,7 @@ export * from "./IAction_Base";
 export * from "./IAction_Broadcast";
 export * from "./IAction_BrokenDefend";
 export * from "./IAction_Defend";
+export * from "./IAction_Error";
 export * from "./IAction_Fusion";
 export * from "./IAction_NextFrame";
 export * from "./IAction_ReboundVX";

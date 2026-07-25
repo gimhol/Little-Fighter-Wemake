@@ -1,6 +1,6 @@
 import type { IItrInfo } from "../../defines/IItrInfo";
 import type { IXMLElement, IXML } from "../../ditto/xml";
-import { xml_from_colli_action } from "./xml_from_colli_action";
+import { xml_x_colli_action } from "./xml_x_colli_action";
 import { xml_from_next_frame, xml_from_t_next_frame } from "./xml_from_next_frame";
 
 /**
@@ -31,7 +31,7 @@ export function xml_from_itr_info(xml: IXML, i: IItrInfo, tag: string = "itr"): 
   xml_from_t_next_frame(xml, i.on_hit_ground, 'on_hit_ground').forEach(v => {
     el.insert(v);
   })
-  i.actions?.map(v => xml_from_colli_action(xml, v, "action")).forEach(v => {
+  i.actions?.map(v => xml_x_colli_action(xml, v, "action")).forEach(v => {
     el.insert(v);
   })
   el.set_arr_attr_soft("qube", [i.x, i.y, i.w, i.h, i.z, i.l]);

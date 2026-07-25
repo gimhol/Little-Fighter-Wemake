@@ -6,13 +6,13 @@ import type { IXMLElement } from "../../ditto/xml/IXMLElement";
  */
 export function xml_to_dat_index(el: IXMLElement): IDatIndex {
   return {
-    id: el.str_attr("id") ?? "",
-    type: (el.str_attr("type") ?? "") as DatTypeEnum,
-    file: el.str_attr("file") ?? "",
-    hash: el.str_attr("hash"),
-    alias: el.str_attr("alias"),
+    id: el.get_str("id") ?? "",
+    type: (el.get_str("type") ?? "") as DatTypeEnum,
+    file: el.get_str("file") ?? "",
+    hash: el.get_str("hash"),
+    alias: el.get_str("alias"),
     groups: el.strs_attr("groups"),
-    skipped: el.str_attr("skipped"),
-    bot: el.str_attr("bot"),
+    skipped: el.get_str("skipped"),
+    bot: el.get_str("bot"),
   };
 }

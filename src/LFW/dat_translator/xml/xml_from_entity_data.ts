@@ -1,9 +1,9 @@
 import type { IEntityData } from "../../defines/IEntityData";
 import type { IXML } from "../../ditto/xml";
-import { xml_from_bdy_info } from "./xml_from_bdy_info";
+import { xml_x_bdy } from "./xml_x_bdy";
 import { xml_from_entity_info } from "./xml_from_entity_info";
 import { xml_from_frame_indexes } from "./xml_from_frame_indexes";
-import { xml_from_frame_info } from "./xml_from_frame_info";
+import { xml_x_frame } from "./xml_x_frame";
 import { xml_from_itr_info } from "./xml_from_itr_info";
 import { xml_from_next_frame } from "./xml_from_next_frame";
 export { xml_from_entity_info };
@@ -30,7 +30,7 @@ export function xml_from_entity_data(xml: IXML, data: IEntityData): string {
   if (data.bdy_prefabs && Object.keys(data.bdy_prefabs).length) {
     for (const [k, v] of Object.entries(data.bdy_prefabs)) {
       if (!v) continue;
-      el.insert(xml_from_bdy_info(xml, v, "bdy_prefab"));
+      el.insert(xml_x_bdy(xml, v, "bdy_prefab"));
     }
   }
 
@@ -44,7 +44,7 @@ export function xml_from_entity_data(xml: IXML, data: IEntityData): string {
 
   // frames
   for (const [fid, frame] of Object.entries(data.frames)) {
-    const fEl = xml_from_frame_info(xml, fid, frame);
+    const fEl = xml_x_frame(xml, fid, frame);
     if (fEl) el.insert(fEl);
   }
 

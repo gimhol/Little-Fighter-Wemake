@@ -6,16 +6,16 @@ export { xml_to_stage_phase_info };
 export function xml_to_stage_info(el: IXMLElement): IStageInfo {
   return {
     id: el.attr("id") ?? "",
-    name: el.str_attr("name") ?? "",
-    bg: el.str_attr("bg") ?? "",
+    name: el.get_str("name") ?? "",
+    bg: el.get_str("bg") ?? "",
     phases: el.children_by_tag("phase").map(xml_to_stage_phase_info),
-    chapter: el.str_attr("chapter"),
-    next: el.str_attr("next"),
-    cond_end: el.str_attr("cond_end"),
-    act_of_goto_next: el.str_attr("act_of_goto_next"),
+    chapter: el.get_str("chapter"),
+    next: el.get_str("next"),
+    cond_end: el.get_str("cond_end"),
+    act_of_goto_next: el.get_str("act_of_goto_next"),
     is_starting: el.bool_attr("is_starting"),
-    starting_name: el.str_attr("starting_name"),
-    title: el.str_attr("title"),
+    starting_name: el.get_str("starting_name"),
+    title: el.get_str("title"),
     group: el.strs_attr("group"),
   };
 }

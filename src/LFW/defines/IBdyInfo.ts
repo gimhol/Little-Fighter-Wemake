@@ -13,6 +13,15 @@ export interface IBdyInfo extends Partial<IQube> {
   ref?: string;
 
   /**
+   * [LF2][LFW]
+   * 
+   * @see {BdyKind}
+   * @type {number}
+   */
+  kind: number | BdyKind;
+  kind_name?: string;
+
+  /**
    * 碰撞标记，决定能与哪些对象碰撞
    * [LFW]
    * @see {HitFlag}
@@ -20,17 +29,6 @@ export interface IBdyInfo extends Partial<IQube> {
    */
   hit_flag?: HitFlag | number;
   hit_flag_name?: string;
-
-  /**
-   * [LF2][LFW]
-   * 
-   * @see {BdyKind}
-   * @type {number}
-   */
-  kind: number | BdyKind;
-
-  kind_name?: string;
-
 
   /**
    * 产生collision时，执行的actions
@@ -41,7 +39,6 @@ export interface IBdyInfo extends Partial<IQube> {
   actions?: TAction[];
 
   test?: string;
-
 
   /**
    * 目前用途:

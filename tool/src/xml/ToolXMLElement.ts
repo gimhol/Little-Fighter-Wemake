@@ -1,5 +1,5 @@
 import { XMLBuilder } from "fast-xml-parser";
-import type { IXMLElement, Voidable } from "../../../src/LFW/ditto/xml/IXMLElement";
+import type { BaseValue, IXMLElement, Voidable } from "../../../src/LFW/ditto/xml/IXMLElement";
 
 const VALUE_TAGS = new Set(['number', 'boolean', 'object', 'array', 'string', 'value']);
 
@@ -227,7 +227,8 @@ export class ToolXMLElement implements IXMLElement {
     return { [this.tag]: Object.keys(attrObj).length ? attrObj : undefined };
   }
 
-  insert(child: ToolXMLElement, index?: number): void {
+  insert(child?: ToolXMLElement, index?: number): void {
+    if (!child) return;
     child._parent = this;
     if (index === void 0 || index >= this._children.length) {
       this._children.push(child);
@@ -268,6 +269,10 @@ export class ToolXMLElement implements IXMLElement {
 
   child_by_tag(tag: string): ToolXMLElement | undefined {
     return this._children.find(c => c.tag === tag);
+  }
+
+  get_obj(tag: string): object | undefined {
+    return this.child_by_tag(tag)?.as_object();
   }
 
   _addChild(child: ToolXMLElement): void {
@@ -317,6 +322,29 @@ export class ToolXMLElement implements IXMLElement {
     return ret
   }
 
+  set_arr_attr(name: string, value: Voidable<BaseValue | BaseValue[]>, sep?: string): void {
+    if (value === void 0 || value === null)
+      return this.del_attr(name);
+    if (Array.isArray(value))
+      this.set_attr(name, value.join(sep))
+    else
+      this.set_attr(name, value)
+  }
+  set_arr_attr_soft(name: string, value: Voidable<Voidable<BaseValue> | Voidable<BaseValue>[]>, sep?: string): void {
+    if (value === void 0 || value === null)
+      return this.del_attr(name);
+    if (!Array.isArray(value))
+      return this.set_arr_attr(name, value, sep)
+    const arr = [...value];
+    while (arr.length) {
+      const t = arr[arr.length - 1];
+      if (t !== void 0 && t !== null) break;
+      arr.pop();
+    }
+    if (!arr.length) return this.del_attr(name);
+    this.set_attr(name, arr.map(n => (n === void 0 || n === null) ? '' : String(n)).join(sep));
+
+  }
   get_num_arr(name: string, or: number[]): number[];
   get_num_arr(name: string, or?: number[]): number[] | undefined;
   get_num_arr(name: string, or?: number[]): number[] | undefined {

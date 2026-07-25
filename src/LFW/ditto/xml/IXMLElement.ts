@@ -36,7 +36,7 @@ export interface IXMLElement {
    * @param {string} name - 属性名
    * @return {string | undefined}
    */
-  str_attr(name: string): string | undefined;
+  get_str(name: string): string | undefined;
 
   /**
    * 获取数值属性
@@ -219,7 +219,7 @@ export interface IXMLElement {
    * @param {this}  child - 子元素
    * @param {number} [index] - 插入位置，默认末尾
    */
-  insert(child: this, index?: number): void;
+  insert(child?: this, index?: number): void;
 
   /**
    * 移除指定子元素
@@ -281,7 +281,9 @@ export interface IXMLElement {
 
   get_str_arr(name: string, or: string[]): string[];
   get_str_arr(name: string, or?: string[]): string[] | undefined;
-  
+
   get_num_arr(name: string, or: number[]): number[];
   get_num_arr(name: string, or?: number[]): number[] | undefined;
+
+  get_obj(tag: string): object | undefined;
 }

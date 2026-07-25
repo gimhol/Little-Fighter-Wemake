@@ -12,9 +12,9 @@ export function xml_to_stage_phase_info(el: IXMLElement): IStagePhaseInfo {
     bound: el.num_attr("bound") ?? 0,
   };
 
-  ret.title = el.str_attr("title");
-  ret.desc = el.str_attr("desc");
-  ret.music = el.str_attr("music");
+  ret.title = el.get_str("title");
+  ret.desc = el.get_str("desc");
+  ret.music = el.get_str("music");
 
   ret.player_l = el.num_attr("player_l");
   ret.player_r = el.num_attr("player_r");
@@ -43,7 +43,7 @@ export function xml_to_stage_phase_info(el: IXMLElement): IStagePhaseInfo {
     const soundEls = soundsEl.children_by_tag("sound");
     if (soundEls.length) {
       ret.sounds = soundEls.map(s => ({
-        path: s.str_attr("path") ?? "",
+        path: s.get_str("path") ?? "",
         x: s.num_attr("x"),
         y: s.num_attr("y"),
         z: s.num_attr("z"),

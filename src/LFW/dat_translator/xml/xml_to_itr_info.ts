@@ -1,6 +1,6 @@
 import { type IItrInfo, itr_info_new } from "../../defines/IItrInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { xml_to_colli_action } from "./xml_to_colli_action";
+import { xml_2_colli_action } from "./xml_to_colli_action";
 import { xml_to_t_next_frame } from "./xml_to_next_frame";
 import { xml_to_qube } from "./xml_to_qube";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
@@ -23,7 +23,7 @@ export function xml_to_itr_info(el: IXMLElement): IItrInfo {
   ret.catchingact = xml_to_t_next_frame(el.children_by_tag('catchingact'))
   ret.caughtact = xml_to_t_next_frame(el.children_by_tag('caughtact'))
   ret.on_hit_ground = xml_to_t_next_frame(el.children_by_tag('on_hit_ground'))
-  ret.actions = el.children_by_tag('action').map(xml_to_colli_action)
+  ret.actions = el.children_by_tag('action').map(xml_2_colli_action)
   if (!ret.actions.length) delete ret.actions;
   ret.test = el.get_str("test", ret.test);
   ret.code = el.get_num("code", ret.code);

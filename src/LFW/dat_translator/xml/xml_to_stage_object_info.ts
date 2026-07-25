@@ -8,11 +8,11 @@ import { parse_diff_map } from "./diff_map_utils";
 export function xml_to_stage_object_info(el: IXMLElement): IStageObjectInfo {
   return {
     id: el.strs_attr("id") ?? [],
-    id_method: el.str_attr("id_method"),
+    id_method: el.get_str("id_method"),
     x: el.num_attr("x") ?? 0,
     y: el.num_attr("y"),
     z: el.num_attr("z"),
-    act: el.str_attr("act"),
+    act: el.get_str("act"),
     facing: el.num_attr("facing") as (1 | -1) | undefined,
     hp: el.num_attr("hp"),
     mp: el.num_attr("mp"),
@@ -24,7 +24,7 @@ export function xml_to_stage_object_info(el: IXMLElement): IStageObjectInfo {
     is_soldier: el.bool_attr("is_soldier") as true | undefined,
     reserve: el.num_attr("reserve"),
     join: el.num_attr("join"),
-    join_team: el.str_attr("join_team"),
-    outline_color: el.str_attr("outline_color"),
+    join_team: el.get_str("join_team"),
+    outline_color: el.get_str("outline_color"),
   };
 }

@@ -25,5 +25,6 @@ export * from "./preprocess_opoint";
 export * from "./preprocess_pic";
 export * from "./preprocess_stage";
 export * from "./preprocess_stage_phase";
+export * from "./preprocess_wpoint";
 export * from "./validate_ui_img_operation_crop";
 /*** AUTO EXPORT END ***/

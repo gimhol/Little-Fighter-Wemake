@@ -179,7 +179,8 @@ export class XMLElement implements IXMLElement {
     return new XMLSerializer().serializeToString(this.inner);
   }
 
-  insert(child: XMLElement, index?: number): void {
+  insert(child?: XMLElement, index?: number): void {
+    if (!child) return;
     // 如果 child 已有父节点，先从旧父节点的缓存中移除
     if (child._parent) {
       child._parent.remove(child);
@@ -243,6 +244,11 @@ export class XMLElement implements IXMLElement {
   child_by_tag(tag: string): XMLElement | undefined {
     return this.children.find(c => c.tag === tag);
   }
+
+  get_obj(tag: string): object | undefined {
+    return this.child_by_tag(tag)?.as_object();
+  }
+
 
   get_str(name: string, or: string): string;
   get_str(name: string, or?: string): string | undefined;
