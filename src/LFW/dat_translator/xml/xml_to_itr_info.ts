@@ -1,6 +1,6 @@
 import { type IItrInfo, itr_info_new } from "../../defines/IItrInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { xml_2_colli_action } from "./xml_to_colli_action";
+import { xml_2_colli_action } from "./xml_x_colli_action";
 import { xml_to_t_next_frame } from "./xml_to_next_frame";
 import { xml_to_qube } from "./xml_to_qube";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";

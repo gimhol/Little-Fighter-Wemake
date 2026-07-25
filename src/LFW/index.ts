@@ -28,7 +28,6 @@ export * from "./PlayerInfo";
 export * from "./stage";
 export * from "./state";
 export * from "./Transform";
-export * from "./types";
 export * from "./ui";
 export * from "./utils";
 export * from "./World";
