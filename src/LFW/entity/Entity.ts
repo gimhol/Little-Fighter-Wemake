@@ -2428,7 +2428,7 @@ export class Entity {
   }
   dataset<K extends keyof IWorldDataset>(name: K): IWorldDataset[K] {
     return (
-      this.frame[name] ??
+      this.frame.dataset?.[name] ??
       this.data.base[name] ??
       this.world.bg.data.dataset?.[name] ??
       this.world.dataset[name]

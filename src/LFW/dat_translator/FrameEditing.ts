@@ -51,14 +51,18 @@ export class FrameEditing {
     this.frame.seqs = this.frame.seqs || {};
     const cookeds: INextFrame[] = [];
     for (const any of nexts) {
+      if (!any) continue;
       if (is_str(any) || is_num(any)) {
         const cooked = get_next_frame_by_raw_id('' + any, 'frame', 'hit', this.costs)
         cookeds.push(cooked)
         continue;
       }
-      cookeds.push(
-        cook_next_frame_cost({ ...any }, 'hit', this.costs)
-      )
+      if (typeof any == 'object') {
+        const t = { ...any }
+        cookeds.push(
+          cook_next_frame_cost(t, 'hit', this.costs)
+        )
+      }
     }
     if (key[0] === 'F') {
       const k1 = 'L' + key.substring(1)

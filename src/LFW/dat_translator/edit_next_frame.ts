@@ -1,9 +1,10 @@
 import type { INextFrame, TNextFrame } from "../defines";
 
 export function edit_next_frame(
-  nexts: TNextFrame,
+  nexts: TNextFrame | undefined | null,
   fn: (item: INextFrame, idx: number, arr: INextFrame[]) => void,
 ) {
+  if (!nexts) return nexts;
   (Array.isArray(nexts) ? nexts : [nexts]).forEach(fn);
   return nexts;
 }

@@ -1,7 +1,7 @@
 import type { IEntityData } from "../defines";
-import { traversal, is_num, floor } from "../utils";
-import { float_scaling_itr } from "./float_scaling_itr";
+import { floor, is_num, round_float, traversal } from "../utils";
 import { float_scaling_bdy } from "./float_scaling_bdy";
+import { float_scaling_itr } from "./float_scaling_itr";
 
 export function float_scaling_entity(ret: IEntityData) {
   traversal(ret.bdy_prefabs, (_, v) => {
@@ -12,12 +12,20 @@ export function float_scaling_entity(ret: IEntityData) {
   });
   traversal(ret.frames, (_, v) => {
     if (!v) return;
-    ([
-      'dvx', 'dvy', 'dvz', 'acc_x', 'acc_y', 'acc_z', 'ctrl_x', 'ctrl_y',
-      'ctrl_z', 'friction_x', 'friction_z', 'gravity'
-    ] as const).forEach(k => {
-      if (is_num(v[k])) v[k] = floor(10000 * v[k]);
-    });
+    if (v.dvx) v.dvx = round_float(v.dvx)
+    if (v.dvy) v.dvy = round_float(v.dvy)
+    if (v.dvz) v.dvz = round_float(v.dvz)
+    if (v.acc_x) v.acc_x = round_float(v.acc_x)
+    if (v.acc_y) v.acc_y = round_float(v.acc_y)
+    if (v.acc_z) v.acc_z = round_float(v.acc_z)
+    if (v.ctrl_x) v.ctrl_x = round_float(v.ctrl_x)
+    if (v.ctrl_y) v.ctrl_y = round_float(v.ctrl_y)
+    if (v.ctrl_z) v.ctrl_z = round_float(v.ctrl_z)
+    if (v.dataset?.friction_x) v.dataset.friction_x = round_float(v.dataset.friction_x)
+    if (v.dataset?.friction_z) v.dataset.friction_z = round_float(v.dataset.friction_z)
+    if (v.dataset?.gravity) v.dataset.gravity = round_float(v.dataset.gravity)
+
+
     v.itr?.forEach(itr => float_scaling_itr(itr));
     v.bdy?.forEach(itr => float_scaling_bdy(itr));
     const cp = v.cpoint;

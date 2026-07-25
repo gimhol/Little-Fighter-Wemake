@@ -24,7 +24,7 @@ import type { StateEnum } from "./StateEnum";
  * @export
  * @interface IFrameInfo
  */
-export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
+export interface IFrameInfo extends IVelocityInfo {
 
   /**
    * 帧ID
@@ -245,6 +245,8 @@ export interface IFrameInfo extends Partial<IWorldDataset>, IVelocityInfo {
   on_y_restrict?: TNextFrame;
   on_z_restrict?: TNextFrame;
 
+  dataset?: Partial<IWorldDataset>;
+
   /* 运行时使用，为Debug预留的玩意 */
   __indicator_info?: IQubePair;
   /* 运行时使用，为渲染层预留的玩意 */
@@ -427,6 +429,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     ctrl_x: { type: 'number', nullable: true },
     ctrl_y: { type: 'number', nullable: true },
     ctrl_z: { type: 'number', nullable: true },
+    dataset: { type: 'object', nullable: true },
 
     __tex: { type: 'object', nullable: true },
     __indicator_info: { type: 'object', nullable: true },
