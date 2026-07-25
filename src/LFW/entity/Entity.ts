@@ -878,14 +878,14 @@ export class Entity {
       this.team = emitter.team;
       this.facing = emitter.facing;
     }
-    const { origin_type } = opoint;
+    const { pos_type } = opoint;
     let { x: pos_x, y: pos_y, z: pos_z } = emitter.position;
     const opoint_y = (opoint.__gen_y ? opoint.__gen_y.get(emitter) : opoint.y) ?? 0;
     const opoint_x = (opoint.__gen_x ? opoint.__gen_x.get(emitter) : opoint.x) ?? 0;
     const opoint_z = (opoint.__gen_z ? opoint.__gen_z.get(emitter) : opoint.z) ?? 2;
 
 
-    if (origin_type === 1) {
+    if (pos_type === 1) {
       pos_y = pos_y - opoint_y;
       pos_x = pos_x + emitter.facing * opoint_x;
     } else {
@@ -1145,7 +1145,7 @@ export class Entity {
       this.lfw.factory.create_ctrl(entity._data.id, "", entity) ?? entity.ctrl;
     entity
       .on_spawn(this, opoint, offset_velocity, facing)
-      .attach(opoint.is_entity);
+      .attach(opoint.ghost);
     if (entity.data.id === this.data.id) this.copies.add(entity.id);
     entity.key_role = false;
     entity.dead_gone = true;
@@ -1154,10 +1154,10 @@ export class Entity {
     return entity;
   }
 
-  attach(is_entity = true): this {
+  attach(ghost = true): this {
     this._spawn_time = this.world.game_time;
     this._mounted = 1;
-    this._ghosted = is_entity ? 0 : 1;
+    this._ghosted = ghost ? 1 : 0;
     this.world.add_entities(this);
     if (this.frame.id === "0" /* EMPTY_FRAME_INFO */)
       this.enter_frame(Defines.NEXT_FRAME_AUTO);

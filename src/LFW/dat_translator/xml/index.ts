@@ -15,7 +15,7 @@ export * from "./xml_from_itr_info";
 export * from "./xml_from_json";
 export * from "./xml_from_key_collection";
 export * from "./xml_from_next_frame";
-export * from "./xml_from_opoint";
+export * from "./xml_x_opoint";
 export * from "./xml_from_opoint_multi";
 export * from "./xml_from_stage_info";
 export * from "./xml_from_stage_object_info";

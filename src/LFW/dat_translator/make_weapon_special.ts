@@ -26,7 +26,7 @@ const broken_pieces_opoints = (...frame_ids: (string | string[])[]): IOpointInfo
       kind: OpointKind.Normal,
       x: 0,
       y: 0,
-      origin_type: 1,
+      pos_type: 1,
       action: { id: frame_id },
       oid: "999",
       unimportant: 1,

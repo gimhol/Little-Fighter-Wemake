@@ -41,7 +41,7 @@ export function make_ball_special(data: IEntityData) {
             x: f.centerx,
             y: f.centery,
             kind: OpointKind.Normal,
-            is_entity: false,
+            ghost: true,
             speedz: 0,
             dvx: 0,
             dvy: 0,
@@ -56,7 +56,7 @@ export function make_ball_special(data: IEntityData) {
         if (tail) {
           tail.unimportant = 1
           tail.speedz = tail.dvx = tail.dvy = tail.dvz = 0;
-          tail.is_entity = false
+          tail.ghost = true
         }
       })
       break;
@@ -69,7 +69,7 @@ export function make_ball_special(data: IEntityData) {
         if (tail) {
           tail.unimportant = 1
           tail.speedz = tail.dvx = tail.dvy = tail.dvz = 0;
-          tail.is_entity = false
+          tail.ghost = true
         }
       })
       break;
@@ -86,7 +86,7 @@ export function make_ball_special(data: IEntityData) {
             x: floor(f.pic!.w / 2),
             y: floor(f.pic!.h / 2),
             kind: OpointKind.Normal,
-            is_entity: false,
+            ghost: true,
             speedz: 0,
             dvx: 0,
             dvy: 0,
@@ -109,7 +109,7 @@ export function make_ball_special(data: IEntityData) {
             x: floor(f.pic!.w / 2),
             y: floor(f.pic!.h / 2),
             kind: OpointKind.Normal,
-            is_entity: false,
+            ghost: true,
             speedz: 0,
             dvx: 0,
             dvy: 0,

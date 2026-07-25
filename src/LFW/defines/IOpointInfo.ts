@@ -1,32 +1,12 @@
 import { any, fields, flt, int, str } from "../fields";
 import type { FacingFlag } from "./FacingFlag";
 import type { TNextFrame } from "./INextFrame";
+import type { IOpointMulti } from "./IOpointMulti";
 import type { IQubePair } from "./IQubePair";
 import { OpointKind } from "./OpointKind";
 import { OpointMultiEnum } from "./OpointMultiEnum";
 import { OpointSpreading } from "./OpointSpreading";
 export type __KEEP_FacingFlag = FacingFlag;
-
-export interface IOpointMulti {
-  /** 生成数量的决定方式 */
-  type: OpointMultiEnum | number;
-  /**
-   * 依据数量零时，将不生成（数量需参见决定方式）
-   * @see {OpointMultiEnum.AccordingEnemies}
-   *
-   * - 当：
-   *   - multi.type == OpointMultiEnum.AccordingEnemies。
-   *   - multi.skip_zero == true
-   *   - 场上无敌人
-   * - 则：
-   *   - 该Opoint将不会生成东西（即使设置了min/max）
-   */
-  skip_zero?: boolean;
-  /** 至少产生多少个 */
-  min?: number;
-  /** 至多产生多少个 */
-  max?: number;
-}
 
 export interface IOpointInfo {
   /**
@@ -52,6 +32,13 @@ export interface IOpointInfo {
   kind: number | OpointKind;
 
   /**
+   * 实体数据ID
+   *
+   * @type {string | string[]}
+   */
+  oid: string | string[];
+
+  /**
    * 实体产生的X坐标（相对frame矩形左上角）
    * @type {number}
    */
@@ -63,15 +50,10 @@ export interface IOpointInfo {
    */
   y: number;
 
-  origin_type?: number;
-
   z?: number;
-  /**
-   * 实体数据ID
-   *
-   * @type {string | string[]}
-   */
-  oid: string | string[];
+
+  pos_type?: number;
+
 
   /**
    * 用于：
@@ -169,11 +151,11 @@ export interface IOpointInfo {
   /**
    * 
    */
-  is_entity?: boolean;
+  ghost?: boolean;
 
   interval?: number;
   interval_id?: string;
-  interval_mode?: 1 | 0;
+  interval_mode?: number;
   motionless?: number;
 
   spreading_x?: number[];
@@ -232,7 +214,7 @@ export const opoint_info_fields = fields<IOpointInfo>({
   }),
   x: int("X"),
   y: int("Y"),
-  origin_type: any,
+  pos_type: any,
   z: int("Z"),
   oid: str("实体数据ID"),
   action: any,
@@ -251,7 +233,7 @@ export const opoint_info_fields = fields<IOpointInfo>({
       label: OpointSpreading[v],
     })),
   }),
-  is_entity: any,
+  ghost: any,
   interval: int("间隔帧数"),
   interval_id: str("间隔ID"),
   interval_mode: int("间隔模式", {

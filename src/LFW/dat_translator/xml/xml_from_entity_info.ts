@@ -2,7 +2,7 @@ import type { IEntityInfo } from "../../defines/IEntityInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { xml_from_armor_info } from "./xml_from_armor_info";
 import { xml_from_drink_info } from "./xml_from_drink_info";
-import { xml_from_opoint } from "./xml_from_opoint";
+import { xml_x_opoint } from "./xml_x_opoint";
 import { xml_from_world_dataset } from "./xml_from_world_dataset";
 import { xml_x_model_info_map } from "./xml_x_model_info";
 import { xml_x_picture_info_map } from "./xml_x_picture_info";
@@ -59,7 +59,7 @@ export function xml_from_entity_info(xml: IXML, info: IEntityInfo, tag: string =
   }
   if (info.brokens?.length) {
     for (const broken of info.brokens) {
-      ret.insert(xml_from_opoint(xml, broken));
+      ret.insert(xml_x_opoint(xml, broken, "broken"));
     }
   }
 

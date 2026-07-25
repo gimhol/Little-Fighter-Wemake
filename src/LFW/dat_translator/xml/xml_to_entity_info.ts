@@ -2,7 +2,7 @@ import { entity_info_new, type IEntityInfo } from "../../defines/IEntityInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
 import { xml_to_armor_info } from "./xml_to_armor_info";
 import { xml_to_drink_info } from "./xml_to_drink_info";
-import { xml_to_opoint } from "./xml_to_opoint";
+import { xml_2_opoint } from "./xml_x_opoint";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
 import { xml_2_model_info_map } from "./xml_x_model_info";
 import { xml_2_picture_info_map } from "./xml_x_picture_info";
@@ -36,6 +36,9 @@ export function xml_to_entity_info(el: IXMLElement): IEntityInfo {
   ret.fast_vy = el.get_num("fast_vy", fast_v?.[0] ?? ret.fast_vy);
   ret.fast_vx = el.get_num("fast_vx", fast_v?.[1] ?? ret.fast_vx);
   ret.fast_vz = el.get_num("fast_vz", fast_v?.[2] ?? ret.fast_vz);
+
+  
+
 
   ret.drop_hurt   /**/ = el.get_num("drop_hurt");
   ret.hit_sounds  /**/ = el.get_str_arr("hit_sounds");
@@ -88,7 +91,7 @@ export function xml_to_entity_info(el: IXMLElement): IEntityInfo {
   // brokens (<opoint> children)
   const opointEls = el.children_by_tag("opoint");
   if (opointEls.length) {
-    ret.brokens = opointEls.map(v => xml_to_opoint(v));
+    ret.brokens = opointEls.map(v => xml_2_opoint(v));
   }
 
   // dataset overrides

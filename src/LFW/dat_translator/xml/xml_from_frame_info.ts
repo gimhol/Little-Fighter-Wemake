@@ -4,7 +4,7 @@ import { xml_from_bdy_info } from "./xml_from_bdy_info";
 import { xml_from_itr_info } from "./xml_from_itr_info";
 import { xml_from_key_collection } from "./xml_from_key_collection";
 import { xml_from_t_next_frame } from "./xml_from_next_frame";
-import { xml_from_opoint } from "./xml_from_opoint";
+import { xml_x_opoint } from "./xml_x_opoint";
 import { xml_x_frame_pic } from "./xml_x_frame_pic";
 
 /**
@@ -94,7 +94,7 @@ export function xml_from_frame_info(xml: IXML, id: string, f: IFrameInfo): IXMLE
   // opoint[]
   if (f.opoint) {
     for (const o of f.opoint) {
-      el.insert(xml_from_opoint(xml, o));
+      el.insert(xml_x_opoint(xml, o, "broken"));
     }
   }
 

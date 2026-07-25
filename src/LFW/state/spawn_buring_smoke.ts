@@ -12,7 +12,7 @@ export function spawn_buring_smoke(entity: Entity, foo: 1 | 2): IOpointInfo {
     oid: OID.BrokenWeapon,
     action: { id: "140", facing },
     speedz: 0,
-    is_entity: false,
+    ghost: true,
     unimportant: 1,
   };
   switch (foo) {

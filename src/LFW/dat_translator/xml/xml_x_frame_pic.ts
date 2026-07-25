@@ -30,9 +30,9 @@ export function xml_x_frame_pic(xml: IXML, pic: IFramePic, tag: string): IXMLEle
   return el;
 }
 
-export function xml_2_picture_info_map(el: IXMLElement, tag: string): Record<string, IFramePic> | undefined {
+export function xml_2_frame_pic_map(el: IXMLElement, tag: string): Record<string, IFramePic> | undefined {
   return xml_2_map(el, tag, xml_2_frame_pic)
 }
-export function xml_x_picture_info_map(xml: IXML, map: Record<string, IFramePic> | undefined, tag: string) {
+export function xml_x_frame_pic_map(xml: IXML, map: Record<string, IFramePic> | undefined, tag: string) {
   return xml_x_map(xml, map, tag, xml_x_frame_pic);
 }

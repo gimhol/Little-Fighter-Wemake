@@ -10,7 +10,7 @@ import { xml_to_cpoint } from "./xml_to_cpoint";
 import { xml_to_itr_info } from "./xml_to_itr_info";
 import { xml_to_key_collection } from "./xml_to_key_collection";
 import { xml_to_next_frame } from "./xml_to_next_frame";
-import { xml_to_opoint } from "./xml_to_opoint";
+import { xml_2_opoint } from "./xml_x_opoint";
 import { xml_2_frame_pic } from "./xml_x_frame_pic";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
@@ -113,7 +113,7 @@ export function xml_to_frame_info(el: IXMLElement): IFrameInfo {
   ret.on_exhaustion /**/ = single_or_array(el, "on_exhaustion", xml_to_next_frame);
   ret.bdy           /**/ = non_emptpy_array(el, "bdy", xml_to_bdy_info);
   ret.itr           /**/ = non_emptpy_array(el, "itr", xml_to_itr_info);
-  ret.opoint        /**/ = non_emptpy_array(el, "opoint", xml_to_opoint);
+  ret.opoint        /**/ = non_emptpy_array(el, "opoint", xml_2_opoint);
   ret.wpoint        /**/ = merge_by_tag(el, "wpoint", xml_to_wpoint);
   ret.bpoint        /**/ = merge_by_tag(el, "bpoint", xml_to_bpoint);
   ret.cpoint        /**/ = merge_by_tag(el, "cpoint", xml_to_cpoint);
