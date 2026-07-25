@@ -6,8 +6,10 @@ class _XML implements IXML {
     const i = new DOMParser().parseFromString(text, 'text/xml').documentElement
     return new XMLElement(i)
   }
-  create(tag: string): XMLElement {
-    return new XMLElement(document.createElement(tag))
+  create(tag: string, text?: string): XMLElement {
+    const ret = new XMLElement(document.createElement(tag))
+    if(text) ret.set_text(text);
+    return ret;
   }
 
   from_string(str: string, tag: string = 'string'): XMLElement {

@@ -3,13 +3,13 @@ import type { IQubePair } from "./IQubePair";
 import { any, fields, int, str } from "../fields";
 
 export interface ICpointInfo {
-  kind: 1 | 2;
+  kind?: number;
   x?: number;
   y?: number;
   z?: number;
   vaction?: TNextFrame;
   injury?: number;
-  hurtable?: 0 | 1;
+  hurtable?: number;
   decrease?: number;
   throwvx?: number;
   throwvy?: number;

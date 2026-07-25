@@ -4,18 +4,18 @@ import type { IHoldKeyCollection } from "../../defines/IHoldKeyCollection";
 import type { IQube } from "../../defines/IQube";
 import type { IXMLElement } from "../../ditto/xml";
 import { xml_to_chase } from "./xml_to_chase";
-import { xml_to_cpoint } from "./xml_to_cpoint";
-import { xml_2_itr } from "./xml_x_itr";
 import { xml_to_key_collection } from "./xml_to_key_collection";
-import { xml_to_t_next_frame } from "./xml_to_next_frame";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
-import { xml_to_wpoint } from "./xml_to_wpoint";
 import { xml_2_bdy } from "./xml_x_bdy";
 import { xml_2_bpoint } from "./xml_x_bpoint";
+import { xml_2_cpoint } from "./xml_x_cpoint";
 import { xml_2_frame_pic } from "./xml_x_frame_pic";
-import { xml_2_opoint } from "./xml_x_opoint";
+import { xml_2_itr } from "./xml_x_itr";
+import { xml_2_t_next_frame } from "./xml_x_next_frame";
 import { xml_2_non_empty } from "./xml_x_non_empty";
+import { xml_2_opoint } from "./xml_x_opoint";
+import { xml_2_wpoint } from "./xml_x_wpoint";
 
 /**
  * 解析快捷属性：rect="x,y,w,h" 或 qube="x,y,w,h" 或 qube="x,y,w,h,z,l"
@@ -87,16 +87,16 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
 
   xml_to_velocity_info(el, ret as any);
 
-  ret.next          /**/ = xml_to_t_next_frame(el.children_by_tag("next"));
-  ret.on_dead       /**/ = xml_to_t_next_frame(el.children_by_tag("on_dead"));
-  ret.on_landing    /**/ = xml_to_t_next_frame(el.children_by_tag("on_landing"));
-  ret.on_exhaustion /**/ = xml_to_t_next_frame(el.children_by_tag("on_exhaustion"));
+  ret.next          /**/ = xml_2_t_next_frame(el.children_by_tag("next"));
+  ret.on_dead       /**/ = xml_2_t_next_frame(el.children_by_tag("on_dead"));
+  ret.on_landing    /**/ = xml_2_t_next_frame(el.children_by_tag("on_landing"));
+  ret.on_exhaustion /**/ = xml_2_t_next_frame(el.children_by_tag("on_exhaustion"));
   ret.bdy           /**/ = xml_2_non_empty(el, "bdy", xml_2_bdy);
   ret.itr           /**/ = xml_2_non_empty(el, "itr", xml_2_itr);
   ret.opoint        /**/ = xml_2_non_empty(el, "opoint", xml_2_opoint);
-  ret.wpoint        /**/ = merge_by_tag(el, "wpoint", xml_to_wpoint);
+  ret.wpoint        /**/ = merge_by_tag(el, "wpoint", xml_2_wpoint);
   ret.bpoint        /**/ = merge_by_tag(el, "bpoint", xml_2_bpoint);
-  ret.cpoint        /**/ = merge_by_tag(el, "cpoint", xml_to_cpoint);
+  ret.cpoint        /**/ = merge_by_tag(el, "cpoint", xml_2_cpoint);
   ret.chase         /**/ = merge_by_tag(el, "chase", xml_to_chase);
   ret.hit           /**/ = xml_to_key_collection(el, "hit") as IHitKeyCollection;
   ret.hold          /**/ = xml_to_key_collection(el, "hold") as IHoldKeyCollection;

@@ -5,7 +5,7 @@ import { xml_from_entity_info } from "./xml_from_entity_info";
 import { xml_from_frame_indexes } from "./xml_from_frame_indexes";
 import { xml_x_frame } from "./xml_x_frame";
 import { xml_x_itr } from "./xml_x_itr";
-import { xml_from_next_frame } from "./xml_from_next_frame";
+import { xml_x_next_frame } from "./xml_x_next_frame";
 export { xml_from_entity_info };
 
 
@@ -19,11 +19,11 @@ export function xml_from_entity_data(xml: IXML, data: IEntityData): string {
   // on_dead / on_exhaustion (可能为数组)
   if (data.on_dead) {
     const list = Array.isArray(data.on_dead) ? data.on_dead : [data.on_dead];
-    for (const nf of list) el.insert(xml_from_next_frame(xml, nf, "on_dead"));
+    for (const nf of list) el.insert(xml_x_next_frame(xml, nf, "on_dead"));
   }
   if (data.on_exhaustion) {
     const list = Array.isArray(data.on_exhaustion) ? data.on_exhaustion : [data.on_exhaustion];
-    for (const nf of list) el.insert(xml_from_next_frame(xml, nf, "on_exhaustion"));
+    for (const nf of list) el.insert(xml_x_next_frame(xml, nf, "on_exhaustion"));
   }
 
   // bdy_prefabs

@@ -67,8 +67,13 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
   if (is_weapon_data(data) || is_ball_data(data))
     make_frame_behavior(frame, data.id);
 
-  if (frame.sound && !lfw.sounds.has(frame.sound))
+  if (Array.isArray(frame.sound)) {
+    frame.sound.forEach(sound => {
+      jobs.push(lfw.sounds.load(sound, sound))
+    })
+  } else if (frame.sound) {
     jobs.push(lfw.sounds.load(frame.sound, frame.sound))
+  }
 
   if (frame.seqs) {
     frame.__seq_map = new Map();
@@ -116,8 +121,8 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
     )
   ) {
     // 拥有itr或bdy的ball在X轴或Y轴被阻，破之
-    frame.on_x_restrict = { id: '20', sounds: data.base.hit_sounds }
-    frame.on_y_restrict = { id: '20', sounds: data.base.hit_sounds }
+    frame.on_x_restrict = { id: '20', sound: data.base.hit_sounds }
+    frame.on_y_restrict = { id: '20', sound: data.base.hit_sounds }
   }
 
   if (frame.on_restrict) frame.on_restrict = preprocess_next_frame(frame.on_restrict);
@@ -152,7 +157,7 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
   frame.pic = preprocess_frame_pic(lfw, data, frame);
   frame.pics?.forEach((pic, i, arr) => arr[i] = preprocess_pic(lfw, data, pic));
 
-  
+
   if (frame.landable === void 0)
     frame.landable = data.type === EntityEnum.Ball ? 0 : 1;
 

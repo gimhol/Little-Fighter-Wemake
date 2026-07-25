@@ -146,7 +146,7 @@ export function cook_frames(ctx: IDatContext): Record<string, IFrameInfo> {
     if (!frame.cpoint) delete frame.cpoint;
 
     const sound = take(frame, "sound");
-    if (sound) frame.sound = sound.replace(/\\/g, '/') + ".mp3";
+    if (typeof sound === 'string') frame.sound = sound.replace(/\\/g, '/') + ".mp3";
     frames[frame_id] = frame;
 
     const dircontrol = take(cpoint_list[0], "dircontrol");

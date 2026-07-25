@@ -3,9 +3,7 @@ import { opoint_multi_new, type IOpointMulti } from "../../defines/IOpointMulti"
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
 import { one_or_arr } from "./one_or_arr";
-import { xml_from_t_next_frame as xml_x_t_next_frame } from "./xml_from_next_frame";
-import { xml_to_t_next_frame as xml_2_t_next_frame } from "./xml_to_next_frame";
-import { xml_to_velocity_info } from "./xml_to_velocity_info";
+import { xml_2_t_next_frame, xml_x_t_next_frame } from "./xml_x_next_frame";
 
 export function xml_2_opoint_multi(el: IXMLElement): IOpointMulti;
 export function xml_2_opoint_multi(el: IXMLElement | undefined): IOpointMulti | undefined;

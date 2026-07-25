@@ -1607,7 +1607,7 @@ export class Entity {
     } else {
       const { next } = this.frame;
       let nf = next ? this.get_next_frame(next)?.which : void 0;
-      if (nf) nf = { ...nf, judger: void 0 }
+      if (nf) nf = { ...nf, __judger: void 0 }
       else nf = { id: this.find_auto_frame().id }
       this.enter_frame(nf)
     }
@@ -2180,7 +2180,12 @@ export class Entity {
           cam_x += offset_x
           x = clamp(x, cam_x, cam_r)
         }
-        this.lfw.sounds.play(frame.sound, x, y, z);
+        if (Array.isArray(frame.sound)) {
+          frame.sound.forEach(s => this.lfw.sounds.play(s, x, y, z))
+        } else {
+          this.lfw.sounds.play(frame.sound, x, y, z);
+        }
+
       }
       this.set_frame(frame);
     } else if (this.frame === EMPTY_FRAME_INFO || fallback) {
@@ -2189,7 +2194,7 @@ export class Entity {
 
     if (flags.facing != void 0) this.facing = this.handle_facing_flag(flags.facing);
     if (frame) this.wait = this.handle_wait_flag(flags.wait, frame);
-    if (flags.sounds?.length) this.play_sound(flags.sounds);
+    if (Array.isArray(flags.sound)) this.play_sound(flags.sound);
     if (flags.blink_time) this.blinking = flags.blink_time;
     return frame ? EnterFrameResult.Entered : EnterFrameResult.Fallback;
   }
@@ -2256,7 +2261,7 @@ export class Entity {
       for (let i = 0; i < l; ++i) {
         const nf: INextFrame | undefined = which[i];
         if (!nf) continue;
-        if (!nf.judger) {
+        if (!nf.__judger) {
           remains.push(nf)
           continue;
         }
@@ -2268,7 +2273,7 @@ export class Entity {
       return this.get_next_frame(next);
     }
     const id = which.id;
-    const judger = which.judger;
+    const judger = which.__judger;
     const use_hp = which.hp;
     const use_mp = which.mp;
     const { mp_mode } = which;
@@ -2398,7 +2403,7 @@ export class Entity {
     this.callbacks.emit("on_data_changed")(this._data, prev, this)
   }
 
-  play_sound(sounds: string[] | undefined, pos: IVector3Like = this.position) {
+  play_sound(sounds: string | string[] | undefined, pos: IVector3Like = this.position) {
     if (!sounds?.length) return;
     this.lfw.mt.mark = 'ps_1'
     const sound = this.lfw.mt.pick(sounds);

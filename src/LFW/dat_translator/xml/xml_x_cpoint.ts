@@ -1,5 +1,7 @@
-import type { ICpointInfo } from "../../defines";
+import { cpoint_info_new, type ICpointInfo } from "../../defines";
 import type { IXML, IXMLElement } from "../../ditto";
+import { delete_undefined } from "./delete_undefined";
+import { xml_x_t_next_frame, xml_2_t_next_frame } from "./xml_x_next_frame";
 
 export function xml_x_cpoint(xml: IXML, i: ICpointInfo, tag: string): IXMLElement
 export function xml_x_cpoint(xml: IXML, i: ICpointInfo | undefined, tag: string): IXMLElement | undefined
@@ -8,6 +10,7 @@ export function xml_x_cpoint(xml: IXML, i: ICpointInfo | undefined, tag: string)
   const ret = xml.create(tag);
   ret.set_attr("kind", i.kind);
   ret.set_arr_attr_soft("pos", [i.x, i.y, i.z]);
+  xml_x_t_next_frame(xml, i.vaction, "vaction").forEach(v => ret.insert(v))
   ret.set_attr("injury", i.injury);
   ret.set_attr("hurtable", i.hurtable);
   ret.set_attr("decrease", i.decrease);
@@ -18,3 +21,17 @@ export function xml_x_cpoint(xml: IXML, i: ICpointInfo | undefined, tag: string)
   ret.set_attr("shaking", i.shaking);
   return ret
 }
+export function xml_2_cpoint(el: IXMLElement): ICpointInfo {
+  const ret = cpoint_info_new();
+  ret.kind     /**/ = el.get_num("kind", ret.kind)
+  const pos    /**/ = el.nums_attr_soft("pos");
+  ret.x        /**/ = el.get_num("x", pos?.[0] ?? ret.x);
+  ret.y        /**/ = el.get_num("y", pos?.[1] ?? ret.y);
+  ret.z        /**/ = el.get_num("z", pos?.[2] ?? ret.z);
+  ret.vaction  /**/ = xml_2_t_next_frame(el.children_by_tag('vaction'))
+  ret.injury   /**/ = el.get_num("injury")
+  ret.hurtable /**/ = el.get_num("hurtable")
+  ret.decrease /**/ = el.get_num("decrease")
+  return delete_undefined(ret);
+}
+

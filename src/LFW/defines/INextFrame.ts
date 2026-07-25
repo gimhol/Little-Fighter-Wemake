@@ -35,14 +35,6 @@ export interface INextFrame extends IVelocityInfo {
   expression?: string;
 
   /**
-   * 根据判断表达式 生成的表达式实例
-   * @see {expression}
-   * 
-   * @type {IExpression<any>}
-   */
-  judger?: IExpression<any>;
-
-  /**
    * 进入此帧消耗的蓝量
    * MP不足时，将
    *
@@ -84,7 +76,7 @@ export interface INextFrame extends IVelocityInfo {
    *
    * @type {?string[]}
    */
-  sounds?: string[];
+  sound?: string | string[];
 
   /**
    * 进入帧时，闪烁时长
@@ -92,5 +84,16 @@ export interface INextFrame extends IVelocityInfo {
    * @type {?number}
    */
   blink_time?: number;
+
+  /**
+   * 根据判断表达式 生成的表达式实例
+   * @see {expression}
+   * 
+   * @type {IExpression<any>}
+   */
+  __judger?: IExpression<any>;
+}
+export function next_frame_new(): INextFrame {
+  return {}
 }
 export type TNextFrame = INextFrame | INextFrame[];

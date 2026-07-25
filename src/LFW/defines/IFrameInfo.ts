@@ -132,7 +132,7 @@ export interface IFrameInfo extends IVelocityInfo {
    *
    * @type {?string}
    */
-  sound?: string;
+  sound?: string | string[];
 
   /**
    * 此frame消耗的血量，每帧都会扣
@@ -144,7 +144,7 @@ export interface IFrameInfo extends IVelocityInfo {
   hp?: number;
   mp?: number;
 
-  
+
 
   hold?: IHoldKeyCollection;
   hit?: IHitKeyCollection;
