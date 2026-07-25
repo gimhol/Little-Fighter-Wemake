@@ -1,6 +1,6 @@
 import { abs } from "./base";
-export interface Result { a: number, b: number, c: number, d: number }
-export const result: Result = { a: 0, b: 0, c: 0, d: 0 }
+interface Result { a: number, b: number, c: number, d: number }
+const result: Result = { a: 0, b: 0, c: 0, d: 0 }
 export function calc_plane(
   x1: number, y1: number, z1: number,
   x2: number, y2: number, z2: number,
