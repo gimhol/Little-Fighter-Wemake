@@ -34,7 +34,6 @@ export * from "./xml_to_drink_info";
 export * from "./xml_to_entity_data";
 export * from "./xml_to_entity_info";
 export * from "./xml_to_frame_indexes";
-export * from "./xml_to_itr_info";
 export * from "./xml_to_key_collection";
 export * from "./xml_to_next_frame";
 export * from "./xml_to_qube";
