@@ -32,7 +32,7 @@ export * from "./xml_to_entity_data";
 export * from "./xml_to_entity_info";
 export * from "./xml_to_frame_indexes";
 export * from "./xml_to_key_collection";
-export * from "./xml_to_qube";
+export * from "./xml_x_qube";
 export * from "./xml_to_stage_info";
 export * from "./xml_to_stage_object_info";
 export * from "./xml_to_stage_phase_info";

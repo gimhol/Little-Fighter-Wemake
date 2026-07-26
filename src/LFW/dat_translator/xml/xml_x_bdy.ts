@@ -1,7 +1,7 @@
 import { bdy_info_new, type IBdyInfo } from "../../defines/IBdyInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
-import { xml_to_qube } from "./xml_to_qube";
+import { xml_2_qube } from "./xml_x_qube";
 import { xml_2_colli_action, xml_x_colli_action } from "./xml_x_colli_action";
 import { xml_2_non_empty, xml_x_non_empty } from "./xml_x_non_empty";
 
@@ -26,7 +26,7 @@ export function xml_2_bdy(el: IXMLElement): IBdyInfo {
   ret.ref      /**/ = el.get_str("ref") ?? el.get_str("prefab_id") ?? ret.ref;
   ret.kind     /**/ = el.get_num("kind", ret.kind);
   ret.hit_flag /**/ = el.get_num("hit_flag", ret.hit_flag);
-  xml_to_qube(el, ret);
+  xml_2_qube(el, ret);
   ret.actions /**/ = xml_2_non_empty(el, 'action', xml_2_colli_action)
   ret.test    /**/ = el.get_str("test", ret.test);
   ret.code    /**/ = el.get_num("code", ret.code);

@@ -1,7 +1,7 @@
 import { itr_info_new, type IItrInfo } from "../../defines/IItrInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
-import { xml_to_qube } from "./xml_to_qube";
+import { xml_2_qube } from "./xml_x_qube";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_2_colli_action, xml_x_colli_action } from "./xml_x_colli_action";
 import { xml_2_t_next_frame, xml_x_t_next_frame } from "./xml_x_next_frame";
@@ -55,7 +55,7 @@ export function xml_2_itr(el: IXMLElement): IItrInfo {
   ret.test          /**/ = el.get_str("test", ret.test);
   ret.code          /**/ = el.get_num("code", ret.code);
   xml_to_velocity_info(el, ret);
-  xml_to_qube(el, ret);
+  xml_2_qube(el, ret);
   return delete_undefined(ret);
 }
 
