@@ -1,5 +1,5 @@
+import format from 'xml-formatter';
 import type { BaseValue, IXMLElement, Voidable } from "../../LFW/ditto/xml/IXMLElement";
-
 export class XMLElement implements IXMLElement {
   readonly inner: Element;
   private _children: XMLElement[] | null = null;
@@ -178,7 +178,9 @@ export class XMLElement implements IXMLElement {
    * @memberof XMLElement
    */
   stringify(): string {
-    return new XMLSerializer().serializeToString(this.inner);
+    const ser = new XMLSerializer();
+    const str = ser.serializeToString(this.inner).replace(/<(\w+)([^>]*)><\/\1>/g, '<$1$2/>');
+    return format(str, { indentation: '  ' });
   }
 
   insert(child?: XMLElement, index?: number): void {
