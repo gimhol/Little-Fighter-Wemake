@@ -2,7 +2,7 @@
 export * from "./delete_undefined";
 export * from "./diff_map_utils";
 export * from "./one_or_arr";
-export * from "./xml_from_armor_info";
+export * from "./xml_x_armor_info";
 export * from "./xml_from_bg_data";
 export * from "./xml_from_dat_index";
 export * from "./xml_from_data_lists";
@@ -19,7 +19,6 @@ export * from "./xml_from_stage_info";
 export * from "./xml_from_stage_object_info";
 export * from "./xml_from_stage_phase_info";
 export * from "./xml_from_world_dataset";
-export * from "./xml_to_armor_info";
 export * from "./xml_to_bg_data";
 export * from "./xml_to_bg_info";
 export * from "./xml_to_bg_layer";

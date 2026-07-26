@@ -1,6 +1,6 @@
 import { entity_info_new, type IEntityInfo } from "../../defines/IEntityInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { xml_to_armor_info } from "./xml_to_armor_info";
+import { xml_2_armor_info } from "./xml_x_armor_info";
 import { xml_2_drink_info } from "./xml_x_drink_info";
 import { xml_2_opoint } from "./xml_x_opoint";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
@@ -67,7 +67,7 @@ export function xml_to_entity_info(el: IXMLElement): IEntityInfo {
   const drinkEl = el.child_by_tag("drink");
   if (drinkEl) ret.drink = xml_2_drink_info(drinkEl);
   const armorEl = el.child_by_tag("armor");
-  if (armorEl) ret.armor = xml_to_armor_info(armorEl);
+  if (armorEl) ret.armor = xml_2_armor_info(armorEl);
 
   // models
 

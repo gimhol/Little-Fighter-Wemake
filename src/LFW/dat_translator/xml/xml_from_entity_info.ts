@@ -1,10 +1,10 @@
 import type { IEntityInfo } from "../../defines/IEntityInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
-import { xml_from_armor_info } from "./xml_from_armor_info";
-import { xml_x_drink_info } from "./xml_x_drink_info";
-import { xml_x_opoint } from "./xml_x_opoint";
 import { xml_from_world_dataset } from "./xml_from_world_dataset";
+import { xml_x_armor_info } from "./xml_x_armor_info";
+import { xml_x_drink_info } from "./xml_x_drink_info";
 import { xml_x_model_info_map } from "./xml_x_model_info";
+import { xml_x_opoint } from "./xml_x_opoint";
 import { xml_x_picture_info_map } from "./xml_x_picture_info";
 
 /**
@@ -43,11 +43,8 @@ export function xml_from_entity_info(xml: IXML, info: IEntityInfo, tag: string =
     el.set_attr("h", p.h);
     ret.insert(el);
   }
-  if (info.drink)
-    ret.insert(xml_x_drink_info(xml, info.drink));
-
-  if (info.armor)
-    ret.insert(xml_from_armor_info(xml, info.armor));
+  ret.insert(xml_x_drink_info(xml, info.drink, "drink"));
+  ret.insert(xml_x_armor_info(xml, info.armor, 'armor'));
 
   for (const [name, m] of Object.entries(info.models ?? {})) {
     const el = xml.create("model");

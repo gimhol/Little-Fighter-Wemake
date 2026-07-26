@@ -2,9 +2,9 @@ import { drink_info_new, type IDrinkInfo } from "../../defines/IDrinkInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
 
-export function xml_x_drink_info(xml: IXML, d: IDrinkInfo, tag?: string): IXMLElement;
-export function xml_x_drink_info(xml: IXML, d: IDrinkInfo | undefined, tag?: string): IXMLElement | undefined;
-export function xml_x_drink_info(xml: IXML, d: IDrinkInfo | undefined, tag: string = "drink"): IXMLElement | undefined {
+export function xml_x_drink_info(xml: IXML, d: IDrinkInfo, tag: string): IXMLElement;
+export function xml_x_drink_info(xml: IXML, d: IDrinkInfo | undefined, tag: string): IXMLElement | undefined;
+export function xml_x_drink_info(xml: IXML, d: IDrinkInfo | undefined, tag: string ): IXMLElement | undefined {
   if (!d) return void 0;
   const ret = xml.create(tag);
   ret.set_attr("id", d.id);
