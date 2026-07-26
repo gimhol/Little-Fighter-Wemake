@@ -2,7 +2,7 @@ import { EntityEnum } from "../../defines/EntityEnum";
 import { entity_data_new, type IEntityData, type TBdyPrefabs, type TItrPrefabs } from "../../defines/IEntityData";
 import type { IFrameInfo } from "../../defines/IFrameInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { xml_2_frame } from "./xml_2_frame";
+import { xml_2_frame } from "./xml_x_frame";
 import { xml_to_entity_info } from "./xml_to_entity_info";
 import { xml_to_frame_indexes } from "./xml_to_frame_indexes";
 import { xml_2_bdy } from "./xml_x_bdy";

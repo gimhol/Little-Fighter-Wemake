@@ -2,7 +2,6 @@
 export * from "./delete_undefined";
 export * from "./diff_map_utils";
 export * from "./one_or_arr";
-export * from "./xml_2_frame";
 export * from "./xml_from_armor_info";
 export * from "./xml_from_bg_data";
 export * from "./xml_from_dat_index";
