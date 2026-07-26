@@ -18,5 +18,5 @@ export function xml_x_chase(xml: IXML, c: IChaseInfo | undefined, tag: string): 
   ret.set_attr('flag', c.flag);
   ret.set_attr('lost', c.lost);
   ret.set_attr('oy', c.oy);
-  return delete_undefined(ret);
+  return ret;
 }
