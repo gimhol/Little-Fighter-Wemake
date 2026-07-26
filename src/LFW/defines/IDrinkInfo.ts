@@ -94,7 +94,7 @@ export interface IDrinkInfo {
   mp_h_ticks?: number;
 }
 
-export function drink_info_new() {
+export function drink_info_new(): IDrinkInfo {
   return {}
 }
 
