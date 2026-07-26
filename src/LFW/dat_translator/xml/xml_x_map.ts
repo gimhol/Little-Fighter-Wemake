@@ -11,7 +11,9 @@ export function xml_2_map<T>(el: IXMLElement, tag: string, reader: (el: IXMLElem
     ret[key] = value;
   }
   return Object.keys(ret).length ? ret : void 0;
-} export function xml_x_map<T>(xml: IXML, map: { [x in string]?: T | undefined } | undefined, tag: string, writer: (xml: IXML, value: T, tag: string) => IXMLElement | undefined | null) {
+}
+
+export function xml_x_map<T>(xml: IXML, map: { [x in string]?: T | undefined } | undefined, tag: string, writer: (xml: IXML, value: T, tag: string) => IXMLElement | undefined | null, parent?: IXMLElement | null) {
   const ret: IXMLElement[] = [];
   for (const [key, value] of Object.entries(map ?? {})) {
     if (value == void 0) continue;
@@ -19,6 +21,7 @@ export function xml_2_map<T>(el: IXMLElement, tag: string, reader: (el: IXMLElem
     if (!el) continue;
     if (!el.get_str("id")) el.get_str("id", key);
     if (!el.get_str("key")) el.get_str("key", key);
+    parent?.insert(el);
     ret.push(el);
   }
   return ret.length ? ret : void 0;

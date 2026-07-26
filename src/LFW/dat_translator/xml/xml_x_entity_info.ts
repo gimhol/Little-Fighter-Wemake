@@ -4,7 +4,10 @@ import { xml_from_world_dataset } from "./xml_from_world_dataset";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
 import { xml_2_armor_info, xml_x_armor_info } from "./xml_x_armor_info";
 import { xml_2_drink_info, xml_x_drink_info } from "./xml_x_drink_info";
+import { xml_x_frame_pic } from "./xml_x_frame_pic";
+import { xml_x_map } from "./xml_x_map";
 import { xml_2_model_info_map, xml_x_model_info_map } from "./xml_x_model_info";
+import { xml_x_non_empty } from "./xml_x_non_empty";
 import { xml_2_opoint, xml_x_opoint } from "./xml_x_opoint";
 import { xml_2_picture_info_map, xml_x_picture_info_map } from "./xml_x_picture_info";
 
@@ -23,34 +26,20 @@ export function xml_x_entity_info(xml: IXML, info: IEntityInfo, tag: string): IX
   ret.set_arr_attr_soft("bounce", [info.bounce_x, info.bounce_y, info.bounce_z]);
   ret.set_arr_attr_soft("bounce_min", [info.bounce_min_x, info.bounce_min_y, info.bounce_min_z]);
   ret.set_arr_attr_soft("fast", [info.fast_vx, info.fast_vy, info.fast_vz]);
-  
-  info.brokens?.forEach(v => ret.insert(xml_x_opoint(xml, v, "broken")))
+  xml_x_non_empty(xml, info.brokens, "broken", xml_x_opoint, ret)
+  ret.insert(xml_x_armor_info(xml, info.armor, 'armor'));
   ret.insert(xml_x_drink_info(xml, info.drink, "drink"));
   ret.set_attr("drop_hurt", info.drop_hurt);
   ret.set_attr("hit_sounds", info.hit_sounds);
   ret.set_attr("drop_sounds", info.drop_sounds);
   ret.set_attr("dead_sounds", info.dead_sounds);
-
   ret.set_attr("bot_id", info.bot_id);
-
-  for (const [name, p] of Object.entries(info.portraits ?? {})) {
-    const el = xml.create("portrait");
-    el.set_attr("name", name);
-    el.set_attr("tex", p.tex);
-    el.set_attr("x", p.x);
-    el.set_attr("y", p.y);
-    el.set_attr("w", p.w);
-    el.set_attr("h", p.h);
-    ret.insert(el);
-  }
-  ret.insert(xml_x_armor_info(xml, info.armor, 'armor'));
-
-
-  const ds = xml_from_world_dataset(xml, info);
-  if (ds) ret.insert(ds);
-
+  xml_x_map(xml, info.portraits, "portrait", xml_x_frame_pic, ret)
+  ret.insert(xml_from_world_dataset(xml, info, "dataset"));
   return ret;
-} export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
+} 
+
+export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
   const ret = entity_info_new();
 
   ret.type /**/ = el.get_num("type", ret.type);
