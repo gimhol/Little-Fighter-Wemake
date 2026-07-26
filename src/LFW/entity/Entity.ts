@@ -1154,7 +1154,7 @@ export class Entity {
     return entity;
   }
 
-  attach(ghost = true): this {
+  attach(ghost = false): this {
     this._spawn_time = this.world.game_time;
     this._mounted = 1;
     this._ghosted = ghost ? 1 : 0;

@@ -2,7 +2,6 @@ import { next_frame_new, type INextFrame, type TNextFrame } from "../../defines/
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
 import { non_empty, one_or_arr } from "./one_or_arr";
-import { xml_2_non_empty } from "./xml_x_non_empty";
 
 export function xml_x_next_frame(xml: IXML, i: INextFrame, tag: string): IXMLElement {
   const ret = xml.create(tag);
@@ -23,7 +22,7 @@ export function xml_x_next_frame(xml: IXML, i: INextFrame, tag: string): IXMLEle
 }
 
 export function xml_2_next_frame(el: IXMLElement): INextFrame {
-  const ret = next_frame_new();
+  const ret      /**/ = next_frame_new();
   ret.id         /**/ = one_or_arr(el.get_str_arr("id"));
   ret.desc       /**/ = el.get_str("desc", ret.desc);
   ret.wait       /**/ = el.get_num("wait") ?? el.get_str("wait");
@@ -36,19 +35,15 @@ export function xml_2_next_frame(el: IXMLElement): INextFrame {
   ret.blink_time /**/ = el.get_num("blink_time", ret.blink_time);
   return delete_undefined(ret);
 }
-export function xml_x_t_next_frame(
-  xml: IXML,
-  nf: TNextFrame | undefined,
-  tag: string = "next"
-): IXMLElement[] {
+export function xml_x_t_next_frame(xml: IXML, nf: TNextFrame | undefined, tag: string): IXMLElement[] {
   if (!nf) return [];
-  const nfs = Array.isArray(nf) ? nf : nf ? [nf] : []
-  if (!nfs.length) return [];
+  const nfs = Array.isArray(nf) ? nf : [nf];
   return nfs.map(v => xml_x_next_frame(xml, v, tag))
 }
 
 export function xml_2_t_next_frame(els: IXMLElement[]): TNextFrame | undefined {
-  if (els.length > 1) return els.map(v => xml_2_next_frame(v));
-  if (els.length === 1) return xml_2_next_frame(els[0]);
-  return void 0
+  const ret = els.map(v => xml_2_next_frame(v));
+  if (!ret.length) return void 0;
+  if (1 == ret.length) return ret[0];
+  return ret;
 }
