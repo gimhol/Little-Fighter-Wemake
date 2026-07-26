@@ -27,6 +27,11 @@
 ![闯关模式(生存)](./docs/image/team_outline_effect_stage_mode.png)
 ![对战模式](./docs/image/team_outline_effect_vs_mode.png)
 
+## 进行中
+
+- 支持XML格式的数据[(为什么?)](./docs/dev/why_xml.MD)
+- frame支持多图叠加以及图片旋转[(为什么?)](./docs/dev/frame_with_multi_pic.MD)
+
 ## 接下来是？
 
 - 支持3d模型与动画?
