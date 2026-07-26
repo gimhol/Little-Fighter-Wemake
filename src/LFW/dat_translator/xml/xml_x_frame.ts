@@ -32,12 +32,13 @@ export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement 
 
   ret.set_attr("center", [f.centerx, f.centery].join())
   ret.set_attr("size", [f.width, f.height].join())
-  if (Array.isArray(f.sound)) {
-    f.sound.forEach(sound => ret.insert(xml.create('sound', sound)))
-  } else if (f.sound) {
-    ret.insert(xml.create('sound', f.sound))
-  }
 
+  const sounds = Array.isArray(f.sound) ? f.sound : f.sound ? [f.sound] : void 0;
+  sounds?.forEach(sound => {
+    const el = xml.create('sound');
+    el.set_attr("value", sound)
+    ret.insert(el)
+  })
   ret.set_attr("hp", f.hp)
   ret.set_attr("mp", f.mp)
 
