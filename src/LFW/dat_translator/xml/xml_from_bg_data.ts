@@ -23,7 +23,7 @@ export function xml_from_bg_data(xml: IXML, data: IBgData): string {
   if (shadow_w || shadow_h)
     info.set_attr("shadowsize", [shadow_w, shadow_h].join(","));
 
-  if (data.base.group?.length) info.set_arr_attr("group", data.base.group as string[]);
+  if (data.base.group?.length) info.set_attr("group", data.base.group as string[]);
   if (data.base.height && data.base.height !== 600) info.set_attr("height", data.base.height);
 
   // 此处刻意的''

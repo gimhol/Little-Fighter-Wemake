@@ -21,7 +21,7 @@ export function xml_2_frame_pic(el: IXMLElement): IFramePic {
 export function xml_x_frame_pic(xml: IXML, pic: IFramePic, tag: string): IXMLElement {
   const el = xml.create(tag);
   el.set_attr("tex", pic.tex);
-  el.set_arr_attr("rect", [pic.x, pic.y, pic.w, pic.h]);
+  el.set_attr("rect", [pic.x, pic.y, pic.w, pic.h]);
   el.set_attr("r", pic.r);
   el.set_attr("ox", pic.ox);
   el.set_attr("oy", pic.oy);

@@ -30,7 +30,7 @@ export function xml_x_opoint(xml: IXML, o: IOpointInfo, tag: string): IXMLElemen
   el.set_attr("id", o.id);
   el.set_attr("name", o.name);
   el.set_attr("kind", o.kind as number);
-  el.set_arr_attr("oid", o.oid);
+  el.set_attr("oid", o.oid);
   el.set_arr_attr_soft("pos", [o.x, o.y, o.z]);
   el.set_attr("pos_type", o.pos_type);
   xml_x_t_next_frame(xml, o.action, 'action').forEach(v => el.insert(v))

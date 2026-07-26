@@ -11,7 +11,7 @@ export function xml_from_dat_index(xml: IXML, idx: IDatIndex, tag: string = "dat
   el.set_attr("file", idx.file);
   if (idx.hash) el.set_attr("hash", idx.hash);
   if (idx.alias) el.set_attr("alias", idx.alias);
-  if (idx.groups?.length) el.set_arr_attr("groups", idx.groups);
+  if (idx.groups?.length) el.set_attr("groups", idx.groups);
   if (idx.skipped) el.set_attr("skipped", idx.skipped);
   if (idx.bot) el.set_attr("bot", idx.bot);
   return el;

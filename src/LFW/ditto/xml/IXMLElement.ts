@@ -89,18 +89,7 @@ export interface IXMLElement {
    * @param {string}          name  - 属性名
    * @param {Voidable<string>} value - 值
    */
-  set_attr(name: string, value: Voidable<BaseValue>): void;
-
-  /**
-   * 设置字符串数组属性，按分隔符合并为字符串，value 为 Voidable 时删除属性
-   *
-   * 可传入单个字符串（自动包装为数组）
-   *
-   * @param {string}            name  - 属性名
-   * @param {Voidable<BaseValue | BaseValue[]>} value - 值
-   * @param {string}           [sep=","] - 分隔符
-   */
-  set_arr_attr(name: string, value: Voidable<BaseValue | BaseValue[]>, sep?: string): void;
+  set_attr(name: string, value: Voidable<BaseValue | BaseValue[]>, sep?: string): void;
 
   /**
    * 设置字符串数组属性（undefined 元素转为空字符串），value 为 Voidable 时删除属性

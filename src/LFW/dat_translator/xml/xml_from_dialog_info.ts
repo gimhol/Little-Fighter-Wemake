@@ -13,7 +13,7 @@ export function xml_from_dialog_info(xml: IXML, d: IDialogInfo): IXMLElement {
   el.set_attr("i18n", d.i18n);
   el.set_attr("close_by", d.close_by);
   el.set_attr("hide_stats", d.hide_stats);
-  el.set_arr_attr("end_test", d.end_test);
+  el.set_attr("end_test", d.end_test);
 
   return el;
 }

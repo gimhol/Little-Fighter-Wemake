@@ -18,8 +18,8 @@ export function xml_x_armor_info(xml: IXML, a: IArmorInfo | undefined, tag: stri
   ret.set_attr("injury_ratio", a.injury_ratio);
   ret.set_attr("shaking_ratio", a.shaking_ratio);
   ret.set_attr("motionless_ratio", a.motionless_ratio);
-  ret.set_arr_attr("hit_sounds", a.hit_sounds);
-  ret.set_arr_attr("dead_sounds", a.dead_sounds);
+  ret.set_attr("hit_sounds", a.hit_sounds);
+  ret.set_attr("dead_sounds", a.dead_sounds);
   return ret;
 }
 

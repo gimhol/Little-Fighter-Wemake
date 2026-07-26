@@ -8,7 +8,7 @@ import { write_diff_map } from "./diff_map_utils";
 export function xml_from_stage_object_info(xml: IXML, o: IStageObjectInfo): IXMLElement {
   const el = xml.create("object");
 
-  el.set_arr_attr("id", o.id);
+  el.set_attr("id", o.id);
   el.set_attr("id_method", o.id_method);
   el.set_attr("x", o.x);
   el.set_attr("y", o.y);

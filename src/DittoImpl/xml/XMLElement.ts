@@ -42,10 +42,12 @@ export class XMLElement implements IXMLElement {
   attr(name: string): string | undefined {
     return this.inner.getAttribute(name) ?? undefined;
   }
-  set_attr(name: string, value: Voidable<string | number | boolean>): void {
+  set_attr(name: string, value: Voidable<BaseValue | BaseValue[]>, sep: string = ','): void {
     this._attrs = null;
     if (value === void 0 || value === null)
       this.del_attr(name);
+    else if (Array.isArray(value))
+      this.inner.setAttribute(name, value.join(sep));
     else
       this.inner.setAttribute(name, String(value));
   }

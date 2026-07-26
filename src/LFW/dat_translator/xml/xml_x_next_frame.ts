@@ -5,7 +5,7 @@ import { non_empty, one_or_arr } from "./one_or_arr";
 
 export function xml_x_next_frame(xml: IXML, i: INextFrame, tag: string): IXMLElement {
   const ret = xml.create(tag);
-  ret.set_arr_attr("id", i.id);
+  ret.set_attr("id", i.id);
   ret.set_attr("wait", i.wait);
   ret.set_attr("facing", i.facing);
   if (i.expression) ret.insert(xml.create("expression", i.expression));
@@ -16,7 +16,7 @@ export function xml_x_next_frame(xml: IXML, i: INextFrame, tag: string): IXMLEle
   ret.set_arr_attr_soft("acc", [i.acc_x, i.acc_y, i.acc_z]);
   ret.set_arr_attr_soft("vm", [i.vxm, i.vym, i.vzm]);
   ret.set_arr_attr_soft("ctrl", [i.ctrl_x, i.ctrl_y, i.ctrl_z]);
-  ret.set_arr_attr("sound", i.sound);
+  ret.set_attr("sound", i.sound);
   ret.set_attr("blink_time", i.blink_time);
   return ret;
 }

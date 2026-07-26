@@ -19,7 +19,7 @@ export function xml_from_stage_info(xml: IXML, stages: IStageInfo[]): string {
     if (s.is_starting) el.set_attr("is_starting", s.is_starting);
     if (s.starting_name) el.set_attr("starting_name", s.starting_name);
     if (s.title) el.set_attr("title", s.title);
-    if (s.group?.length) el.set_arr_attr("group", s.group);
+    if (s.group?.length) el.set_attr("group", s.group);
 
     for (const phase of s.phases) {
       el.insert(xml_from_stage_phase_info(xml, phase));
