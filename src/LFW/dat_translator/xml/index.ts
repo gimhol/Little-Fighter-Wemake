@@ -24,7 +24,7 @@ export * from "./xml_to_bg_data";
 export * from "./xml_to_bg_info";
 export * from "./xml_to_bg_layer";
 export * from "./xml_to_bg_terrain";
-export * from "./xml_to_chase";
+export * from "./xml_x_chase";
 export * from "./xml_to_dat_index";
 export * from "./xml_to_data_lists";
 export * from "./xml_to_dialog_info";

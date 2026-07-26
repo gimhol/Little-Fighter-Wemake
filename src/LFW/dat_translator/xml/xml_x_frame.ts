@@ -11,7 +11,7 @@ import { xml_2_opoint, xml_x_opoint } from "./xml_x_opoint";
 import { xml_2_wpoint, xml_x_wpoint } from "./xml_x_wpoint";
 import type { IHitKeyCollection, IHoldKeyCollection } from "../../defines";
 import { merge_by_tag } from "./merge_by_tag";
-import { xml_to_chase } from "./xml_to_chase";
+import { xml_2_chase, xml_x_chase } from "./xml_x_chase";
 import { xml_to_key_collection } from "./xml_to_key_collection";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
@@ -56,11 +56,10 @@ export function xml_x_frame(xml: IXML, id: string, f: IFrameInfo): IXMLElement |
   f.bdy?.map(v => xml_x_bdy(xml, v, "bdy")).forEach(v => el.insert(v))
   f.itr?.map(v => xml_x_itr(xml, v, "itr")).forEach(v => el.insert(v))
   f.opoint?.map(v => xml_x_opoint(xml, v, "opoint")).forEach(v => el.insert(v))
-
   el.insert(xml_x_bpoint(xml, f.bpoint, 'bpoint'));
   el.insert(xml_x_wpoint(xml, f.wpoint, "wpoint"));
   el.insert(xml_x_cpoint(xml, f.cpoint, "cpoint"));
-
+  el.insert(xml_x_chase(xml, f.chase, "chase"))
   return el;
 }
 
@@ -72,7 +71,7 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   const pics = el.children_by_tag('pic').map(v => xml_2_frame_pic(v));
   if (pics.length > 0) ret.pic = pics[0];
   if (pics.length > 1) ret.pics = pics.slice(1);
-  
+
   ret.state           /**/ = el.get_num("state", ret.state);
   ret.wait            /**/ = el.get_num("wait", ret.wait);
   const center        /**/ = el.nums_attr("center");
@@ -104,7 +103,7 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   ret.wpoint /**/ = merge_by_tag(el, "wpoint", xml_2_wpoint);
   ret.bpoint /**/ = merge_by_tag(el, "bpoint", xml_2_bpoint);
   ret.cpoint /**/ = merge_by_tag(el, "cpoint", xml_2_cpoint);
-  ret.chase /**/ = merge_by_tag(el, "chase", xml_to_chase);
+  ret.chase /**/ = merge_by_tag(el, "chase", xml_2_chase);
   ret.hit /**/ = xml_to_key_collection(el, "hit") as IHitKeyCollection;
   ret.hold /**/ = xml_to_key_collection(el, "hold") as IHoldKeyCollection;
   ret.key_down /**/ = xml_to_key_collection(el, "key_down") as IHoldKeyCollection;
