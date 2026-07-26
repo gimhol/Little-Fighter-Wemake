@@ -43,7 +43,6 @@ export function xml_x_t_next_frame(xml: IXML, nf: TNextFrame | undefined, tag: s
 
 export function xml_2_t_next_frame(els: IXMLElement[]): TNextFrame | undefined {
   const ret = els.map(v => xml_2_next_frame(v));
-  if (!ret.length) return void 0;
-  if (1 == ret.length) return ret[0];
-  return ret;
+  if (ret.length > 1) return ret;
+  return ret[0];
 }
