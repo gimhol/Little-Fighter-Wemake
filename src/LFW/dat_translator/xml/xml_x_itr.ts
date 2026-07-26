@@ -25,7 +25,7 @@ export function xml_x_itr(xml: IXML, i: IItrInfo, tag: string): IXMLElement {
   xml_x_t_next_frame(xml, i.catchingact, 'catchingact').forEach(v => ret.insert(v))
   xml_x_t_next_frame(xml, i.caughtact, 'caughtact').forEach(v => ret.insert(v))
   xml_x_t_next_frame(xml, i.on_hit_ground, 'on_hit_ground').forEach(v => ret.insert(v))
-  xml_x_non_empty(xml, i.actions, "action", xml_x_colli_action)?.forEach(v => ret.insert(v))
+  xml_x_non_empty(xml, i.actions, "action", xml_x_colli_action, ret)
   ret.set_arr_attr_soft("qube", [i.x, i.y, i.w, i.h, i.z, i.l]);
   ret.set_arr_attr_soft("dv", [i.dvx, i.dvy, i.dvz]);
   ret.set_attr("test", i.test);
