@@ -1,4 +1,4 @@
-import type { IHitKeyCollection, IHoldKeyCollection } from "../../defines";
+import { FRAME_BEHAVIOR_LABEL_MAP, StateEnum, StateEnumNames, type IHitKeyCollection, type IHoldKeyCollection } from "../../defines";
 import { frame_info_new, type IFrameInfo } from "../../defines/IFrameInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
@@ -62,6 +62,15 @@ export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement 
   ret.insert(xml_x_wpoint(xml, f.wpoint, "wpoint"));
   ret.insert(xml_x_cpoint(xml, f.cpoint, "cpoint"));
   ret.insert(xml_x_chase(xml, f.chase, "chase"))
+
+  if (f.behavior != void 0) {
+    const label = (FRAME_BEHAVIOR_LABEL_MAP as any)[f.behavior];
+    if (label) ret.set_attr("behavior_label", label)
+  }
+  if (f.state != void 0) {
+    const label = (StateEnumNames as any)[f.state];
+    if (label) ret.set_attr("state_label", label)
+  }
   return ret;
 }
 
@@ -112,6 +121,7 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   ret.key_up /**/ = xml_to_key_collection(el, "key_up") as IHoldKeyCollection;
   ret.seqs /**/ = xml_to_key_collection(el, "seqs");
   ret.dataset /**/ = xml_to_world_dataset(el.child_by_tag("dataset"));
+
   return delete_undefined(ret);
 }
 
