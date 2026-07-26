@@ -1,5 +1,6 @@
 import { drink_info_new, type IDrinkInfo } from "../../defines/IDrinkInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
+import { delete_undefined } from "./delete_undefined";
 
 export function xml_x_drink_info(xml: IXML, d: IDrinkInfo, tag?: string): IXMLElement;
 export function xml_x_drink_info(xml: IXML, d: IDrinkInfo | undefined, tag?: string): IXMLElement | undefined;
@@ -30,6 +31,6 @@ export function xml_2_drink_info(el: IXMLElement): IDrinkInfo {
   ret.mp_h_total /**/ = el.get_num("mp_h_total", mp_h?.[0] ?? ret.mp_h_total)
   ret.mp_h_value /**/ = el.get_num("mp_h_value", mp_h?.[1] ?? ret.mp_h_value)
   ret.mp_h_ticks /**/ = el.get_num("mp_h_ticks", mp_h?.[2] ?? ret.mp_h_ticks)
-  return ret
+  return delete_undefined(ret)
 }
 
