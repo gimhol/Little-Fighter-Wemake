@@ -68,9 +68,6 @@ export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
   ret.fast_vx = el.get_num("fast_vx", fast_v?.[1] ?? ret.fast_vx);
   ret.fast_vz = el.get_num("fast_vz", fast_v?.[2] ?? ret.fast_vz);
 
-
-
-
   ret.drop_hurt /**/ = el.get_num("drop_hurt");
   ret.hit_sounds /**/ = el.get_str_arr("hit_sounds");
   ret.drop_sounds /**/ = el.get_str_arr("drop_sounds");

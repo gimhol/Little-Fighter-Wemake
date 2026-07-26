@@ -8,7 +8,11 @@ export function xml_x_next_frame(xml: IXML, i: INextFrame, tag: string): IXMLEle
   ret.set_attr("id", i.id);
   ret.set_attr("wait", i.wait);
   ret.set_attr("facing", i.facing);
-  if (i.expression) ret.insert(xml.create("expression", i.expression));
+  if (i.expression) {
+    const el = xml.create("expression");
+    el.set_attr("value", i.expression)
+    ret.insert(el);
+  }
   ret.set_attr("mp", i.mp);
   ret.set_attr("mp_mode", i.mp_mode);
   ret.set_attr("hp", i.hp);
