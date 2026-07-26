@@ -11,9 +11,10 @@ export function xml_2_map<T>(el: IXMLElement, tag: string, reader: (el: IXMLElem
     ret[key] = value;
   }
   return Object.keys(ret).length ? ret : void 0;
-}export function xml_x_map<T>(xml: IXML, map: Record<string, T> | undefined, tag: string, writer: (xml: IXML, value: T, tag: string) => IXMLElement | undefined | null) {
+} export function xml_x_map<T>(xml: IXML, map: { [x in string]?: T | undefined } | undefined, tag: string, writer: (xml: IXML, value: T, tag: string) => IXMLElement | undefined | null) {
   const ret: IXMLElement[] = [];
   for (const [key, value] of Object.entries(map ?? {})) {
+    if (value == void 0) continue;
     const el = writer(xml, value, tag);
     if (!el) continue;
     if (!el.get_str("id")) el.get_str("id", key);

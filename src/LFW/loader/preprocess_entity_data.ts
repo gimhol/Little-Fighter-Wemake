@@ -1,4 +1,4 @@
-import { make_entity_special, make_fighter_special, make_weapon_special, xml_from_entity_data } from "../dat_translator";
+import { make_entity_special, make_fighter_special, make_weapon_special, xml_x_entity_data } from "../dat_translator";
 import { make_ball_special } from "../dat_translator/make_ball_special";
 import type { IEntityData } from "../defines";
 import { Ditto } from "../ditto";
@@ -48,7 +48,7 @@ export async function preprocess_entity_data(lfw: LFW, data: IEntityData, jobs: 
   data.processed = true;
   if (errors.length) Ditto.warn(errors);
 
-  (data as any).xml = () => xml_from_entity_data(Ditto.XML, data)
+  (data as any).xml = () => xml_x_entity_data(Ditto.XML, data).stringify()
   return data;
 }
 

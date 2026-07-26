@@ -5,7 +5,7 @@ import { mkdir } from "fs/promises";
 import type { IBgData, IDataLists, IEntityData, IStageInfo } from "../../../src/LFW/defines";
 import { xml_from_bg_data } from "../../../src/LFW/dat_translator/xml/xml_from_bg_data";
 import { xml_from_data_lists } from "../../../src/LFW/dat_translator/xml/xml_from_data_lists";
-import { xml_from_entity_data } from "../../../src/LFW/dat_translator/xml/xml_from_entity_data";
+import { xml_x_entity_data } from "../../../src/LFW/dat_translator/xml/xml_x_entity_data";
 import { xml_from_stage_info } from "../../../src/LFW/dat_translator/xml/xml_from_stage_info";
 import { XML } from "../xml/ToolXML";
 
@@ -27,7 +27,7 @@ function obj_to_xml(dst_path: string, content: any): string {
     return xml_from_bg_data(XML, content as IBgData);
   }
   if (dst_path.endsWith('.obj.xml') && content && content.id !== undefined) {
-    return xml_from_entity_data(XML, content as IEntityData);
+    return xml_x_entity_data(XML, content as IEntityData).stringify();
   }
   if (dst_path.endsWith('.stage.xml') && Array.isArray(content)) {
     return xml_from_stage_info(XML, content as IStageInfo[]);

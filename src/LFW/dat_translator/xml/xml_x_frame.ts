@@ -19,9 +19,9 @@ import { xml_2_non_empty } from "./xml_x_non_empty";
 import { xml_2_opoint, xml_x_opoint } from "./xml_x_opoint";
 import { xml_2_wpoint, xml_x_wpoint } from "./xml_x_wpoint";
 
-export function xml_x_frame(xml: IXML, id: string, f: IFrameInfo): IXMLElement | null {
-  const ret = xml.create("frame");
-  ret.set_attr("id", id);
+export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement | null {
+  const ret = xml.create(tag);
+  ret.set_attr("id", f.id);
   ret.set_attr("name", f.name)
   if (f.pic) ret.insert(xml_x_frame_pic(xml, f.pic, 'pic'))
   if (f.pics) f.pics.forEach(pic => ret.insert(xml_x_frame_pic(xml, pic, 'pic')))
