@@ -621,6 +621,7 @@ function App() {
         container={() => ele_game_canvas?.parentElement} />
       <Loading loading={!ui_id} big className={csses.loading_img} />
       <div className={csses.top_bar}>
+        <div className={csses.wails_drag} />
         <Show show={lfw?.is_cheat(CheatEnum.GIM_INK)}>
           <ToggleImgButton
             checked={app_state.dev_ui_open}

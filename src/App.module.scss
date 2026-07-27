@@ -31,20 +31,33 @@
   }
 
   .top_bar {
-    --wails-draggable: drag;
-    position         : absolute;
-    right            : 0px;
-    top              : 0px;
-    left             : 0px;
-    user-select      : none;
-    display          : flex;
-    justify-content  : flex-end;
-    align-items      : flex-start;
-    gap              : 0px;
-    pointer-events   : none;
+    position       : absolute;
+    right          : 0px;
+    top            : 0px;
+    left           : 0px;
+    user-select    : none;
+    display        : flex;
+    justify-content: flex-end;
+    align-items    : flex-start;
+    gap            : 0px;
+    pointer-events : none;
 
     &>* {
       pointer-events: all;
+    }
+
+    .wails_drag {
+      --wails-draggable: drag;
+      position         : absolute;
+      height           : 90%;
+      left             : 0px;
+      right            : 0px;
+      background-color : #88888800;
+      transition       : background-color 255ms;
+
+      &:hover {
+        background-color: #88888855;
+      }
     }
 
     button {
