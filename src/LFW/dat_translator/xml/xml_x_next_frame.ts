@@ -39,10 +39,14 @@ export function xml_2_next_frame(el: IXMLElement): INextFrame {
   ret.blink_time /**/ = el.get_num("blink_time", ret.blink_time);
   return delete_undefined(ret);
 }
-export function xml_x_t_next_frame(xml: IXML, nf: TNextFrame | undefined, tag: string): IXMLElement[] {
+export function xml_x_t_next_frame(xml: IXML, nf: TNextFrame | undefined, tag: string, parent?: IXMLElement): IXMLElement[] {
   if (!nf) return [];
   const nfs = Array.isArray(nf) ? nf : [nf];
-  return nfs.map(v => xml_x_next_frame(xml, v, tag))
+  return nfs.map(v => {
+    const el = xml_x_next_frame(xml, v, tag)
+    parent?.insert(el);
+    return el;
+  })
 }
 
 export function xml_2_t_next_frame(els: IXMLElement[]): TNextFrame | undefined {

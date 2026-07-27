@@ -27,8 +27,6 @@ export * from "./xml_x_chase";
 export * from "./xml_to_dat_index";
 export * from "./xml_to_data_lists";
 export * from "./xml_to_dialog_info";
-export * from "./xml_to_entity_data";
-export * from "./xml_to_frame_indexes";
 export * from "./xml_to_key_collection";
 export * from "./xml_x_qube";
 export * from "./xml_to_stage_info";

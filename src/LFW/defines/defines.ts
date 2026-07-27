@@ -12,7 +12,10 @@ import type { IStageInfo } from "./IStageInfo";
 import { StageGroup as SG } from "./StageGroup";
 import { TeamEnum as _TeamEnum } from "./TeamEnum";
 import { WT } from "./WeaponType";
+
+/** TFrameIdPair 是否有点蠢？ */
 export interface TFrameIdPair extends IPairByFace<string> { }
+/** TFrameIdListPair 是否有点蠢？ */
 export interface TFrameIdListPair extends IPairByFace<string[]> { }
 export type TTODO = any;
 export type TFace = -1 | 1;

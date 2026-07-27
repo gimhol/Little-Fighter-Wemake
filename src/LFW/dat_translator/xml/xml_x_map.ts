@@ -1,14 +1,17 @@
 import type { IXML, IXMLElement } from "../../ditto";
 
 
-export function xml_2_map<T>(el: IXMLElement, tag: string, reader: (el: IXMLElement) => T | undefined | null): Record<string, T> | undefined {
+export function xml_2_map<T>(el: IXMLElement, tag: string | string[], reader: (el: IXMLElement) => T | undefined | null): Record<string, T> | undefined {
   const ret: Record<string, T> = {};
-  for (const child of el.children_by_tag(tag)) {
-    const value = reader(child);
-    if (!value) continue;
-    const key = child.get_str("id") ?? child.get_str("key");
-    if (!key) continue;
-    ret[key] = value;
+  const tags = Array.isArray(tag) ? tag : [tag];
+  for (const tag of tags) {
+    for (const child of el.children_by_tag(tag)) {
+      const value = reader(child);
+      if (!value) continue;
+      const key = child.get_str("id") ?? child.get_str("key");
+      if (!key) continue;
+      ret[key] = value;
+    }
   }
   return Object.keys(ret).length ? ret : void 0;
 }
