@@ -13,12 +13,15 @@ export interface IFramePic {
   /** 高度（像素） */
   h: number;
 
-  /** 旋转 */
-  r?: number;
+  /** 旋转（弧度） */
+  rad?: number;
+  /** 旋转（角度） */
+  deg?: number;
   /** 变换中心x */
   ox?: number;
   /** 变换中心y */
   oy?: number;
+
 
   cx?: number;
   cy?: number;
@@ -41,7 +44,8 @@ export const frame_pic_fields = fields<IFramePic>({
   y: int('裁剪起点Y坐标（像素）'),
   w: int('宽度（像素）'),
   h: int('高度（像素）'),
-  r: int({ nullable: true }),
+  rad: int({ nullable: true }),
+  deg: int({ nullable: true }),
   ox: int({ nullable: true }),
   oy: int({ nullable: true }),
   cx: int({ nullable: true }),
@@ -57,7 +61,8 @@ export const Schema_IFramePic = make_schema<IFramePic>({
     y: { type: "number", description: "裁剪起点Y坐标（像素）" },
     w: { type: "number", description: "宽度（像素）" },
     h: { type: "number", description: "高度（像素）" },
-    r: { type: "number", nullable: true },
+    rad: { type: "number", nullable: true },
+    deg: { type: "number", nullable: true },
     ox: { type: "number", nullable: true },
     oy: { type: "number", nullable: true },
     cx: { type: "number", nullable: true },

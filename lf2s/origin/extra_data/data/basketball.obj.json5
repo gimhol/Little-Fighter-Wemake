@@ -80,7 +80,7 @@
       id: "0",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -111,7 +111,7 @@
       id: "1",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0.3927,
+        tex: "0", ox: 24, oy: 24, deg: 22.5,
         x: 0,
         y: 0,
         w: 48,
@@ -142,7 +142,7 @@
       id: "2",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0.7854,
+        tex: "0", ox: 24, oy: 24, deg: 45,
         x: 0,
         y: 0,
         w: 48,
@@ -173,7 +173,7 @@
       id: "3",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.1781,
+        tex: "0", ox: 24, oy: 24, deg: 67.5,
         x: 0,
         y: 0,
         w: 48,
@@ -204,7 +204,7 @@
       id: "4",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.5708,
+        tex: "0", ox: 24, oy: 24, deg: 90,
         x: 0,
         y: 0,
         w: 48,
@@ -235,7 +235,7 @@
       id: "5",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.9635,
+        tex: "0", ox: 24, oy: 24, deg: 112.5,
         x: 0,
         y: 0,
         w: 48,
@@ -266,7 +266,7 @@
       id: "6",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 2.35619,
+        tex: "0", ox: 24, oy: 24, deg: 135,
         x: 0,
         y: 0,
         w: 48,
@@ -297,7 +297,7 @@
       id: "7",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 2.74889,
+        tex: "0", ox: 24, oy: 24, deg: 157.5,
         x: 0,
         y: 0,
         w: 48,
@@ -328,7 +328,7 @@
       id: "8",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.14159,
+        tex: "0", ox: 24, oy: 24, deg: 180,
         x: 0,
         y: 0,
         w: 48,
@@ -359,7 +359,7 @@
       id: "9",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.53429,
+        tex: "0", ox: 24, oy: 24, deg: 202.5,
         x: 0,
         y: 0,
         w: 48,
@@ -390,7 +390,7 @@
       id: "10",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.92699,
+        tex: "0", ox: 24, oy: 24, deg: 225,
         x: 0,
         y: 0,
         w: 48,
@@ -421,7 +421,7 @@
       id: "11",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 4.31969,
+        tex: "0", ox: 24, oy: 24, deg: 247.5,
         x: 0,
         y: 0,
         w: 48,
@@ -452,7 +452,7 @@
       id: "12",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 4.71239,
+        tex: "0", ox: 24, oy: 24, deg: 270,
         x: 0,
         y: 0,
         w: 48,
@@ -483,7 +483,7 @@
       id: "13",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.10509,
+        tex: "0", ox: 24, oy: 24, deg: 292.5,
         x: 0,
         y: 0,
         w: 48,
@@ -514,7 +514,7 @@
       id: "14",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.49779,
+        tex: "0", ox: 24, oy: 24, deg: 315,
         x: 0,
         y: 0,
         w: 48,
@@ -545,7 +545,7 @@
       id: "15",
       name: "in_the_sky",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.89049,
+        tex: "0", ox: 24, oy: 24, deg: 337.5,
         x: 0,
         y: 0,
         w: 48,
@@ -576,7 +576,7 @@
       id: "20",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -618,7 +618,7 @@
       id: "21",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0.3927,
+        tex: "0", ox: 24, oy: 24, deg: 22.5,
         x: 0,
         y: 0,
         w: 48,
@@ -661,7 +661,7 @@
       id: "22",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0.7854,
+        tex: "0", ox: 24, oy: 24, deg: 45,
         x: 0,
         y: 0,
         w: 48,
@@ -704,7 +704,7 @@
       id: "23",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.1781,
+        tex: "0", ox: 24, oy: 24, deg: 67.5,
         x: 0,
         y: 0,
         w: 48,
@@ -747,7 +747,7 @@
       id: "24",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.5708,
+        tex: "0", ox: 24, oy: 24, deg: 90,
         x: 0,
         y: 0,
         w: 48,
@@ -790,7 +790,7 @@
       id: "25",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.9635,
+        tex: "0", ox: 24, oy: 24, deg: 112.5,
         x: 0,
         y: 0,
         w: 48,
@@ -833,7 +833,7 @@
       id: "26",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 2.35619,
+        tex: "0", ox: 24, oy: 24, deg: 135,
         x: 0,
         y: 0,
         w: 48,
@@ -876,7 +876,7 @@
       id: "27",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 2.74889,
+        tex: "0", ox: 24, oy: 24, deg: 157.5,
         x: 0,
         y: 0,
         w: 48,
@@ -919,7 +919,7 @@
       id: "28",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.14159,
+        tex: "0", ox: 24, oy: 24, deg: 180,
         x: 0,
         y: 0,
         w: 48,
@@ -962,7 +962,7 @@
       id: "29",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.53429,
+        tex: "0", ox: 24, oy: 24, deg: 202.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1005,7 +1005,7 @@
       id: "30",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.92699,
+        tex: "0", ox: 24, oy: 24, deg: 225,
         x: 0,
         y: 0,
         w: 48,
@@ -1048,7 +1048,7 @@
       id: "31",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 4.31969,
+        tex: "0", ox: 24, oy: 24, deg: 247.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1091,7 +1091,7 @@
       id: "32",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 4.71239,
+        tex: "0", ox: 24, oy: 24, deg: 270,
         x: 0,
         y: 0,
         w: 48,
@@ -1130,7 +1130,7 @@
       id: "33",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.10509,
+        tex: "0", ox: 24, oy: 24, deg: 292.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1173,7 +1173,7 @@
       id: "34",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.49779,
+        tex: "0", ox: 24, oy: 24, deg: 315,
         x: 0,
         y: 0,
         w: 48,
@@ -1216,7 +1216,7 @@
       id: "35",
       name: "on_hand",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.89049,
+        tex: "0", ox: 24, oy: 24, deg: 337.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1259,7 +1259,7 @@
       id: "40",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -1303,7 +1303,7 @@
       id: "41",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0.3927,
+        tex: "0", ox: 24, oy: 24, deg: 22.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1347,7 +1347,7 @@
       id: "42",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0.7854,
+        tex: "0", ox: 24, oy: 24, deg: 45,
         x: 0,
         y: 0,
         w: 48,
@@ -1391,7 +1391,7 @@
       id: "43",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.1781,
+        tex: "0", ox: 24, oy: 24, deg: 67.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1435,7 +1435,7 @@
       id: "44",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.5708,
+        tex: "0", ox: 24, oy: 24, deg: 90,
         x: 0,
         y: 0,
         w: 48,
@@ -1479,7 +1479,7 @@
       id: "45",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 1.9635,
+        tex: "0", ox: 24, oy: 24, deg: 112.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1523,7 +1523,7 @@
       id: "46",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 2.35619,
+        tex: "0", ox: 24, oy: 24, deg: 135,
         x: 0,
         y: 0,
         w: 48,
@@ -1567,7 +1567,7 @@
       id: "47",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 2.74889,
+        tex: "0", ox: 24, oy: 24, deg: 157.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1611,7 +1611,7 @@
       id: "48",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.14159,
+        tex: "0", ox: 24, oy: 24, deg: 180,
         x: 0,
         y: 0,
         w: 48,
@@ -1655,7 +1655,7 @@
       id: "49",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.53429,
+        tex: "0", ox: 24, oy: 24, deg: 202.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1699,7 +1699,7 @@
       id: "50",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 3.92699,
+        tex: "0", ox: 24, oy: 24, deg: 225,
         x: 0,
         y: 0,
         w: 48,
@@ -1743,7 +1743,7 @@
       id: "51",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 4.31969,
+        tex: "0", ox: 24, oy: 24, deg: 247.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1787,7 +1787,7 @@
       id: "52",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 4.71239,
+        tex: "0", ox: 24, oy: 24, deg: 270,
         x: 0,
         y: 0,
         w: 48,
@@ -1831,7 +1831,7 @@
       id: "53",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.10509,
+        tex: "0", ox: 24, oy: 24, deg: 292.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1875,7 +1875,7 @@
       id: "54",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.49779,
+        tex: "0", ox: 24, oy: 24, deg: 315,
         x: 0,
         y: 0,
         w: 48,
@@ -1919,7 +1919,7 @@
       id: "55",
       name: "throwing",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 5.89049,
+        tex: "0", ox: 24, oy: 24, deg: 337.5,
         x: 0,
         y: 0,
         w: 48,
@@ -1963,7 +1963,7 @@
       id: "60",
       name: "on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -1985,7 +1985,7 @@
       id: "61",
       name: "on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2006,7 +2006,7 @@
       id: "62",
       name: "on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2028,7 +2028,7 @@
       id: "63",
       name: "on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2049,7 +2049,7 @@
       id: "64",
       name: "on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2078,7 +2078,7 @@
       id: "70",
       name: "just_on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2100,7 +2100,7 @@
       id: "71",
       name: "just_on_on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2121,7 +2121,7 @@
       id: "72",
       name: "just_on_on_ground",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 0,
         y: 0,
         w: 48,
@@ -2143,7 +2143,7 @@
       id: "399",
       name: "dummy",
       pic: {
-        tex: "0", ox: 24, oy: 24, r: 0,
+        tex: "0", ox: 24, oy: 24, deg: 0,
         x: 196,
         y: 0,
         w: 48,

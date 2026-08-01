@@ -11,7 +11,8 @@ export function xml_2_frame_pic(el: IXMLElement): IFramePic {
   ret.y = el.get_num("y", rect?.[1] ?? ret.y)
   ret.w = el.get_num("w", rect?.[2] ?? ret.w)
   ret.h = el.get_num("h", rect?.[3] ?? ret.h)
-  ret.r = el.get_num("r")
+  ret.deg = el.get_num("deg")
+  ret.rad = el.get_num("rad")
   ret.ox = el.get_num("ox")
   ret.oy = el.get_num("oy")
   ret.cx = el.get_num("cx")
@@ -22,7 +23,8 @@ export function xml_x_frame_pic(xml: IXML, pic: IFramePic, tag: string): IXMLEle
   const el = xml.create(tag);
   el.set_attr("tex", pic.tex);
   el.set_attr("rect", [pic.x, pic.y, pic.w, pic.h]);
-  el.set_attr("r", pic.r);
+  el.set_attr("deg", pic.deg);
+  el.set_attr("rad", pic.rad);
   el.set_attr("ox", pic.ox);
   el.set_attr("oy", pic.oy);
   el.set_attr("cx", pic.cx);
