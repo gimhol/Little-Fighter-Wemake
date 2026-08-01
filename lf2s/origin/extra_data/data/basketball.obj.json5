@@ -28,6 +28,7 @@
     ],
     drop_hurt: 48,
     hp_max: 750,
+    group: [ "VsWeapon", "StageWeapon" ]
   },
   itr_prefabs: {
     "1": {
