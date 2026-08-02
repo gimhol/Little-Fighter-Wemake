@@ -180,12 +180,15 @@ export class EntityMainRender {
     const { invisible } = this.owner;
     const { blinking, facing } = entity;
     const { pic } = this.frame;
-    const mesh0 = meshs[0]
+    const mesh = meshs[0]
     const visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0)
-    mesh0.visible = visible;
+    mesh.visible = visible;
 
-    if (pic)
-      this.update_mesh_position(pic, mesh0, this.centerx + this.shaking_x, this.centery)
+    if (pic) {
+      const cx = this.centerx + this.shaking_x;
+      const cy = this.centery;
+      this.update_mesh_position(pic, mesh, cx, cy, 0)
+    }
 
     for (let i = 1; i < meshs.length; i++) {
       const mesh = meshs[i];
@@ -200,16 +203,18 @@ export class EntityMainRender {
           (facing === 1 ? -pic.cx : pic.cx - pic.w)
       ) + this.shaking_x;
       const cy = pic.cy ?? this.centery;
-      this.update_mesh_position(pic, mesh, cx, cy)
+      this.update_mesh_position(pic, mesh, cx, cy, 0.1)
     }
 
     this.render_bpoint();
     this.update_outline();
   }
-  private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number) {
+  private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number, cz: number) {
     const rad = pic?.rad
     if (!pic || !rad) {
-      mesh.position.set(cx, cy, 0);
+      mesh.position.x = cx;
+      mesh.position.y = cy;
+      mesh.position.z = cz;
       mesh.rotation.z = 0;
       return;
     }
@@ -223,6 +228,7 @@ export class EntityMainRender {
     const _sin = pic.__sin_r ?? sin(rad);
     mesh.position.x = px + dx * _cos - dy * _sin;
     mesh.position.y = py + dx * _sin + dy * _cos;
+    mesh.position.z = cz;
     mesh.rotation.z = rad;
   }
   private update_mesh_material(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
