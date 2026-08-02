@@ -207,8 +207,8 @@ export class EntityMainRender {
     this.update_outline();
   }
   private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number) {
-    const deg = pic?.deg
-    if (!pic || !deg) {
+    const rad = pic?.rad
+    if (!pic || !rad) {
       mesh.position.set(cx, cy, 0);
       mesh.rotation.z = 0;
       return;
@@ -217,13 +217,13 @@ export class EntityMainRender {
     const oy = pic?.oy ?? pic.h / 2;
     const px = cx + ox;
     const py = cy - oy;
-    const dx = mesh.position.x - px;
-    const dy = mesh.position.y - py;
-    const _cos = pic.__cos_r ?? cos(deg);
-    const _sin = pic.__sin_r ?? sin(deg);
+    const dx = cx - px;
+    const dy = cy - py;
+    const _cos = pic.__cos_r ?? cos(rad);
+    const _sin = pic.__sin_r ?? sin(rad);
     mesh.position.x = px + dx * _cos - dy * _sin;
     mesh.position.y = py + dx * _sin + dy * _cos;
-    mesh.rotation.z = deg;
+    mesh.rotation.z = rad;
   }
   private update_mesh_material(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
     mesh.scale.set(pic.w, pic.h, 0);

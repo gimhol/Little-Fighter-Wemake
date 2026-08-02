@@ -9,11 +9,7 @@
     files: {
       "0": {
         id: "0",
-        path: "sprite/basketball.png",
-        row: 10,
-        col: 10,
-        cell_w: 48,
-        cell_h: 48,
+        path: "sprite/basketball.png"
       },
     },
     type: 4,

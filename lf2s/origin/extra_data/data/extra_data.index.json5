@@ -1,4 +1,11 @@
 {
+  objects:[
+    {
+      id: "basketball",
+      type: "4",
+      file: "data/basketball.obj.json5",
+    },
+  ],
   backgrounds: [
     {
       id: "bg_8",
