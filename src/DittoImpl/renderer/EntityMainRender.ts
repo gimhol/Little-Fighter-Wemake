@@ -203,7 +203,7 @@ export class EntityMainRender {
           (facing === 1 ? -pic.cx : pic.cx - pic.w)
       ) + this.shaking_x;
       const cy = pic.cy ?? this.centery;
-      this.update_mesh_position(pic, mesh, cx, cy, 0.1)
+      this.update_mesh_position(pic, mesh, cx, cy, 0.05 * i)
     }
 
     this.render_bpoint();
