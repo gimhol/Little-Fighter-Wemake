@@ -776,7 +776,7 @@ export class World {
       if (a.ghosted) continue;
       for (let j = divider; j < temp_entities.length; j++) {
         const b = temp_entities[j];
-        if (a.aabb_max_z < b.aabb_min_z) { divider = j + 1; continue; }
+        if (b.aabb_max_z < a.aabb_min_z) { divider = j + 1; continue; }
         this._z_pairs.add(pair_key(a, b));
       }
       temp_entities.push(a);
@@ -790,7 +790,7 @@ export class World {
       if (a.ghosted) continue;
       for (let j = divider; j < temp_entities.length; j++) {
         const b = temp_entities[j];
-        if (a.aabb_max_x < b.aabb_min_x) { divider = j + 1; continue; }
+        if (b.aabb_max_x < a.aabb_min_x) { divider = j + 1; continue; }
         if (!this._z_pairs.has(pair_key(a, b))) continue;
         // 细致的碰撞判定
         const c1 = collision_get(a, b);
