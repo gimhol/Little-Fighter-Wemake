@@ -34,7 +34,7 @@ export class __Fallback extends BaseSounds {
     if (float_equal(v, prev)) return;
     this._bgm_volume = v;
     this.apply_bgm_volume();
-    this._callbacks.emit("on_bgm_volume_changed")(v, prev, this);
+    this._callbacks.call("on_bgm_volume_changed", v, prev, this);
   }
   override sound_volume(): number {
     return this._sound_volume;
@@ -45,7 +45,7 @@ export class __Fallback extends BaseSounds {
     if (float_equal(v, prev)) return;
     this._sound_volume = v;
     this.apply_sound_volume();
-    this._callbacks.emit("on_sound_volume_changed")(v, prev, this);
+    this._callbacks.call("on_sound_volume_changed", v, prev, this);
   }
   override muted(): boolean {
     return this._muted;
@@ -63,7 +63,7 @@ export class __Fallback extends BaseSounds {
     if (v === this.bgm_muted()) return;
     this._bgm_muted = v;
     this.apply_bgm_volume();
-    this._callbacks.emit("on_bgm_muted_changed")(v, this);
+    this._callbacks.call("on_bgm_muted_changed", v, this);
   }
   override sound_muted(): boolean {
     return this._sound_muted;
@@ -72,7 +72,7 @@ export class __Fallback extends BaseSounds {
     if (v === this.sound_muted()) return;
     this._sound_muted = v;
     this.apply_sound_volume();
-    this._callbacks.emit("on_sound_muted_changed")(v, this);
+    this._callbacks.call("on_sound_muted_changed", v, this);
   }
 
   private apply_bgm_volume(): void {
@@ -100,7 +100,7 @@ export class __Fallback extends BaseSounds {
     this._volume = v;
     this.apply_bgm_volume();
     this.apply_sound_volume();
-    this._callbacks.emit("on_volume_changed")(v, prev, this);
+    this._callbacks.call("on_volume_changed", v, prev, this);
   }
 
   override bgm(): string | null {
@@ -132,7 +132,7 @@ export class __Fallback extends BaseSounds {
     ++this._req_id;
     const req_id = this._req_id;
     this._prev_bgm_url = name;
-    this._callbacks.emit("on_bgm_changed")(name, prev, this);
+    this._callbacks.call("on_bgm_changed", name, prev, this);
     this._is_random = name === '?'
     // TODO: support random.
     return () => {

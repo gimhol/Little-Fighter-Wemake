@@ -289,7 +289,7 @@ export class Entity {
     const o = this._reserve;
     if (o === v) return;
     this._reserve = v;
-    this.callbacks.emit("on_reserve_changed")(this, v, o);
+    this.callbacks.call("on_reserve_changed", this, v, o);
   }
 
   get type(): TEntityEnum { return this._data.type; }
@@ -310,7 +310,7 @@ export class Entity {
     const o = this.resting_max;
     if (o === v) return;
     this._resting_max = v;
-    this.callbacks.emit("on_resting_max_changed")(this, v, o);
+    this.callbacks.call("on_resting_max_changed", this, v, o);
   }
   get resting() { return this._resting; }
   set resting(v: number) {
@@ -318,7 +318,7 @@ export class Entity {
     const o = this._resting;
     if (o === v) return;
     this._resting = v;
-    this.callbacks.emit("on_resting_changed")(this, v, o);
+    this.callbacks.call("on_resting_changed", this, v, o);
   }
   get fall_value(): number { return this._fall_value; }
   set fall_value(v: number) {
@@ -329,7 +329,7 @@ export class Entity {
       this.resting = this.resting_max;
       this.toughness_resting = this.toughness_resting_max;
     }
-    this.callbacks.emit("on_fall_value_changed")(this, v, o);
+    this.callbacks.call("on_fall_value_changed", this, v, o);
   }
 
   get toughness(): number { return this._toughness; }
@@ -340,7 +340,7 @@ export class Entity {
     if (o === v) return;
     this._toughness = v;
     if (v < o) this.toughness_resting = this.toughness_resting_max;
-    this.callbacks.emit("on_toughness_changed")(this, v, o);
+    this.callbacks.call("on_toughness_changed", this, v, o);
   }
 
   get toughness_max(): number { return this._toughness_max; }
@@ -350,7 +350,7 @@ export class Entity {
     const o = this._toughness_max;
     if (o === v) return;
     this._toughness_max = v;
-    this.callbacks.emit("on_toughness_max_changed")(this, v, o);
+    this.callbacks.call("on_toughness_max_changed", this, v, o);
   }
   get toughness_resting() { return this._toughness_resting; }
   set toughness_resting(v: number) {
@@ -365,7 +365,7 @@ export class Entity {
     const o = this.catch_time_max;
     if (o === v) return;
     this._catch_time_max = v;
-    this.callbacks.emit("on_catch_time_max_changed")(this, v, o);
+    this.callbacks.call("on_catch_time_max_changed", this, v, o);
   }
   get fall_value_max(): number { return this._fall_value_max ?? this.world.dataset.fall_value_max; }
   set fall_value_max(v: number) {
@@ -373,7 +373,7 @@ export class Entity {
     const o = this.fall_value_max;
     if (o === v) return;
     this._fall_value_max = v;
-    this.callbacks.emit("on_fall_value_max_changed")(this, v, o);
+    this.callbacks.call("on_fall_value_max_changed", this, v, o);
   }
   get defend_value(): number { return this._defend_value; }
   set defend_value(v: number) {
@@ -384,7 +384,7 @@ export class Entity {
       this.resting = this.resting_max;
       this.toughness_resting = this.toughness_resting_max;
     }
-    this.callbacks.emit("on_defend_value_changed")(this, v, o);
+    this.callbacks.call("on_defend_value_changed", this, v, o);
   }
   get defend_value_max(): number { return this._defend_value_max ?? this.world.dataset.defend_value_max }
   set defend_value_max(v: number) {
@@ -392,7 +392,7 @@ export class Entity {
     const o = this.defend_value_max;
     if (o === v) return;
     this._defend_value_max = v;
-    this.callbacks.emit("on_defend_value_max_changed")(this, v, o);
+    this.callbacks.call("on_defend_value_max_changed", this, v, o);
   }
   get healing(): number { return this._healing; }
   set healing(v: number) {
@@ -401,7 +401,7 @@ export class Entity {
     const o = this._healing;
     if (o === v) return;
     this._healing = v;
-    this.callbacks.emit("on_healing_changed")(this, v, o);
+    this.callbacks.call("on_healing_changed", this, v, o);
   }
 
   get defend_ratio(): number { return this._defend_ratio ?? this.world.dataset.defend_ratio; }
@@ -458,7 +458,7 @@ export class Entity {
     if (v === this.name) return;
     const o = this._name;
     this._name = v;
-    this.callbacks.emit("on_name_changed")(this, v || '', o);
+    this.callbacks.call("on_name_changed", this, v || '', o);
   }
 
   get mp(): number {
@@ -472,7 +472,7 @@ export class Entity {
     this._mp = v
     if (v < o) summary_mgr.get(this.id).mp_usage += o - v;
     if (v < o && !is_independent(this.team)) summary_mgr.get(this.team).mp_usage += o - v;
-    this.callbacks.emit("on_mp_changed")(this, v, o);
+    this.callbacks.call("on_mp_changed", this, v, o);
     if (o > 0 && v <= 0) {
       const nf = this.frame.on_exhaustion ?? this._data.on_exhaustion;
       if (nf) this.enter_frame(nf);
@@ -487,7 +487,7 @@ export class Entity {
     v = max(0, v)
     v = round_float(v)
     if (o === v) return;
-    this.callbacks.emit("on_hp_r_changed")(this, (this._hp_r = v), o);
+    this.callbacks.call("on_hp_r_changed", this, (this._hp_r = v), o);
   }
 
   get hp(): number {
@@ -502,9 +502,9 @@ export class Entity {
     if (v < o) summary_mgr.get(this.id).hp_lost += o - v;
     if (v < o && !is_independent(this.team)) summary_mgr.get(this.team).hp_lost += o - v;
 
-    this.callbacks.emit("on_hp_changed")(this, v, o);
+    this.callbacks.call("on_hp_changed", this, v, o);
     if (o > 0 && v <= 0) {
-      this.callbacks.emit("on_dead")(this);
+      this.callbacks.call("on_dead", this);
       this._state?.on_dead?.(this);
       if (
         this.state !== StateEnum.Gone &&
@@ -530,7 +530,7 @@ export class Entity {
     v = max(0, v)
     v = round_float(v)
     if (v === o) return;
-    this.callbacks.emit("on_mp_max_changed")(this, (this._mp_max = v), o);
+    this.callbacks.call("on_mp_max_changed", this, (this._mp_max = v), o);
   }
 
   get hp_max(): number {
@@ -541,7 +541,7 @@ export class Entity {
     v = max(0, v)
     v = round_float(v)
     if (v === o) return;
-    this.callbacks.emit("on_hp_max_changed")(this, (this._hp_max = v), o);
+    this.callbacks.call("on_hp_max_changed", this, (this._hp_max = v), o);
   }
 
   /**
@@ -564,7 +564,7 @@ export class Entity {
     const o = this._team;
     this._team = v;
     this.variant = Number(this._team) || 0
-    this.callbacks.emit("on_team_changed")(this, v, o);
+    this.callbacks.call("on_team_changed", this, v, o);
     ++this._render_effect_time;
   }
 
@@ -619,7 +619,7 @@ export class Entity {
     if (this._ctrl === v) return;
     const prev = this._ctrl
     this._ctrl = v;
-    this.callbacks.emit('on_ctrl_changed')(v, prev, this)
+    this.callbacks.call('on_ctrl_changed', v, prev, this)
   }
   get key_role(): boolean {
     if (this._key_role !== null) return this._key_role;
@@ -842,7 +842,7 @@ export class Entity {
     if (this._bearer === v) return this;
     const old = this._bearer;
     this._bearer = v;
-    this.callbacks.emit("on_holder_changed")(this, v, old);
+    this.callbacks.call("on_holder_changed", this, v, old);
     return this;
   }
 
@@ -850,7 +850,7 @@ export class Entity {
     if (this._holding === v) return this;
     const old = this._holding;
     this._holding = v;
-    this.callbacks.emit("on_holding_changed")(this, v, old);
+    this.callbacks.call("on_holding_changed", this, v, old);
     return this;
   }
 
@@ -2022,7 +2022,7 @@ export class Entity {
     if (!this._mounted) return;
     this._mounted = 0;
     this.world.del_entity(this);
-    this.callbacks.emit("on_disposed")(this);
+    this.callbacks.call("on_disposed", this);
     this.callbacks.clear()
     this.reset(this.data, this._states);
   }
@@ -2400,7 +2400,7 @@ export class Entity {
     const prev = this._data;
     this._data = data;
     this.reset_armor()
-    this.callbacks.emit("on_data_changed")(this._data, prev, this)
+    this.callbacks.call("on_data_changed", this._data, prev, this)
   }
 
   play_sound(sounds: string | string[] | undefined, pos: IVector3Like = this.position) {

@@ -53,7 +53,7 @@ export class Summary {
     const o = this._picking_sum;
     if (o == v) return;
     this._picking_sum = v;
-    this.callbacks.emit("on_picking_sum_changed")(v, o, this);
+    this.callbacks.call("on_picking_sum_changed", v, o, this);
     return;
   }
 
@@ -71,7 +71,7 @@ export class Summary {
     const o = this._damage_sum;
     if (o == v) return;
     this._damage_sum = v;
-    this.callbacks.emit("on_damage_sum_changed")(v, o, this);
+    this.callbacks.call("on_damage_sum_changed", v, o, this);
     return;
   }
 
@@ -88,7 +88,7 @@ export class Summary {
     const o = this._kill_sum;
     if (o == v) return;
     this._kill_sum = v;
-    this.callbacks.emit("on_kill_sum_changed")(v, o, this);
+    this.callbacks.call("on_kill_sum_changed", v, o, this);
     return;
   }
 
@@ -99,7 +99,7 @@ export class Summary {
     const o = this._hp_lost;
     if (o == v) return;
     this._hp_lost = v;
-    this.callbacks.emit("on_hp_lost_changed")(v, o, this);
+    this.callbacks.call("on_hp_lost_changed", v, o, this);
     return;
   }
 
@@ -110,7 +110,7 @@ export class Summary {
     const o = this._mp_usage;
     if (o == v) return;
     this._mp_usage = v;
-    this.callbacks.emit("on_mp_usage_changed")(v, o, this);
+    this.callbacks.call("on_mp_usage_changed", v, o, this);
     return;
   }
 

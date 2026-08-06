@@ -76,7 +76,7 @@ export class UIStack {
       curr.on_start();
       curr.on_resume();
     }
-    if (curr || prev) this.callback.emit('on_set')(curr, prev, this)
+    if (curr || prev) this.callback.call('on_set', curr, prev, this)
   }
 
   push(opts: IPushUIOpts = {}): void {
@@ -91,7 +91,7 @@ export class UIStack {
       curr.on_start();
       curr.on_resume();
     }
-    this.callback.emit('on_push')(curr, prev, this)
+    this.callback.call('on_push', curr, prev, this)
   }
 
   pop(opts: IPopUIOpts = {}): void {
@@ -117,6 +117,6 @@ export class UIStack {
     }
     this.uis.splice(len - poppeds.length, poppeds.length)
     this.ui?.on_resume();
-    this.callback.emit('on_pop')(this.ui, poppeds, this)
+    this.callback.call('on_pop', this.ui, poppeds, this)
   }
 }

@@ -316,9 +316,9 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
     const ui_stack = new UI.UIStack(this, 0);
     ui_stack.callback.add({
-      on_set: (curr, prev) => this.callbacks.emit("on_ui_changed")(curr, prev),
-      on_push: (curr, prev) => this.callbacks.emit("on_ui_changed")(curr, prev),
-      on_pop: (curr, poppeds) => this.callbacks.emit("on_ui_changed")(curr, poppeds[0]),
+      on_set: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
+      on_push: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
+      on_pop: (curr, poppeds) => this.callbacks.call("on_ui_changed", curr, poppeds[0]),
     })
     this.ui_stacks.push(ui_stack)
     this._i18n.add({
@@ -365,8 +365,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
         for (const [pid, player] of this.players) {
           if (!player.local) continue;
           if (player.keys[key_name] !== key_code) continue;
-          if (e.device_type == 'controller') this.callbacks.emit('controller_detected')(player)
-          if (e.device_type == 'keyboard') this.callbacks.emit('keyboard_detected')(player)
+          if (e.device_type == 'controller') this.callbacks.call('controller_detected', player)
+          if (e.device_type == 'keyboard') this.callbacks.call('keyboard_detected', player)
           this._cheat_gkeys.set(pid, (this._cheat_gkeys.get(pid) || '') + key_name)
           this.events.push(new UI.LFWKeyEvent(pid, true, key_name, key_code));
         }
@@ -468,7 +468,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const is_first = this.zips.length === 0;
     this._dispose_check('load')
     this._loading = true;
-    this.callbacks.emit("on_loading_start")();
+    this.callbacks.call("on_loading_start");
     if (is_first) {
       const [obj] = await this.import_json("builtin_data/launch/strings.json5")
       this._i18n.add(obj)
@@ -490,11 +490,11 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
         await this.load_data(zip, md5);
         await this.load_ui(zip);
       }
-      if (is_first) this.callbacks.emit("on_prel_loaded")(this);
+      if (is_first) this.callbacks.call("on_prel_loaded", this);
       this._playable = true;
-      this.callbacks.emit("on_loading_end")();
+      this.callbacks.call("on_loading_end");
     } catch (e) {
-      this.callbacks.emit("on_loading_failed")(e);
+      this.callbacks.call("on_loading_failed", e);
       return await Promise.reject(e);
     } finally {
       this._loading = false;
@@ -528,7 +528,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this._dispose_check('load_data')
     this.zips.unshift(zip);
     this.md5s.unshift(md5);
-    this.callbacks.emit("on_zips_changed")(this.zips);
+    this.callbacks.call("on_zips_changed", this.zips);
 
     const index_files = zip.file(/\.index\.(json5|xml)$/g).map(v => v.name)
     await this.datas.load(index_files);
@@ -564,7 +564,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   dispose() {
     this.debug('dispose')
     this._disposed = true;
-    this.callbacks.emit("on_dispose")();
+    this.callbacks.call("on_dispose");
     this.callbacks.clear()
     this.world.dispose();
     this.datas.dispose();
@@ -619,7 +619,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     if (!next_stage) {
       this.world.stage.stop_bgm();
       this.sounds.play_with_load(D.Defines.Sounds.StagePass);
-      this.callbacks.emit("on_stage_pass")();
+      this.callbacks.call("on_stage_pass");
     }
     if (next_stage?.is_starting) {
       for (const e of this.world.entities) {
@@ -630,7 +630,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const time = this.world.stage.time;
     this.change_stage(next_stage?.id || '');
     this.world.stage.time = time;
-    this.callbacks.emit("on_enter_next_stage")();
+    this.callbacks.call("on_enter_next_stage");
   }
 
   string(name: string): string { return this._i18n.string(name) }
@@ -683,7 +683,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     }
     this._ui_loaded = true;
     this.uis.add(...ret)
-    this.callbacks.emit("on_ui_loaded")(ret);
+    this.callbacks.call("on_ui_loaded", ret);
     return ret;
   }
 
@@ -734,15 +734,15 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
    * @param {number} progress 加载进度 [0~100]
    */
   emit_progress(content: string, progress: number): void {
-    this.callbacks.emit("on_progress")(content, progress);
+    this.callbacks.call("on_progress", content, progress);
   }
 
   broadcast(message: string): void {
     this.broadcasts.push(message);
-    this.callbacks.emit("on_broadcast")(message, this);
+    this.callbacks.call("on_broadcast", message, this);
   }
   on_component_broadcast(component: UI.UIComponent, message: string) {
-    this.callbacks.emit("on_component_broadcast")(component, message);
+    this.callbacks.call("on_component_broadcast", component, message);
   }
   switch_difficulty(offset: number = 1): void {
     const list = [
@@ -761,7 +761,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       DATA_LIST.unshift(LFW.INFO?.title)
     this._i18n.add({ '': { DATA_LIST } })
 
-    this.callbacks.emit('on_extra_zips_changed')(this)
+    this.callbacks.call('on_extra_zips_changed', this)
   }
 
   create_keys(): Keys {

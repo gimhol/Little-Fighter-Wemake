@@ -62,11 +62,11 @@ export class __Keyboard implements IKeyboard {
   key_down(key_code: string, gamepad: 'controller' | 'keyboard' | 'touch', e?: KeyboardEvent) {
     const times = this._times_map.get(key_code) ?? -1;
     this._times_map.set(key_code, times + 1);
-    this._callback.emit("on_key_down")(new __KeyEvent(key_code, true, gamepad, times + 1, e));
+    this._callback.call("on_key_down", new __KeyEvent(key_code, true, gamepad, times + 1, e));
   };
   key_up(key_code: string, gamepad: 'controller' | 'keyboard' | 'touch', e?: KeyboardEvent) {
     this._times_map.delete(key_code);
-    this._callback.emit("on_key_up")(new __KeyEvent(key_code, false, gamepad, 0, e));
+    this._callback.call("on_key_up", new __KeyEvent(key_code, false, gamepad, 0, e));
   };
   protected gamepads: (Gamepad | null)[] = [];
   protected gamepad_timer?: ReturnType<typeof setInterval>;

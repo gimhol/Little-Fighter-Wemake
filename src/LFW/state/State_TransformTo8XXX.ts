@@ -11,7 +11,7 @@ export class State_TransformTo8XXX extends State_Base {
     e.enter_frame(e.find_auto_frame());
     const new_type = e.data.type
     if (old_data.type !== new_type && new_type === EntityEnum.Fighter) {
-      e.world.callbacks.emit("on_fighter_add")(e) // so stupid
+      e.world.callbacks.call("on_fighter_add", e) // so stupid
     }
   }
 }

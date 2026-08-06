@@ -142,12 +142,12 @@ export class Stage {
   }, {
     key: Status.Completed,
     enter: () => {
-      this.callbacks.emit('on_stage_finish')(this)
-      if (this.is_chapter_finish) this.callbacks.emit('on_chapter_finish')(this)
+      this.callbacks.call('on_stage_finish', this)
+      if (this.is_chapter_finish) this.callbacks.call('on_chapter_finish', this)
     },
     update: () => {
       if (this.should_goto_next_stage) {
-        this.callbacks.emit('on_requrie_goto_next_stage')(this)
+        this.callbacks.call('on_requrie_goto_next_stage', this)
         return Status.End;
       }
     }
@@ -187,7 +187,7 @@ export class Stage {
     this.phase_end_tester.reset(phase?.end_testers ?? [])
 
     const prev = this.phase
-    this.callbacks.emit("on_phase_changed")(this, this._phase = phase, prev);
+    this.callbacks.call("on_phase_changed", this, this._phase = phase, prev);
     this.player_l = 0
     this.player_r = this.bg.right
     if (!phase) return;
@@ -288,7 +288,7 @@ export class Stage {
       this.dialog_end_tester.reset(list[index]?.end_testers ?? [])
     }
     const curr = this._dialogs = { ...prev, list, index }
-    this.callbacks.emit('on_dialogs_changed')(curr, prev, this)
+    this.callbacks.call('on_dialogs_changed', curr, prev, this)
   }
   next_dialog() {
     const prev = this._dialogs
@@ -297,12 +297,12 @@ export class Stage {
     const curr = this._dialogs = { ...prev, index: prev.index + 1 }
     this.dialog_end_tester.reset(curr.list[curr.index]?.end_testers ?? [])
     this.dialog_time = 0;
-    this.callbacks.emit('on_dialogs_changed')(curr, prev, this)
+    this.callbacks.call('on_dialogs_changed', curr, prev, this)
   }
   clear_dialogs() {
     const prev = this._dialogs
     const curr = this._dialogs = { index: -1, list: [] }
-    this.callbacks.emit('on_dialogs_changed')(curr, prev, this)
+    this.callbacks.call('on_dialogs_changed', curr, prev, this)
   }
 
   enter_phase(idx: number) {

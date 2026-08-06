@@ -62,7 +62,7 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
       const { min_value, max_value, precision, step } = this;
       if (min_value == 0 && max_value == 1 && precision == 1 && step == 1) {
         this.factor = this._factor ? 0 : 1;
-        this.callbacks.emit('on_value_changed')(this.value, this)
+        this.callbacks.call('on_value_changed', this.value, this)
       } else {
         this._on_me = true
       }
@@ -80,12 +80,12 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
     on_pointer_up: (e: IPointingEvent): void => {
       if (!this._on_me) return;
       this.handle_pointing_event(e);
-      this.callbacks.emit('on_value_changed')(this.value, this)
+      this.callbacks.call('on_value_changed', this.value, this)
       this._on_me = false;
     },
     on_pointer_cancel: (e) => {
       if (!this._on_me) return;
-      this.callbacks.emit('on_value_changed')(this.value, this)
+      this.callbacks.call('on_value_changed', this.value, this)
       this._on_me = false;
     },
   }
@@ -246,7 +246,7 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
       if (curr > this.max_value) curr = this.min_value;
       this.value = curr;
       if (prev != curr)
-        this.callbacks.emit('on_value_changed')(this.value, this)
+        this.callbacks.call('on_value_changed', this.value, this)
     } else if (this.direction == 'col') {
       const ud =
         (this.keys.D.is_start() ? 1 : 0) -
@@ -257,7 +257,7 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
       if (curr > this.max_value) curr = this.min_value;
       this.value = curr;
       if (prev != curr)
-        this.callbacks.emit('on_value_changed')(this.value, this)
+        this.callbacks.call('on_value_changed', this.value, this)
     }
   }
 }

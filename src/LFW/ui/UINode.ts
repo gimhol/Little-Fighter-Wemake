@@ -142,13 +142,13 @@ export class UINode implements IDebugging {
     this._root._focused_node = val;
     if (old) {
       old.on_blur();
-      old._callbacks.emit("on_foucs_changed")(old);
+      old._callbacks.call("on_foucs_changed", old);
     }
     if (val) {
       val.on_foucs();
-      val._callbacks.emit("on_foucs_changed")(val);
+      val._callbacks.call("on_foucs_changed", val);
     }
-    this._root._callbacks.emit("on_foucs_item_changed")(val, old);
+    this._root._callbacks.call("on_foucs_item_changed", val, old);
   }
 
   get id(): string | undefined { return this.data.id }
@@ -386,26 +386,26 @@ export class UINode implements IDebugging {
     this._click_flag = 1;
     for (const c of this.components)
       c.on_pointer_down?.(e);
-    this.callbacks.emit('on_pointer_down')(e, this);
+    this.callbacks.call('on_pointer_down', e, this);
   }
   on_pointer_move(e: LF2PointerEvent) {
     for (const c of this.components)
       c.on_pointer_move?.(e);
-    this.callbacks.emit('on_pointer_move')(e, this);
+    this.callbacks.call('on_pointer_move', e, this);
   }
 
   on_pointer_up(e: LF2PointerEvent) {
     this._pointer_down = 0
     for (const c of this.components)
       c.on_pointer_up?.(e);
-    this.callbacks.emit('on_pointer_up')(e, this);
+    this.callbacks.call('on_pointer_up', e, this);
   }
 
   on_pointer_cancel(e: LF2PointerEvent) {
     this._pointer_down = 0
     for (const c of this.components)
       c.on_pointer_cancel?.(e);
-    this.callbacks.emit('on_pointer_cancel')(e, this);
+    this.callbacks.call('on_pointer_cancel', e, this);
   }
 
   on_pointer_leave() {
@@ -413,14 +413,14 @@ export class UINode implements IDebugging {
     this._click_flag = 0;
     for (const c of this.components)
       c.on_pointer_leave?.();
-    this.callbacks.emit('on_pointer_leave')(this);
+    this.callbacks.call('on_pointer_leave', this);
   }
 
   on_pointer_enter() {
     this._pointer_over = 1
     for (const c of this.components)
       c.on_pointer_enter?.();
-    this.callbacks.emit('on_pointer_enter')(this);
+    this.callbacks.call('on_pointer_enter', this);
   }
 
   on_start() {
@@ -484,7 +484,7 @@ export class UINode implements IDebugging {
 
   on_show() {
     for (const c of this.components) c.on_show?.();
-    this._callbacks.emit("on_show")(this);
+    this._callbacks.call("on_show", this);
     if (this.data.auto_focus && !this.disabled && !this.focused_node) {
       this.focused_node = this;
     }
@@ -494,7 +494,7 @@ export class UINode implements IDebugging {
   on_hide() {
     if (this.focused_node === this) this.focused_node = void 0;
     for (const c of this.components) c.on_hide?.();
-    this._callbacks.emit("on_hide")(this);
+    this._callbacks.call("on_hide", this);
     this.renderer.on_hide?.();
   }
 
@@ -535,7 +535,7 @@ export class UINode implements IDebugging {
         continue;
       this._components.push(component)
       component.on_add?.()
-      this._callbacks.emit('on_component_add')(component, this)
+      this._callbacks.call('on_component_add', component, this)
     }
   }
   del_components(...components: UIComponent[]) {
@@ -548,7 +548,7 @@ export class UINode implements IDebugging {
       if (idx < 0) continue;
       this._components.splice(idx, 1)
       component.on_del?.()
-      this._callbacks.emit('on_component_del')(component, this)
+      this._callbacks.call('on_component_del', component, this)
     }
   }
 
@@ -570,7 +570,7 @@ export class UINode implements IDebugging {
       c.on_click?.(e);
       if (e.stopped === 2) break;
     }
-    this.callbacks.emit('on_click')(e);
+    this.callbacks.call('on_click', e);
   }
 
   /** 

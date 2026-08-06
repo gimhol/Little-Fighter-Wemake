@@ -64,7 +64,7 @@ export class __Modern extends BaseSounds {
     if (float_equal(v, prev)) return;
     this._bgm_volume = v;
     this.apply_bgm_volume();
-    this._callbacks.emit("on_bgm_volume_changed")(v, prev, this);
+    this._callbacks.call("on_bgm_volume_changed", v, prev, this);
   }
   override sound_volume(): number {
     return this._sound_volume;
@@ -75,7 +75,7 @@ export class __Modern extends BaseSounds {
     if (float_equal(v, prev)) return;
     this._sound_volume = v;
     this.apply_sound_volume();
-    this._callbacks.emit("on_sound_volume_changed")(v, prev, this);
+    this._callbacks.call("on_sound_volume_changed", v, prev, this);
   }
 
   override muted(): boolean {
@@ -86,7 +86,7 @@ export class __Modern extends BaseSounds {
     if (v === this.muted()) return;
     this._muted = v;
     this.apply_volume();
-    this._callbacks.emit("on_muted_changed")(v, this);
+    this._callbacks.call("on_muted_changed", v, this);
   }
 
   override bgm_muted(): boolean {
@@ -97,7 +97,7 @@ export class __Modern extends BaseSounds {
     if (v === this.bgm_muted()) return;
     this._bgm_muted = v;
     this.apply_bgm_volume();
-    this._callbacks.emit("on_bgm_muted_changed")(v, this);
+    this._callbacks.call("on_bgm_muted_changed", v, this);
   }
 
   override sound_muted(): boolean {
@@ -108,7 +108,7 @@ export class __Modern extends BaseSounds {
     if (v === this.sound_muted()) return;
     this._sound_muted = v;
     this.apply_sound_volume();
-    this._callbacks.emit("on_sound_muted_changed")(v, this);
+    this._callbacks.call("on_sound_muted_changed", v, this);
   }
 
   override volume(): number {
@@ -120,7 +120,7 @@ export class __Modern extends BaseSounds {
     if (float_equal(v, prev)) return;
     this._volume = v;
     this.apply_volume();
-    this._callbacks.emit("on_volume_changed")(v, prev, this);
+    this._callbacks.call("on_volume_changed", v, prev, this);
   }
 
   protected apply_volume(): void {
@@ -178,7 +178,7 @@ export class __Modern extends BaseSounds {
     if (!this._bgm_node) return;
     const prev = this.bgm();
     this._stop_bgm();
-    this._callbacks.emit("on_bgm_changed")(null, prev, this);
+    this._callbacks.call("on_bgm_changed", null, prev, this);
   }
   _random_next = () => this.play_bgm('?')
   override play_bgm(name: string, restart?: boolean | undefined): () => void {
@@ -233,7 +233,7 @@ export class __Modern extends BaseSounds {
       this.load(real_name, real_name).then(start);
     }
 
-    this._callbacks.emit("on_bgm_changed")(real_name, prev, this);
+    this._callbacks.call("on_bgm_changed", real_name, prev, this);
     return () => req_id === this._req_id && this.stop_bgm();
   }
 

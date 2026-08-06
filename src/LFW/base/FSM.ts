@@ -85,7 +85,7 @@ export class FSM<
       const next_label = next_key == next_name ? next_name : `${next_name}(${next_key})`
       this.log(`[${this.name}::state] ${prev_label} ==> ${next_label}`)
     }
-    this._callbacks.emit("on_state_changed")(this);
+    this._callbacks.call("on_state_changed", this);
   }
   update(dt: number) {
     this._time += dt;

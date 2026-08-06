@@ -49,7 +49,7 @@ export class Jalousie extends Flex<IJalousieCallbacks> {
     this.update_children();
 
     if (this._anim.done)
-      this.callbacks.emit('on_anim_end')(this);
+      this.callbacks.call('on_anim_end', this);
   }
 
   override on_show(): void {

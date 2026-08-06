@@ -103,20 +103,20 @@ export class PlayerInfo {
     const prev = this._info.ctrl;
     if (prev === ctrl) return this;
     this.ctrl = ctrl;
-    if (emit) this.callbacks.emit("on_ctrl_changed")(ctrl, prev, this);
+    if (emit) this.callbacks.call("on_ctrl_changed", ctrl, prev, this);
     return this;
   }
   set_name(name: string, emit: boolean): this {
     const prev = this._info.name;
     if (prev === name) return this;
     this.name = name;
-    if (emit) this.callbacks.emit("on_name_changed")(name, prev);
+    if (emit) this.callbacks.call("on_name_changed", name, prev);
     return this;
   }
   set_is_com(is_com: boolean, emit: boolean): this {
     if (this._is_com === is_com) return this;
     this.is_com = is_com;
-    if (emit) this.callbacks.emit("on_is_com_changed")(is_com);
+    if (emit) this.callbacks.call("on_is_com_changed", is_com);
     return this;
   }
   set_key(name: string, key: string, emit: boolean): this;
@@ -125,7 +125,7 @@ export class PlayerInfo {
     if (this._info.keys[name] === key) return this;
     const prev = this._info.keys[name];
     this._info.keys[name] = key.toLowerCase();
-    if (emit) this.callbacks.emit("on_key_changed")(name, key.toLowerCase(), prev);
+    if (emit) this.callbacks.call("on_key_changed", name, key.toLowerCase(), prev);
     return this;
   }
 

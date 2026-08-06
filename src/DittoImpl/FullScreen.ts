@@ -30,7 +30,7 @@ export class __FullScreen<T extends Element = any> implements IFullScreen<T> {
     if (this._prev_element === curr_element) return;
 
     this._prev_element = curr_element;
-    this._callbacks.emit("onChange")(curr_element);
+    this._callbacks.call("onChange", curr_element);
   };
 
   get target(): T | null {

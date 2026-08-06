@@ -70,7 +70,7 @@ export class IntegerPicker extends UIComponent<{}, IIntegerPickerCallbacks> {
     else if (Number.isNaN(v)) v = MIN
     else v = max(ceil(v), MIN);
     const p = this._min; if (p === v) return;
-    this.callbacks.emit('on_min_changed')(this._min = v, p, this)
+    this.callbacks.call('on_min_changed', this._min = v, p, this)
     this.set_val(this._val)
   }
 
@@ -79,7 +79,7 @@ export class IntegerPicker extends UIComponent<{}, IIntegerPickerCallbacks> {
     else if (Number.isNaN(v)) v = MIN
     else v = min(floor(v), MAX);
     const p = this._max; if (p === v) return;
-    this.callbacks.emit('on_max_changed')(this._max = v, p, this)
+    this.callbacks.call('on_max_changed', this._max = v, p, this)
     this.set_val(this._val)
   }
 
@@ -87,7 +87,7 @@ export class IntegerPicker extends UIComponent<{}, IIntegerPickerCallbacks> {
     if (Number.isNaN(v)) v = this._min
     else v = clamp(round(v), this._min, this._max)
     const p = this._val; if (p === v) return;
-    this.callbacks.emit('on_val_changed')(this._val = v, p, this)
+    this.callbacks.call('on_val_changed', this._val = v, p, this)
     this.node.text = new TextInfo({ text: '' + v, style: this.node.text?.style ?? {} })
   }
 }

@@ -68,7 +68,7 @@ export class Connection {
   protected _on_open = () => {
     console.log(`[${Connection.TAG}::_on_open]`);
     this._urls.length = 0;
-    this.callbacks.emit('on_open')(this)
+    this.callbacks.call('on_open', this)
     this.send(MsgEnum.ClientInfo, {
       name: this._nickname,
       players: this._players,
@@ -77,7 +77,7 @@ export class Connection {
     }).then((resp) => {
       this.start_ping_job();
       this._client = resp.client;
-      this.callbacks.emit('on_register')(resp, this)
+      this.callbacks.call('on_register', resp, this)
     }).catch((e) => {
       this.close();
       throw e;
@@ -93,7 +93,7 @@ export class Connection {
         const job = this._jobs.get(pid);
         const err = code ? resp_error(what) : void 0
         if (err) {
-          this.callbacks.emit('on_error')(err, this)
+          this.callbacks.call('on_error', err, this)
         } else {
           this.handle_resp(what)
         }
@@ -124,10 +124,10 @@ export class Connection {
     }
 
     if (this.room)
-      this.callbacks.emit('on_room_change')(this.room = void 0, this)
+      this.callbacks.call('on_room_change', this.room = void 0, this)
     if (this.rooms.length)
-      this.callbacks.emit('on_rooms_change')(this.rooms = [], this)
-    this.callbacks.emit('on_close')(e, this)
+      this.callbacks.call('on_rooms_change', this.rooms = [], this)
+    this.callbacks.call('on_close', e, this)
     this._ws = null;
   }
 
@@ -184,7 +184,7 @@ export class Connection {
       const timerId = timeout > 0 ? setTimeout(() => {
         this._jobs.delete(pid);
         const error = req_timeout_error(_req, timeout)
-        this.callbacks.emit('on_error')(error, this)
+        this.callbacks.call('on_error', error, this)
         reject(error);
       }, timeout) : void 0;
 
@@ -194,26 +194,26 @@ export class Connection {
       } catch (e) {
         clearTimeout(timerId)
         const error = req_unknown_error(_req, e as Error)
-        this.callbacks.emit('on_error')(error, this)
+        this.callbacks.call('on_error', error, this)
         reject(error)
       }
     });
   }
 
   handle_resp(resp: TResp) {
-    this.callbacks.emit('on_message')(resp, this)
+    this.callbacks.call('on_message', resp, this)
     switch (resp.type) {
       case MsgEnum.JoinRoom:
       case MsgEnum.CreateRoom:
-        this.callbacks.emit('on_room_change')(this.room = resp.room, this)
+        this.callbacks.call('on_room_change', this.room = resp.room, this)
         break;
       case MsgEnum.CloseRoom:
-        this.callbacks.emit('on_room_change')(this.room = void 0, this)
+        this.callbacks.call('on_room_change', this.room = void 0, this)
         break;
       case MsgEnum.ExitRoom:
       case MsgEnum.Kick:
         const room = resp.client?.id === this._client?.id ? void 0 : resp.room
-        this.callbacks.emit('on_room_change')(this.room = room, this)
+        this.callbacks.call('on_room_change', this.room = room, this)
         break;
       case MsgEnum.ClientReady: {
         const prev = this.room
@@ -224,7 +224,7 @@ export class Connection {
               if (p.id === resp.client?.id)
                 p.ready = !!resp.ready;
           if (room.clients) room.clients = [...room.clients]
-          this.callbacks.emit('on_room_change')(this.room = room, this)
+          this.callbacks.call('on_room_change', this.room = room, this)
         }
         break;
       }
@@ -237,17 +237,17 @@ export class Connection {
               if (p.id === resp.client?.id)
                 Object.assign(p, resp.client)
           if (room.clients) room.clients = [...room.clients]
-          this.callbacks.emit('on_room_change')(this.room = room, this)
+          this.callbacks.call('on_room_change', this.room = room, this)
         }
         break;
       }
       case MsgEnum.ListRooms: {
-        this.callbacks.emit('on_rooms_change')(this.rooms = resp.rooms ?? [], this)
+        this.callbacks.call('on_rooms_change', this.rooms = resp.rooms ?? [], this)
         break;
       }
       case MsgEnum.Ping: {
         this._rtt = Date.now() - resp.time;
-        this.callbacks.emit("on_ping")(resp, this);
+        this.callbacks.call("on_ping", resp, this);
         break;
       }
     }

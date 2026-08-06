@@ -126,7 +126,7 @@ export class World {
     if (v === this._stage) return;
     const o = this._stage;
     this._stage = v;
-    this.callbacks.emit("on_stage_change")(v, o);
+    this.callbacks.call("on_stage_change", v, o);
     o.dispose();
     v.enter_phase(0);
     for (const e of this.entities) {
@@ -135,7 +135,7 @@ export class World {
     }
   }
   on_dataset_change(k: string, curr: any, prev: any) {
-    this.callbacks.emit('on_dataset_change')(k as any, curr, prev, this)
+    this.callbacks.call('on_dataset_change', k as any, curr, prev, this)
     if (
       k === 'sync_render' ||
       k === 'UPS' ||
@@ -213,13 +213,13 @@ export class World {
       if (this.entity_map.has(e.id)) continue;
       // this.freshs.add(entity)
       if (is_fighter(e)) {
-        this.callbacks.emit("on_fighter_add")(e);
+        this.callbacks.call("on_fighter_add", e);
         const player = this.lfw.players.get(e.ctrl.player_id)
         if (player) {
           player.fighter = e;
           this.puppets.set(e.ctrl.player_id, e);
           e.puppet = true
-          this.callbacks.emit("on_puppet_add")(e.ctrl.player_id);
+          this.callbacks.call("on_puppet_add", e.ctrl.player_id);
         }
       }
       this.entities.push(e);
@@ -282,7 +282,7 @@ export class World {
       if (real_dt < fix_radio * ideally_dt) return;
       this.render_once(real_dt);
       this._FPS.update(real_dt);
-      if (this._need_FPS) this.callbacks.emit("on_fps_update")(this._FPS.value);
+      if (this._need_FPS) this.callbacks.call("on_fps_update", this._FPS.value);
       fix_radio = 1 - clamp(6 * (fps - this._FPS.value) / fps, 0, 1);
       prev_time = time;
     };
@@ -334,13 +334,13 @@ export class World {
         if (sync_render == SyncRenderEnum.Sync) {
           this.render_once(real_dt);
           this._FPS.update(real_dt);
-          if (this._need_FPS) this.callbacks.emit("on_fps_update")(this._FPS.value);
+          if (this._need_FPS) this.callbacks.call("on_fps_update", this._FPS.value);
         } else if (sync_render == SyncRenderEnum.Half && floor(this._lifetime / playrate) % 2) {
           this.render_once(real_dt * 2);
           this._FPS.update(real_dt * 2);
-          if (this._need_FPS) this.callbacks.emit("on_fps_update")(this._FPS.value);
+          if (this._need_FPS) this.callbacks.call("on_fps_update", this._FPS.value);
         }
-        if (this._need_UPS) this.callbacks.emit("on_ups_update")(this._UPS.value, 0);
+        if (this._need_UPS) this.callbacks.call("on_ups_update", this._UPS.value, 0);
         this.after_update?.();
         this._UPS.update(real_dt);
         fix_radio = 1 - clamp(6 * (UPS - this._UPS.value) / UPS, 0, 1);
@@ -560,7 +560,7 @@ export class World {
           const cheat = Defines.CheatInfos.get(cmd)
           if (!cheat) continue;
           if (cheat.sound) this.lfw.sounds.play_with_load(cheat.sound);
-          this.lfw.callbacks.emit("on_cheat_changed")(cmd, !!enabled);
+          this.lfw.callbacks.call("on_cheat_changed", cmd, !!enabled);
           continue;
         case CMD.F1: this.paused = !this.paused; continue;
         case CMD.F2: this.set_paused(2); continue;
@@ -636,7 +636,7 @@ export class World {
             continue;
           }
           if (this.current_cam_pos.x != x)
-            this.callbacks.emit("on_cam_move")(x, y);
+            this.callbacks.call("on_cam_move", x, y);
           this._lock_cam_pos = Ditto.vec2(x, y);
           this.target_cam_pos.x = x;
           this.current_cam_pos.x = x;
@@ -822,13 +822,13 @@ export class World {
     for (const entity of this._gones) {
       this.entity_map.delete(entity.id)
       if (is_fighter(entity))
-        this.callbacks.emit("on_fighter_del")(entity);
+        this.callbacks.call("on_fighter_del", entity);
       const player = this.lfw.players.get(entity.ctrl.player_id)
       if (player) player.fighter = void 0
       const puppet = this.puppets.get(entity.ctrl.player_id)
       if (puppet === entity) this.puppets.delete(entity.ctrl.player_id);
       entity.puppet = false
-      this.callbacks.emit("on_puppet_del")(entity.ctrl.player_id);
+      this.callbacks.call("on_puppet_del", entity.ctrl.player_id);
       this.renderer.del_entity(entity);
       entity.release();
       this.lfw.factory.recycle_entity(entity)
@@ -915,7 +915,7 @@ export class World {
     const new_cam_x = round(this.current_cam_pos.x);
     const new_cam_y = round(this.current_cam_pos.y);
     if (old_cam_x !== new_cam_x || old_cam_y !== new_cam_y)
-      this.callbacks.emit("on_cam_move")(new_cam_x, new_cam_y);
+      this.callbacks.call("on_cam_move", new_cam_x, new_cam_y);
   }
 
   /**
@@ -992,17 +992,17 @@ export class World {
     if (this._paused === v) return;
     const changed = (!v) !== (!this._paused)
     this._paused = v;
-    if (changed) this.callbacks.emit("on_pause_change")(!!v);
+    if (changed) this.callbacks.call("on_pause_change", !!v);
   }
 
   set_fn_locked(v: 0 | 1) {
     if (this._fn_locked === v) return;
     this._fn_locked = v;
-    this.callbacks.emit("on_fn_locked_change")(v);
+    this.callbacks.call("on_fn_locked_change", v);
   }
 
   dispose() {
-    this.callbacks.emit("on_disposed")();
+    this.callbacks.call("on_disposed");
     this.stop_update();
     this.stop_render();
     this.del_entities(Array.from(this.entities));
@@ -1013,7 +1013,7 @@ export class World {
   add_count(key: string, o: number) {
     const v = this._counts.get(key) || 0
     this._counts.set(key, v + o);
-    this.callbacks.emit('on_counts')();
+    this.callbacks.call('on_counts');
   }
 
   clear() {
@@ -1029,7 +1029,7 @@ export class World {
     this.paused = false;
     this._lock_cam_pos = null;
     this._dist_cam_pos = null;
-    this.callbacks.emit('on_counts')();
+    this.callbacks.call('on_counts');
     this._counts.clear()
   }
 
