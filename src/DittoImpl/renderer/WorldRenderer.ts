@@ -112,7 +112,7 @@ export class WorldRenderer implements IWorldRenderer {
   add_entity(entity: Entity): void {
     let renderer: EntityRenderer = entity.renderer;
     if (!renderer) renderer = entity.renderer = new EntityRenderer(entity)
-
+    if (!renderer) return;
     renderer.mount();
     this.entity_renderers.add(renderer)
   }
