@@ -9,7 +9,7 @@ import { EntityRenderer } from "./EntityRenderer";
 import { TerrainIndicator } from "./TerrainIndicator";
 import csses from "./styles.module.scss";
 
-/** 离屏裁剪裕量（场地单位），避免边缘实体提前消失 */
+/** 离屏裁剪：y 方向固定裕量（场地单位）；x 方向用实体帧的 l_len/r_len 动态裕量 */
 const OFFSCREEN_MARGIN = 200;
 
 export class WorldRenderer implements IWorldRenderer {
@@ -119,16 +119,15 @@ export class WorldRenderer implements IWorldRenderer {
     const { dataset } = this.world;
     const np = this.world_node.position;
     const sp = this.world_node.scale;
-    const cam_x = this.camera.position.x;
-    const cam_y = this.camera.position.y;
     const sx = sp.x || 1;
     const sy = sp.y || 1;
-    const mx = OFFSCREEN_MARGIN;
-    const my = OFFSCREEN_MARGIN;
-    const x = np.x + e.position.x * sx;
-    if (x < cam_x - mx || x > cam_x + dataset.screen_w + mx) return false;
-    const y = np.y + e.position.y * sy;
-    if (y < cam_y - my || y > cam_y + dataset.screen_h + my) return false;
+    // 相机视口左下角（场地坐标）
+    const cam_x = (this.camera.position.x - np.x) / sx;
+    const cam_y = (this.camera.position.y - np.y) / sy;
+    // x：用帧左右延展（centerx/width 派生，含朝向）作动态裕量，实体边缘刚出视口才裁
+    if (e.position.x < cam_x - e.r_len || e.position.x > cam_x + dataset.screen_w / sx + e.l_len) return false;
+    // y：固定裕量
+    if (e.position.y < cam_y - OFFSCREEN_MARGIN || e.position.y > cam_y + dataset.screen_h / sy + OFFSCREEN_MARGIN) return false;
     return true;
   }
   /** 单趟实体渲染：进出屏管理 + 渲染合一（world.entities 为唯一来源） */
