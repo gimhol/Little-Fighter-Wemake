@@ -1,4 +1,7 @@
-<background id="bg_8">
+<background
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd"
+  id="bg_8">
   <base
     name="Brokeback Clif"
     shadow="bg/sys/bc/s.png"
