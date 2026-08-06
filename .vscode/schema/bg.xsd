@@ -181,6 +181,8 @@
       <xs:annotation>
         <xs:documentation>图层图片资源路径</xs:documentation>
         <xs:documentation>Layer image resource path.</xs:documentation>
+        <xs:documentation>以 ! 开头 = 精确匹配：只使用该路径本身，不做 @Nx/格式回退查找</xs:documentation>
+        <xs:documentation>'!' prefix = exact match: use this path as-is, skip @Nx/format fallback resolution</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="width" type="xs:double">
