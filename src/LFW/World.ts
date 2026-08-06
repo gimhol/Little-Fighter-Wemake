@@ -45,8 +45,6 @@ import { WorldDataset } from "./WorldDataset";
 const CHASING_UPDATE_INTERVAL = 8;
 const MAX_DEBUG_ENTITIES = 355
 const x_sorter = (a: Entity, b: Entity) => a.aabb_min_x - b.aabb_min_x
-const z_sorter = (a: Entity, b: Entity) => a.aabb_min_z - b.aabb_min_z
-const pair_key = (a: Entity, b: Entity) => a.id < b.id ? a.id + '|' + b.id : b.id + '|' + a.id;
 
 /**
  * TODO:
@@ -110,7 +108,6 @@ export class World {
   readonly collisions = new Map<string, Collision>()
   public has_players_alive: boolean = false;
   TU: number = 1;
-  // private _z_pairs: Set<string> = new Set<string>();
   get bg() { return this._bg; }
   set bg(v: Background) {
     if (v === this._bg) return;
@@ -768,21 +765,6 @@ export class World {
     this.entities.length = this.entities.length - offset
 
     let divider = 0;
-    // this._z_pairs.clear();
-    // this.entities.sort(z_sorter);
-    // temp_entities.length = 0;
-    // for (let i = 0; i < this.entities.length; i++) {
-    //   const a = this.entities[i];
-    //   if (a.ghosted) continue;
-    //   for (let j = divider; j < temp_entities.length; j++) {
-    //     const b = temp_entities[j];
-    //     if (b.aabb_max_z < a.aabb_min_z) { divider = j + 1; continue; }
-    //     this._z_pairs.add(pair_key(a, b));
-    //   }
-    //   temp_entities.push(a);
-    // }
-    // divider = 0;
-
     this.entities.sort(x_sorter);
     temp_entities.length = 0;
     for (let i = 0; i < this.entities.length; i++) {
@@ -791,7 +773,6 @@ export class World {
       for (let j = divider; j < temp_entities.length; j++) {
         const b = temp_entities[j];
         if (b.aabb_max_x < a.aabb_min_x) { divider = j + 1; continue; }
-        // if (!this._z_pairs.has(pair_key(a, b))) continue;
         if (a.aabb_max_z < b.aabb_min_z || b.aabb_max_z < a.aabb_min_z) continue;
         // 细致的碰撞判定
         const c1 = collision_get(a, b);

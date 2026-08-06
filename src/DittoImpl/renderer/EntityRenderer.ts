@@ -24,6 +24,8 @@ export class EntityRenderer {
   readonly p0 = new Vector3()
   readonly p1 = new Vector3()
   readonly position = new Vector3();
+  /** 当前是否已挂载进场景（离屏裁剪用） */
+  mounted: boolean = false;
   get invisible() {
     const { invisible, frame } = this.entity;
     if (frame.id == FID.Gone) return true

@@ -9,6 +9,9 @@ import { EntityRenderer } from "./EntityRenderer";
 import { TerrainIndicator } from "./TerrainIndicator";
 import csses from "./styles.module.scss";
 
+/** 离屏裁剪裕量（场地单位），避免边缘实体提前消失 */
+const OFFSCREEN_MARGIN = 200;
+
 export class WorldRenderer implements IWorldRenderer {
   readonly lfw: LFW;
   readonly world: World;
@@ -19,7 +22,6 @@ export class WorldRenderer implements IWorldRenderer {
   readonly ui_offset = new Vector3(0, 0, 0);
   readonly bg_container: Object3D;
   readonly bg_offset = new Vector3(0, 0, 0);
-  readonly entity_renderers = new Set<EntityRenderer>();
   readonly world_node = new Object3D();
   readonly world_offset = new Vector3(0, 0, 0);
   readonly is_scene_node = true;
@@ -91,36 +93,61 @@ export class WorldRenderer implements IWorldRenderer {
       camera.updateProjectionMatrix();
     }
 
-    {
-      // this.ui_offset.x = -Defines.MODERN_SCREEN_WIDTH / 2
-      // this.ui_offset.y = -Defines.MODERN_SCREEN_HEIGHT / 2
-      // this.world_offset.x = -Defines.MODERN_SCREEN_WIDTH / 2
-      // this.world_offset.y = -Defines.MODERN_SCREEN_HEIGHT / 2
-
-      // const camera = this.camera = new PerspectiveCamera()
-      // camera.aspect = Defines.MODERN_SCREEN_WIDTH / Defines.MODERN_SCREEN_HEIGHT
-      // camera.near = 0.1;
-      // camera.far = 2000;
-      // camera.position.set(0, 0, 482)
-      // camera.name = "default_orthographic_camera"
-      // this.scene.add_camera(camera);
-      // camera.updateProjectionMatrix();
-    }
     window.addEventListener('resize', this.on_win_resize)
   }
 
   add_entity(entity: Entity): void {
+    if (entity.bearer || entity.catcher || this.is_on_screen(entity))
+      this.mount_renderer(entity)
+  }
+  /** 创建（如有）+ 挂载 + 登记渲染器 */
+  protected mount_renderer(entity: Entity): void {
     let renderer: EntityRenderer = entity.renderer;
     if (!renderer) renderer = entity.renderer = new EntityRenderer(entity)
-    if (!renderer) return;
+    if (!renderer || renderer.mounted) return;
     renderer.mount();
-    this.entity_renderers.add(renderer)
+    renderer.mounted = true;
   }
   del_entity(e: Entity): void {
     const renderer: EntityRenderer = e.renderer;
-    if (!renderer) return;
+    if (!renderer || !renderer.mounted) return;
     renderer.unmount();
-    this.entity_renderers.delete(renderer);
+    renderer.mounted = false;
+  }
+  /** 离屏判定：2D 正交相机，视口 = [camera, camera + screen]（场地坐标经 world_node 变换） */
+  protected is_on_screen(e: Entity): boolean {
+    const { dataset } = this.world;
+    const np = this.world_node.position;
+    const sp = this.world_node.scale;
+    const cam_x = this.camera.position.x;
+    const cam_y = this.camera.position.y;
+    const sx = sp.x || 1;
+    const sy = sp.y || 1;
+    const mx = OFFSCREEN_MARGIN;
+    const my = OFFSCREEN_MARGIN;
+    const x = np.x + e.position.x * sx;
+    if (x < cam_x - mx || x > cam_x + dataset.screen_w + mx) return false;
+    const y = np.y + e.position.y * sy;
+    if (y < cam_y - my || y > cam_y + dataset.screen_h + my) return false;
+    return true;
+  }
+  /** 单趟实体渲染：进出屏管理 + 渲染合一（world.entities 为唯一来源） */
+  protected render_entities(dt: number): void {
+    const { entities } = this.world;
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      if (e.bearer || e.catcher) continue;
+      if (!this.is_on_screen(e)) {
+        const r = e.renderer;
+        if (r && r.mounted) {
+          r.unmount();
+          r.mounted = false;
+        }
+        continue;
+      }
+      this.mount_renderer(e);
+      e.renderer!.render(dt);
+    }
   }
   tu: number = 1;
   utime: number = 0;
@@ -171,11 +198,7 @@ export class WorldRenderer implements IWorldRenderer {
     this.bg_render.render(dt);
     this.bg_flags.set_visible(!!this.world.dataset.bg_flags);
     this.bg_flags.render();
-    for (const renderer of this.entity_renderers) {
-      if (renderer.entity.bearer || renderer.entity.catcher)
-        continue;
-      renderer.render(dt)
-    }
+    this.render_entities(dt);
     for (const ui_stack of this.lfw.ui_stacks)
       ui_stack.ui?.renderer.render(dt)
 
@@ -197,10 +220,7 @@ export class WorldRenderer implements IWorldRenderer {
     if (canvas) {
       const { renderer_w, renderer_h } = this;
       this._canvas_ob.observe(canvas, { attributes: true, attributeFilter: ['style'] })
-      this._renderer = new WebGLRenderer({
-        canvas,
-        // premultipliedAlpha: false 
-      });
+      this._renderer = new WebGLRenderer({ canvas });
       this._renderer.setSize(renderer_w, renderer_h, false);
       this._css_renderer = new CSS2DRenderer();
       this._css_renderer.domElement.className = csses.css_2d_renderer
