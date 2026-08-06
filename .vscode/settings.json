@@ -7,6 +7,12 @@
   "files.eol": "\n",
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "xml.fileAssociations": [
+    {
+      "pattern": "**/*.bg.xml",
+      "systemId": ".vscode/schema/bg.xsd"
+    }
+  ],
   "json5.schemas": [
     {
       "fileMatch": [

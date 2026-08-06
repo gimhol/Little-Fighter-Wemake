@@ -21,8 +21,11 @@ export interface IBgLayerInfo {
    * x轴循环布置间隔距离
    */
   loop?: number;
+  /** 循环周期帧数（总帧数），now = count % cc */
   cc?: number;
+  /** 循环内开始显示帧（含），now >= c1 时可见 */
   c1?: number;
+  /** 循环内结束显示帧（含），now <= c2 时可见 */
   c2?: number;
 
   /** UV偏移动画，横轴(像素/秒) */

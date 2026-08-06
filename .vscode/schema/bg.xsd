@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Grammar (XSD) for LF2 background data files (*.bg.xml).
+
+  Reflects the parser in src/LFW/dat_translator/xml/:
+    - xml_to_bg_data / xml_to_bg_info / xml_to_bg_layer / xml_to_bg_terrain
+
+  Bound to all "**/*.bg.xml" files via "xml.fileAssociations" in .vscode/settings.json.
+
+  每个字段拆成多个 xs:documentation（中文/英文各一条），
+  因为 LemMinX 会对单个 xs:documentation 做 normalizeSpace（把换行折叠成空格），
+  只有独立的 xs:documentation 才会各自渲染为一行。
+  Each field uses separate xs:documentation entries (one per line),
+  because LemMinX normalizes whitespace inside a single xs:documentation.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
+
+  <!-- ===================== root ===================== -->
+  <xs:element name="background" type="BgType">
+    <xs:annotation>
+      <xs:documentation>背景根元素（必填）</xs:documentation>
+      <xs:documentation>Background root element (required).</xs:documentation>
+      <xs:documentation>子元素：base（必填）、可选 dataset / layer / terrain，顺序不限。</xs:documentation>
+      <xs:documentation>Children: base (required), optional dataset / layer / terrain, in any order.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="BgType">
+    <xs:sequence>
+      <xs:element name="base" type="BaseType" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>背景基础信息（必填）</xs:documentation>
+          <xs:documentation>Background base info (required).</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <!-- the parser collects layer/terrain/dataset by tag, order does not matter -->
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="dataset" type="DatasetType">
+          <xs:annotation>
+            <xs:documentation>世界数据集：任意键值参数（key=value 属性形式）</xs:documentation>
+            <xs:documentation>World dataset: arbitrary key/value parameters (as key=value attributes).</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="layer" type="LayerType">
+          <xs:annotation>
+            <xs:documentation>图层（可多个，按 z 排序）</xs:documentation>
+            <xs:documentation>Layer (multiple allowed, ordered by z).</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="terrain" type="TerrainType">
+          <xs:annotation>
+            <xs:documentation>地形块（可多个）</xs:documentation>
+            <xs:documentation>Terrain block (multiple allowed).</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>背景唯一 ID（必填）</xs:documentation>
+        <xs:documentation>Background unique ID (required).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- ===================== <base> ===================== -->
+  <xs:complexType name="BaseType">
+    <xs:attribute name="name" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>背景名称（缺省用 id 兜底）</xs:documentation>
+        <xs:documentation>Background name (falls back to id).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="shadow" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>阴影资源路径</xs:documentation>
+        <xs:documentation>Shadow image resource path.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="shadowsize" type="NumList">
+      <xs:annotation>
+        <xs:documentation>阴影尺寸简写：[shadow_w, shadow_h]，如 "37,9"</xs:documentation>
+        <xs:documentation>Shadow size shorthand [shadow_w, shadow_h], e.g. "37,9".</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="shadow_w" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>阴影宽度</xs:documentation>
+        <xs:documentation>Shadow width.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="shadow_h" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>阴影高度</xs:documentation>
+        <xs:documentation>Shadow height.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="left" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>左边界 X</xs:documentation>
+        <xs:documentation>Left boundary X.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="right" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>右边界 X</xs:documentation>
+        <xs:documentation>Right boundary X.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="far" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>远边界 Z（负值，数值上更小）</xs:documentation>
+        <xs:documentation>Far boundary Z (negative, numerically smaller).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="near" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>近边界 Z（负值，数值上更大）</xs:documentation>
+        <xs:documentation>Near boundary Z (negative, numerically larger).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="height" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>高度（默认 600）</xs:documentation>
+        <xs:documentation>Height (default 600).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="zoom" type="NumList">
+      <xs:annotation>
+        <xs:documentation>缩放简写：[zoom_x, zoom_y, zoom_z]</xs:documentation>
+        <xs:documentation>Zoom shorthand [zoom_x, zoom_y, zoom_z].</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="zoom_x" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>X 轴缩放</xs:documentation>
+        <xs:documentation>X axis zoom.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="zoom_y" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>Y 轴缩放</xs:documentation>
+        <xs:documentation>Y axis zoom.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="zoom_z" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>Z 轴缩放</xs:documentation>
+        <xs:documentation>Z axis zoom.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="group" type="StrList">
+      <xs:annotation>
+        <xs:documentation>所属组，多个用逗号分隔，如 "regular"</xs:documentation>
+        <xs:documentation>Group(s), comma separated, e.g. "regular".</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="bound" type="NumList">
+      <xs:annotation>
+        <xs:documentation>边界简写：[left, right, far, near]</xs:documentation>
+        <xs:documentation>Bounds shorthand [left, right, far, near].</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- ===================== <layer> ===================== -->
+  <xs:complexType name="LayerType">
+    <xs:attribute name="id" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>预留 ID（可选）</xs:documentation>
+        <xs:documentation>Reserved ID (optional).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>预留名称（可选）</xs:documentation>
+        <xs:documentation>Reserved name (optional).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="file" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>图层图片资源路径</xs:documentation>
+        <xs:documentation>Layer image resource path.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="width" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>图层宽度</xs:documentation>
+        <xs:documentation>Layer width.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="height" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>图层高度</xs:documentation>
+        <xs:documentation>Layer height.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="x" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>X 位置</xs:documentation>
+        <xs:documentation>X position.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="y" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>Y 位置</xs:documentation>
+        <xs:documentation>Y position.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="w" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>裁剪宽度</xs:documentation>
+        <xs:documentation>Clip width.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="h" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>裁剪高度</xs:documentation>
+        <xs:documentation>Clip height.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="z" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>层级 Z（越大越靠前）</xs:documentation>
+        <xs:documentation>Z order (larger = in front).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="loop" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>X 轴循环布置间隔距离</xs:documentation>
+        <xs:documentation>X-axis loop spacing distance.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="absolute" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>绝对定位开关（非 0 时不随相机移动）</xs:documentation>
+        <xs:documentation>Absolute positioning flag (non-zero = does not follow camera).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="color" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>图层着色（颜色值或资源）</xs:documentation>
+        <xs:documentation>Layer tint (color value or resource).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="cc" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>循环周期帧数（总帧数）</xs:documentation>
+        <xs:documentation>与 c1/c2 同时定义时生效，取 now = count % cc</xs:documentation>
+        <xs:documentation>Cycle frame count (total)</xs:documentation>
+        <xs:documentation>Active only when c1/c2 are also defined; uses now = count % cc</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="c1" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>循环内开始显示帧（含）</xs:documentation>
+        <xs:documentation>图层在 count % cc 处于 [c1, c2] 区间内才可见</xs:documentation>
+        <xs:documentation>Start frame (inclusive) of the visibility window</xs:documentation>
+        <xs:documentation>Layer is visible while count % cc is in [c1, c2]</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="c2" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>循环内结束显示帧（含）</xs:documentation>
+        <xs:documentation>图层在 count % cc 处于 [c1, c2] 区间内才可见</xs:documentation>
+        <xs:documentation>End frame (inclusive) of the visibility window</xs:documentation>
+        <xs:documentation>Layer is visible while count % cc is in [c1, c2]</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="offsetAnimX" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>UV 偏移动画，横轴（像素/秒）</xs:documentation>
+        <xs:documentation>UV offset animation, horizontal axis (pixels/sec).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="offsetAnimY" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>UV 偏移动画，纵轴（像素/秒）</xs:documentation>
+        <xs:documentation>UV offset animation, vertical axis (pixels/sec).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="pos" type="NumList">
+      <xs:annotation>
+        <xs:documentation>位置简写：[x, y]</xs:documentation>
+        <xs:documentation>Position shorthand [x, y].</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="size" type="NumList">
+      <xs:annotation>
+        <xs:documentation>尺寸简写：[w, h]</xs:documentation>
+        <xs:documentation>Size shorthand [w, h].</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="rect" type="NumList">
+      <xs:annotation>
+        <xs:documentation>矩形简写：[x, y, w, h]</xs:documentation>
+        <xs:documentation>Rectangle shorthand [x, y, w, h].</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="offsetAnim" type="NumList">
+      <xs:annotation>
+        <xs:documentation>UV 动画简写：[offsetAnimX, offsetAnimY]</xs:documentation>
+        <xs:documentation>UV animation shorthand [offsetAnimX, offsetAnimY].</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- ===================== <terrain> ===================== -->
+  <xs:complexType name="TerrainType">
+    <xs:attribute name="type" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>地形类型 / Terrain type：</xs:documentation>
+        <xs:documentation>0 = 平地 / Flat</xs:documentation>
+        <xs:documentation>1 = X 轴方向斜坡 / Slope along X axis</xs:documentation>
+        <xs:documentation>2 = Z 轴方向斜坡 / Slope along Z axis</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>地形名称（可选）</xs:documentation>
+        <xs:documentation>Terrain name (optional).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="x1" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>起点 X（左）</xs:documentation>
+        <xs:documentation>Start X (left).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="x2" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>终点 X（右）</xs:documentation>
+        <xs:documentation>End X (right).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="z1" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>起点 Z（远）</xs:documentation>
+        <xs:documentation>Start Z (far).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="z2" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>终点 Z（近）</xs:documentation>
+        <xs:documentation>End Z (near).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="h1" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>起点高度（左/远侧 Y）</xs:documentation>
+        <xs:documentation>Start height (left/far Y).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="h2" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>终点高度（右/近侧 Y）</xs:documentation>
+        <xs:documentation>End height (right/near Y).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- ===================== <dataset> (arbitrary key/value) ===================== -->
+  <xs:complexType name="DatasetType" mixed="false">
+    <xs:annotation>
+      <xs:documentation>世界数据集，可包含任意属性/子元素（键值对）</xs:documentation>
+      <xs:documentation>World dataset; may contain arbitrary attributes/child elements (key/value pairs).</xs:documentation>
+      <xs:documentation>例如世界常数：itr_shaking / itr_motionless / fvx_f / fvy_f / fvz_f 等。</xs:documentation>
+      <xs:documentation>e.g. world constants such as itr_shaking / itr_motionless / fvx_f / fvy_f / fvz_f.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:anyAttribute processContents="lax" />
+  </xs:complexType>
+
+  <!-- comma separated numeric list, e.g. "37,9" or "-301,-39" -->
+  <xs:simpleType name="NumList">
+    <xs:annotation>
+      <xs:documentation>逗号分隔的数字列表，如 "37,9" 或 "-301,-39"</xs:documentation>
+      <xs:documentation>Comma separated numeric list, e.g. "37,9" or "-301,-39".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="-?[0-9]+(\.[0-9]+)?(\s*,\s*-?[0-9]+(\.[0-9]+)?)*" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- comma separated string list, e.g. "regular" or "a,b" -->
+  <xs:simpleType name="StrList">
+    <xs:annotation>
+      <xs:documentation>逗号分隔的字符串列表，如 "regular" 或 "a,b"</xs:documentation>
+      <xs:documentation>Comma separated string list, e.g. "regular" or "a,b".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[^,]+(\s*,\s*[^,]+)*" />
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
