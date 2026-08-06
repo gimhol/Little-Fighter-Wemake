@@ -7,6 +7,8 @@
   "files.eol": "\n",
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  // XML 扩展缓存目录（远程下载的 XSD/DTD），`~` 指向用户主目录
+  "xml.server.workDir": "~/.cache/lfj/lemminx",
   // "xml.fileAssociations": [
   //   {
   //     "pattern": "**/*.bg.xml",

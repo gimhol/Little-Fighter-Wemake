@@ -177,12 +177,16 @@
         <xs:documentation>Reserved name (optional).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="file" type="xs:string">
+    <xs:attribute name="file" type="xs:string" use="required">
       <xs:annotation>
-        <xs:documentation>图层图片资源路径</xs:documentation>
-        <xs:documentation>Layer image resource path.</xs:documentation>
+        <xs:documentation>图层图片资源路径（必填）</xs:documentation>
+        <xs:documentation>Layer image resource path (required).</xs:documentation>
+        <xs:documentation>支持倍数图：无 ! 时按 @4x.webp → @4x.png → @3x → @2x → 原路径 顺序自动选择可用版本</xs:documentation>
+        <xs:documentation>Scale variants: without '!', tries @4x.webp → @4x.png → @3x → @2x → original path in order</xs:documentation>
         <xs:documentation>以 ! 开头 = 精确匹配：只使用该路径本身，不做 @Nx/格式回退查找</xs:documentation>
         <xs:documentation>'!' prefix = exact match: use this path as-is, skip @Nx/format fallback resolution</xs:documentation>
+        <xs:documentation>需固定倍数图时：路径直接写 xxx@4x.png 并加 ! 前缀</xs:documentation>
+        <xs:documentation>To pin a scale: write it explicitly (e.g. xxx@4x.png) with a '!' prefix</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="width" type="xs:double">
@@ -309,9 +313,10 @@
 
   <!-- ===================== <terrain> ===================== -->
   <xs:complexType name="TerrainType">
-    <xs:attribute name="type" type="xs:double">
+    <xs:attribute name="type" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>地形类型 / Terrain type：</xs:documentation>
+        <xs:documentation>地形类型 / Terrain type（必填）：</xs:documentation>
+        <xs:documentation>Terrain type (required)：</xs:documentation>
         <xs:documentation>0 = 平地 / Flat</xs:documentation>
         <xs:documentation>1 = X 轴方向斜坡 / Slope along X axis</xs:documentation>
         <xs:documentation>2 = Z 轴方向斜坡 / Slope along Z axis</xs:documentation>
@@ -323,40 +328,40 @@
         <xs:documentation>Terrain name (optional).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="x1" type="xs:double">
+    <xs:attribute name="x1" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>起点 X（左）</xs:documentation>
-        <xs:documentation>Start X (left).</xs:documentation>
+        <xs:documentation>起点 X（左）（必填）</xs:documentation>
+        <xs:documentation>Start X (left) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="x2" type="xs:double">
+    <xs:attribute name="x2" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>终点 X（右）</xs:documentation>
-        <xs:documentation>End X (right).</xs:documentation>
+        <xs:documentation>终点 X（右）（必填）</xs:documentation>
+        <xs:documentation>End X (right) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="z1" type="xs:double">
+    <xs:attribute name="z1" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>起点 Z（远）</xs:documentation>
-        <xs:documentation>Start Z (far).</xs:documentation>
+        <xs:documentation>起点 Z（远）（必填）</xs:documentation>
+        <xs:documentation>Start Z (far) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="z2" type="xs:double">
+    <xs:attribute name="z2" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>终点 Z（近）</xs:documentation>
-        <xs:documentation>End Z (near).</xs:documentation>
+        <xs:documentation>终点 Z（近）（必填）</xs:documentation>
+        <xs:documentation>End Z (near) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="h1" type="xs:double">
+    <xs:attribute name="h1" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>起点高度（左/远侧 Y）</xs:documentation>
-        <xs:documentation>Start height (left/far Y).</xs:documentation>
+        <xs:documentation>起点高度（左/远侧 Y）（必填）</xs:documentation>
+        <xs:documentation>Start height (left/far Y) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="h2" type="xs:double">
+    <xs:attribute name="h2" type="xs:double" use="required">
       <xs:annotation>
-        <xs:documentation>终点高度（右/近侧 Y）</xs:documentation>
-        <xs:documentation>End height (right/near Y).</xs:documentation>
+        <xs:documentation>终点高度（右/近侧 Y）（必填）</xs:documentation>
+        <xs:documentation>End height (right/near Y) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
