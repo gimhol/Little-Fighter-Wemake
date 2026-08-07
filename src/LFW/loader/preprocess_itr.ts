@@ -2,7 +2,7 @@ import { Expression } from "../base/Expression";
 import { CondMaker } from "../dat_translator/CondMaker";
 import { get_next_frame_by_raw_id } from "../dat_translator/get_the_next";
 import { set_hit_flag } from "../dat_translator/set_hit_flag";
-import { ActionType, BdyKind, OID, CollisionVal as C_Val, EntityEnum, type IEntityData, type IItrInfo, ItrEffect, ItrKind, StateEnum } from "../defines";
+import { ActionType, BdyKind, OID, CollisionVal as C_Val, EntityEnum, type IEntityData, type IItrInfo, ItrEffect, ItrKind, StateEnum, WeaponEnum } from "../defines";
 import { HitFlag } from "../defines/HitFlag";
 import type { LFW } from "../LFW";
 import { ensure } from "../utils/container_help/ensure";
@@ -27,7 +27,6 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
   if (prefab) itr = { ...prefab, ...itr };
   if (itr.catchingact) preprocess_next_frame(itr.catchingact);
   if (itr.caughtact) preprocess_next_frame(itr.caughtact);
-  itr.actions?.forEach((n, i, l) => l[i] = preprocess_action(lfw, n, jobs));
   switch (itr.kind) {
     case ItrKind.Normal: {
       switch (itr.effect as ItrEffect) {
@@ -78,6 +77,25 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
           StateEnum.HeavyWeapon_OnGround,
         )
         .done();
+      const test_1 = new CondMaker<C_Val>()
+        .and(C_Val.VictimBaseType, "!=", WeaponEnum.Heavy)
+        .done()
+      const test_2 = new CondMaker<C_Val>()
+        .and(C_Val.VictimBaseType, "==", WeaponEnum.Heavy)
+        .done()
+      itr.actions = ensure(itr.actions, {
+        type: ActionType.A_NEXT_FRAME,
+        desc: "picking_light 捡起轻型武器",
+        pretest: true,
+        test: test_1,
+        data: { id: "115" },
+      }, {
+        type: ActionType.A_NEXT_FRAME,
+        pretest: true,
+        test: test_2,
+        desc: "picking_heavy 捡起重型武器",
+        data: { id: "117" },
+      })
       break;
     }
     case ItrKind.PickSecretly: {
@@ -217,6 +235,7 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
       break;
     }
   }
+  itr.actions?.forEach((n, i, l) => l[i] = preprocess_action(lfw, n, jobs));
   if (itr.test)
     itr.__tester = new Expression(itr.test, get_val_geter_from_collision);
   return itr;

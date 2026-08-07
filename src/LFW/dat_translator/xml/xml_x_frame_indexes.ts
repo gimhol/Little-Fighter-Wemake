@@ -12,8 +12,6 @@ export function xml_x_frame_indexes(xml: IXML, indexes: IFrameIndexes | undefine
   ret.set_attr("landing_1", indexes.landing_1);
   ret.set_attr("landing_2", indexes.landing_2);
   ret.set_attr("dizzy", indexes.dizzy);
-  ret.set_attr("picking_heavy", indexes.picking_heavy);
-  ret.set_attr("picking_light", indexes.picking_light);
   ret.set_attr("in_the_skys", indexes.in_the_skys);
   ret.set_attr("throwings", indexes.throwings);
   ret.set_attr("on_hands", indexes.on_hands);
@@ -45,8 +43,6 @@ export function xml_2_frame_indexes(el: IXMLElement | undefined): IFrameIndexes 
   ret.landing_1      /**/ = el.get_str("landing_1", ret.landing_1);
   ret.landing_2      /**/ = el.get_str("landing_2", ret.landing_2);
   ret.dizzy          /**/ = el.get_str("dizzy", ret.dizzy);
-  ret.picking_heavy  /**/ = el.get_str("picking_heavy", ret.picking_heavy);
-  ret.picking_light  /**/ = el.get_str("picking_light", ret.picking_light);
   ret.in_the_skys    /**/ = el.get_str_arr("in_the_skys", ret.in_the_skys);
   ret.throwings      /**/ = el.get_str_arr("throwings", ret.throwings);
   ret.on_hands       /**/ = el.get_str_arr("on_hands", ret.on_hands);

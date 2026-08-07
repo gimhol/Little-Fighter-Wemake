@@ -9,11 +9,6 @@ export function handle_weapon_is_picked(collision: Collision): void {
   victim.bearer = attacker;
   attacker.holding = victim;
   victim.team = attacker.team;
-  if (victim.base_type === WeaponEnum.Heavy) {
-    attacker.enter_frame_by_id(attacker.data.indexes?.picking_heavy)
-  } else {
-    attacker.enter_frame_by_id(attacker.data.indexes?.picking_light)
-  }
   victim.follow_bearer()
   summary_mgr.get(attacker.id).picking_sum += 1
   if (!is_independent(attacker.team))

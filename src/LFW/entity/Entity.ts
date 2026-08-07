@@ -1017,6 +1017,8 @@ export class Entity {
     if (v.broadcasts?.length)
       for (const m of v.broadcasts)
         this.lfw.broadcast(m)
+    this.holding?.follow_bearer();
+    this.catching?.follow_catcher();
   }
 
   apply_opoints(opoints: IOpointInfo[]): void {

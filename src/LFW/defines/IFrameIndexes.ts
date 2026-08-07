@@ -13,16 +13,6 @@ export interface IFrameIndexes {
    */
   dizzy?: string;
 
-  /**
-   * 角色举起重物的首个帧ID
-   */
-  picking_heavy?: string;
-
-  /**
-   * 角色拿起轻物的首个帧ID
-   */
-  picking_light?: string;
-
   in_the_skys?: string[];
   throwings?: string[];
   on_hands?: string[];

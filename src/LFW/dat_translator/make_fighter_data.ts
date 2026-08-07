@@ -507,8 +507,6 @@ export function make_fighter_data(ctx: IDatContext): IEntityData {
 
   const indexes: IFrameIndexes = {
     heavy_obj_walk: "heavy_obj_walk_0",
-    picking_light: "115",
-    picking_heavy: "117",
     ice: "200",
     fire: ["203", "205"],
     injured: {

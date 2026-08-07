@@ -33,6 +33,8 @@ export enum ItrKind {
    * 当角色的itr与武器的bdy碰撞，
    * 且武器的frame.state为1004(Weapon_OnGround)或2004(HeavyWeapon_OnGround)时
    *
+   * 捡起武器的动作实在preprocess中通过action实现，见preprocess_itr
+   * 
    * 用于：
    * * [X] LF2
    * * [X] WEMAKE

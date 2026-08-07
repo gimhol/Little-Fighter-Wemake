@@ -67,6 +67,8 @@ export enum CollisionVal {
   ItrCode = "itr_code",
   VToughness = "v_toughness",
   AToughness = "a_toughness",
+  AttackerBaseType = "attacker_base_type",
+  VictimBaseType = "victim_base_type",
 }
 export const CollisionValDescriptions: Record<CollisionVal, string> = {
   [CollisionVal.AttackerType]: "",
@@ -104,6 +106,8 @@ export const CollisionValDescriptions: Record<CollisionVal, string> = {
   [CollisionVal.ItrCode]: "",
   [CollisionVal.VToughness]: "",
   [CollisionVal.AToughness]: "",
+  [CollisionVal.AttackerBaseType]: "",
+  [CollisionVal.VictimBaseType]: "",
 }
 export const C_Val = CollisionVal;
 export type C_Val = CollisionVal;

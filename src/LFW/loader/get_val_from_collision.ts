@@ -9,6 +9,8 @@ import { round } from "../utils";
 const map: Record<CollisionVal, IValGetter<Collision>> = {
   [CollisionVal.AttackerType]: c => c.attacker.data.type,
   [CollisionVal.VictimType]: c => c.victim.data.type,
+  [CollisionVal.AttackerBaseType]: c => c.attacker.data.base.type,
+  [CollisionVal.VictimBaseType]: c => c.victim.data.base.type,
   [CollisionVal.ItrKind]: c => c.itr.kind,
   [CollisionVal.ItrEffect]: c => c.itr.effect,
   [CollisionVal.SameTeam]: c => c.attacker.is_ally(c.victim) ? 1 : 0,

@@ -37,4 +37,7 @@ export interface IAction_Base {
 
   /** 子类数据，任意object */
   data?: object;
+
+  /** 开发者描述 */
+  desc?: string;
 }
