@@ -100,7 +100,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
     }
   }
 
-  traversal(frame.hit, (k, v, o) => { if (v) o[k] = preprocess_next_frame(o[k]!) });
+  traversal(frame.hit, (k, v, o) => { if (v) o[k] = preprocess_next_frame(v) });
   traversal(frame.hold, (k, v, o) => { if (v) o[k] = preprocess_next_frame(v) });
   traversal(frame.key_down, (k, v, o) => { if (v) o[k] = preprocess_next_frame(v) });
   traversal(frame.key_up, (k, v, o) => { if (v) o[k] = preprocess_next_frame(v) });
