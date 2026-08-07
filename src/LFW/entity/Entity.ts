@@ -1000,6 +1000,7 @@ export class Entity {
       }
     }
     this._prev_frame = this.frame;
+    this._landing_frame = null;
     this.frame = v;
     if (!v.itr?.length) this.arest = 0
     const prev_state_code = this._prev_frame.state;
