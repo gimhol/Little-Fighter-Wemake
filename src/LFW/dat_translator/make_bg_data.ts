@@ -10,6 +10,7 @@ import { to_num } from "../utils/type_cast/to_num";
 import { is_str } from "../utils/type_check";
 import { ColonValueReader } from "./ColonValueReader";
 import { take } from "./take";
+import { delete_undefined } from "./xml";
 const bg_color_translate = function (rect: number | string) {
   switch ("" + rect) {
     case "4706":
@@ -128,12 +129,13 @@ function make_bg_layer(block_str: string) {
   layer.z = 0;
   layer.w = typeof fields.w === "number" ? fields.w : layer.width;
   layer.h = typeof fields.h === "number" ? fields.h : layer.height;
-  layer.loop = fields.loop ?? 0;
+  layer.loop = fields.loop ?? void 0;
   layer.cc = typeof fields.cc === "number" ? fields.cc * 2 : void 0;
   layer.c1 = typeof fields.c1 === "number" ? fields.c1 * 2 : void 0;
   layer.c2 = typeof fields.c2 === "number" ? fields.c2 * 2 + 1 : void 0;
 
   reorder_keys(layer, bg_layer_info_fields);
+  delete_undefined(layer)
   return layer;
 }
 
