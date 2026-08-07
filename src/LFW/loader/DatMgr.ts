@@ -2,6 +2,10 @@ import { Factory } from "../Factory";
 import { LFW } from "../LFW";
 import { BotController } from "../bot/BotController";
 import { BallController } from "../controller/BallController";
+import { xml_to_bg_data } from "../dat_translator/xml/xml_to_bg_data";
+import { xml_to_data_lists } from "../dat_translator/xml/xml_to_data_lists";
+import { xml_to_stage_info_list } from "../dat_translator/xml/xml_to_stage_info";
+import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
 import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IStageInfo } from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
 import { Defines } from "../defines/defines";
@@ -14,10 +18,7 @@ import {
 } from "../entity/type_check";
 import { Randoming } from "../helper/Randoming";
 import { is_non_blank_str, is_str } from "../utils/type_check";
-import { xml_to_bg_data } from "../dat_translator/xml/xml_to_bg_data";
-import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
-import { xml_to_data_lists } from "../dat_translator/xml/xml_to_data_lists";
-import { xml_to_stage_info_list } from "../dat_translator/xml/xml_to_stage_info";
+import type { IEntityDataContext } from "./IEntityDataContext";
 import { check_stage_info } from "./check_stage_info";
 import { preprocess_bg_data } from "./preprocess_bg_data";
 import { preprocess_bot_data } from "./preprocess_bot_data";
@@ -76,7 +77,8 @@ class Inner {
     else if (is_fighter_data(data))
       Factory.register_ctrl(data.id, (a, b) => new BotController(a, b));
     data.base.bot = data.base.bot ?? this.bot_map.get(data.id ?? data.base.bot_id);
-    return preprocess_entity_data(this.lfw, data, jobs);
+    const ctx: IEntityDataContext = { lfw: this.lfw, data, jobs, errors: [] };
+    return preprocess_entity_data(ctx).then(r => r as IEntityData);
   }
   private _add_alias(alias: string, data: IEntityData) {
     const prev = this.alias_map.get(alias)

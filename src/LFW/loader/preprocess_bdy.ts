@@ -1,10 +1,12 @@
 import { Expression } from "../base/Expression";
-import type { IBdyInfo, IEntityData } from "../defines";
-import type { LFW } from "../LFW";
+import type { IBdyInfo } from "../defines";
 import { get_val_geter_from_collision } from "./get_val_from_collision";
+import type { IBdyInfoContext } from "./IEntityDataContext";
 import { preprocess_action } from "./preprocess_action";
 
-export function preprocess_bdy(lfw: LFW, bdy: IBdyInfo, data: IEntityData, jobs: Promise<void>[]): IBdyInfo {
+export function preprocess_bdy(ctx: IBdyInfoContext): IBdyInfo {
+  const { lfw, data, jobs } = ctx;
+  let { bdy } = ctx;
   const ref = bdy.ref ?? bdy.prefab_id;
   const prefab = ref ? data.bdy_prefabs?.[ref] : void 0;
   if (prefab) bdy = { ...prefab, ...bdy };

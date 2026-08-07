@@ -1,14 +1,13 @@
-import { LFW } from "../LFW";
 import { CondMaker } from "../dat_translator";
 import { cook_frame_indicator_info } from "../dat_translator/cook_frame_indicator_info";
 import { make_frame_behavior } from "../dat_translator/make_frame_behavior";
 import { set_hit_flag } from "../dat_translator/set_hit_flag";
 import { Defines, EntityEnum, EntityVal as EV, FacingFlag as FF, FrameBehavior, HitFlag, type IFrameInfo, SE, StateEnum } from "../defines";
-import type { IEntityData } from "../defines/IEntityData";
 import { is_ball_data, is_weapon_data } from "../entity";
 import { read_nums } from "../ui/utils/read_nums";
 import { max, min } from "../utils";
 import { traversal } from "../utils/container_help/traversal";
+import type { IFrameInfoContext } from "./IEntityDataContext";
 import { preprocess_ball_frame } from "./preprocess_ball_frame";
 import { preprocess_bdy } from "./preprocess_bdy";
 import { preprocess_frame_pic } from "./preprocess_frame_pic";
@@ -24,7 +23,8 @@ const breakfall_j_expression = new CondMaker<EV>()
   .and(EV.CAUGHT, "!=", 1)
   .done()
 
-export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo, jobs: Promise<void>[]): IFrameInfo {
+export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
+  const { lfw, data, frame, jobs } = ctx;
   if (data.processed != false) { }
   else if (is_ball_data(data)) preprocess_ball_frame(frame, data);
   else if (is_weapon_data(data)) {
@@ -131,14 +131,14 @@ export function preprocess_frame(lfw: LFW, data: IEntityData, frame: IFrameInfo,
   if (frame.on_z_restrict) frame.on_z_restrict = preprocess_next_frame(frame.on_z_restrict);
 
   frame.bdy?.forEach((n, i, l) => {
-    const bdy = l[i] = preprocess_bdy(lfw, n, data, jobs)
+    const bdy = l[i] = preprocess_bdy({ ...ctx, bdy: n, index: i });
     if (bdy.on_hit_ground) {
       frame.__hit_ground_bdys = frame.__hit_ground_bdys || []
       frame.__hit_ground_bdys?.push(bdy)
     }
   })
   frame.itr?.forEach((n, i, l) => {
-    const itr = l[i] = preprocess_itr(lfw, n, data, jobs)
+    const itr = l[i] = preprocess_itr({ ...ctx, itr: n, index: i })
     if (itr.on_hit_ground) {
       frame.__hit_ground_itrs = frame.__hit_ground_itrs || []
       frame.__hit_ground_itrs?.push(itr)

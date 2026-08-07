@@ -3,17 +3,16 @@ import { make_ball_special } from "../dat_translator/make_ball_special";
 import type { IEntityData } from "../defines";
 import { Ditto } from "../ditto";
 import { is_ball_data, is_fighter_data, is_weapon_data } from "../entity";
-import { LFW } from "../LFW";
 import { is_non_blank_str, max } from "../utils";
 import { traversal } from "../utils/container_help/traversal";
 import { check_frame } from "./check_frame";
+import type { IEntityDataContext } from "./IEntityDataContext";
 import { preprocess_bot_data } from "./preprocess_bot_data";
 import { preprocess_frame } from "./preprocess_frame";
 import { preprocess_next_frame } from "./preprocess_next_frame";
 import { preprocess_pic } from "./preprocess_pic";
-
-export async function preprocess_entity_data(lfw: LFW, data: IEntityData, jobs: Promise<any>[]): Promise<IEntityData> {
-  const errors: string[] = []
+export async function preprocess_entity_data(ctx: IEntityDataContext): Promise<IEntityData> {
+  const { lfw, data, jobs, errors } = ctx;
   const { images, sounds } = lfw;
   const { small, head } = data.base;
   is_non_blank_str(small) && jobs.push(images.load_img(small, small));
@@ -37,7 +36,7 @@ export async function preprocess_entity_data(lfw: LFW, data: IEntityData, jobs: 
   else if (is_fighter_data(data)) make_fighter_special(data)
 
   traversal(frames, (fid, frame, o) => {
-    o[fid] = preprocess_frame(lfw, data, frame, jobs)
+    o[fid] = preprocess_frame({ ...ctx, frame });
     check_frame(data, frame, errors);
     const pics = frame.pics?.length;
     if (pics) data.__pics = max(pics, data.__pics || 0);
