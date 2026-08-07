@@ -4,12 +4,42 @@ import { make_schema } from "../utils/schema";
 export interface IBgLayerInfo {
   /** 预留的 */
   id?: string;
+  
   /** 预留的 */
   name?: string;
 
+  /**
+   * 图层图片资源路径（必填）
+   * 
+   * Layer image resource path (required).
+   * 
+   * 支持倍数图：无 ! 时按 @4x.webp → @4x.png → @3x → @2x → 原路径 顺序自动选择可用版本
+   * 
+   * Scale variants: without '!', tries @4x.webp → @4x.png → @3x → @2x → original path in order
+   * 
+   * 以 ! 开头 = 精确匹配：只使用该路径本身，不做 @Nx/格式回退查找
+   * 
+   * '!' prefix = exact match: use this path as-is, skip @Nx/format fallback resolution
+   * 
+   * 需固定倍数图时：路径直接写 xxx@4x.png 并加 ! 前缀
+   * 
+   * To pin a scale: write it explicitly (e.g. xxx@4x.png) with a '!' prefix
+   */
   file?: string;
+
+  /**
+   * 绝对定位开关（非 0 时不随相机移动）
+   * 
+   * Absolute positioning flag (non-zero = does not follow camera).
+   */
   absolute?: number;
+
+  /**
+   * Layer的颜色（可选）
+   * 当file存在时，此值无效
+   */
   color?: number | string;
+
   width: number;
   height: number;
   x: number;

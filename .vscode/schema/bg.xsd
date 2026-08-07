@@ -177,10 +177,10 @@
         <xs:documentation>Reserved name (optional).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="file" type="xs:string" use="required">
+    <xs:attribute name="file" type="xs:string">
       <xs:annotation>
-        <xs:documentation>图层图片资源路径（必填）</xs:documentation>
-        <xs:documentation>Layer image resource path (required).</xs:documentation>
+        <xs:documentation>图层图片资源路径（可选）</xs:documentation>
+        <xs:documentation>Layer image resource path (optional).</xs:documentation>
         <xs:documentation>支持倍数图：无 ! 时按 @4x.webp → @4x.png → @3x → @2x → 原路径 顺序自动选择可用版本</xs:documentation>
         <xs:documentation>Scale variants: without '!', tries @4x.webp → @4x.png → @3x → @2x → original path in order</xs:documentation>
         <xs:documentation>以 ! 开头 = 精确匹配：只使用该路径本身，不做 @Nx/格式回退查找</xs:documentation>
@@ -245,8 +245,8 @@
     </xs:attribute>
     <xs:attribute name="color" type="xs:string">
       <xs:annotation>
-        <xs:documentation>图层着色（颜色值或资源）</xs:documentation>
-        <xs:documentation>Layer tint (color value or resource).</xs:documentation>
+        <xs:documentation>图层着色（颜色值）</xs:documentation>
+        <xs:documentation>Layer tint (color value).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="cc" type="xs:double">

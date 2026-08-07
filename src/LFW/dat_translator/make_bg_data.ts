@@ -1,10 +1,9 @@
 import { BackgroundGroup, BGG } from "../defines";
 import { bg_data_info_fields, bg_data_new, type IBgData } from "../defines/IBgData";
-import { bg_layer_info_fields, type IBgLayerInfo } from "../defines/IBgLayerInfo";
+import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../defines/IBgLayerInfo";
 import type { IDatIndex } from "../defines/IDatIndex";
 import { Defines } from "../defines/defines";
 import { reorder_keys } from "../fields";
-import { min } from "../utils/math/base";
 import { match_colon_value } from "../utils/string_parser/match_colon_value";
 import { take_blocks } from "../utils/string_parser/take_blocks";
 import { to_num } from "../utils/type_cast/to_num";
@@ -49,6 +48,7 @@ const bg_color_translate = function (rect: number | string) {
     ")"
   );
 };
+
 export function make_bg_data(
   full_str: string,
   datIndex: IDatIndex,
@@ -64,7 +64,6 @@ export function make_bg_data(
 
   const ret: IBgData = bg_data_new();
   const info = ret.base
-
   info.name = fields.name
   info.shadow = fields.shadow
   info.shadow_w = fields.shadowsize[0]
@@ -75,54 +74,15 @@ export function make_bg_data(
   info.far = 2 * (fields.zboundary[0] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的远坐标
   info.near = 2 * (fields.zboundary[1] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的近坐标,
   info.height = 0
-
   ret.id = datIndex.id ?? info.name
   ret.base = info
   ret.layers = []
-
   ret.base.name = ret.base.name?.replace(/_/g, " ");
   ret.base.shadow = ret.base.shadow?.replace(/.bmp$/, ".png").replace(/\\/g, '/');
-  const { blocks, remains } = take_blocks(full_str, "layer:", "layer_end");
-  full_str = remains
-
-  let min_y = fields.top;
+  const { blocks } = take_blocks(full_str, "layer:", "layer_end");
   for (const block_str of blocks) {
-    const [file, remains] = block_str
-      .trim()
-      .split(/\n|\r/g)
-      .filter((v) => v)
-      .map((v) => v.trim());
-    const fields: any = {};
-    for (const [key, value] of match_colon_value(remains)) {
-      fields[key] = to_num(value) ?? value;
-    }
-    take(fields, "transparency");
-    const y = take(fields, "y");
-    const cc = take(fields, "cc");
-    const c1 = take(fields, "c1");
-    const c2 = take(fields, "c2");
-    const color = take(fields, "rect");
-    const layer: IBgLayerInfo = {
-      ...fields,
-      file: file.replace(/.bmp$/, ".png").replace(/\\/g, '/'),
-      y: Defines.CLASSIC_SCREEN_HEIGHT - y,
-      z: ret.layers.length - blocks.length,
-    };
-    min_y = min(layer.y, min_y);
-    if (color) {
-      layer.absolute = 1;
-      layer.color = bg_color_translate(color);
-      delete layer.file;
-    } else if (
-      typeof cc === "number" &&
-      typeof c1 === "number" &&
-      typeof c2 === "number"
-    ) {
-      layer.cc = cc * 2;
-      layer.c1 = c1 * 2;
-      layer.c2 = c2 * 2 + 1;
-    }
-    reorder_keys(layer, bg_layer_info_fields);
+    const layer: IBgLayerInfo = make_bg_layer(block_str);
+    layer.z = ret.layers.length - blocks.length;
     ret.layers.push(layer);
   }
 
@@ -134,3 +94,46 @@ export function make_bg_data(
   reorder_keys(ret, bg_data_info_fields);
   return ret;
 }
+
+function make_bg_layer(block_str: string) {
+  const [file, remains] = block_str
+    .trim()
+    .split(/\n|\r/g)
+    .filter((v) => v)
+    .map((v) => v.trim());
+  const fields: any = {};
+
+  for (const [key, value] of match_colon_value(remains))
+    fields[key] = to_num(value) ?? value;
+
+  take(fields, "transparency");
+
+  const y = take(fields, "y");
+  const layer: IBgLayerInfo = bg_layer_info_new();
+  layer.id = fields.id ? ('' + fields.id) : layer.id;
+  layer.name = fields.name ? ('' + fields.name) : layer.name;
+  /*
+  lf2中，背景layer.rect会是意义不明的字符串，对应不同颜色，就是这么任性。
+  对应关系参见 bg_color_translate。
+
+  有rect的layer，永远跟随相机移动，且不使用图片文件，而是直接用颜色填充。
+  */
+  layer.file = fields.rect ? void 0 : file.replace(/.bmp$/, ".png").replace(/\\/g, '/');
+  layer.absolute = fields.rect ? 1 : void 0;
+  layer.color = fields.rect ? bg_color_translate(fields.rect) : void 0;
+  layer.width = fields.width ?? 0;
+  layer.height = fields.height ?? 0;
+  layer.x = typeof fields.x === "number" ? fields.x : 0;
+  layer.y = Defines.CLASSIC_SCREEN_HEIGHT - (y ?? 0);
+  layer.z = 0;
+  layer.w = typeof fields.w === "number" ? fields.w : 0;
+  layer.h = typeof fields.h === "number" ? fields.h : 0;
+  layer.loop = fields.loop ?? 0;
+  layer.cc = typeof fields.cc === "number" ? fields.cc * 2 : void 0;
+  layer.c1 = typeof fields.c1 === "number" ? fields.c1 * 2 : void 0;
+  layer.c2 = typeof fields.c2 === "number" ? fields.c2 * 2 + 1 : void 0;
+
+  reorder_keys(layer, bg_layer_info_fields);
+  return layer;
+}
+
