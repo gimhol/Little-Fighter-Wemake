@@ -2,7 +2,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd"
   id="bg_nekketsu_f_01">
-  <base name="Nekketsu F01" shadow="bg/sys/bc/s.png" shadowsize="37,9" left="0" right="940" far="-300" near="-40" group="regular" />
+  <base name="Nekketsu F01" shadow="bg/sys/bc/s.png" shadowsize="37,9" bound="0,940,-300,-40" group="regular" />
   <terrain type="0" name="left_high_land_1" x1="0" x2="95" z1="-301" z2="-39" h1="74" h2="74" />
   <terrain type="0" name="left_high_land_2" x1="95" x2="150" z1="-301" z2="-39" h1="35" h2="35" />
   <terrain type="0" name="right_high_land_1" x1="790" x2="845" z1="-301" z2="-39" h1="35" h2="35" />
