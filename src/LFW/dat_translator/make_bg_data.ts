@@ -126,8 +126,8 @@ function make_bg_layer(block_str: string) {
   layer.x = typeof fields.x === "number" ? fields.x : 0;
   layer.y = Defines.CLASSIC_SCREEN_HEIGHT - (y ?? 0);
   layer.z = 0;
-  layer.w = typeof fields.w === "number" ? fields.w : 0;
-  layer.h = typeof fields.h === "number" ? fields.h : 0;
+  layer.w = typeof fields.w === "number" ? fields.w : layer.width;
+  layer.h = typeof fields.h === "number" ? fields.h : layer.height;
   layer.loop = fields.loop ?? 0;
   layer.cc = typeof fields.cc === "number" ? fields.cc * 2 : void 0;
   layer.c1 = typeof fields.c1 === "number" ? fields.c1 * 2 : void 0;
