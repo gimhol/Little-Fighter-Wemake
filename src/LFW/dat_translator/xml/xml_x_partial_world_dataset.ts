@@ -12,10 +12,6 @@ export function xml_x_partial_world_dataset(el: IXMLElement | undefined): Partia
 
 export function xml_2_partial_world_dataset(xml: IXML, i: Partial<IWorldDataset> | undefined, tag: string = 'dataset'): IXMLElement | undefined {
   if (!i) return void 0;
-  const pairs = Object.entries(i);
-  if (!pairs.length) return void 0;
-  const ret = xml.create(tag);
-  for (const [k, v] of pairs)
-    ret.insert(xml.from_number(v, k));
-  return ret;
+  if (!Object.keys(i).length) return void 0;
+  return xml.from_object(i, tag);
 }

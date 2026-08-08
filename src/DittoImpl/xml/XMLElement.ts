@@ -119,7 +119,7 @@ export class XMLElement implements IXMLElement {
   as_number(or?: number): number | undefined;
   as_number(or?: number): number | undefined {
     if ('number' != this.type) return or;
-    const txt = this.as_string();
+    const txt = this.attr('value') ?? this.text;
     const ret = Number(txt);
     if (isNaN(ret)) return or;
     return ret;
@@ -128,7 +128,7 @@ export class XMLElement implements IXMLElement {
   as_boolean(or?: boolean): boolean | undefined;
   as_boolean(or?: boolean): boolean | undefined {
     if ('boolean' != this.type) return or;
-    const txt = this.as_string()?.toLowerCase();
+    const txt = (this.attr('value') ?? this.text)?.toLowerCase();
     if (txt === '1' || txt === 'true') return true;
     if (txt === '0' || txt === 'false') return false;
     return or;
@@ -144,9 +144,6 @@ export class XMLElement implements IXMLElement {
   as_object(or?: object): object | undefined;
   as_object(or?: object): object | undefined {
     const ret: Record<string, any> = {};
-    for (const attr of this.attrs)
-      ret[attr.name] = attr.value;
-
     for (const child of this.children) {
       const key = child.attr('name') || child.tag;
       if (key) ret[key] = child.as_value();

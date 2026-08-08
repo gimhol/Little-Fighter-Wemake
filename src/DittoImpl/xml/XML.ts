@@ -50,7 +50,8 @@ class _XML implements IXML {
     const el = new XMLElement(this.doc.createElement(tag));
     el.set_attr('type', 'object');
     for (const [key, value] of Object.entries(obj)) {
-      const child = this._from_value(key, value);
+      const child = this._from_value("value", value);
+      child.set_attr('name', key)
       el.insert(child);
     }
     return el;
