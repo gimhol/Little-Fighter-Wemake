@@ -27,7 +27,7 @@ export function cook_ball_frame_state_3000(e: IEntityData, frame: IFrameInfo) {
         .or(c => c
           /** 被武器击中 */
           .add(C_Val.AttackerType, "==", EntityEnum.Weapon)
-          .and(C_Val.ItrKind, "!=", ItrKind.WeaponSwing),
+          .and(C_Val.AttackerState, "!=", StateEnum.Weapon_OnHand),
         ).or(c => c
           /**  */
           .add(C_Val.AttackerType, "==", EntityEnum.Fighter)
@@ -69,7 +69,6 @@ export function cook_ball_frame_state_3000(e: IEntityData, frame: IFrameInfo) {
             // 敌方角色的攻击反弹气功波
             .add(C_Val.SameTeam, "==", 0)
             .and(C_Val.AttackerType, "==", EntityEnum.Fighter)
-            .and(C_Val.ItrKind, "==", ItrKind.Normal)
             .and(C_Val.ItrEffect, "!=", ItrEffect.Ice)
             .and(C_Val.ItrEffect, "!=", ItrEffect.MFire1)
           )
@@ -78,7 +77,6 @@ export function cook_ball_frame_state_3000(e: IEntityData, frame: IFrameInfo) {
             .add(C_Val.SameTeam, "==", 1)
             .and(C_Val.AttackerType, "==", EntityEnum.Fighter)
             .and(C_Val.SameFacing, "==", 0)
-            .and(C_Val.ItrKind, "==", ItrKind.Normal)
             .and(C_Val.ItrEffect, "!=", ItrEffect.Ice),
           )
           .or(C_Val.ItrKind, "==", ItrKind.JohnShield)
@@ -87,14 +85,12 @@ export function cook_ball_frame_state_3000(e: IEntityData, frame: IFrameInfo) {
             .add(C_Val.SameTeam, "==", 1)
             .and(C_Val.SameFacing, "==", 0)
             .and(C_Val.AttackerType, "==", EntityEnum.Weapon)
-            .and(C_Val.ItrKind, "==", ItrKind.Normal)
             .and(C_Val.AttackerState, "==", StateEnum.Weapon_OnHand),
           )
           .or((c) => c
             // 敌人角色的攻击 挥动武器 反弹气功波
             .add(C_Val.SameTeam, "==", 0)
             .and(C_Val.AttackerType, "==", EntityEnum.Weapon)
-            .and(C_Val.ItrKind, "==", ItrKind.Normal)
             .and(C_Val.AttackerState, "==", StateEnum.Weapon_OnHand),
           )
           .and().not_in(

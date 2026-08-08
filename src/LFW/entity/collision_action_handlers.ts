@@ -136,7 +136,8 @@ export const collision_action_handlers: IActionHandler = {
   },
   [AT.ERROR]: function (a, c) {
     Ditto.alert(a.data.msg)
-  }
+  },
+  [AT.NONE]: () => void 0
 };
 
 function apply_buff(

@@ -5,7 +5,7 @@ export * from "./EditBdy";
 export * from "./FrameEditing";
 export * from "./broken_piece_frames";
 export * from "./cook_ball_frame_state_3000";
-export * from "./cook_ball_frame_state_3001_4";
+export * from "./cook_ball_frame_state_3001";
 export * from "./cook_ball_frame_state_3005";
 export * from "./cook_ball_frame_state_3006";
 export * from "./cook_bdy";

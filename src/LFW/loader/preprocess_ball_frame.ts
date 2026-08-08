@@ -1,4 +1,4 @@
-import { CondMaker, cook_ball_frame_state_3000, cook_ball_frame_state_3001_4, cook_ball_frame_state_3005, cook_ball_frame_state_3006 } from "../dat_translator";
+import { CondMaker, cook_ball_frame_state_3000, cook_ball_frame_state_3001, cook_ball_frame_state_3005, cook_ball_frame_state_3006 } from "../dat_translator";
 import { ActionType, C_Val, EntityEnum, type IEntityData, type IFrameInfo, ItrKind, StateEnum } from "../defines";
 import { ensure, foreach } from "../utils";
 
@@ -35,7 +35,7 @@ export function preprocess_ball_frame(frame: IFrameInfo, data: IEntityData) {
       cook_ball_frame_state_3000(data, frame);
       break;
     case StateEnum.Ball_Hitting:
-      cook_ball_frame_state_3001_4(data, frame);
+      cook_ball_frame_state_3001(data, frame);
       break;
     case StateEnum.Ball_3005:
       cook_ball_frame_state_3005(data, frame);

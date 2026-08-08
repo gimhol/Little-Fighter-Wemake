@@ -45,6 +45,8 @@ export enum ActionType {
   V_BUFF = "V_BUFF",
 
   ERROR = "ERROR",
+
+  NONE = "NONE",
 }
 export const ActionTypeDescriptions: Record<ActionType, string> = {
   [ActionType.A_SOUND]: "",
@@ -67,4 +69,5 @@ export const ActionTypeDescriptions: Record<ActionType, string> = {
   [ActionType.A_BUFF]: "",
   [ActionType.V_BUFF]: "",
   [ActionType.ERROR]: "",
+  [ActionType.NONE]: "什么都不做，可以用于actions判定的提前返回",
 }

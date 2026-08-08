@@ -1,5 +1,6 @@
 import type { IAction_ABuff } from "./IAction_ABuff";
 import type { IAction_VBuff } from "./IAction_VBuff";
+import type { IAction_None as IAction_None } from "./IAction_None";
 import type { IAction_Broadcast } from "./IAction_Broadcast";
 import type { IAction_BrokenDefend } from "./IAction_BrokenDefend";
 import type { IAction_Defend } from "./IAction_Defend";
@@ -27,5 +28,6 @@ export type TAction =
   IAction_Broadcast |
   IAction_StealValue |
   IAction_ABuff |
-  IAction_VBuff | 
-  IAction_Error;
+  IAction_VBuff |
+  IAction_Error |
+  IAction_None;
