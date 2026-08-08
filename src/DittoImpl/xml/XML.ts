@@ -2,18 +2,19 @@ import type { IXML } from "@/LFW"
 import { XMLElement } from "./XMLElement"
 
 class _XML implements IXML {
+  readonly doc = document.implementation.createDocument(null, null, null);
   parse(text: string): XMLElement {
     const i = new DOMParser().parseFromString(text, 'text/xml').documentElement
     return new XMLElement(i)
   }
   create(tag: string, text?: string): XMLElement {
-    const ret = new XMLElement(document.createElement(tag))
+    const ret = new XMLElement(this.doc.createElement(tag))
     if (text) ret.set_text(text);
     return ret;
   }
 
   from_string(str: string, tag: string = 'string'): XMLElement {
-    const el = new XMLElement(document.createElement(tag));
+    const el = new XMLElement(this.doc.createElement(tag));
     el.set_attr('type', 'string');
     if (str.length > 80)
       el.set_text(str);
@@ -23,21 +24,21 @@ class _XML implements IXML {
   }
 
   from_number(num: number, tag: string = 'number'): XMLElement {
-    const el = new XMLElement(document.createElement(tag));
+    const el = new XMLElement(this.doc.createElement(tag));
     el.set_attr('type', 'number');
     el.set_attr("value", num);
     return el;
   }
 
   from_boolean(bool: boolean, tag: string = 'boolean'): XMLElement {
-    const el = new XMLElement(document.createElement(tag));
+    const el = new XMLElement(this.doc.createElement(tag));
     el.set_attr('type', 'boolean');
     el.set_attr("value", bool ? 'true' : 'false');
     return el;
   }
 
   from_array(arr: any[], tag: string = 'array'): XMLElement {
-    const el = new XMLElement(document.createElement(tag));
+    const el = new XMLElement(this.doc.createElement(tag));
     el.set_attr('type', 'array');
     for (const item of arr) {
       el.insert(this._from_value(item, "item"));
@@ -46,7 +47,7 @@ class _XML implements IXML {
   }
 
   from_object(obj: any, tag: string = 'object'): XMLElement {
-    const el = new XMLElement(document.createElement(tag));
+    const el = new XMLElement(this.doc.createElement(tag));
     el.set_attr('type', 'object');
     for (const [key, value] of Object.entries(obj)) {
       const child = this._from_value(key, value);
@@ -56,7 +57,7 @@ class _XML implements IXML {
   }
 
   private _from_value(key: string, value: any): XMLElement {
-    if (value === null || value === undefined) return new XMLElement(document.createElement(key))
+    if (value === null || value === undefined) return new XMLElement(this.doc.createElement(key))
     if (typeof value === 'string') return this.from_string(value, key);
     if (typeof value === 'number') return this.from_number(value, key);
     if (typeof value === 'boolean') return this.from_boolean(value, key);

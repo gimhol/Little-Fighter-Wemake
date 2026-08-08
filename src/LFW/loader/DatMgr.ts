@@ -2,9 +2,9 @@ import { Factory } from "../Factory";
 import { LFW } from "../LFW";
 import { BotController } from "../bot/BotController";
 import { BallController } from "../controller/BallController";
-import { xml_2_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_to_data_lists } from "../dat_translator/xml/xml_to_data_lists";
 import { xml_to_stage_info_list } from "../dat_translator/xml/xml_to_stage_info";
+import { xml_2_bg_data, xml_x_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
 import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IStageInfo } from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
@@ -118,7 +118,17 @@ class Inner {
     const list = this.datas[data.type];
     const idx = list.findIndex(v => v.id === data.id);
     if (idx < 0) list.push(data); else list[idx] = data;
-    data.base.group?.forEach(v => this.bg_randomings.delete(v))
+    data.base.group?.forEach(v => this.bg_randomings.delete(v));
+
+    Object.defineProperty(data, 'xml', {
+      configurable: true,
+      get() { return xml_x_bg_data(Ditto.XML, data) }
+    })
+    Object.defineProperty(data, 'test_xml', {
+      configurable: true,
+      get() { return xml_2_bg_data(xml_x_bg_data(Ditto.XML, data)) }
+    })
+
   }
 
   async load(index_files: string[]) {

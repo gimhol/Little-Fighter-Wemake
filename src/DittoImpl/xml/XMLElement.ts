@@ -2,8 +2,7 @@ import format from 'xml-formatter';
 import type { BaseValue, IXMLElement, Voidable } from "../../LFW/ditto/xml/IXMLElement";
 export class XMLElement implements IXMLElement {
   readonly inner: Element;
-  private _children: XMLElement[] | null = null;
-  private _attrs: { name: string; value: string; }[] | null = null;
+  private _children: XMLElement[] = [];
   private _parent: XMLElement | null = null;
 
   get type(): string | undefined {
@@ -14,36 +13,30 @@ export class XMLElement implements IXMLElement {
   get tag(): string { return this.inner.tagName; }
   get text(): string { return this.inner.textContent ?? ''; }
 
-  get children(): XMLElement[] {
-    if (!this._children) {
-      this._children = [];
-      for (const c of this.inner.children) {
-        const child = new XMLElement(c);
-        child._parent = this;
-        this._children.push(child);
-      }
-    }
-    return this._children;
-  }
+  get children(): XMLElement[] { return this._children; }
 
   get attrs(): { name: string; value: string; }[] {
-    if (!this._attrs) {
-      this._attrs = [];
-      const map = this.inner.attributes;
-      for (let i = 0; i < map.length; i++) {
-        const a = map.item(i)!;
-        this._attrs.push({ name: a.name, value: a.value });
-      }
+    const ret: { name: string; value: string; }[] = [];
+    const map = this.inner.attributes;
+    for (let i = 0; i < map.length; i++) {
+      const a = map.item(i)!;
+      ret.push({ name: a.name, value: a.value });
     }
-    return this._attrs;
+    return ret;
   }
-  constructor(inner: Element) { this.inner = inner; }
+  constructor(inner: Element) {
+    this.inner = inner;
+    for (const c of this.inner.children) {
+      const child = new XMLElement(c);
+      child._parent = this;
+      this._children.push(child);
+    }
+  }
 
   attr(name: string): string | undefined {
     return this.inner.getAttribute(name) ?? undefined;
   }
   set_attr(name: string, value: Voidable<BaseValue | BaseValue[]>, sep: string = ','): void {
-    this._attrs = null;
     if (value === void 0 || value === null)
       this.del_attr(name);
     else if (Array.isArray(value))
@@ -52,7 +45,6 @@ export class XMLElement implements IXMLElement {
       this.inner.setAttribute(name, String(value));
   }
   del_attr(name: string): void {
-    this._attrs = null;
     this.inner.removeAttribute(name)
   }
   str_attr(name: string): string | undefined {
@@ -145,9 +137,7 @@ export class XMLElement implements IXMLElement {
   as_array(or?: any[]): any[] | undefined;
   as_array(or?: any[]): any[] | undefined {
     if ('array' != this.type) return or;
-    const ret: any[] = [];
-    for (const child of this.children) ret.push(child.as_value());
-    return ret;
+    return this._children.map(c => c.as_value());
   }
 
   as_object(or: object): object;
@@ -156,6 +146,7 @@ export class XMLElement implements IXMLElement {
     const ret: Record<string, any> = {};
     for (const attr of this.attrs)
       ret[attr.name] = attr.value;
+
     for (const child of this.children) {
       const key = child.attr('name') || child.tag;
       if (key) ret[key] = child.as_value();
@@ -185,18 +176,16 @@ export class XMLElement implements IXMLElement {
 
   insert(child?: XMLElement, index?: number): void {
     if (!child) return;
-    // 如果 child 已有父节点，先从旧父节点的缓存中移除
-    if (child._parent) {
-      child._parent.remove(child);
-    }
+    child._parent?.remove(child);
     child._parent = this;
+
     if (index === void 0 || index >= this.inner.children.length) {
       this.inner.appendChild(child.inner);
-      if (this._children) this._children.push(child);
+      this.children.push(child);
     } else {
       const ref = this.inner.children[index];
       this.inner.insertBefore(child.inner, ref);
-      if (this._children) this._children.splice(index, 0, child);
+      this.children.splice(index, 0, child);
     }
   }
 
@@ -204,10 +193,8 @@ export class XMLElement implements IXMLElement {
     if (!this.inner.contains(child.inner)) return false;
     this.inner.removeChild(child.inner);
     child._parent = null;
-    if (this._children) {
-      const i = this._children.indexOf(child);
-      if (i >= 0) this._children.splice(i, 1);
-    }
+    const i = this._children.indexOf(child);
+    if (i >= 0) this._children.splice(i, 1);
     return true;
   }
 
@@ -220,10 +207,8 @@ export class XMLElement implements IXMLElement {
   }
 
   remove_all(): void {
-    if (this._children) {
-      for (const c of this._children) c._parent = null;
-      this._children.length = 0;
-    }
+    for (const c of this._children) c._parent = null;
+    this._children.length = 0;
     while (this.inner.firstChild) {
       this.inner.removeChild(this.inner.firstChild);
     }
@@ -246,7 +231,7 @@ export class XMLElement implements IXMLElement {
   }
 
   child_by_tag(tag: string): XMLElement | undefined {
-    return this.children.find(c => c.tag === tag);
+    return this._children.find(c => c.tag === tag);
   }
 
   get_obj(tag: string): object | undefined {
