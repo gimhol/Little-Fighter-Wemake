@@ -1,7 +1,7 @@
-import { Ditto } from "..";
+import { bg_data_fields, bg_info_fields, bg_layer_info_fields, delete_undefined, Ditto, reorder_keys, world_dataset_fields } from "..";
 import { Defines, } from "../defines/defines";
 import type { IBgData } from "../defines/IBgData";
-import { Schema_ITerrainInfo } from "../defines/ITerrainInfo";
+import { Schema_ITerrainInfo, terrain_info_fields } from "../defines/ITerrainInfo";
 import type { ImageInfo } from "../ditto/image/ImageInfo";
 import type { LFW } from "../LFW";
 import { SchemaValidator as SV } from "../utils/schema/validate_schema";
@@ -10,15 +10,30 @@ import { is_non_blank_str } from "../utils/type_check/is_str";
 
 export function preprocess_bg_data(lfw: LFW, data: IBgData, jobs: Promise<ImageInfo>[]): IBgData {
   const { layers, base: { shadow }, terrain } = data;
+
+  reorder_keys(data.base, bg_info_fields)
+  delete_undefined(data.base);
+
+  if (data.dataset) {
+    reorder_keys(data.dataset, world_dataset_fields)
+    delete_undefined(data.dataset);
+  }
+
   data.base.height ??= Defines.MODERN_SCREEN_HEIGHT;
   is_non_blank_str(shadow) && jobs.push(lfw.images.load_img(shadow, shadow));
 
-  if (layers?.length)
-    for (const { file } of layers)
+  if (layers?.length) {
+    for (const layer of layers) {
+      reorder_keys(layer, bg_layer_info_fields)
+      delete_undefined(layer);
+      const { file } = layer
       is_non_blank_str(file) && jobs.push(lfw.images.load_img(file, file));
-
+    }
+  }
   if (terrain?.length) {
     for (const t of terrain) {
+      reorder_keys(t, terrain_info_fields)
+      delete_undefined(t);
       SV.Default.validate(t, Schema_ITerrainInfo)
       if (SV.Default.warnings.length)
         Ditto.warn(SV.Default.warnings)
@@ -41,6 +56,8 @@ export function preprocess_bg_data(lfw: LFW, data: IBgData, jobs: Promise<ImageI
     data.base.zoom_y ??= typeof b == 'number' ? b : 0;
     data.base.zoom_z ??= typeof c == 'number' ? c : 0;
   }
+  reorder_keys(data, bg_data_fields)
+  delete_undefined(data);
   return data
 }
 preprocess_bg_data.TAG = "preprocess_bg_data"
