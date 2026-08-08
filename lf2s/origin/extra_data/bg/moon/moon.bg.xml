@@ -1,0 +1,10 @@
+<background id="bg_moon"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd">
+  <base name="Moon" shadow="bg/sys/bc/s.png" group="hidden" bound="0,1300,-450,-40" height="450" shadowsize="37,9"/>
+  <dataset>
+    <gravity type="number" value="0.21875"/>
+    <gravity_d type="number" value="0.65625"/>
+    <weapon_throwing_gravity type="number" value="0.109325"/>
+  </dataset>
+  <layer width="1356" x="0" y="288" z="-1" file="!bg/moon/ground.png"/>
+</background>

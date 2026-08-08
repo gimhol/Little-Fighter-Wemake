@@ -3,7 +3,7 @@ import { write_file } from "./write_file";
 import path from "path";
 import { mkdir } from "fs/promises";
 import type { IBgData, IDataLists, IEntityData, IStageInfo } from "../../../src/LFW/defines";
-import { xml_from_bg_data } from "../../../src/LFW/dat_translator/xml/xml_from_bg_data";
+import { xml_x_bg_data } from "../../../src/LFW/dat_translator/xml/xml_x_bg_data";
 import { xml_from_data_lists } from "../../../src/LFW/dat_translator/xml/xml_from_data_lists";
 import { xml_x_entity_data } from "../../../src/LFW/dat_translator/xml/xml_x_entity_data";
 import { xml_from_stage_info } from "../../../src/LFW/dat_translator/xml/xml_from_stage_info";
@@ -24,7 +24,7 @@ export async function write_obj_file(dst_path: string, content: any) {
 
 function obj_to_xml(dst_path: string, content: any): string {
   if (dst_path.endsWith('.bg.xml') && content && content.type === 'background') {
-    return xml_from_bg_data(XML, content as IBgData);
+    return xml_x_bg_data(XML, content as IBgData).stringify();
   }
   if (dst_path.endsWith('.obj.xml') && content && content.id !== undefined) {
     return xml_x_entity_data(XML, content as IEntityData).stringify();

@@ -15,7 +15,7 @@
     {
       id: "bg_moon",
       type: "bg",
-      file: "bg/moon/bg.bg.json5",
+      file: "bg/moon/moon.bg.xml",
     },
     {
       id: "nekketsu_f_01",
