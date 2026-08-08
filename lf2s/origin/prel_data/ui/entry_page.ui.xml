@@ -23,7 +23,9 @@
 
     <node id="btn_game_start" size="200,22" center="0.5,0.5" auto_focus="true" template="builtin_data/launch/main_text_button.ui.json5">
       <Reachable args="main"/>
-      <values text="entry_page.game_start"/>
+      <values>
+        <string name="text">entry_page.game_start</string>
+      </values>
       <actions>
         <click action="sound" args="ok"/>
         <click action="set_ui" args="loading"/>
@@ -33,7 +35,9 @@
 
     <node id="btn_extra_data" size="200,22" center="0.5,0.5" template="builtin_data/launch/main_text_button.ui.json5">
       <Reachable args="main"/>
-      <values text="add_mods"/>
+      <values>
+        <string name="text">add_mods</string>
+      </values>
       <actions>
         <click action="sound" args="ok"/>
         <click action="broadcast" args="select_extra_data"/>
@@ -42,7 +46,9 @@
 
     <node id="btn_custom_game" size="200,22" center="0.5,0.5" template="builtin_data/launch/main_text_button.ui.json5">
       <Reachable args="main"/>
-      <values text="entry_page.custom_game"/>
+      <values>
+        <string name="text">entry_page.custom_game</string>
+      </values>
       <actions>
         <click action="sound" args="ok"/>
         <click action="broadcast" args="custom_game"/>
@@ -51,7 +57,9 @@
 
     <node id="btn_network_game" size="200,22" center="0.5,0.5" template="builtin_data/launch/main_text_button.ui.json5">
       <Reachable args="main"/>
-      <values text="entry_page.network_game"/>
+      <values>
+        <string name="text">entry_page.network_game</string>
+      </values>
       <actions>
         <click action="sound" args="ok"/>
         <click action="broadcast" args="network_game"/>
@@ -60,7 +68,9 @@
 
     <node id="btn_ctrl_settings" size="200,22" center="0.5,0.5" template="builtin_data/launch/main_text_button.ui.json5">
       <Reachable args="main"/>
-      <values text="settings"/>
+      <values>
+        <string name="text">settings</string>
+      </values>
       <actions>
         <click action="sound" args="ok"/>
         <click action="push_ui" args="settings,1"/>

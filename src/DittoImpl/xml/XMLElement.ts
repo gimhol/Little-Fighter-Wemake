@@ -144,6 +144,10 @@ export class XMLElement implements IXMLElement {
   as_object(or?: object): object | undefined;
   as_object(or?: object): object | undefined {
     const ret: Record<string, any> = {};
+    for (const attr of this.attrs) {
+      if (attr.name == 'type') continue; // ...
+      ret[attr.name] = attr.value;
+    }
     for (const child of this.children) {
       const key = child.attr('name') || child.tag;
       if (key) ret[key] = child.as_value();
