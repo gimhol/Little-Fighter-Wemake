@@ -2,7 +2,7 @@ import { Factory } from "../Factory";
 import { LFW } from "../LFW";
 import { BotController } from "../bot/BotController";
 import { BallController } from "../controller/BallController";
-import { xml_to_bg_data } from "../dat_translator/xml/xml_to_bg_data";
+import { xml_2_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_to_data_lists } from "../dat_translator/xml/xml_to_data_lists";
 import { xml_to_stage_info_list } from "../dat_translator/xml/xml_to_stage_info";
 import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
@@ -192,7 +192,7 @@ class Inner {
       try {
         this.lfw.emit_progress(`${file}`, 0);
         const raw = file.endsWith(".bg.xml")
-          ? xml_to_bg_data((await this.lfw.import_xml(file, true))[0])
+          ? xml_2_bg_data((await this.lfw.import_xml(file, true))[0])
           : await this.lfw.import_json(file, true).then(r => r[0]);
         const cooked = await this._cook_data(raw) as IBgData;
         this._add_bg(cooked)

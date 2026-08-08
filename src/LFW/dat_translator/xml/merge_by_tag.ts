@@ -5,6 +5,7 @@ import type { IXMLElement } from "../../ditto";
  * @param el      父元素
  * @param tag     标签名
  * @param parser  解析函数
+ * @param target  
  * @return 合并后的解析结果，无匹配时 undefined
  */
 
@@ -12,7 +13,8 @@ import type { IXMLElement } from "../../ditto";
 export function merge_by_tag<T extends Record<string, any>>(
   el: IXMLElement,
   tag: string,
-  parser: (child: IXMLElement) => T
+  parser: (child: IXMLElement) => T,
+  target?: T
 ): T | undefined {
   const children = el.children_by_tag(tag);
   if (!children.length) return void 0;
@@ -20,5 +22,6 @@ export function merge_by_tag<T extends Record<string, any>>(
   for (let i = 1; i < children.length; i++) {
     ret = Object.assign(ret, parser(children[i]));
   }
+  if (target) Object.assign(ret);
   return ret;
 }

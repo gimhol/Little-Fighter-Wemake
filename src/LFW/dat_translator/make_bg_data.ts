@@ -1,5 +1,5 @@
 import { BackgroundGroup, BGG } from "../defines";
-import { bg_data_info_fields, bg_data_new, type IBgData } from "../defines/IBgData";
+import { bg_data_fields, bg_data_new, type IBgData } from "../defines/IBgData";
 import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../defines/IBgLayerInfo";
 import type { IDatIndex } from "../defines/IDatIndex";
 import { Defines } from "../defines/defines";
@@ -92,7 +92,7 @@ export function make_bg_data(
   } else {
     ret.base.group = [BackgroundGroup.Regular]
   }
-  reorder_keys(ret, bg_data_info_fields);
+  reorder_keys(ret, bg_data_fields);
   return ret;
 }
 

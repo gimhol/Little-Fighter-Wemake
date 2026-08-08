@@ -1,8 +1,8 @@
 import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../../defines";
-import type { IXMLElement } from "../../ditto";
+import type { IXML, IXMLElement } from "../../ditto";
 import { reorder_keys } from "../../fields";
 
-export function xml_to_bg_layer(el: IXMLElement, defaultZ: number | undefined): IBgLayerInfo {
+export function xml_2_bg_layer(el: IXMLElement, defaultZ: number | undefined): IBgLayerInfo {
   const ret = bg_layer_info_new();
   const pos = el.get_num_arr('pos');
   const size = el.get_num_arr('size');
@@ -30,5 +30,28 @@ export function xml_to_bg_layer(el: IXMLElement, defaultZ: number | undefined): 
 
   reorder_keys(ret, bg_layer_info_fields);
   return ret;
+}
+
+export function xml_x_bg_layer(xml: IXML, l: IBgLayerInfo, tag: string): IXMLElement {
+  const layer = xml.create(tag);
+  layer.set_attr("width", l.width);
+  layer.set_attr("height", l.height);
+  layer.set_attr("x", l.x);
+  layer.set_attr("y", l.y);
+  layer.set_attr("z", l.z);
+  layer.set_attr("w", l.w);
+  layer.set_attr("h", l.h);
+  layer.set_attr("loop", l.loop);
+  layer.set_attr("absolute", l.absolute);
+  layer.set_attr("cc", l.cc);
+  layer.set_attr("c1", l.c1);
+  layer.set_attr("c2", l.c2);
+  layer.set_attr("offsetAnimX", l.offsetAnimX);
+  layer.set_attr("offsetAnimY", l.offsetAnimY);
+  layer.set_attr("id", l.id);
+  layer.set_attr("name", l.name);
+  layer.set_attr("file", l.file);
+  layer.set_attr("color", l.color);
+  return layer;
 }
 

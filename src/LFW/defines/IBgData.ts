@@ -14,7 +14,7 @@ export interface IBgData {
   terrain?: ITerrainInfo[];
 }
 
-export const bg_data_info_fields = fields<IBgData>({
+export const bg_data_fields = fields<IBgData>({
   id: str("ID"),
   alias_id: str("别名ID"),
   type: str("类型"),

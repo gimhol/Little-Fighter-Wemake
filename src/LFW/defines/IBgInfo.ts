@@ -1,3 +1,5 @@
+import { fields, int, str } from "../fields";
+
 export interface IBgInfo {
   /** 背景名称 */
   name?: string;
@@ -30,3 +32,19 @@ export interface IBgInfo {
 export function bg_info_new(): IBgInfo {
   return {};
 }
+
+export const bg_info_fields = fields<IBgInfo>({
+  name     /**/: str({ nullable: true }),
+  shadow   /**/: str({ nullable: true }),
+  shadow_w /**/: int({ nullable: true }),
+  shadow_h /**/: int({ nullable: true }),
+  group    /**/: str({ nullable: true, array: true }),
+  left     /**/: int({ nullable: true }),
+  right    /**/: int({ nullable: true }),
+  far      /**/: int({ nullable: true }),
+  near     /**/: int({ nullable: true }),
+  height   /**/: int({ nullable: true }),
+  zoom_x   /**/: int({ nullable: true }),
+  zoom_y   /**/: int({ nullable: true }),
+  zoom_z   /**/: int({ nullable: true }),
+});
