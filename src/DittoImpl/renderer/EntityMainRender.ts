@@ -225,12 +225,13 @@ export class EntityMainRender {
     const py = cy - oy;
     const dx = cx - px;
     const dy = cy - py;
+    const flipped = this.facing < 0;
     const _cos = pic.__cos_r ?? cos(rad);
-    const _sin = pic.__sin_r ?? sin(rad);
+    const _sin = (pic.__sin_r ?? sin(rad)) * (flipped ? -1 : 1);
     mesh.position.x = px + dx * _cos - dy * _sin;
     mesh.position.y = py + dx * _sin + dy * _cos;
     mesh.position.z = cz;
-    mesh.rotation.z = rad;
+    mesh.rotation.z = flipped ? -rad : rad;
   }
   private update_mesh_material(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>) {
     mesh.scale.set(pic.w, pic.h, 0);
