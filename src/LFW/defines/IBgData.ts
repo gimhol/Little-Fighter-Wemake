@@ -21,6 +21,7 @@ export const bg_data_fields = fields<IBgData>({
   base: any,
   dataset: any,
   layers: any,
+  terrain: any
 });
 
 export function bg_data_new(): IBgData {

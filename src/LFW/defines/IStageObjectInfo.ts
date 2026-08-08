@@ -76,7 +76,7 @@ export interface IStageObjectInfo {
   outline_color?: string;
 }
 
-export const stage_object_info_fields = fields<Partial<IStageObjectInfo>>({
+export const stage_object_info_fields = fields<IStageObjectInfo>({
   id_method: str('ID生成方式'),
   id: str('物件ID', { array: true }),
   x: int('X坐标'),

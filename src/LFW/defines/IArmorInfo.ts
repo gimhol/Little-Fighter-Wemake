@@ -133,6 +133,7 @@ export const armor_Info_fields = fields<IArmorInfo>({
   motionless_ratio: flt('??比例', '默认: 0.1'),
   hit_sounds: str("", { array: true }),
   dead_sounds: str("", { array: true }),
+  toughness_resting: int,
 })
 export function armor_Info_new(): IArmorInfo {
   return {

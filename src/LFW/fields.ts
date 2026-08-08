@@ -56,29 +56,30 @@ export const flt = assign(<T extends object>(...p: (string | Omit<IFltFieldInfo<
 export const int = assign(<T extends object>(...p: (string | Omit<IIntFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('int', ...p), w('int'))
 
 export const any = assign(<T extends object>(...p: (string | Omit<IFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('', ...p), w(''))
+
+
 export function fields<T extends object>(
-  source: { [K in keyof T]: IRet<T> },
-  ...extra_maps: Map<any, any>[]
+  source: Required<{ [K in keyof T]: IRet<T> }>,
 ): Map<keyof T, IFieldInfo<T>> {
   const ret = new Map<keyof T, IFieldInfo<T>>();
   let order = 0;
-  // 来自 source 的字段：按顺序分配 order
   for (const k in source) {
     const key = k as keyof T;
     const value = assign({}, source[k], { key, order: order++ });
     ret.set(key, value as any);
   }
-  // 来自已有 Map 的字段：保持相对顺序，追加 order
-  for (const map of extra_maps) {
-    const sorted = [...map.entries()].sort(
-      (a: any, b: any) => (a[1].order ?? 0) - (b[1].order ?? 0)
-    );
-    for (const [key, value] of sorted) {
-      ret.set(key, { ...value, order: order++ } as any);
-    }
-  }
   return ret;
 }
+
+/** stupid? - Gim */
+export function fields_map_2_fields_obj<T extends object>(map: Map<keyof T, IFieldInfo<T>>): Required<{ [K in keyof T]: IRet<T> }> {
+  const obj: any = {}
+  for (const [k, v] of map) {
+    obj[k] = v;
+  }
+  return obj;
+}
+
 
 export function reorder_keys<T extends {}>(obj: Partial<T>, fields_map: Map<keyof T, IFieldInfo<Partial<T>>>) {
   const all_keys = new Set(Object.keys(obj));

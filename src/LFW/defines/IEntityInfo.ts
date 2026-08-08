@@ -1,4 +1,5 @@
-import { any, fields, flt, int, str } from "../fields";
+import { any, fields, fields_map_2_fields_obj, flt, int, str } from "../fields";
+import type { WorldDataset } from "../WorldDataset";
 import { ALL_ENTITY_ENUM, ENTITY_ENUM_DESC_MAP, ENTITY_ENUM_LABEL_MAP, EntityEnum } from "./EntityEnum";
 import { ALL_ENTITY_GROUP, ENTITY_GROUP_DESC_MAP, ENTITY_GROUP_LABEL_MAP } from "./EntityGroup";
 import type { IArmorInfo } from "./IArmorInfo";
@@ -53,7 +54,7 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
    * 角色力气，决定能丢多远
    */
   strength?: number
-  
+
   /**
    * 所属组
    *
@@ -220,7 +221,6 @@ export const entity_info_fields = fields<IEntityInfo>({
   fast_vy: flt('武器快速Y', '武器速度超过此值时，会变为投掷状态', { nullable: true }),
   fast_vx: flt('武器快速X', '武器速度超过此值时，会变为投掷状态', { nullable: true }),
   fast_vz: flt('武器快速Z', '武器速度超过此值时，会变为投掷状态', { nullable: true }),
-
   files: any,
   models: any,
   brokens: any,
@@ -234,7 +234,6 @@ export const entity_info_fields = fields<IEntityInfo>({
   strength: flt('力气', '目前为角色力气', { nullable: true }),
   bot_id: any,
   bot: any,
-  portraits: any
-},
-  world_dataset_fields
-);
+  portraits: any,
+  ...fields_map_2_fields_obj(world_dataset_fields),
+});

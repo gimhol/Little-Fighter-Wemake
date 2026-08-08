@@ -1,4 +1,4 @@
-import { fields, int } from "../fields";
+import { fields, int, str } from "../fields";
 import { make_schema } from "../utils";
 
 export const enum TerrainEnum {
@@ -35,6 +35,8 @@ export function terrain_info_new(): ITerrainInfo {
 }
 
 export const terrain_info_fields = fields<ITerrainInfo>({
+  id: str,
+  name: str,
   type: int({
     options: [{
       value: TerrainEnum.Flat, label: 'Flat'
