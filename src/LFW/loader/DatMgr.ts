@@ -122,13 +122,18 @@ class Inner {
 
     Object.defineProperty(data, 'xml', {
       configurable: true,
-      get() { return xml_x_bg_data(Ditto.XML, data) }
+      get: function () { return xml_x_bg_data(Ditto.XML, this) }
     })
-    Object.defineProperty(data, 'test_xml', {
+    Object.defineProperty(data, 'xml_roundtrip', {
       configurable: true,
-      get() { return xml_2_bg_data(xml_x_bg_data(Ditto.XML, data)) }
+      get: function () { return xml_2_bg_data(this.xml) }
     })
-
+    Object.defineProperty(data, 'xml_roundtrip_ok', {
+      configurable: true,
+      get: function () {
+        return JSON.stringify(this.xml_roundtrip) === JSON.stringify(this)
+      }
+    })
   }
 
   async load(index_files: string[]) {
