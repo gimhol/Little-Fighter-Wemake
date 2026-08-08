@@ -57,7 +57,23 @@ export const int = assign(<T extends object>(...p: (string | Omit<IIntFieldInfo<
 
 export const any = assign(<T extends object>(...p: (string | Omit<IFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('', ...p), w(''))
 
-
+/**
+ * 将字段定义对象转换为字段信息 Map
+ *
+ * 输入一个以字段名为 key、字段定义为 value 的普通对象，
+ * 输出以字段名（keyof T）为 key、IFieldInfo 为 value 的 Map。
+ *
+ * 转换时，每个字段信息会被补充上：
+ * - `key`：字段名
+ * - `order`：按对象键的声明顺序自增的序号（0, 1, 2, ...）
+ *
+ * 生成的 Map 通常配合 `reorder_keys` / UI 表单渲染使用，
+ * 以便按声明顺序稳定地展示与排序字段。
+ *
+ * @template T 目标对象类型（key 会被约束为 T 的字段）
+ * @param source 字段定义对象：每个属性对应 T 的一个字段
+ * @returns 字段名 → 字段信息的 Map
+ */
 export function fields<T extends object>(
   source: Required<{ [K in keyof T]: IRet<T> }>,
 ): Map<keyof T, IFieldInfo<T>> {
