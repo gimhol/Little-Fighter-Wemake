@@ -4,7 +4,6 @@ import type { IXMLElement } from "../../ditto/xml/IXMLElement";
 import { reorder_keys } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { merge_by_tag } from "./merge_by_tag";
-import { non_empty } from "./one_or_arr";
 import { xml_to_bg_terrain } from "./xml_to_bg_terrain";
 import { xml_2_bg_info, xml_x_bg_info } from "./xml_x_bg_info";
 import { xml_2_bg_layer, xml_x_bg_layer } from "./xml_x_bg_layer";
