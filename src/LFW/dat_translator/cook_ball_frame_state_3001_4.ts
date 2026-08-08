@@ -1,4 +1,4 @@
-import { OID } from "../defines";
+import { OID, StateEnum } from "../defines";
 import { ActionType } from "../defines/actions/ActionType";
 import { CollisionVal as C_Val } from "../defines/CollisionVal";
 import { EntityEnum } from "../defines/EntityEnum";
@@ -78,12 +78,16 @@ export function cook_ball_frame_state_3001_4(e: IEntityData, frame: IFrameInfo) 
             // 队友角色的攻击 挥动武器(必须相向) 反弹气功波
             .add(C_Val.SameTeam, "==", 1)
             .and(C_Val.SameFacing, "==", 0)
-            .and(C_Val.ItrKind, "==", ItrKind.WeaponSwing),
+            .and(C_Val.AttackerType, "==", EntityEnum.Weapon)
+            .and(C_Val.ItrKind, "==", ItrKind.Normal)
+            .and(C_Val.AttackerState, "==", StateEnum.Weapon_OnHand),
           )
           .or((c) => c
             // 敌人角色的攻击 挥动武器 反弹气功波
             .add(C_Val.SameTeam, "==", 0)
-            .and(C_Val.ItrKind, "==", ItrKind.WeaponSwing),
+            .and(C_Val.AttackerType, "==", EntityEnum.Weapon)
+            .and(C_Val.ItrKind, "==", ItrKind.Normal)
+            .and(C_Val.AttackerState, "==", StateEnum.Weapon_OnHand),
           )
           .and().not_in(
             C_Val.ItrKind,
