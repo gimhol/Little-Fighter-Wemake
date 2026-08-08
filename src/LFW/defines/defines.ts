@@ -31,12 +31,12 @@ export namespace Defines {
   export const DEFAULT_OPOINT_SPEED_Z = 3.5;
   export const DEFAULT_FIREN_FLAME_SPEED_Z = 0.5;
   export const WT_BOUNCE_MIN_Y: Record<WT, number> = {
-    [WT.None]:     /**/ 2,
-    [WT.Stick]:    /**/ 2,
-    [WT.Heavy]:    /**/ 2,
-    [WT.Knife]:    /**/ 2,
-    [WT.Baseball]: /**/ 2,
-    [WT.Drink]:    /**/ 2,
+    [WT.None]:     /**/ 0.2,
+    [WT.Stick]:    /**/ 0.2,
+    [WT.Heavy]:    /**/ 0.2,
+    [WT.Knife]:    /**/ 0.2,
+    [WT.Baseball]: /**/ 0.1,
+    [WT.Drink]:    /**/ 0.1,
   }
   export const WT_BOUNCE_MIN_X: Record<WT, number> = {
     [WT.None]:     /**/ 99,
