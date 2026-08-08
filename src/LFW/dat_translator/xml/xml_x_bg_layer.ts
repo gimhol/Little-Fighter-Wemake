@@ -1,6 +1,7 @@
 import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../../defines";
 import type { IXML, IXMLElement } from "../../ditto";
 import { reorder_keys } from "../../fields";
+import { delete_undefined } from "./delete_undefined";
 
 export function xml_2_bg_layer(el: IXMLElement, defaultZ: number | undefined): IBgLayerInfo {
   const ret = bg_layer_info_new();
@@ -28,6 +29,7 @@ export function xml_2_bg_layer(el: IXMLElement, defaultZ: number | undefined): I
   ret.offsetAnimX /**/ = el.get_num("offsetAnimX") ?? offsetAnim?.[0] ?? ret.offsetAnimX;
   ret.offsetAnimY /**/ = el.get_num("offsetAnimY") ?? offsetAnim?.[1] ?? ret.offsetAnimY;
 
+  delete_undefined(ret)
   reorder_keys(ret, bg_layer_info_fields);
   return ret;
 }

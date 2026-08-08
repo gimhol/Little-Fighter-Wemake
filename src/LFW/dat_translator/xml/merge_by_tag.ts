@@ -22,6 +22,6 @@ export function merge_by_tag<T extends Record<string, any>>(
   for (let i = 1; i < children.length; i++) {
     ret = Object.assign(ret, parser(children[i]));
   }
-  if (target) Object.assign(ret);
+  if (target) Object.assign(target, ret);
   return ret;
 }
