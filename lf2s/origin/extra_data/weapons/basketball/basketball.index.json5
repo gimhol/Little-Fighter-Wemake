@@ -1,0 +1,9 @@
+{
+  objects:[
+    {
+      id: "basketball",
+      type: "4",
+      file: "weapons/basketball/basketball.obj.json5",
+    },
+  ]
+}
