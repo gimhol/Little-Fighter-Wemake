@@ -25,7 +25,7 @@ const broken_pieces_opoints = (...frame_ids: (string | string[])[]): IOpointInfo
     return {
       kind: OpointKind.Normal,
       x: 0,
-      y: 0,
+      y: -1, // 确保不在地面上，避免直接触发落地消失
       pos_type: 1,
       action: { id: frame_id },
       oid: "999",
