@@ -1,6 +1,6 @@
 import { Defines, type IFrameInfo, type IVector3, SE, WT } from "../defines";
 import type { Entity } from "../entity/Entity";
-import { clamp, round_float } from "../utils";
+import { round_float } from "../utils";
 import { State_Base } from "./State_Base";
 
 export class WeaponState_Base extends State_Base {
@@ -12,11 +12,9 @@ export class WeaponState_Base extends State_Base {
   protected _hit_ground_weapons: Set<Entity> = new Set<Entity>();
   override get_auto_frame(e: Entity): IFrameInfo | undefined {
     const { frames, indexes } = e.data;
-    if (e.position.y > e.ground_y) {
-      const fid = indexes?.in_the_skys?.[0];
-      return fid ? frames[fid] : void 0
-    }
-    return indexes?.on_ground ? frames[indexes.on_ground] : void 0;
+    if (!indexes) return void 0;
+    if (e.is_on_ground) return frames[indexes.on_ground!];
+    return frames[indexes.in_the_skys?.[0]!];
   }
 
   override on_landing(e: Entity, velocity: IVector3): void {

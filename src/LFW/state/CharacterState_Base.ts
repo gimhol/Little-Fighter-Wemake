@@ -1,5 +1,5 @@
 import { Defines, type IFrameInfo, type INextFrame, type IVector3, StateEnum, WeaponEnum } from "../defines";
-import type { Entity } from "../entity/Entity";
+import { Entity } from "../entity/Entity";
 import { State_Base } from "./State_Base";
 
 export class CharacterState_Base extends State_Base {
@@ -31,10 +31,10 @@ export class CharacterState_Base extends State_Base {
     let fid: string | undefined;
     if (e.holding?.base_type === WeaponEnum.Heavy) {
       fid = e.data.indexes?.heavy_obj_walk;
-    } else if (e.position.y > e.ground_y) {
-      fid = e.data.indexes?.in_the_skys?.[0];
-    } else if (e.hp > 0) {
+    } else if (e.is_on_ground) {
       fid = e.data.indexes?.default;
+    } else if (e.hp > 0) {
+      fid = e.data.indexes?.in_the_skys?.[0];
     }
     if (!fid) return void 0;
     return e.data.frames[fid];
