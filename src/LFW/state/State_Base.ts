@@ -60,7 +60,8 @@ export class State_Base {
     if (!float_equal(z, e.position.z))
       vz = clamp(e.velocity.z, -MIN_V, MIN_V);
     if (!float_equal(y, e.position.y)) {
-      vy = clamp(e.velocity.y, -MIN_V, MIN_V);
+      // 这影响了武器触地反弹，如何是好？
+      // vy = clamp(e.velocity.y, -MIN_V, MIN_V);
       vx = clamp(e.velocity.x, -MIN_V, MIN_V);
       vz = clamp(e.velocity.z, -MIN_V, MIN_V);
     }

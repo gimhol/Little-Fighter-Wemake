@@ -35,8 +35,8 @@ export namespace Defines {
     [WT.Stick]:    /**/ 2,
     [WT.Heavy]:    /**/ 2,
     [WT.Knife]:    /**/ 2,
-    [WT.Baseball]: /**/ 2,
-    [WT.Drink]:    /**/ 2,
+    [WT.Baseball]: /**/ 1,
+    [WT.Drink]:    /**/ 1,
   }
   export const WT_BOUNCE_MIN_X: Record<WT, number> = {
     [WT.None]:     /**/ 99,
