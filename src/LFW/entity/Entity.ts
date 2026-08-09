@@ -1607,12 +1607,10 @@ export class Entity {
         this.wait = rf(this.wait - this._atom_time)
         if (this.wait < 0) this.wait = 0;
       }
+    } else if (this.frame.next) {
+      this.enter_frame(this.frame.next)
     } else {
-      const { next } = this.frame;
-      let nf = next ? this.get_next_frame(next)?.which : void 0;
-      if (nf) nf = { ...nf, __judger: void 0 }
-      else nf = { id: this.find_auto_frame().id }
-      this.enter_frame(nf)
+      this.set_frame(this.find_auto_frame())
     }
     this.handle_gravity();
     this.update_velocity(this.frame);
