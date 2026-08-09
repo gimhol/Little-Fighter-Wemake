@@ -41,7 +41,6 @@ import { StatBarType } from "./StatBarType";
 import { summary_mgr } from "./SummaryMgr";
 import { turn_face } from "./face_helper";
 import { is_fighter, is_human_ctrl } from "./type_check";
-
 import { sus_cases } from "../cases_instances";
 import { collision_clone } from "../collision/Collision";
 import type { ITerrainInfo } from "../defines/ITerrainInfo";
@@ -1669,10 +1668,7 @@ export class Entity {
     */
     const just_land = !is_on_ground && (
       this.position.y <= _ground_y
-    ) && (
-        // 有点糟
-        _ground_y > 0 || this.velocity.y < 0
-      )
+    )
 
     // 落地
     if (just_land) {
@@ -2021,6 +2017,8 @@ export class Entity {
 
   release(): void {
     if (!this._mounted) return;
+    this.bearer?.drop_holding();
+    this.catcher?.drop_catching();
     this._mounted = 0;
     this.world.del_entity(this);
     this.callbacks.call("on_disposed", this);
