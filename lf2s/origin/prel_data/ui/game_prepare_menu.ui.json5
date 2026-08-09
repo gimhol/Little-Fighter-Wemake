@@ -184,6 +184,7 @@
               component: ["Reachable(menu)"],
               actions: {
                 click: ["switch_difficulty()", "sound(ok)"],
+                rclick: ["switch_difficulty(-1)", "sound(ok)"],
               },
             },
             {
