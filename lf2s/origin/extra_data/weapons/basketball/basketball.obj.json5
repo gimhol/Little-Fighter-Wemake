@@ -9,7 +9,7 @@
     files: {
       "0": {
         id: "0",
-        path: "sprite/basketball.png"
+        path: "!weapons/basketball/basketball@4x.png"
       },
     },
     type: 4,
