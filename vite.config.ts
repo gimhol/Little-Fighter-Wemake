@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
@@ -7,6 +8,24 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import json from "./package.json";
 import dayjs from "dayjs"
 
+function getGitCommitId(): string {
+  try {
+    return execSync('git rev-parse HEAD').toString().trim();
+  } catch {
+    return "";
+  }
+}
+
+function isGitDirty(): boolean {
+  try {
+    return execSync('git status --porcelain').toString().trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+const GIT_COMMIT_ID = getGitCommitId();
+const GIT_COMMIT_DIRTY = isGitDirty();
 export default defineConfig({
   base: './',
   plugins: [
@@ -23,6 +42,8 @@ export default defineConfig({
   ],
   define: {
     VERSION_NAME: JSON.stringify(json.version),
+    GIT_COMMIT_ID: JSON.stringify(GIT_COMMIT_ID),
+    GIT_COMMIT_DIRTY: JSON.stringify(GIT_COMMIT_DIRTY ? "dirty" : ""),
     BUILD_TIME: JSON.stringify(dayjs().format(`YYYY-MM-DD HH:mm:ss`)),
   },
   resolve: {

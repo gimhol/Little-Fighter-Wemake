@@ -53,4 +53,8 @@ ewents.filter = async (type: string, event: object) => {
 }
 ewents.mount()
 ewents.submit_visit()
-LFW.VERSION_NAME = `v${VERSION_NAME} ${BUILD_TIME}`;
+
+LFW.VERSION_NAME = [
+  `v${VERSION_NAME}-${GIT_COMMIT_ID.substring(0, 7)}${GIT_COMMIT_DIRTY ? `-${GIT_COMMIT_DIRTY}` : ''}`,
+  `${BUILD_TIME}`
+].filter(v => v).join(' ');
