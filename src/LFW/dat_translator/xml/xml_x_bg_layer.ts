@@ -3,7 +3,7 @@ import type { IXML, IXMLElement } from "../../ditto";
 import { reorder_keys } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 
-export function xml_2_bg_layer(el: IXMLElement, defaultZ: number | undefined): IBgLayerInfo {
+export function xml_2_bg_layer(el: IXMLElement, index: number): IBgLayerInfo {
   const ret = bg_layer_info_new();
   const pos = el.get_num_arr('pos');
   const size = el.get_num_arr('size');
@@ -19,7 +19,7 @@ export function xml_2_bg_layer(el: IXMLElement, defaultZ: number | undefined): I
   ret.y           /**/ = el.get_num("y") ?? pos?.[1] ?? rect?.[1] ?? ret.y
   ret.w           /**/ = el.get_num("w") ?? size?.[0] ?? rect?.[2] ?? ret.w
   ret.h           /**/ = el.get_num("h") ?? size?.[1] ?? rect?.[3] ?? ret.h
-  ret.z           /**/ = el.get_num("z") ?? defaultZ ?? ret.z
+  ret.z           /**/ = el.get_num("z") ?? index ?? ret.z
   ret.loop        /**/ = el.get_num("loop") ?? ret.loop;
   ret.absolute    /**/ = el.get_num("absolute") ?? ret.absolute;
   ret.color       /**/ = el.get_str("color") ?? ret.color;

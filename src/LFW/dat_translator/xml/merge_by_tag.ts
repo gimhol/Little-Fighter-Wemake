@@ -9,7 +9,18 @@ import type { IXMLElement } from "../../ditto";
  * @return 合并后的解析结果，无匹配时 undefined
  */
 
-
+export function merge_by_tag<T extends Record<string, any>>(
+  el: IXMLElement,
+  tag: string,
+  parser: (child: IXMLElement) => T,
+  target: T
+): T
+export function merge_by_tag<T extends Record<string, any>>(
+  el: IXMLElement,
+  tag: string,
+  parser: (child: IXMLElement) => T,
+  target?: T
+): T | undefined
 export function merge_by_tag<T extends Record<string, any>>(
   el: IXMLElement,
   tag: string,
