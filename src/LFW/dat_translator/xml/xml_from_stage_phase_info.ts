@@ -1,8 +1,8 @@
 import type { IStagePhaseInfo } from "../../defines/IStagePhaseInfo";
 import type { IXMLElement, IXML } from "../../ditto/xml";
-import { write_diff_map } from "./diff_map_utils";
+import { xml_x_difficulty_map } from "./xml_x_difficulty_map";
 import { xml_from_dialog_info } from "./xml_from_dialog_info";
-import { xml_from_stage_object_info } from "./xml_from_stage_object_info";
+import { xml_x_stage_object_info } from "./xml_x_stage_object_info";
 
 /**
  * 序列化 <phase>
@@ -28,11 +28,11 @@ export function xml_from_stage_phase_info(xml: IXML, p: IStagePhaseInfo): IXMLEl
   el.set_attr("player_jump_to_z", p.player_jump_to_z);
   el.set_attr("player_facing", p.player_facing as number);
 
-  write_diff_map(el, "respawn", p.respawn as Record<number, number>);
-  write_diff_map(el, "respawn_r", p.respawn_r as Record<number, number>);
-  write_diff_map(el, "respawn_x", p.respawn_x as Record<number, number>);
-  write_diff_map(el, "health_up", p.health_up as Record<number, number>);
-  write_diff_map(el, "mp_up", p.mp_up as Record<number, number>);
+  xml_x_difficulty_map(el, "respawn", p.respawn as Record<number, number>);
+  xml_x_difficulty_map(el, "respawn_r", p.respawn_r as Record<number, number>);
+  xml_x_difficulty_map(el, "respawn_x", p.respawn_x as Record<number, number>);
+  xml_x_difficulty_map(el, "health_up", p.health_up as Record<number, number>);
+  xml_x_difficulty_map(el, "mp_up", p.mp_up as Record<number, number>);
 
   el.set_attr("end_test", p.end_test);
   el.set_attr("on_start", p.on_start);
@@ -57,7 +57,7 @@ export function xml_from_stage_phase_info(xml: IXML, p: IStagePhaseInfo): IXMLEl
 
   if (p.objects?.length) {
     for (const o of p.objects) {
-      el.insert(xml_from_stage_object_info(xml, o));
+      el.insert(xml_x_stage_object_info(xml, o, "object"));
     }
   }
 

@@ -1,13 +1,13 @@
-import { Difficulty } from "./Difficulty";
 import { any, fields, flt, int, str } from "../fields";
+import { Difficulty } from "./Difficulty";
 
 export interface IStageObjectInfo {
   /** 物件ID的生成方式（TODO: 待实现） */
   id_method?: string; // TODO
   /** 物件类型ID列表，可为具体角色/物品ID或随机组ID */
-  id: string[];
+  id?: string[];
   /** 生成位置的X坐标（水平） */
-  x: number;
+  x?: number;
   /** 生成位置的Y坐标（垂直） */
   y?: number;
   /** 生成位置的Z坐标（深度） */
@@ -15,7 +15,7 @@ export interface IStageObjectInfo {
   /** 生成时的初始动作 */
   act?: string;
   /** 生成时的朝向：-1为左，1为右 */
-  facing?: -1 | 1;
+  facing?: number;
   /** 血量 */
   hp?: number;
   /** 蓝量 */
@@ -24,7 +24,7 @@ export interface IStageObjectInfo {
   hp_map?: { [x in Difficulty]?: number }
   /** 不同难度下的蓝量 */
   mp_map?: { [x in Difficulty]?: number }
-  
+
 
   /**
    * 出现次数
@@ -75,7 +75,9 @@ export interface IStageObjectInfo {
   /** 自定义描边颜色，如 '#FF0000'。未设置时使用队伍默认颜色 */
   outline_color?: string;
 }
-
+export function stage_object_info_new(): IStageObjectInfo {
+  return {}
+}
 export const stage_object_info_fields = fields<IStageObjectInfo>({
   id_method: str('ID生成方式'),
   id: str('物件ID', { array: true }),

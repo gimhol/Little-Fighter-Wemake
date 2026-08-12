@@ -46,18 +46,20 @@ export class Item {
     this.times = info.times ? round(info.times) : void 0;
     const data_list: IEntityData[] = [];
     const randoming_list: Randoming<IEntityData>[] = []
-    for (const oid of this.info.id) {
-      const data = this.lfw.datas.find(oid);
-      if (data) {
-        if (is_fighter_data(data))
+    if (this.info.id?.length) {
+      for (const oid of this.info.id) {
+        const data = this.lfw.datas.find(oid);
+        if (data) {
+          if (is_fighter_data(data))
+            this._is_fighter = true;
+          data_list.push(data);
+          continue;
+        }
+        const randoming = this.lfw.datas.get_randoming_by_group(oid)
+        if (randoming.src.some(data => is_fighter_data(data)))
           this._is_fighter = true;
-        data_list.push(data);
-        continue;
+        if (randoming.src.length) randoming_list.push(randoming);
       }
-      const randoming = this.lfw.datas.get_randoming_by_group(oid)
-      if (randoming.src.some(data => is_fighter_data(data)))
-        this._is_fighter = true;
-      if (randoming.src.length) randoming_list.push(randoming);
     }
     if (data_list.length === 1 && !randoming_list.length) {
       this.data = data_list[0]
@@ -105,7 +107,7 @@ export class Item {
     const e = this.lfw.factory.create_entity(this.world, data);
     if (!e) { debugger; return false; }
     let {
-      hp, act, facing, x, y, z, reserve, hp_map, mp, mp_map,
+      hp, act, facing, x = 0, y, z, reserve, hp_map, mp, mp_map,
       outline_color
     } = this.info;
     if (this.times) this.times--;
@@ -155,7 +157,7 @@ export class Item {
     }
     e.team = this.stage.team;
     e.attach();
-    if (facing) e.facing = facing;
+    if (facing == 1 || facing == -1) e.facing = facing;
     if (is_str(act)) e.enter_frame_by_id(act);
     else if (is_fighter(e)) e.enter_frame_by_id("running_0")
     else e.enter_frame(Defines.NEXT_FRAME_AUTO);

@@ -1,8 +1,8 @@
 import type { IStagePhaseInfo } from "../../defines/IStagePhaseInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { parse_diff_map } from "./diff_map_utils";
+import { xml_2_difficulty_map } from "./xml_x_difficulty_map";
 import { xml_to_dialog_info } from "./xml_to_dialog_info";
-import { xml_to_stage_object_info } from "./xml_to_stage_object_info";
+import { xml_2_stage_object_info } from "./xml_x_stage_object_info";
 
 /**
  * 解析 <phase> → IStagePhaseInfo
@@ -54,7 +54,7 @@ export function xml_to_stage_phase_info(el: IXMLElement): IStagePhaseInfo {
   // objects
   const objs = el.children_by_tag("object");
   if (objs.length) {
-    ret.objects = objs.map(o => xml_to_stage_object_info(o));
+    ret.objects = objs.map(o => xml_2_stage_object_info(o));
   }
 
   // dialogs
@@ -64,11 +64,11 @@ export function xml_to_stage_phase_info(el: IXMLElement): IStagePhaseInfo {
   }
 
   // difficulty maps
-  ret.respawn = parse_diff_map(el, "respawn");
-  ret.respawn_r = parse_diff_map(el, "respawn_r");
-  ret.respawn_x = parse_diff_map(el, "respawn_x");
-  ret.health_up = parse_diff_map(el, "health_up");
-  ret.mp_up = parse_diff_map(el, "mp_up");
+  ret.respawn = xml_2_difficulty_map(el, "respawn");
+  ret.respawn_r = xml_2_difficulty_map(el, "respawn_r");
+  ret.respawn_x = xml_2_difficulty_map(el, "respawn_x");
+  ret.health_up = xml_2_difficulty_map(el, "health_up");
+  ret.mp_up = xml_2_difficulty_map(el, "mp_up");
 
   return ret;
 }

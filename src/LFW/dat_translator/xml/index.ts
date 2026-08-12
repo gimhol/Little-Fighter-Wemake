@@ -1,6 +1,6 @@
 /*** AUTO EXPORT START ***/
 export * from "./delete_undefined";
-export * from "./diff_map_utils";
+export * from "./xml_x_difficulty_map";
 export * from "./one_or_arr";
 export * from "./xml_x_armor_info";
 export * from "./xml_from_dat_index";
@@ -15,7 +15,7 @@ export * from "./xml_from_json";
 export * from "./xml_from_key_collection";
 export * from "./xml_x_next_frame";
 export * from "./xml_from_stage_info";
-export * from "./xml_from_stage_object_info";
+export * from "./xml_x_stage_object_info";
 export * from "./xml_from_stage_phase_info";
 export * from "./xml_from_world_dataset";
 export * from "./xml_x_bg_data";
@@ -29,7 +29,6 @@ export * from "./xml_to_dialog_info";
 export * from "./xml_to_key_collection";
 export * from "./xml_x_qube";
 export * from "./xml_to_stage_info";
-export * from "./xml_to_stage_object_info";
 export * from "./xml_to_stage_phase_info";
 export * from "./xml_to_velocity_info";
 export * from "./xml_to_world_dataset";

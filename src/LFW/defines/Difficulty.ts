@@ -8,6 +8,12 @@ export enum Difficulty {
   MIN = 1,
   MAX = 4,
 }
+export const DifficultyList = [
+  Difficulty.Easy,
+  Difficulty.Normal,
+  Difficulty.Difficult,
+  Difficulty.Crazy,
+]
 export const DifficultyDescriptions: Record<Difficulty, string> = {
   [Difficulty.Easy]: "",
   [Difficulty.Normal]: "",
