@@ -59,7 +59,7 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
             if (key === "id") object.id = [value];
             else if (key === "act") object.act = value;
             else (object as any)[key] = to_num(value) ?? (object as any)[key];
-            object.facing = object.x < 0 ? 1 : -1;
+            object.facing = (object.x && object.x < 0) ? 1 : -1;
           }
           phase_info.objects?.push(object);
         }
@@ -81,7 +81,8 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
     }
     for (let i = 0; i < stage_info.phases.length; i++) {
       const p = stage_info.phases[i];
-      p.enemy_r = p.bound + 200;
+      // bound 应该是原版必有的，此处'!' -Gim
+      p.enemy_r = p.bound! + 200;
       p.enemy_l = -200;
       p.on_end = [StageActions.EnterNextPhase]
       if (i == stage_info.phases.length - 1)

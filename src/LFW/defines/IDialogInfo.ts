@@ -50,7 +50,7 @@ export interface IDialogInfo {
    * 
    * 无结束测试器时, 对话框完毕，且敌人被清空视为结束
    */
-  end_testers?: IExpression<any>[];
+  __end_testers?: IExpression<any>[];
 }
 
 export enum DialogCloseBy {
@@ -68,5 +68,5 @@ export const dialog_info_fields = fields<Partial<IDialogInfo>>({
   close_by: str('关闭方式', '默认 press_a'),
   hide_stats: int('隐藏状态栏'),
   end_test: str('结束判定', { array: true }),
-  end_testers: any('结束测试器', { array: true }),
+  __end_testers: any('结束测试器', { array: true }),
 });

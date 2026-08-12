@@ -184,7 +184,7 @@ export class Stage {
     if (phase === this.phase) return;
     // Ditto.debug('set_phase', phase)
     this.phase_time = 0;
-    this.phase_end_tester.reset(phase?.end_testers ?? [])
+    this.phase_end_tester.reset(phase?.__end_testers ?? [])
 
     const prev = this.phase
     this.callbacks.call("on_phase_changed", this, this._phase = phase, prev);
@@ -285,7 +285,7 @@ export class Stage {
     if (index < 0) {
       index = prev.index + 1;
       this.dialog_time = 0;
-      this.dialog_end_tester.reset(list[index]?.end_testers ?? [])
+      this.dialog_end_tester.reset(list[index]?.__end_testers ?? [])
     }
     const curr = this._dialogs = { ...prev, list, index }
     this.callbacks.call('on_dialogs_changed', curr, prev, this)
@@ -295,7 +295,7 @@ export class Stage {
     // prev.index == prev.list.length 代表结束，这是允许的。
     if (prev.index >= prev.list.length) return
     const curr = this._dialogs = { ...prev, index: prev.index + 1 }
-    this.dialog_end_tester.reset(curr.list[curr.index]?.end_testers ?? [])
+    this.dialog_end_tester.reset(curr.list[curr.index]?.__end_testers ?? [])
     this.dialog_time = 0;
     this.callbacks.call('on_dialogs_changed', curr, prev, this)
   }

@@ -4,6 +4,28 @@ import type { Difficulty } from "./Difficulty";
 import type { IDialogInfo } from "./IDialogInfo";
 import type { IExpression } from "./IExpression";
 import type { IStageObjectInfo } from "./IStageObjectInfo";
+
+export interface ISoundPlayInfo {
+  path: string;
+  x?: number;
+  y?: number;
+  z?: number;
+  desc?: string;
+}
+export function sound_play_info_new(): ISoundPlayInfo {
+  return { path: '' }
+}
+export const sound_play_info_fields = fields<ISoundPlayInfo>({
+  path: str,
+  x: int,
+  y: int,
+  z: int,
+  desc: str
+})
+
+
+
+
 /**
  * 关卡阶段信息
  *
@@ -13,7 +35,7 @@ import type { IStageObjectInfo } from "./IStageObjectInfo";
 export interface IStagePhaseInfo {
   title?: string;
   /** @deprecated */
-  bound: number;
+  bound?: number;
   /** 玩家左边界 */
   player_l?: number;
   /** 玩家右边界 */
@@ -32,7 +54,6 @@ export interface IStagePhaseInfo {
   drink_r?: number;
   /** 关卡描述 */
   desc?: string;
-  objects?: IStageObjectInfo[];
 
   /** 
    * 背景音乐 
@@ -41,30 +62,6 @@ export interface IStagePhaseInfo {
    * @type {string}
    */
   music?: string;
-
-  /**
-   * 播放音效
-   * 
-   * @type {string}
-   */
-  sounds?: {
-    path: string,
-    x?: number,
-    y?: number,
-    z?: number
-  }[]
-
-  respawn?: { [x in Difficulty]?: number };
-  respawn_r?: { [x in Difficulty]?: number };
-  respawn_x?: { [x in Difficulty]?: number };
-  /**
-   *
-   *
-   * @type {number}
-   * @memberof IStagePhaseInfo
-   */
-  health_up?: { [x in Difficulty]?: number },
-  mp_up?: { [x in Difficulty]?: number },
 
   /**
    * 相机跳至位置
@@ -86,7 +83,7 @@ export interface IStagePhaseInfo {
    *
    * @type {?number}
    */
-  player_facing?: -1 | 1;
+  player_facing?: number;
 
   /** 
    * 结束判定 
@@ -94,6 +91,29 @@ export interface IStagePhaseInfo {
    * @type {string[]}
    */
   end_test?: string[];
+  on_start?: string[];
+  on_end?: string[];
+
+  /** 隐藏状态栏 */
+  hide_stats?: number;
+
+  world_pause?: number;
+  control_disabled?: number;
+  weapon_rain_disabled?: number;
+
+  respawn?: { [x in Difficulty]?: number };
+  respawn_r?: { [x in Difficulty]?: number };
+  respawn_x?: { [x in Difficulty]?: number };
+  health_up?: { [x in Difficulty]?: number },
+  mp_up?: { [x in Difficulty]?: number },
+  /**
+   * 播放音效
+   * 
+   * @type {string}
+   */
+  sounds?: ISoundPlayInfo[]
+  objects?: IStageObjectInfo[];
+  dialogs?: IDialogInfo[];
 
   /**
    * 结束测试器
@@ -103,19 +123,10 @@ export interface IStagePhaseInfo {
    * 
    * 无结束测试器时, 对话框完毕，且敌人被清空视为结束
    */
-  end_testers?: IExpression<any>[];
-
-  on_start?: string[];
-  on_end?: string[];
-
-  dialogs?: IDialogInfo[];
-
-  /** 隐藏状态栏 */
-  hide_stats?: number;
-
-  world_pause?: number;
-  control_disabled?: number;
-  weapon_rain_disabled?: number;
+  __end_testers?: IExpression<any>[];
+}
+export function stage_phase_info_new(): IStagePhaseInfo {
+  return {}
 }
 
 export const stage_phase_info_fields = fields<Partial<IStagePhaseInfo>>({
@@ -143,7 +154,7 @@ export const stage_phase_info_fields = fields<Partial<IStagePhaseInfo>>({
   player_jump_to_z: flt('玩家跳至Z'),
   player_facing: int('玩家朝向', { options: [{ value: -1, label: '左' }, { value: 1, label: '右' }] }),
   end_test: str('结束判定', { array: true }),
-  end_testers: any('结束测试器', { array: true }),
+  __end_testers: any('结束测试器', { array: true }),
   on_start: str('开始时动作', { array: true }),
   on_end: str('结束时动作', { array: true }),
   dialogs: any('对话框', { array: true }),

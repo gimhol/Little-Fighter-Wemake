@@ -1,14 +1,14 @@
 import type { IStageInfo } from "../../defines/IStageInfo";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { xml_to_stage_phase_info } from "./xml_to_stage_phase_info";
-export { xml_to_stage_phase_info };
+import { xml_2_stage_phase_info } from "./xml_x_stage_phase_info";
+export { xml_2_stage_phase_info as xml_to_stage_phase_info };
 
 export function xml_to_stage_info(el: IXMLElement): IStageInfo {
   return {
     id: el.attr("id") ?? "",
     name: el.get_str("name") ?? "",
     bg: el.get_str("bg") ?? "",
-    phases: el.children_by_tag("phase").map(xml_to_stage_phase_info),
+    phases: el.children_by_tag("phase").map(xml_2_stage_phase_info),
     chapter: el.get_str("chapter"),
     next: el.get_str("next"),
     cond_end: el.get_str("cond_end"),

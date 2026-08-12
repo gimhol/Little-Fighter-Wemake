@@ -1,6 +1,6 @@
 import type { IStageInfo } from "../../defines/IStageInfo";
 import type { IXML } from "../../ditto/xml";
-import { xml_from_stage_phase_info } from "./xml_from_stage_phase_info";
+import { xml_x_stage_phase_info } from "./xml_x_stage_phase_info";
 
 /**
  * 序列化关卡信息列表为 XML（<stages> 包裹多个 <stage>）
@@ -22,7 +22,7 @@ export function xml_from_stage_info(xml: IXML, stages: IStageInfo[]): string {
     if (s.group?.length) el.set_attr("group", s.group);
 
     for (const phase of s.phases) {
-      el.insert(xml_from_stage_phase_info(xml, phase));
+      el.insert(xml_x_stage_phase_info(xml, phase));
     }
 
     root.insert(el);
