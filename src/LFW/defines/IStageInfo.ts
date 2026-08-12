@@ -20,7 +20,7 @@ export interface IStageInfo {
    * @memberof IStageInfo
    */
   bg: string;
-  
+
   name: string;
 
   phases: IStagePhaseInfo[];
@@ -78,6 +78,15 @@ export interface IStageInfo {
   title?: string;
 
   group?: string[];
+}
+
+export function stage_info_new(): IStageInfo {
+  return {
+    id: "",
+    bg: "",
+    name: "",
+    phases: []
+  }
 }
 
 export const stage_info_fields = fields<IStageInfo>({
