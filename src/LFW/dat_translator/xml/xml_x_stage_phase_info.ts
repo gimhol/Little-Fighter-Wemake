@@ -2,8 +2,7 @@ import { sound_play_info_new, stage_phase_info_fields, stage_phase_info_new, typ
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { reorder_keys } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
-import { xml_x_dialog_info } from "./xml_from_dialog_info";
-import { xml_to_dialog_info } from "./xml_to_dialog_info";
+import { xml_2_dialog_info, xml_x_dialog_info } from "./xml_x_dialog_info";
 import { xml_2_difficulty_map, xml_x_difficulty_map } from "./xml_x_difficulty_map";
 import { xml_2_non_empty, xml_x_non_empty } from "./xml_x_non_empty";
 import { xml_2_stage_object_info, xml_x_stage_object_info } from "./xml_x_stage_object_info";
@@ -107,7 +106,7 @@ export function xml_2_stage_phase_info(el: IXMLElement): IStagePhaseInfo {
 
   xml_2_non_empty(el, "sound", xml_2_sound_play_info);
   xml_2_non_empty(el, "object", xml_2_stage_object_info);
-  xml_2_non_empty(el, "dialog", xml_to_dialog_info);
+  xml_2_non_empty(el, "dialog", xml_2_dialog_info);
 
   delete_undefined(ret);
   reorder_keys(ret, stage_phase_info_fields);

@@ -4,8 +4,9 @@ import { any, fields, int, str } from "../fields";
 export interface IDialogInfo {
   /** 
    * 对话框类型 
+   * 'left' | 'right'
    */
-  type?: 'left' | 'right'
+  type?: string;
 
   /** 
    * 说话的角色ID
@@ -20,7 +21,7 @@ export interface IDialogInfo {
   /**
    * 对话文本
    */
-  i18n: string;
+  i18n?: string;
 
   /** 
    * 如果关闭当前对话 
@@ -52,7 +53,9 @@ export interface IDialogInfo {
    */
   __end_testers?: IExpression<any>[];
 }
-
+export function dialog_info_new(): IDialogInfo {
+  return {}
+}
 export enum DialogCloseBy {
   PRESS_A = 'press_a'
 }

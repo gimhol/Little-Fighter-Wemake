@@ -42,7 +42,7 @@ export class Dialogs extends UIComponent<IDialogsProps> {
   show_dialog(dialog: IDialogInfo) {
     this._transform.scale_to(1, 1, 1, true)
     this.node.visible = true;
-    const text = this.lfw.string(dialog.i18n)
+    const text = this.lfw.string(dialog.i18n || "")
     this.props.text?.set_text(text);
 
     const fighter = dialog.fighter ? this.lfw.datas.find_fighter(dialog.fighter) : void 0
