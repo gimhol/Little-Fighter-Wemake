@@ -30,7 +30,7 @@ export function xml_2_sound_play_info(el: IXMLElement): ISoundPlayInfo {
 }
 
 
-export function xml_x_stage_phase_info(xml: IXML, p: IStagePhaseInfo, tag = "phase"): IXMLElement {
+export function xml_x_stage_phase_info(xml: IXML, p: IStagePhaseInfo, tag: string): IXMLElement {
   const el = xml.create(tag);
   el.set_attr("title", p.title);
   el.set_attr("desc", p.desc);

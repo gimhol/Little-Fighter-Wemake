@@ -23,8 +23,6 @@ export interface IStageInfo {
 
   name: string;
 
-  phases: IStagePhaseInfo[];
-
   /**
    * 所属章ID
    * 
@@ -78,6 +76,8 @@ export interface IStageInfo {
   title?: string;
 
   group?: string[];
+  
+  phases: IStagePhaseInfo[];
 }
 
 export function stage_info_new(): IStageInfo {
@@ -93,15 +93,15 @@ export const stage_info_fields = fields<IStageInfo>({
   id: str('关卡ID'),
   bg: str('背景ID'),
   name: str('名称'),
-  phases: any('阶段列表', { array: true }),
   chapter: str('所属章节'),
   next: str('下一关'),
+  group: str('分组', { array: true }),
   cond_end: str('结束条件', '默认全部阶段结束'),
   act_of_goto_next: str('通过动作', '默认玩家跑到场景最右边'),
   is_starting: any('初始关卡', { options: [{ value: true, label: 'YES' }, { value: false, label: 'NO' }] }),
   starting_name: str('起点名称'),
   title: str('大标题'),
-  group: str('分组', { array: true }),
+  phases: any('阶段列表', { array: true }),
 });
 
 export const Schema_IStageInfo = make_schema<IStageInfo>({

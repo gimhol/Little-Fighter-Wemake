@@ -27,7 +27,7 @@ export * from "./xml_to_data_lists";
 export * from "./xml_x_dialog_info";
 export * from "./xml_to_key_collection";
 export * from "./xml_x_qube";
-export * from "./xml_to_stage_info";
+export * from "./xml_x_stage_info";
 export * from "./xml_to_velocity_info";
 export * from "./xml_to_world_dataset";
 export * from "./xml_x_bdy";

@@ -3,7 +3,7 @@ import { LFW } from "../LFW";
 import { BotController } from "../bot/BotController";
 import { BallController } from "../controller/BallController";
 import { xml_to_data_lists } from "../dat_translator/xml/xml_to_data_lists";
-import { xml_to_stage_info_list } from "../dat_translator/xml/xml_to_stage_info";
+import { xml_to_stage_info_list } from "../dat_translator/xml/xml_x_stage_info";
 import { xml_2_bg_data, xml_x_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
 import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IStageInfo } from "../defines";
