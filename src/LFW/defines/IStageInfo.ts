@@ -11,7 +11,7 @@ export interface IStageInfo {
    * @type {string}
    * @memberof IStageInfo
    */
-  id: string;
+  id?: string;
 
   /**
    * 关卡使用的背景ID
@@ -19,9 +19,9 @@ export interface IStageInfo {
    * @type {string}
    * @memberof IStageInfo
    */
-  bg: string;
+  bg?: string;
 
-  name: string;
+  name?: string;
 
   /**
    * 所属章ID
@@ -77,16 +77,11 @@ export interface IStageInfo {
 
   group?: string[];
   
-  phases: IStagePhaseInfo[];
+  phases?: IStagePhaseInfo[];
 }
 
 export function stage_info_new(): IStageInfo {
-  return {
-    id: "",
-    bg: "",
-    name: "",
-    phases: []
-  }
+  return {}
 }
 
 export const stage_info_fields = fields<IStageInfo>({

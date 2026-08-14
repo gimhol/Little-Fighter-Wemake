@@ -1,7 +1,7 @@
 import { Difficulty as DF } from "../defines/Difficulty";
-import type { IStageInfo } from "../defines/IStageInfo";
+import { stage_info_new, type IStageInfo } from "../defines/IStageInfo";
 import type { IStageObjectInfo } from "../defines/IStageObjectInfo";
-import type { IStagePhaseInfo } from "../defines/IStagePhaseInfo";
+import { stage_phase_info_new, type IStagePhaseInfo } from "../defines/IStagePhaseInfo";
 import { StageActions } from "../defines/StageActions";
 import { match_colon_value } from "../utils/string_parser/match_colon_value";
 import { match_hash_end } from "../utils/string_parser/match_hash_end";
@@ -18,20 +18,13 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
   const r_0 = take_blocks(full_str, "<stage>", "<stage_end>")
   full_str = r_0.remains;
   for (let stage_str of r_0.blocks) {
-    const stage_info: IStageInfo = {
-      bg: "",
-      id: "",
-      name: "",
-      phases: [],
-    };
+    const phases: IStagePhaseInfo[] = []
+    const stage_info = stage_info_new();
+    stage_info.phases = phases;
     const r1 = take_blocks(stage_str, "<phase>", "<phase_end>")
     stage_str = r1.remains
     for (let phase_str of r1.blocks) {
-      const phase_info: IStagePhaseInfo = {
-        bound: 0,
-        desc: "",
-        objects: [],
-      };
+      const phase_info = stage_phase_info_new();
       for (let line of phase_str.trim().split("\n")) {
         line = line.trim();
         if (!line) continue;
@@ -71,9 +64,9 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
       (stage_info as any)[key] = value;
     }
     const nid = Number(stage_info.id);
-    stage_info.name = (match_hash_end(head) ?? stage_info.id)
-      .replace(/stage/gi, "")
-      .trim();
+    stage_info.name = (match_hash_end(head) ?? stage_info?.id)?.
+      replace(/stage/gi, "").
+      trim();
 
     if (nid % 10 === 0) {
       stage_info.is_starting = true;
@@ -172,7 +165,8 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
   }
 
   for (const stage_info of stage_infos) {
-    const first_phase = stage_info.phases[0];
+    const first_phase = stage_info.phases?.[0];
+    if (!first_phase) continue;
     first_phase.cam_jump_to_x = 0;
     first_phase.player_jump_to_x = 0;
     first_phase.player_facing = 1;
@@ -194,7 +188,7 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
     const next = stage_infos.find(v => v.id === s.next)
     const is_stage_end = s.next === 'end' || !s.next || next?.chapter !== s.chapter;
     if (!is_stage_end) continue;
-    const last_phase = s.phases[s.phases.length - 1]
+    const last_phase = s.phases?.[s.phases.length - 1]
     if (!last_phase) continue;
     last_phase.on_end = void 0;
   }

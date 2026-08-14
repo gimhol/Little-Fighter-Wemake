@@ -45,8 +45,8 @@ export class Stage {
 
   get bg(): Background { return this.world.bg; }
   get phases() { return this.data.phases }
-  get id(): string { return this.data.id; }
-  get name(): string { return this.data.name; }
+  get id(): string { return this.data.id || ""; }
+  get name(): string { return this.data.name || ""; }
 
   get time() { return this.fsm.time; }
   set time(v) { this.fsm.time = v; }
@@ -307,8 +307,8 @@ export class Stage {
 
   enter_phase(idx: number) {
     if (this.world.stage !== this) return;
-    this.set_phase(this.data.phases[this._phase_idx = idx])
-    this._is_stage_finish = this.data.phases.length > 0 && this._phase_idx >= this.data.phases.length
+    this.set_phase(this.data.phases?.[this._phase_idx = idx])
+    this._is_stage_finish = !this.data.phases?.length || this._phase_idx >= this.data.phases.length
     this._is_chapter_finish = this._is_stage_finish && this.next_stage?.chapter !== this.data.chapter
     return
   }

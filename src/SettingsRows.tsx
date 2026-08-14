@@ -66,7 +66,7 @@ export default function SettingsRows(props: ISettingsRowsProps) {
       set_stage_phase_idx(stage?.phase_idx ?? -1);
       stage?.callbacks.add({
         on_phase_changed(stage, curr) {
-          set_stage_phase_idx(curr ? stage.data.phases.indexOf(curr) : -1);
+          set_stage_phase_idx(stage.data.phases?.indexOf(curr!) ?? -1);
         },
       });
     };
@@ -137,7 +137,7 @@ export default function SettingsRows(props: ISettingsRowsProps) {
   }, [lf2, set_dwds, set_cwds])
 
   if (!lf2 || visible === false) return <></>;
-    const on_click_add_weapon = () => {
+  const on_click_add_weapon = () => {
     weapon_id ? lf2.weapons.add(weapon_id, rwn) : lf2.weapons.add_random(rwn);
   };
   const on_click_del_weapon = () => {
@@ -166,7 +166,7 @@ export default function SettingsRows(props: ISettingsRowsProps) {
               value={stage_id}
               onChange={v => lf2.change_stage(v || '')}
               options={stage_list}
-              parse={(i) => [i.id, i.name]}
+              parse={(i) => [i.id!, i.name]}
             />
             {!stage_phase_list.length ? null : (
               <Select

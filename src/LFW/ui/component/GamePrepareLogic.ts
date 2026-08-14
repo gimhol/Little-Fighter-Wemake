@@ -59,7 +59,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
     const { bg_switcher, stage_switcher } = this.props
     if (stage_switcher?.node.visible && !stage_switcher.node.disabled)
-      this.lfw.change_bg(stage_switcher.stage.bg);
+      this.lfw.change_bg(stage_switcher.stage.bg ?? "");
     else if (bg_switcher?.node.visible && !bg_switcher.node.disabled)
       this.lfw.change_bg(bg_switcher.background.id);
 
@@ -107,7 +107,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
     if (is_stage_mode) {
       if (stage_switcher)
-        this.lfw.change_stage(stage_switcher.stage.id);
+        this.lfw.change_stage(stage_switcher.stage.id ?? "");
       this.lfw.push_ui({ id: "stage_mode_page" });
     } else {
       this.lfw.push_ui({ id: "vs_mode_page" });

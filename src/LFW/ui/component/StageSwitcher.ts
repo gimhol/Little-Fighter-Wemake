@@ -27,8 +27,8 @@ export class StageSwitcher extends Label {
     return this._stage;
   }
   get stage_text(): string {
-    if (this.show_all) return this._stage.name;
-    return this._stage.starting_name ?? this._stage.name;
+    if (this.show_all) return this._stage.name ?? "";
+    return this._stage.starting_name ?? this._stage.name ?? "";
   }
   override on_resume(): void {
     this.lfw.callbacks.add(this)

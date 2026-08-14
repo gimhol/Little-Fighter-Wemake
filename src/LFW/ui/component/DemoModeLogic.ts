@@ -323,7 +323,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       this.world_callbacks.on_fighter_add?.(f)
     }
     if (is_stage_mode && stage) {
-      this.lfw.change_stage(stage.id);
+      this.lfw.change_stage(stage.id ?? "");
       this.lfw.world.stage.callbacks.add(this.stage_callbacks);
     }
     this.lfw.world.callbacks.add(this.world_callbacks);
