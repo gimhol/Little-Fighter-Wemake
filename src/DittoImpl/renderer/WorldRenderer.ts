@@ -9,9 +9,6 @@ import { EntityRenderer } from "./EntityRenderer";
 import { TerrainIndicator } from "./TerrainIndicator";
 import csses from "./styles.module.scss";
 
-/** 离屏裁剪：y 方向固定裕量（场地单位）；x 方向用实体帧的 l_len/r_len 动态裕量 */
-const OFFSCREEN_MARGIN = 200;
-
 export class WorldRenderer implements IWorldRenderer {
   readonly lfw: LFW;
   readonly world: World;
@@ -97,8 +94,7 @@ export class WorldRenderer implements IWorldRenderer {
   }
 
   add_entity(entity: Entity): void {
-    if (entity.bearer || entity.catcher || this.is_on_screen(entity))
-      this.mount_renderer(entity)
+    this.mount_renderer(entity)
   }
   /** 创建（如有）+ 挂载 + 登记渲染器 */
   protected mount_renderer(entity: Entity): void {
@@ -114,42 +110,12 @@ export class WorldRenderer implements IWorldRenderer {
     renderer.unmount();
     renderer.mounted = false;
   }
-  /** 离屏判定：2D 正交相机，视口 = [camera, camera + screen]（场地坐标经 world_node 变换） */
-  protected is_on_screen(e: Entity): boolean {
-    const { dataset } = this.world;
-    const np = this.world_node.position;
-    const sp = this.world_node.scale;
-    const sx = sp.x || 1;
-    const sy = sp.y || 1;
-    // 相机视口左下角（场地坐标）
-    const cam_x = (this.camera.position.x - np.x) / sx;
-    const cam_y = (this.camera.position.y - np.y) / sy;
-    // x：用帧左右延展（centerx/width 派生，含朝向）作动态裕量，实体边缘刚出视口才裁
-    if (e.position.x < cam_x - e.r_len || e.position.x > cam_x + dataset.screen_w / sx + e.l_len) return false;
-    // y：固定裕量
-    if (e.position.y < cam_y - OFFSCREEN_MARGIN || e.position.y > cam_y + dataset.screen_h / sy + OFFSCREEN_MARGIN) return false;
-    return true;
-  }
-  /** 单趟实体渲染：进出屏管理 + 渲染合一（world.entities 为唯一来源） */
+  /** 单趟实体渲染（world.entities 为唯一来源） */
   protected render_entities(dt: number): void {
     const { entities } = this.world;
     for (let i = 0; i < entities.length; i++) {
       const e = entities[i];
       if (e.bearer || e.catcher) continue;
-      if (!this.is_on_screen(e)) {
-        // 离屏但名字可见的实体：保持挂载，仅渲染名字（贴屏幕边缘）
-        if (e.name && e.name_visible) {
-          this.mount_renderer(e);
-          e.renderer?.render_name_only();
-          continue;
-        }
-        const r = e.renderer;
-        if (r && r.mounted) {
-          r.unmount();
-          r.mounted = false;
-        }
-        continue;
-      }
       this.mount_renderer(e);
       e.renderer!.render(dt);
     }

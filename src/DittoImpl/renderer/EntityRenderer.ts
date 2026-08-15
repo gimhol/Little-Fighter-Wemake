@@ -24,7 +24,7 @@ export class EntityRenderer {
   readonly p0 = new Vector3()
   readonly p1 = new Vector3()
   readonly position = new Vector3();
-  /** 当前是否已挂载进场景（离屏裁剪用） */
+  /** 当前是否已挂载进场景 */
   mounted: boolean = false;
   get invisible() {
     const { invisible, frame } = this.entity;
@@ -95,15 +95,6 @@ export class EntityRenderer {
     this.ctrl?.render()
     this.entity.holding?.renderer.render(dt)
     this.entity.catching?.renderer.render(dt)
-  }
-  /** 离屏时仅渲染名字（贴屏幕边缘显示） */
-  render_name_only() {
-    if (this.owner.dirty) {
-      this.p0.copy(this.p1)
-      this.p1.copy(this.entity.position)
-    }
-    this.position.lerpVectors(this.p0, this.p1, this.owner.dfactor)
-    this.name.render();
   }
   mount() {
     this.main.on_mount();
