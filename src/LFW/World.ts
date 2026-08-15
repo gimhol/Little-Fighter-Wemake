@@ -837,17 +837,17 @@ export class World {
       const { cam_l, left, cam_r, right } = this.stage;
       const min_cam_l = is_num(this._lock_cam_pos?.x) ? left : cam_l;
       const max_cam_r = is_num(this._lock_cam_pos?.x) ? right : cam_r;
+      const max_cam_x = max_cam_r - this.dataset.screen_w;
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
-      const want_x = this._lock_cam_pos?.x ?? this._dist_cam_pos?.x ?? this.target_cam_pos.x;
-      this.target_cam_pos.x = clamp(want_x,
+      this.target_cam_pos.x = clamp(this._lock_cam_pos?.x ?? this._dist_cam_pos?.x ?? this.target_cam_pos.x,
         min_cam_l,
-        max_cam_r - this.dataset.screen_w
+        max_cam_x
       );
-      // 超出地图范围（目标被截断）时直接跳转，不缓动
-      if (want_x !== this.target_cam_pos.x) {
+      // 当前相机超出地图范围时直接跳回边界，不缓动
+      if (this.current_cam_pos.x < min_cam_l || this.current_cam_pos.x > max_cam_x) {
         this._cam_v.x = 0;
-        this.current_cam_pos.x = this.target_cam_pos.x;
+        this.current_cam_pos.x = clamp(this.current_cam_pos.x, min_cam_l, max_cam_x);
         break;
       }
       if (round(this.current_cam_pos.x) == round(this.target_cam_pos.x)) break
@@ -879,13 +879,12 @@ export class World {
       const { far } = this.stage;
       let max_vy_ratio = 50;
       let acc_y_ratio = 1;
-      const cam_y = this._lock_cam_pos?.y ?? this._dist_cam_pos?.y ?? this.target_cam_pos.y
       const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT)
-      this.target_cam_pos.y = clamp(cam_y, 0, cam_max_y);
-      // 超出地图范围（目标被截断）时直接跳转，不缓动
-      if (cam_y !== this.target_cam_pos.y) {
+      this.target_cam_pos.y = clamp(this._lock_cam_pos?.y ?? this._dist_cam_pos?.y ?? this.target_cam_pos.y, 0, cam_max_y);
+      // 当前相机超出地图范围时直接跳回边界，不缓动
+      if (this.current_cam_pos.y < 0 || this.current_cam_pos.y > cam_max_y) {
         this._cam_v.y = 0;
-        this.current_cam_pos.y = this.target_cam_pos.y;
+        this.current_cam_pos.y = clamp(this.current_cam_pos.y, 0, cam_max_y);
         break;
       }
       const acc_y = min(
