@@ -828,6 +828,7 @@ export class Entity {
     this._mix_strength = 0;
     this._greyscale = 0;
     this._render_effect_time = 0;
+    this._ctrl = new InvalidController('', this)
   }
   reset_armor() {
     const { armor } = this._data.base
