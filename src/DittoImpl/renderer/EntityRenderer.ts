@@ -96,6 +96,15 @@ export class EntityRenderer {
     this.entity.holding?.renderer.render(dt)
     this.entity.catching?.renderer.render(dt)
   }
+  /** 离屏时仅渲染名字（贴屏幕边缘显示） */
+  render_name_only() {
+    if (this.owner.dirty) {
+      this.p0.copy(this.p1)
+      this.p1.copy(this.entity.position)
+    }
+    this.position.lerpVectors(this.p0, this.p1, this.owner.dfactor)
+    this.name.render();
+  }
   mount() {
     this.main.on_mount();
     this.name.on_mount();

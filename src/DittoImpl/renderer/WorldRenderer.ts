@@ -137,6 +137,12 @@ export class WorldRenderer implements IWorldRenderer {
       const e = entities[i];
       if (e.bearer || e.catcher) continue;
       if (!this.is_on_screen(e)) {
+        // 离屏但名字可见的实体：保持挂载，仅渲染名字（贴屏幕边缘）
+        if (e.name && e.name_visible) {
+          this.mount_renderer(e);
+          e.renderer?.render_name_only();
+          continue;
+        }
         const r = e.renderer;
         if (r && r.mounted) {
           r.unmount();
