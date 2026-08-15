@@ -839,10 +839,17 @@ export class World {
       const max_cam_r = is_num(this._lock_cam_pos?.x) ? right : cam_r;
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
-      this.target_cam_pos.x = clamp(this._lock_cam_pos?.x ?? this._dist_cam_pos?.x ?? this.target_cam_pos.x,
+      const want_x = this._lock_cam_pos?.x ?? this._dist_cam_pos?.x ?? this.target_cam_pos.x;
+      this.target_cam_pos.x = clamp(want_x,
         min_cam_l,
         max_cam_r - this.dataset.screen_w
       );
+      // 超出地图范围（目标被截断）时直接跳转，不缓动
+      if (want_x !== this.target_cam_pos.x) {
+        this._cam_v.x = 0;
+        this.current_cam_pos.x = this.target_cam_pos.x;
+        break;
+      }
       if (round(this.current_cam_pos.x) == round(this.target_cam_pos.x)) break
 
       const acc_x = min(
@@ -875,6 +882,12 @@ export class World {
       const cam_y = this._lock_cam_pos?.y ?? this._dist_cam_pos?.y ?? this.target_cam_pos.y
       const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT)
       this.target_cam_pos.y = clamp(cam_y, 0, cam_max_y);
+      // 超出地图范围（目标被截断）时直接跳转，不缓动
+      if (cam_y !== this.target_cam_pos.y) {
+        this._cam_v.y = 0;
+        this.current_cam_pos.y = this.target_cam_pos.y;
+        break;
+      }
       const acc_y = min(
         this.dataset.atom_time * acc_y_ratio,
         this.dataset.atom_time * 0.7 * (acc_y_ratio * abs(this.current_cam_pos.y - this.target_cam_pos.y)) / this.dataset.screen_h,
