@@ -3,7 +3,9 @@ import type { LFW } from "../LFW";
 import { World } from "../World";
 import { Callbacks } from "../base";
 import { Buff } from "../buff/Buff";
+import { sus_cases } from "../cases_instances";
 import type { Collision } from "../collision/Collision";
+import { collision_clone } from "../collision/Collision";
 import { BaseController } from "../controller/BaseController";
 import { InvalidController } from "../controller/InvalidController";
 import {
@@ -25,6 +27,7 @@ import {
   StateEnum, type TEntityEnum, type TFace, type TNextFrame,
   WpointKind
 } from "../defines";
+import type { ITerrainInfo } from "../defines/ITerrainInfo";
 import type { IWorldDataset } from "../defines/IWorldDataset";
 import { Ditto } from "../ditto";
 import { States } from "../state";
@@ -35,18 +38,14 @@ import { Times } from "../utils/Times";
 import { cross_bounding } from "../utils/cross_bounding";
 import { is_f_num, is_positive, is_str } from "../utils/type_check";
 import { DrinkInfo } from "./DrinkInfo";
+import { EnterFrameResult } from "./EnterFrameResult";
 import type { IEntityCallbacks } from "./IEntityCallbacks";
 import type { IEntitySnapshot } from "./IEntitySnapshot";
 import { StatBarType } from "./StatBarType";
 import { summary_mgr } from "./SummaryMgr";
-import { turn_face } from "./face_helper";
-import { is_fighter, is_human_ctrl } from "./type_check";
-import { sus_cases } from "../cases_instances";
-import { collision_clone } from "../collision/Collision";
-import type { ITerrainInfo } from "../defines/ITerrainInfo";
-import { EnterFrameResult } from "./EnterFrameResult";
 import { calc_v } from "./calc_v";
-import { is_ball_ctrl } from "./type_check";
+import { turn_face } from "./face_helper";
+import { is_ball_ctrl, is_fighter, is_human_ctrl } from "./type_check";
 
 export class Entity {
   static readonly TAG: string = 'Entity';
@@ -828,7 +827,6 @@ export class Entity {
     this._mix_strength = 0;
     this._greyscale = 0;
     this._render_effect_time = 0;
-    this._ctrl = new InvalidController('', this)
   }
   reset_armor() {
     const { armor } = this._data.base
@@ -1164,6 +1162,18 @@ export class Entity {
     this.world.add_entities(this);
     if (this.frame.id === "0" /* EMPTY_FRAME_INFO */)
       this.enter_frame(Defines.NEXT_FRAME_AUTO);
+
+    if (is_fighter(this)) {
+      const { x, z } = this.position;
+      const seg = this.world.ground.segment(this.position.x, this.position.z);
+      const y = this.world.ground.y(seg, x, z);
+      if (y >= this.position.y) {
+        this.position.y = y
+        this.is_on_ground = true
+      } else {
+        this.is_on_ground = false
+      }
+    }
     return this;
   }
 

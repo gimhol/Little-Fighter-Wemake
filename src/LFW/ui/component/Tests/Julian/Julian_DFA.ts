@@ -7,13 +7,11 @@ export class Julian_DFA extends TestCase {
   override name: string = 'Julian D>A'
   julian?: Entity | null;
   director = new ActionDirector()
+    .offset(100, () => {
+      this.julian?.ctrl.click(GK.Defend, GK.Right, GK.Attack)
+    })
     .repeat(1000, 50, () => {
-      const { julian } = this;
-      if (!julian) return;
-      if (StateEnum.Standing === julian.state)
-        this.julian?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Attack)
-      else
-        this.julian?.ctrl.key_up(...AGK).click(GK.Attack)
+      this.julian?.ctrl.click(GK.Attack)
     })
     .times(9999)
     .sort()
@@ -32,7 +30,7 @@ export class Julian_DFA extends TestCase {
       julian.mp = 1000000;
       julian.attach();
     } while (0);
-    
+
     this.bandits_8().forEach(bandit => {
       bandit.team = TeamEnum.Team_2;
       bandit.hp = bandit.hp_r = bandit.hp_max = 75

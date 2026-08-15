@@ -19,6 +19,8 @@ export class Bat_DUJ_0 extends TestCase {
     this.director.update(dt);
   }
   override enter(): void {
+    super.enter();
+    this.director.reset();
     do {
       const fighter = this.bat = this.spawn(O_ID.Bat)
       if (!fighter) return;
@@ -85,6 +87,8 @@ export class Bat_DUJ_3 extends TestCase {
     this.director.update(dt);
   }
   override enter(): void {
+    super.enter();
+    this.director.reset();
     do {
       const fighter = this.bat = this.spawn(O_ID.Bat)
       if (!fighter) return;
