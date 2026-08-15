@@ -64,14 +64,15 @@ export class TestCase implements IState<number> {
   circle(oid: string | string[], ox: number, oz: number, r1: number, r2: number, count?: number): Entity[] {
     if (!oid.length) return [];
     const oids = typeof oid === 'string' ? [oid] : oid;
-    count = count ?? oids.length;
+    count = Math.floor(count ?? oids.length);
+    if (count <= 0) return [];
     const ret: Entity[] = [];
     const d = Math.PI * 2 / count;
     for (let i = 0; i < count; i++) {
       const oid = oids[i % oids.length];
       const a = round_float(d * i);
-      const x = round_float(ox + Math.cos(a) * r1);
-      const z = round_float(oz + Math.sin(a) * r2);
+      const x = count === 1 ? ox : round_float(ox + Math.cos(a) * r1);
+      const z = count === 1 ? oz : round_float(oz + Math.sin(a) * r2);
       const e = this.spawn(oid);
       if (!e) break;
       ret.push(e);
@@ -84,11 +85,12 @@ export class TestCase implements IState<number> {
   verti(oid: string | string[], ox: number, oz: number, h: number, count?: number): Entity[] {
     if (!oid.length) return [];
     const oids = typeof oid === 'string' ? [oid] : oid;
-    count = count ?? oids.length;
+    count = Math.floor(count ?? oids.length);
+    if (count <= 0) return [];
     const ret: Entity[] = [];
-    const d = h / (count - 1);
+    const d = count > 1 ? h / (count - 1) : 0;
     for (let i = 0; i < count; i++) {
-      const z = round_float(oz - h / 2 + d * i)
+      const z = round_float(count === 1 ? oz : oz - h / 2 + d * i)
       const oid = oids[i % oids.length];
       const o = this.spawn(oid);
       if (!o) continue;
@@ -102,11 +104,12 @@ export class TestCase implements IState<number> {
   hori(oid: string | string[], ox: number, oz: number, w: number, count?: number): Entity[] {
     if (!oid.length) return [];
     const oids = typeof oid === 'string' ? [oid] : oid;
-    count = count ?? oids.length;
+    count = Math.floor(count ?? oids.length);
+    if (count <= 0) return [];
     const ret: Entity[] = [];
-    const d = w / (count - 1);
+    const d = count > 1 ? w / (count - 1) : 0;
     for (let i = 0; i < count; i++) {
-      const x = round_float(ox - w / 2 + d * i);
+      const x = round_float(count === 1 ? ox : ox - w / 2 + d * i);
       const oid = oids[i % oids.length];
       const o = this.spawn(oid);
       if (!o) continue;

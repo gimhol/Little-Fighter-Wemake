@@ -1,4 +1,4 @@
-import { type IFrameInfo, StateEnum } from "../defines";
+import { type IFrameInfo, SE, StateEnum } from "../defines";
 import { ActionType } from "../defines/actions/ActionType";
 import { B_K, OLD_BDY_KIND_GOTO_MAX, OLD_BDY_KIND_GOTO_MIN } from "../defines/BdyKind";
 import { O_ID } from "../defines/OID";
@@ -16,36 +16,7 @@ import { take } from "./take";
 
 export function cook_bdy(bdy: Partial<IBdyInfo>, frame: IFrameInfo): void {
   if (!bdy) return;
-
   const kind = Number(take(bdy, "kind"));
   set_bdy_kind(bdy, kind);
-
-  if (kind === B_K.Normal && frame.state === StateEnum.Caught)
-    set_hit_flag(bdy, HitFlag.AllBoth)
-
-  if (between(kind, OLD_BDY_KIND_GOTO_MIN, OLD_BDY_KIND_GOTO_MAX)) {
-    set_bdy_kind(bdy, B_K.Criminal)
-    bdy.test = new CondMaker<C_Val>()
-      .add(c => c
-        .add(C_Val.SameTeam, "==", 0)
-        .and(C_Val.AttackerType, "==", E_E.Fighter)
-        .and(C_Val.ItrKind, "==", I_K.Normal),
-      ).or(c => c
-        .add(C_Val.SameTeam, "==", 0)
-        .and(C_Val.AttackerType, "==", E_E.Weapon)
-        .and(c => c
-          .add(C_Val.ItrKind, "==", I_K.WeaponSwing)
-          .or(C_Val.AttackerOID, "==", O_ID.HenryArrow1)
-          .or(C_Val.AttackerOID, "==", O_ID.RudolfWeapon),
-        ),
-      ).done();
-    bdy.actions = ensure(bdy.actions, {
-      type: ActionType.V_NEXT_FRAME,
-      data: { id: `${kind - 1000}` },
-    }, {
-      type: ActionType.V_TURN_TEAM,
-      data: { team: "" }
-    })
-  }
   reorder_keys(bdy, bdy_info_fields)
 }

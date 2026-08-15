@@ -21,7 +21,7 @@
       outlineWidth: 1,
       outlineAlpha: 1,
       center: "0,0",
-      pos: "0,0",
+      pos: "300,0",
       component: [{ id: "test_case_name", cls: "Label" }],
     },
   ],

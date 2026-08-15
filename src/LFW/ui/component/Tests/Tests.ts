@@ -1,5 +1,7 @@
 import { Bat_DUJ_3 } from './Bat/Bat_DUJ';
-import { BotAvoiding, WeaponPicking1, WeaponPicking2 } from './Bot/BotAvoiding';
+import { BotAvoiding } from './Bot/BotAvoiding';
+import { WeaponPicking2 } from './Bot/WeaponPicking2';
+import { WeaponPicking1 } from './Bot/WeaponPicking1';
 import { BotFollow } from './Others/Follow';
 import { FasterSlowerStandUp } from './Others/FasterSlowerStandUp';
 import { Firzen_DUA_0, Firzen_DUA_2 } from './Firezen/Firzen_DUA';
@@ -33,6 +35,7 @@ import { MoveStayCome } from './Others/MoveStayCome';
 import { AllFighters } from "./Others/AllFighters";
 import { Rudolf_DFJ } from './Rudolf/Rudolf_DFJ';
 import { TestCase } from "./TestCase";
+import { CriminalSaving1 } from './Others/CriminalSaving';
 
 const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
   [TestCase, AllFighters], [
@@ -58,7 +61,7 @@ const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
     MoonTest
   ], [BottomsUp, MoveStayCome, BotCome, BotFollow, FasterSlowerStandUp,
   ], [
-    BotAvoiding, WeaponPicking1, WeaponPicking2
+    BotAvoiding, WeaponPicking1, WeaponPicking2, CriminalSaving1
   ]
 ]
 export class Tests extends UIComponent {
