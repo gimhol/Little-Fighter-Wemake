@@ -1662,7 +1662,16 @@ export class Entity {
       this.transfrom_to_another();
       this.ctrl.reset_key_list();
     } else if (next_frame) {
-      this.enter_frame(next_frame);
+      const r = this.enter_frame(next_frame);
+      if (r == EnterFrameResult.Entered && keys != GK.a) {
+        /*
+        FIXME: 
+          此处为了Louis的抓人逻辑，简单粗暴的重置了抓人时间计算。
+          这大概不是合适的实现。
+            -Gim
+        */
+        this.set_catch_time(this.catch_time_max)
+      }
     }
 
     if (!this.shaking && !this.motionless && !this._bearer && !this._catcher)
