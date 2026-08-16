@@ -413,7 +413,6 @@ export class BaseController {
         return;
       }
     }
-    result.keys = this._key_list;
   }
 
   sequence_keys_test(str: string): boolean {
