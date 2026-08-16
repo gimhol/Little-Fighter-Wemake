@@ -1963,7 +1963,7 @@ export class Entity {
    * @returns 下帧信息
    */
   get_catching_cancel_frame(): INextFrame { return Defines.NEXT_FRAME_AUTO; }
-  
+
   transfrom_to_another(data?: IEntityData): boolean {
     const datas = this.transforms = data ?
       [this._data, data] :
@@ -2160,6 +2160,7 @@ export class Entity {
   }
 
   enter_frame_by_id(id: string | undefined, fallback: boolean = false): EnterFrameResult {
+    if (id == void 0 && fallback) id = FrameId.Auto;
     this._next_frame_by_id.id = id;
     return this.enter_frame(this._next_frame_by_id, fallback);
   }
