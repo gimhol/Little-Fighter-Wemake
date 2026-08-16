@@ -4,7 +4,7 @@ import { CheatEnum, EntityGroup, HitFlag } from "../defines";
 import { CollisionVal } from "../defines/CollisionVal";
 import type { IValGetter, IValGetterGetter } from "../defines/IExpression";
 import { is_ball_ctrl } from "../entity";
-import { round } from "../utils";
+import { abs, round } from "../utils";
 
 const map: Record<CollisionVal, IValGetter<Collision>> = {
   [CollisionVal.AttackerType]: c => c.attacker.data.type,
@@ -46,6 +46,30 @@ const map: Record<CollisionVal, IValGetter<Collision>> = {
   [CollisionVal.ItrCode]: c => c.itr.code,
   [CollisionVal.VToughness]: c => c.victim.toughness,
   [CollisionVal.AToughness]: c => c.attacker.toughness,
+  [CollisionVal.AClosingSpeedX]: c => {
+    const v = c.attacker.velocity.x;
+    const p1 = c.attacker.position.x;
+    const p2 = c.victim.position.x;
+    if (p1 > p2) return v;
+    if (p1 < p2) return -v;
+    return abs(-v)
+  },
+  [CollisionVal.AClosingSpeedY]: c => {
+    const v = c.attacker.velocity.y;
+    const p1 = c.attacker.position.y;
+    const p2 = c.victim.position.y;
+    if (p1 > p2) return v;
+    if (p1 < p2) return -v;
+    return abs(-v)
+  },
+  [CollisionVal.AClosingSpeedZ]: c => {
+    const v = c.attacker.velocity.z;
+    const p1 = c.attacker.position.z;
+    const p2 = c.victim.position.z;
+    if (p1 > p2) return v;
+    if (p1 < p2) return -v;
+    return abs(-v)
+  },
 };
 export const get_val_geter_from_collision: IValGetterGetter<Collision> = (
   word: string,

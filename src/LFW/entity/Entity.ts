@@ -1707,6 +1707,7 @@ export class Entity {
       if (this.position.y - _ground_y > this.world.ground.step) {
         // 离地面太高
         this._state?.on_leave_ground?.(this);
+        this.is_on_ground = false;
       } else {
         this.position.y = _ground_y;
       }
@@ -2015,15 +2016,6 @@ export class Entity {
     const y = 2 + round_float((b + t) / 2);//this.lf2.random_in(b, t);
     const z = max(f, n) + 2;
     return [x, y, z] as const;
-  }
-
-  dizzy_catch_test(target: Entity): boolean {
-    return (
-      is_fighter(this) &&
-      is_fighter(target) && target.state === StateEnum.Tired &&
-      ((this.velocity.x > 0 && target.position.x > this.position.x) ||
-        (this.velocity.x < 0 && target.position.x < this.position.x))
-    );
   }
 
   release(): void {

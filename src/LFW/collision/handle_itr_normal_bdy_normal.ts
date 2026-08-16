@@ -5,7 +5,7 @@ import { calc_itr_velocity } from "./calc_itr_velocity";
 import { handle_armor } from "./handle_armor";
 import { handle_fall } from "./handle_fall";
 import { handle_injury } from "./handle_injury";
-import { handle_itr_effect_freeze, handle_itr_kind_freeze } from "./handle_itr_kind_freeze";
+import { handle_itr_effect_freeze } from "./handle_itr_kind_freeze";
 import { handle_rest } from "./handle_rest";
 import { handle_stiffness } from "./handle_stiffness";
 import { is_fall } from "./is_fall";

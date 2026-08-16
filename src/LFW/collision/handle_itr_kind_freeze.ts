@@ -1,6 +1,5 @@
-import type { Collision } from "./Collision";
-import { Defines, WeaponEnum } from "../defines";
 import { calc_itr_velocity } from "./calc_itr_velocity";
+import type { Collision } from "./Collision";
 import { handle_injury } from "./handle_injury";
 import { handle_rest } from "./handle_rest";
 import { handle_stiffness } from "./handle_stiffness";

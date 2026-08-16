@@ -19,7 +19,7 @@ export enum CollisionVal {
 
   /** IItrInfo.kind */
   ItrKind = "itr_kind",
-  
+
   /** 碰撞双方朝向是否相同，朝向相同:1，朝向不同:0 */
   SameFacing = "same_facing",
 
@@ -28,12 +28,12 @@ export enum CollisionVal {
 
   /** 受击者的 IFrameInfo.state */
   VictimState = "victim_state",
-  
+
   AttackerHasHolder = "attacker_has_holder",
   VictimHasHolder = "victim_has_holder",
   AttackerHasHolding = "attacker_has_holding",
   VictimHasHolding = "victim_has_holding",
-  
+
   /** 碰撞双方是否同队，同队:1，敌对:0 */
   SameTeam = "same_team",
   /** 攻击者的数据ID */
@@ -69,6 +69,12 @@ export enum CollisionVal {
   AToughness = "a_toughness",
   AttackerBaseType = "attacker_base_type",
   VictimBaseType = "victim_base_type",
+  /* 接近的速度X，大于0时，“攻击者”速度朝向“受击者” */
+  AClosingSpeedX = "a_closing_speed_x",
+  /* 接近的速度Y，大于0时，“攻击者”速度朝向“受击者” */
+  AClosingSpeedY = "a_closing_speed_y",
+  /* 接近的速度Z，大于0时，“攻击者”速度朝向“受击者” */
+  AClosingSpeedZ = "a_closing_speed_z",
 }
 export const CollisionValDescriptions: Record<CollisionVal, string> = {
   [CollisionVal.AttackerType]: "",
@@ -108,6 +114,9 @@ export const CollisionValDescriptions: Record<CollisionVal, string> = {
   [CollisionVal.AToughness]: "",
   [CollisionVal.AttackerBaseType]: "",
   [CollisionVal.VictimBaseType]: "",
+  [CollisionVal.AClosingSpeedX]: "",
+  [CollisionVal.AClosingSpeedY]: "",
+  [CollisionVal.AClosingSpeedZ]: "",
 }
 export const C_Val = CollisionVal;
 export type C_Val = CollisionVal;

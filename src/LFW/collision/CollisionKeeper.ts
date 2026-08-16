@@ -8,7 +8,7 @@ import { handle_ball_hit_other } from "./handle_ball_hit_other";
 import { handle_ball_is_hit_a, handle_ball_is_hit_b } from "./handle_ball_is_hit";
 import { handle_body_goto as handle_criminal_hit } from "./handle_body_goto";
 import { handle_healing } from "./handle_healing";
-import { handle_itr_kind_catch } from "./handle_itr_kind_catch";
+import { handle_itr_catch as handle_itr_catch } from "./handle_itr_catch";
 import { handle_itr_kind_force_catch } from "./handle_itr_kind_force_catch";
 import { handle_itr_kind_freeze } from "./handle_itr_kind_freeze";
 import { handle_itr_kind_magic_flute } from "./handle_itr_kind_magic_flute";
@@ -39,6 +39,8 @@ export interface IHandlerConfig {
   a_state?: StateEnum[];
   /** 受击方帧状态（默认全状态） */
   v_state?: StateEnum[];
+  /** Description of handler */
+  desc?: string;
 }
 
 function product_keys(...dims: (number[] | string[])[]): string[] {
@@ -163,7 +165,7 @@ const HANDLER_CONFIGS: IHandlerConfig[] = [
     itr: [ItrKind.Catch],
     v_type: [EntityEnum.Fighter],
     bdy: [BdyKind.Normal, BdyKind.Defend],
-    handler: handle_itr_kind_catch,
+    handler: handle_itr_catch,
   },
   {
     a_type: ALL_ENTITY_ENUM,
