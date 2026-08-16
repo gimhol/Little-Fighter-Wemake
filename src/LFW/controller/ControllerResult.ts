@@ -25,8 +25,9 @@ export class ControllerResult {
   }
 
   fire(nf: TNextFrame, time: number, keys: string, kind: typeof this.kind): boolean {
-    const result = this.result = this.owner.entity.get_next_frame(nf);
+    const result = this.owner.entity.get_next_frame(nf);
     if (!result) return false;
+    this.result = result;
     this.time = time;
     this.keys = keys;
     this.kind = kind;
