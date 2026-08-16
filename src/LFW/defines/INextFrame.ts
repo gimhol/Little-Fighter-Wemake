@@ -85,6 +85,10 @@ export interface INextFrame extends IVelocityInfo {
    */
   blink_time?: number;
 
+  reset_keys?: number;
+
+  transfrom_to_another?: number;
+
   /**
    * 根据判断表达式 生成的表达式实例
    * @see {expression}

@@ -7,7 +7,7 @@ import { xml_2_bdy, xml_x_bdy } from "./xml_x_bdy";
 import { xml_2_entity_info, xml_x_entity_info } from "./xml_x_entity_info";
 import { xml_2_frame, xml_x_frame } from "./xml_x_frame";
 import { xml_2_frame_indexes, xml_x_frame_indexes } from "./xml_x_frame_indexes";
-import { xml_x_hit_key_map } from "./xml_x_hit_key_map";
+import { xml_2_hit_key_map, xml_x_hit_key_map } from "./xml_x_hit_key_map";
 import { xml_2_itr, xml_x_itr } from "./xml_x_itr";
 import { xml_2_map, xml_x_map } from "./xml_x_map";
 import { xml_2_t_next_frame, xml_x_t_next_frame } from "./xml_x_next_frame";
@@ -24,7 +24,8 @@ export function xml_x_entity_data(xml: IXML, data: IEntityData, tag: string = 'e
   xml_x_map(xml, data.itr_prefabs, "itr", xml_x_itr, ret)
   ret.insert(xml_x_frame_indexes(xml, data.indexes, "indexes"));
   ret.set_attr("processed", data.processed);
-  xml_x_hit_key_map(xml, data.hit, 'hit')?.forEach(el => ret.insert(el));
+  xml_x_hit_key_map(xml, data.pre_hitkeys, 'pre_hitkey')?.forEach(el => ret.insert(el));
+  xml_x_hit_key_map(xml, data.post_hitkeys, 'post_hitkey')?.forEach(el => ret.insert(el));
   xml_x_map(xml, data.frames, "frame", xml_x_frame, ret);
   return ret;
 }
@@ -44,8 +45,9 @@ export function xml_2_entity_data(el: IXMLElement | undefined): IEntityData | un
   ret.bdy_prefabs   /**/ = xml_2_map(el, ["bdy_prefab", "bdy"], xml_2_bdy)
   ret.itr_prefabs   /**/ = xml_2_map(el, ["itr_prefab", "itr"], xml_2_itr)
   ret.processed     /**/ = el.get_bool("processed", ret.processed) || void 0;
+  ret.pre_hitkeys   /**/ = xml_2_hit_key_map(el, 'pre_hitkey')
+  ret.post_hitkeys  /**/ = xml_2_hit_key_map(el, 'post_hitkey')
   ret.frames        /**/ = xml_2_map(el, "frame", xml_2_frame) ?? {};
-
   delete_undefined(ret);
   reorder_keys(ret, entity_data_fields);
   return ret;

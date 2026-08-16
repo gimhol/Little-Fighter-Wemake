@@ -75,6 +75,9 @@ export enum EntityVal {
   HoldingOID = "holdingOID",
   HpRecoverable = "hp_recoverable",
   HitByMagicFlute = 'hit_by_magic_flute',
+  TransformListSize = 'transform_list_size',
+  IsOnGround = 'is_on_ground',
+  TransformIndex = 'transform_index',
 }
 
 export const EntityValDescriptions: Record<EntityVal, string> = {
@@ -114,6 +117,9 @@ export const EntityValDescriptions: Record<EntityVal, string> = {
   [EntityVal.HoldingOID]: "",
   [EntityVal.HpRecoverable]: "",
   [EntityVal.HitByMagicFlute]: "",
+  [EntityVal.TransformListSize]: "",
+  [EntityVal.IsOnGround]: "",
+  [EntityVal.TransformIndex]: ""
 }
 
 export const E_Val = EntityVal

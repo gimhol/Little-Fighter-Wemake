@@ -7,13 +7,13 @@ export class Keys {
   readonly lfw: LFW;
   readonly world: World;
   get time() { return this.lfw.world.lifetime; }
-  readonly [GK.L] = new KeyStatus(this);
-  readonly [GK.R] = new KeyStatus(this);
-  readonly [GK.U] = new KeyStatus(this);
-  readonly [GK.D] = new KeyStatus(this);
-  readonly [GK.a] = new KeyStatus(this);
-  readonly [GK.j] = new KeyStatus(this);
-  readonly [GK.d] = new KeyStatus(this);
+  readonly [GK.L] = new KeyStatus(this, GK.L);
+  readonly [GK.R] = new KeyStatus(this, GK.R);
+  readonly [GK.U] = new KeyStatus(this, GK.U);
+  readonly [GK.D] = new KeyStatus(this, GK.D);
+  readonly [GK.a] = new KeyStatus(this, GK.a);
+  readonly [GK.j] = new KeyStatus(this, GK.j);
+  readonly [GK.d] = new KeyStatus(this, GK.d);
   constructor(lfw: LFW) {
     this.lfw = lfw;
     this.world = lfw.world;

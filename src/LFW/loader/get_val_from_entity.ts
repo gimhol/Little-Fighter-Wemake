@@ -62,7 +62,10 @@ export const entity_val_getters: Record<E_Val, (e: Entity) => any> = {
         return 1;
     }
     return 0;
-  }
+  },
+  [E_Val.TransformListSize]: e => e.transforms?.length || 0,
+  [E_Val.IsOnGround]: e => e.is_on_ground ? 1 : 0,
+  [E_Val.TransformIndex]: e => e.transforms?.findIndex(v => v.id == e.data.id) ?? -1,
 }
 export const entity_world_val_getters = new Map<string, undefined | IValGetter<Entity>>();
 

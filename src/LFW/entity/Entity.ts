@@ -54,7 +54,7 @@ export class Entity {
   id: string = '';
   wait: number = 0;
   variant: number = 0;
-  transforms: [string, string] | null = null;
+  transforms: [IEntityData, IEntityData] | null = null;
   protected _lifetime: number = 0;
   protected _spawn_time: number = 0;
 
@@ -915,7 +915,7 @@ export class Entity {
       : emitter.facing;
 
     if (result) this.enter_frame(result.which);
-    else this.enter_frame(this.find_auto_frame());
+    else this.enter_frame(Defines.NEXT_FRAME_AUTO);
 
     let { speedz: o_speedz = this.get_opoint_speed_z(emitter, opoint) } = opoint;
     let o_dvx = (opoint.__gen_dvx ? opoint.__gen_dvx.get(emitter) : opoint.dvx) ?? 0
@@ -1652,18 +1652,10 @@ export class Entity {
     }
     if (this.update_catching()) return;
     if (this.update_caught()) return;
-    const { next_frame, keys } = this.ctrl.update();
-    if (
-      keys === "dja" &&
-      this.transforms &&
-      this.transforms[1] === this._data.id &&
-      this.position.y === this.ground_y
-    ) {
-      this.transfrom_to_another();
-      this.ctrl.reset_key_list();
-    } else if (next_frame) {
-      const r = this.enter_frame(next_frame);
-      if (r == EnterFrameResult.Entered && keys != GK.a) {
+    const { result, keys } = this.ctrl.update();
+    if (result) {
+      const r = this.handle_next_frame_result(result);
+      if (r >= EnterFrameResult.Entered && keys != GK.a) {
         /*
         FIXME: 
           此处为了Louis的抓人逻辑，简单粗暴的重置了抓人时间计算。
@@ -1971,16 +1963,16 @@ export class Entity {
    * @returns 下帧信息
    */
   get_catching_cancel_frame(): INextFrame { return Defines.NEXT_FRAME_AUTO; }
-  transfrom_to_another(data?: IEntityData) {
+  
+  transfrom_to_another(data?: IEntityData): boolean {
     const datas = this.transforms = data ?
-      [this._data.id, data.id] :
+      [this._data, data] :
       this.transforms;
-    if (!datas?.length) return;
-    const curr_idx = datas.indexOf(this._data.id)
+    if (!datas?.length) return false;
+    const curr_idx = datas.findIndex(v => v.id == this._data.id)
     const next_idx = (curr_idx + 1) % datas.length;
-    const next_data_id = datas[next_idx]
-    const next_data = this.lfw.datas.find_entity(next_data_id);
-    if (!next_data) return;
+    const next_data = datas[next_idx]
+    if (!next_data) return false;
     this.transform(next_data);
     if (next_idx === 0) {
       // TODO: 这个逻辑感觉怪怪的，后续可以改成直接在数据里写死变身后的帧
@@ -1998,6 +1990,7 @@ export class Entity {
       for (const d of gones)
         this.copies.delete(d)
     }
+    return true;
   }
 
   start_catch(target: Entity, itr: IItrInfo) {
@@ -2164,19 +2157,18 @@ export class Entity {
       this.set_velocity(vx, dvy, vz);
       return;
     }
-
   }
 
-  enter_frame_by_id(id: string | undefined, fallback = false): EnterFrameResult {
+  enter_frame_by_id(id: string | undefined, fallback: boolean = false): EnterFrameResult {
     this._next_frame_by_id.id = id;
     return this.enter_frame(this._next_frame_by_id, fallback);
   }
 
-  enter_frame(which: TNextFrame, fallback = false): EnterFrameResult {
+  enter_frame(nfs: TNextFrame, fallback: boolean = false): EnterFrameResult {
     if (this.frame.id === FrameId.Gone)
       return EnterFrameResult.Gone;
 
-    const result = this.get_next_frame(which);
+    const result = this.get_next_frame(nfs);
     if (!result && fallback) {
       const frame = this.find_auto_frame()
       this.set_frame(frame);
@@ -2184,7 +2176,10 @@ export class Entity {
       return EnterFrameResult.Fallback;
     }
     if (!result) return EnterFrameResult.NotFound;
+    return this.handle_next_frame_result(result);
+  }
 
+  handle_next_frame_result(result: INextFrameResult, fallback: boolean = false) {
     const { frame, which: flags } = result;
     if (!this.world.dataset.infinity_mp) {
       const { mp, hp } = flags;
@@ -2208,17 +2203,17 @@ export class Entity {
         } else {
           this.lfw.sounds.play(frame.sound, x, y, z);
         }
-
       }
       this.set_frame(frame);
     } else if (this.frame === EMPTY_FRAME_INFO || fallback) {
       this.set_frame(this.find_auto_frame());
     }
-
     if (flags.facing != void 0) this.facing = this.handle_facing_flag(flags.facing);
     if (frame) this.wait = this.handle_wait_flag(flags.wait, frame);
     if (Array.isArray(flags.sound)) this.play_sound(flags.sound);
     if (flags.blink_time) this.blinking = flags.blink_time;
+    if (flags.reset_keys) this.ctrl.reset_key_list();
+    if (flags.transfrom_to_another) this.transfrom_to_another();
     return frame ? EnterFrameResult.Entered : EnterFrameResult.Fallback;
   }
 
@@ -2321,14 +2316,12 @@ export class Entity {
         if (use_hp && this._hp <= use_hp) return void 0;
       }
     }
-
     let w: INextFrame;
     if (is_str(which)) {
       w = { id: which };
     } else {
       w = which;
     }
-
     return { frame, which: w };
   }
 
@@ -2480,7 +2473,7 @@ export class Entity {
       id: this.id,
       wait: this.wait,
       variant: this.variant,
-      transforms: this.transforms ? [...this.transforms] : null,
+      transforms: this.transforms?.map(v => v.id) ?? null,
       lifetime: this._lifetime,
       spawn_time: this._spawn_time,
       outline_color: this._outline_color,

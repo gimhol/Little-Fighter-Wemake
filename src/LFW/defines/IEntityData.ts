@@ -24,7 +24,8 @@ export interface IEntityData {
   indexes?: IFrameIndexes;
   bdy_prefabs?: TBdyPrefabs;
   itr_prefabs?: TItrPrefabs;
-  hit?: IHitKeyMap;
+  pre_hitkeys?: { [x in string]?: TNextFrame; };
+  post_hitkeys?: { [x in string]?: TNextFrame; };
   frames: Record<string, IFrameInfo>;
 
   /**
@@ -40,6 +41,8 @@ export interface IEntityData {
   processed?: boolean;
 
   __pics?: number;
+  __pre_hitkeys_map?: Map<string, TNextFrame>;
+  __post_hitkeys_map?: Map<string, TNextFrame>;
 }
 
 export function entity_data_new(): IEntityData {
@@ -60,8 +63,11 @@ export const entity_data_fields = fields<IEntityData>({
   indexes: any({ nullable: true }),
   bdy_prefabs: any({ nullable: true }),
   itr_prefabs: any({ nullable: true }),
-  hit: any({ nullable: true }),
+  pre_hitkeys: any({ nullable: true }),
+  post_hitkeys: any({ nullable: true }),
   frames: any({ nullable: true }),
   processed: bool({ nullable: true }),
   __pics: any({ nullable: true }),
+  __pre_hitkeys_map: any({ nullable: true }),
+  __post_hitkeys_map: any({ nullable: true }),
 })

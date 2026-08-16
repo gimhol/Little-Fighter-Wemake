@@ -43,7 +43,7 @@ export class BaseController {
     ['djjj', new SeqKeys([GK.d, GK.j, GK.j, GK.j].join(''), { etc: "8" })],
   ])
 
-  protected readonly result = new ControllerResult();
+  protected readonly result = new ControllerResult(this);
   readonly queue: (readonly [Status, LGK])[] = []
 
   readonly ku = this.key_up.bind(this);
@@ -313,25 +313,36 @@ export class BaseController {
       if (ku.B && this.tst("ku", B))
         ret.fire(ku.B, this.keys[B].time, B, 'ku');
     }
+    if (me.data.pre_hitkeys && !ret.time) {
+      /** 相对方向的双击判定 */
+      if (me.data.pre_hitkeys.F && this.tst("hit", F) && ret.fire(me.data.pre_hitkeys.F, this.keys[F].time, F, 'hit')) this.keys[F].use();
+      if (me.data.pre_hitkeys.B && this.tst("hit", B) && ret.fire(me.data.pre_hitkeys.B, this.keys[B].time, B, 'hit')) this.keys[B].use();
+    }
     if (hit && !ret.time) {
       /** 相对方向的按钮判定 */
-      if (hit.F && this.tst("hit", F)) ret.fire(hit.F, this.keys[F].use(), F, 'hit');
-      if (hit.B && this.tst("hit", B)) ret.fire(hit.B, this.keys[B].use(), B, 'hit');
+      if (hit.F && this.tst("hit", F) && ret.fire(hit.F, this.keys[F].time, F, 'hit')) this.keys[F].use();
+      if (hit.B && this.tst("hit", B) && ret.fire(hit.B, this.keys[B].time, B, 'hit')) this.keys[B].use();
     }
-    if (me.data.hit && !ret.time) {
+    if (me.data.post_hitkeys && !ret.time) {
       /** 相对方向的双击判定 */
-      if (me.data.hit.F && this.tst("hit", F)) ret.fire(me.data.hit.F, this.keys[F].use(), F, 'hit');
-      if (me.data.hit.B && this.tst("hit", B)) ret.fire(me.data.hit.B, this.keys[B].use(), B, 'hit');
+      if (me.data.post_hitkeys.F && this.tst("hit", F) && ret.fire(me.data.post_hitkeys.F, this.keys[F].time, F, 'hit')) this.keys[F].use();
+      if (me.data.post_hitkeys.B && this.tst("hit", B) && ret.fire(me.data.post_hitkeys.B, this.keys[B].time, B, 'hit')) this.keys[B].use();
+    }
+
+    if (me.data.pre_hitkeys) {
+      /** 相对方向的双击判定 */
+      if (me.data.pre_hitkeys.FF && this.tst("dbl", F)) ret.fire(me.data.pre_hitkeys.FF, this.dbc[F].time, F, 'dbl');
+      if (me.data.pre_hitkeys.BB && this.tst("dbl", B)) ret.fire(me.data.pre_hitkeys.BB, this.dbc[B].time, B, 'dbl');
     }
     if (hit) {
       /** 相对方向的双击判定 */
       if (hit.FF && this.tst("dbl", F)) ret.fire(hit.FF, this.dbc[F].time, F, 'dbl');
       if (hit.BB && this.tst("dbl", B)) ret.fire(hit.BB, this.dbc[B].time, B, 'dbl');
     }
-    if (me.data.hit) {
+    if (me.data.post_hitkeys) {
       /** 相对方向的双击判定 */
-      if (me.data.hit.FF && this.tst("dbl", F)) ret.fire(me.data.hit.FF, this.dbc[F].time, F, 'dbl');
-      if (me.data.hit.BB && this.tst("dbl", B)) ret.fire(me.data.hit.BB, this.dbc[B].time, B, 'dbl');
+      if (me.data.post_hitkeys.FF && this.tst("dbl", F)) ret.fire(me.data.post_hitkeys.FF, this.dbc[F].time, F, 'dbl');
+      if (me.data.post_hitkeys.BB && this.tst("dbl", B)) ret.fire(me.data.post_hitkeys.BB, this.dbc[B].time, B, 'dbl');
     }
 
     /** 相对方向的按钮判定 */
@@ -344,21 +355,32 @@ export class BaseController {
       const key = this.keys[name];
       if (this.check_key_act(kd, 'kd', key, false)) break;
       if (this.check_key_act(ku, 'ku', key, false)) break;
-      if (this.check_key_act(me.data.hit, 'hit', key, true)) break;
+      if (this.check_key_act(me.data.pre_hitkeys, 'hit', key, true)) break;
       if (this.check_key_act(hit, 'hit', key, true)) break;
+      if (this.check_key_act(me.data.post_hitkeys, 'hit', key, true)) break;
       if (this.check_key_act(hld, 'hld', key, false)) break;
       if (this.dbc[name].fired) this.dbc[name].fired = false;
     }
-    frame?.__seq_map && this.check_hit_seqs(frame.__seq_map, ret);
+    do {
+      const m1 = me.transforms?.[0].__pre_hitkeys_map ?? me.data.__pre_hitkeys_map;
+      if (m1 && this.check_hit_seqs(m1, ret))
+        break;
+      if (frame?.__seq_map && this.check_hit_seqs(frame.__seq_map, ret))
+        break;
+      const m2 = me.transforms?.[0].__post_hitkeys_map ?? me.data.__post_hitkeys_map;
+      if (m2 && this.check_hit_seqs(m2, ret))
+        break;
+    } while (0);
+
     /** 这里不想支持过长的指令 */
-    if (this._key_list && this._key_list.length >= 10) {
+    if (this._key_list.length >= 10) {
       this._key_list = '';
       this._readable_key_list = ''
     }
     return ret;
   }
 
-  private check_key_act(map: IHitKeyMap | undefined, kind: 'hit' | 'ku' | 'kd' | 'hld', key: KeyStatus, use: boolean) {
+  private check_key_act(map: IHitKeyMap | undefined, kind: 'hit' | 'ku' | 'kd' | 'hld', key: KeyStatus, use: boolean): boolean {
     if (!map) return false;
     if (this.result.time) return false;
 
@@ -366,9 +388,10 @@ export class BaseController {
     /** 单击判定 */
     let act = map[name];
     if (act && this.tst(kind, name)) {
-      const time = use ? key.use() : key.time
-      this.result.fire(act, time, name, kind);
-      return true;
+      if (this.result.fire(act, key.time, name, kind)) {
+        if (use) key.use()
+        return true;
+      }
     }
 
     if (kind != 'hit') return false;
@@ -377,37 +400,41 @@ export class BaseController {
     const keykey = `${name}${name}` as keyof IHitKeyMap;
     act = map[keykey];
     if (act && this.tst("dbl", name)) {
-      this.result.fire(act, this.dbc[name].time, name, 'dbl');
-      return true;
+      return this.result.fire(act, this.dbc[name].time, name, 'dbl');
     }
     return false;
   }
-  private check_hit_seqs(seqs: Map<string, TNextFrame>, result: ControllerResult) {
+  private check_hit_seqs(seqs: Map<string, TNextFrame>, result: ControllerResult): boolean {
     /** 同时按键 判定 */
     if (this.keys.d.is_hit()) {
       for (const [seq, nf] of seqs) {
         if (!seq || !nf) continue;
         if (!this.sametime_keys_test(seq)) continue;
         for (let k of seq) this.keys[k as GK]?.use();
-        result.fire(nf, this.time, 'd' + seq, 'seq');
-        this._key_list = '';
-        this._readable_key_list = ''
-        return;
+        if (result.fire(nf, this.time, 'd' + seq, 'seq')) {
+          for (let k of seq) this.keys[k as GK]?.use();
+          this._key_list = '';
+          this._readable_key_list = ''
+          return true;
+        }
+
       }
     }
-    if (is_bot_ctrl(this)) return;
+    if (is_bot_ctrl(this)) return false;
     /** 顺序按键 判定 */
     if (this._key_list.length >= 3) {
       for (const [seq, nf] of seqs) {
         if (!seq || !nf) continue;
         if (!this.sequence_keys_test(seq)) continue;
-        result.fire(nf, this.time, 'd' + seq, 'seq');
-        for (let k of seq) this.keys[k as GK]?.use();
-        this._key_list = '';
-        this._readable_key_list = ''
-        return;
+        if (result.fire(nf, this.time, 'd' + seq, 'seq')) {
+          for (let k of seq) this.keys[k as GK]?.use();
+          this._key_list = '';
+          this._readable_key_list = ''
+          return true;
+        }
       }
     }
+    return false;
   }
 
   sequence_keys_test(str: string): boolean {
