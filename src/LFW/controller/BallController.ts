@@ -5,7 +5,7 @@ import type { Entity } from "../entity/Entity";
 import { closer_one } from "../helper";
 import { round_float } from "../utils";
 import { BaseController } from "./BaseController";
-import type { ControllerUpdateResult } from "./ControllerUpdateResult";
+import type { ControllerResult } from "./ControllerResult";
 const { L, R, U, D, j, d } = GK
 export class BallController extends BaseController {
   readonly __is_ball_ctrl__ = true;
@@ -54,7 +54,7 @@ export class BallController extends BaseController {
     return (target & flag) == target
   }
 
-  override update(): ControllerUpdateResult {
+  override update(): ControllerResult {
     const { frame, facing, hp } = this.entity;
     const { chase, behavior } = frame;
 

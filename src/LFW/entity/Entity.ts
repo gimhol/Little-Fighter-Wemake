@@ -1652,7 +1652,7 @@ export class Entity {
     }
     if (this.update_catching()) return;
     if (this.update_caught()) return;
-    const { next_frame, key_list, } = this.ctrl.update();
+    const { next_frame, keys: key_list, } = this.ctrl.update();
     if (
       key_list === "dja" &&
       this.transforms &&

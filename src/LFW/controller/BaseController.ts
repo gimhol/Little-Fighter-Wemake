@@ -9,7 +9,7 @@ import { Times } from "../utils/Times";
 import type { World } from "../World";
 import { ControllerDoubleClicks } from "./ControllerDoubleClicks";
 import { ControllerKeyStatus } from "./ControllerKeyStatus";
-import { ControllerUpdateResult } from "./ControllerUpdateResult";
+import { ControllerResult } from "./ControllerResult";
 import { SeqKeys } from "./SeqKeys";
 enum Status {
   UP = 0,
@@ -42,7 +42,7 @@ export class BaseController {
     ['djjj', new SeqKeys([GK.d, GK.j, GK.j, GK.j].join(''), { etc: "8" })],
   ])
 
-  protected readonly result = new ControllerUpdateResult();
+  protected readonly result = new ControllerResult();
   readonly queue: (readonly [Status, LGK])[] = []
 
   readonly ku = this.key_up.bind(this);
@@ -237,7 +237,7 @@ export class BaseController {
     else return this.keys[key].is_hld();
   }
 
-  update(): ControllerUpdateResult {
+  update(): ControllerResult {
     this._time.add()
     const me = this.entity;
     const { facing } = me;
@@ -295,40 +295,40 @@ export class BaseController {
     const frame = entity.frame;
     const { hold: hld, hit, key_down: kd_map, key_up: ku_map } = frame;
 
-    const ret = this.result.set(void 0, 0);
+    const ret = this.result.clear();
 
 
     if (kd_map && !ret.time) {
       /** 相对方向的按钮判定 */
       if (kd_map.F && this.tst('kd', F))
-        ret.set(kd_map.F, this.keys[F].time, F);
+        ret.fire(kd_map.F, this.keys[F].time, F, 'kd');
       if (kd_map.B && this.tst("kd", B))
-        ret.set(kd_map.B, this.keys[B].time, B);
+        ret.fire(kd_map.B, this.keys[B].time, B, 'kd');
     }
     if (ku_map && !ret.time) {
       /** 相对方向的按钮判定 */
       if (ku_map.F && this.tst("ku", F))
-        ret.set(ku_map.F, this.keys[F].time, F);
+        ret.fire(ku_map.F, this.keys[F].time, F, 'ku');
       if (ku_map.B && this.tst("ku", B))
-        ret.set(ku_map.B, this.keys[B].time, B);
+        ret.fire(ku_map.B, this.keys[B].time, B, 'ku');
     }
     if (hit && !ret.time) {
       /** 相对方向的按钮判定 */
       if (hit.F && this.tst("hit", F))
-        ret.set(hit.F, this.keys[F].use(), F);
+        ret.fire(hit.F, this.keys[F].use(), F, 'hit');
       if (hit.B && this.tst("hit", B))
-        ret.set(hit.B, this.keys[B].use(), B);
+        ret.fire(hit.B, this.keys[B].use(), B, 'hit');
     }
     if (hit) {
       /** 相对方向的双击判定 */
-      if (hit.FF && this.tst("dbl", F)) ret.set(hit.FF, this.dbc[F].time);
-      if (hit.BB && this.tst("dbl", B)) ret.set(hit.BB, this.dbc[B].time);
+      if (hit.FF && this.tst("dbl", F)) ret.fire(hit.FF, this.dbc[F].time, F, 'dbc');
+      if (hit.BB && this.tst("dbl", B)) ret.fire(hit.BB, this.dbc[B].time, B, 'dbc');
     }
 
     /** 相对方向的按钮判定 */
     if (hld) {
-      if (hld.F && this.tst("hld", F)) ret.set(hld.F, this.keys[F].time, F);
-      if (hld.B && this.tst("hld", B)) ret.set(hld.B, this.keys[B].time, B);
+      if (hld.F && this.tst("hld", F)) ret.fire(hld.F, this.keys[F].time, F, 'hld');
+      if (hld.B && this.tst("hld", B)) ret.fire(hld.B, this.keys[B].time, B, 'hld');
     }
 
     for (const name of AGK) {
@@ -338,7 +338,7 @@ export class BaseController {
         /** 按键判定 */
         let act = kd_map[name];
         if (act && this.tst("kd", name)) {
-          ret.set(act, key.time, name);
+          ret.fire(act, key.time, name, 'ku');
           break;
         }
       }
@@ -346,7 +346,7 @@ export class BaseController {
         /** 按键判定 */
         let act = ku_map[name];
         if (act && this.tst("ku", name)) {
-          ret.set(act, key.time, name);
+          ret.fire(act, key.time, name, 'ku');
           break;
         }
       }
@@ -354,7 +354,7 @@ export class BaseController {
         /** 按键判定 */
         let act = hit[name];
         if (act && this.tst("hit", name)) {
-          ret.set(act, key.use(), name);
+          ret.fire(act, key.use(), name, 'hit');
           break;
         }
 
@@ -362,7 +362,7 @@ export class BaseController {
         const keykey = `${name}${name}` as keyof IHitKeyCollection;
         act = hit[keykey];
         if (act && this.tst("dbl", name)) {
-          ret.set(act, this.dbc[name].time);
+          ret.fire(act, this.dbc[name].time, name, 'dbc');
           break;
         }
       }
@@ -370,7 +370,7 @@ export class BaseController {
         /** 长按判定 */
         let act = hld[name];
         if (act && this.tst("hld", name)) {
-          ret.set(act, key.time, name);
+          ret.fire(act, key.time, name, 'hld');
         }
       }
       if (this.dbc[name].fired)
@@ -386,14 +386,14 @@ export class BaseController {
     return ret;
   }
 
-  private check_hit_seqs(seqs: Map<string, TNextFrame>, result: ControllerUpdateResult) {
+  private check_hit_seqs(seqs: Map<string, TNextFrame>, result: ControllerResult) {
     /** 同时按键 判定 */
     if (this.keys.d.is_hit()) {
       for (const [seq, nf] of seqs) {
         if (!seq || !nf) continue;
         if (!this.sametime_keys_test(seq)) continue;
         for (let k of seq) this.keys[k as GK]?.use();
-        result.set(nf, this.time, void 0, this._key_list);
+        result.fire(nf, this.time, seq, 'seq');
         this._key_list = '';
         this._readable_key_list = ''
         return;
@@ -405,14 +405,14 @@ export class BaseController {
       for (const [seq, nf] of seqs) {
         if (!seq || !nf) continue;
         if (!this.sequence_keys_test(seq)) continue;
-        result.set(nf, this.time, void 0, this._key_list);
+        result.fire(nf, this.time, seq, 'seq');
         for (let k of seq) this.keys[k as GK]?.use();
         this._key_list = '';
         this._readable_key_list = ''
         return;
       }
     }
-    result.key_list = this._key_list;
+    result.keys = this._key_list;
   }
 
   sequence_keys_test(str: string): boolean {
