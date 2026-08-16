@@ -1,6 +1,6 @@
-import { make_entity_special, make_fighter_special, make_weapon_special, xml_x_entity_data } from "../dat_translator";
+import { CondMaker, make_entity_special, make_fighter_special, make_weapon_special, xml_x_entity_data } from "../dat_translator";
 import { make_ball_special } from "../dat_translator/make_ball_special";
-import type { IEntityData } from "../defines";
+import { E_Val, type IEntityData } from "../defines";
 import { Ditto } from "../ditto";
 import { is_ball_data, is_fighter_data, is_weapon_data } from "../entity";
 import { is_non_blank_str, max } from "../utils";
@@ -11,13 +11,27 @@ import { preprocess_bot_data } from "./preprocess_bot_data";
 import { preprocess_frame } from "./preprocess_frame";
 import { preprocess_next_frame } from "./preprocess_next_frame";
 import { preprocess_pic } from "./preprocess_pic";
+501
 export async function preprocess_entity_data(ctx: IEntityDataContext): Promise<IEntityData> {
   const { lfw, data, jobs, errors } = ctx;
 
   if (data.processed != false) { }
   if (is_ball_data(data)) make_ball_special(data)
   else if (is_weapon_data(data)) make_weapon_special(data)
-  else if (is_fighter_data(data)) make_fighter_special(data)
+  else if (is_fighter_data(data)) {
+    data.pre_hitkeys ??= {
+      ja: {
+        reset_keys: 1,
+        transfrom_to_another: 1,
+        expression: new CondMaker<E_Val>()
+          .add(E_Val.TransformListSize, '==', 2)
+          .and(E_Val.IsOnGround, '==', 1)
+          .and(E_Val.TransformIndex, '==', 1)
+          .done()
+      }
+    }
+    make_fighter_special(data)
+  }
 
   const { images, sounds } = lfw;
   const { small, head } = data.base;

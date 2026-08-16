@@ -9,17 +9,6 @@ import { CondMaker } from "../CondMaker";
  * @return {IEntityData}
  */
 export function make_fighter_data_rudolf(data: IEntityData): IEntityData {
-  data.pre_hitkeys ??= {
-    ja: {
-      reset_keys: 1,
-      transfrom_to_another: 1,
-      expression: new CondMaker<EV>()
-        .add(EV.TransformListSize, '==', 2)
-        .and(EV.IsOnGround, '==', 1)
-        .and(EV.TransformIndex, '==', 1)
-        .done()
-    }
-  }
   for (const k in data.frames) {
     const frame = data.frames[k]
     frame.opoint?.forEach((opoint) => {

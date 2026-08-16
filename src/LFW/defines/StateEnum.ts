@@ -272,7 +272,7 @@ export const StateEnumDescriptions: Record<StateEnum, string> = {
   [StateEnum.Gone]: "实体已消失/移除",
   [StateEnum.Weapon_Brokens]: "武器破碎状态",
   [StateEnum.TransformToCatching_Begin]: "变身抓取开始（Rudolf抓人变身后允许进入500帧）",
-  [StateEnum.TransformToCatching_End]: "变身抓取结束（变成最后变过的人，Rudolf的D>J效果）",
+  [StateEnum.TransformToCatching_End]: "变身抓取结束（变成最后变过的人，Rudolf的DJA）",
 }
 export const SE = StateEnum;
 export type SE = StateEnum;
