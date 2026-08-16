@@ -753,7 +753,7 @@ export class Entity {
     this.facing = 1;
     this.frame = EMPTY_FRAME_INFO;
     this._prev_frame = EMPTY_FRAME_INFO;
-    this._catching = null
+    this.set_catching(null)
     this._catcher = null
     this._wakeup_invuln = null;
     this._name_visible = null;
@@ -803,7 +803,7 @@ export class Entity {
     this.defend_value = this.defend_value_max;
     this._hp = this._hp_r = this.hp_max;
     this._mp = this.mp_max;
-    this._catch_time = this.catch_time_max;
+    this.set_catch_time(this.catch_time_max)
     this._invisible_duration = 0;
     this._invulnerable_duration = 0;
     this._blinking_duration = 0;
@@ -835,6 +835,22 @@ export class Entity {
     this.toughness_resting = 0;
     this.toughness_resting_max = armor?.toughness_resting || 0;
     this._toughness_r_tick.max = 1;
+  }
+
+  set_catching(v: Entity | null): this {
+    if (this._catching === v) return this;
+    this._catching = v;
+    return this;
+  }
+  add_catch_time(value: number): this {
+    if (!value) return this;
+    return this.set_catch_time(this._catch_time + value);
+  }
+  set_catch_time(value: number): this {
+    const v = round_float(value)
+    if (this._catch_time == v) return this;
+    this._catch_time = clamp(v, 0, this.catch_time_max);
+    return this;
   }
   set_bearer(v: Entity | null): this {
     if (this._bearer === v) return this;
@@ -1009,7 +1025,7 @@ export class Entity {
     if (v.invisible) this.invisibility(v.invisible);
     if (v.opoint) this.apply_opoints(v.opoint);
     if (!v.cpoint) {
-      this._catching = null;
+      this.set_catching(null);
       this._catcher = null;
     }
     if (v.broadcasts?.length)
@@ -1636,7 +1652,7 @@ export class Entity {
     }
     if (this.update_catching()) return;
     if (this.update_caught()) return;
-    const { next_frame, key_list } = this.ctrl.update();
+    const { next_frame, key_list, } = this.ctrl.update();
     if (
       key_list === "dja" &&
       this.transforms &&
@@ -1842,28 +1858,24 @@ export class Entity {
     if (!this._catching) return false;
     if (this._catching._catcher === this)
       this._catching._catcher = null;
-    this._catching = null;
+    this.set_catching(null);
     this.enter_frame(Defines.NEXT_FRAME_AUTO);
     return true;
   }
   update_catching(): boolean {
     if (!this._catching) return false;
     if (!this._catch_time) {
-      this._catching = null;
+      this.set_catching(null);
       this.enter_frame(Defines.NEXT_FRAME_AUTO);
       return true;
     }
     const { cpoint: cpoint_a } = this.frame;
-    if (cpoint_a?.decrease) {
-      this._catch_time = clamp_add(
-        this._catch_time, cpoint_a.decrease * this._atom_time,
-        0,
-        this.catch_time_max
-      )
-    }
+    if (cpoint_a?.decrease)
+      this.add_catch_time(cpoint_a.decrease * this._atom_time)
+
     if (!cpoint_a) {
-      this._catching = null;
-      this._catch_time = this.catch_time_max;
+      this.set_catching(null);
+      this.set_catch_time(this.catch_time_max);
       this.enter_frame(Defines.NEXT_FRAME_AUTO);
       return true;
     }
@@ -1885,7 +1897,7 @@ export class Entity {
       }
     }
     if (throwvx || throwvy || throwvz) {
-      this._catching = null;
+      this.set_catching(null);
       return false;
     }
 
@@ -1984,8 +1996,8 @@ export class Entity {
       Ditto.warn(`[Entity::start_caught] cannot catch, catchingact got ${itr.catchingact}`);
       return;
     }
-    this._catch_time = this.catch_time_max;
-    this._catching = target;
+    this.set_catch_time(this.catch_time_max);
+    this.set_catching(target)
     this.enter_frame(itr.catchingact);
   }
 

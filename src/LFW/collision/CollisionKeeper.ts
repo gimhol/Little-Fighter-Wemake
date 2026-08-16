@@ -8,8 +8,7 @@ import { handle_ball_hit_other } from "./handle_ball_hit_other";
 import { handle_ball_is_hit_a, handle_ball_is_hit_b } from "./handle_ball_is_hit";
 import { handle_body_goto as handle_criminal_hit } from "./handle_body_goto";
 import { handle_healing } from "./handle_healing";
-import { handle_itr_catch as handle_itr_catch } from "./handle_itr_catch";
-import { handle_itr_kind_force_catch } from "./handle_itr_kind_force_catch";
+import { handle_itr_catch } from "./handle_itr_catch";
 import { handle_itr_kind_freeze } from "./handle_itr_kind_freeze";
 import { handle_itr_kind_magic_flute } from "./handle_itr_kind_magic_flute";
 import { handle_itr_kind_whirlwind } from "./handle_itr_kind_whirlwind";
@@ -162,19 +161,14 @@ const HANDLER_CONFIGS: IHandlerConfig[] = [
   // ── 抓取类 ──
   {
     a_type: ALL_ENTITY_ENUM,
-    itr: [ItrKind.Catch],
+    itr: [ItrKind.Catch, ItrKind.ForceCatch],
     v_type: [EntityEnum.Fighter],
     bdy: [BdyKind.Normal, BdyKind.Defend],
     handler: handle_itr_catch,
+    desc: ` 
+能否抓起的判定通过itr.test实现
+`.trim()
   },
-  {
-    a_type: ALL_ENTITY_ENUM,
-    itr: [ItrKind.ForceCatch],
-    v_type: [EntityEnum.Fighter],
-    bdy: [BdyKind.Normal, BdyKind.Defend],
-    handler: handle_itr_kind_force_catch,
-  },
-
   // ── 特殊效果类 ──
   {
     a_type: ALL_ENTITY_ENUM,

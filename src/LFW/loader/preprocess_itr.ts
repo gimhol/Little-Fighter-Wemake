@@ -2,9 +2,8 @@ import { Expression } from "../base/Expression";
 import { CondMaker } from "../dat_translator/CondMaker";
 import { get_next_frame_by_raw_id } from "../dat_translator/get_the_next";
 import { set_hit_flag } from "../dat_translator/set_hit_flag";
-import { ActionType, BdyKind, OID, CollisionVal as C_Val, EntityEnum, type IEntityData, type IItrInfo, ItrEffect, ItrKind, StateEnum, WeaponEnum, EE } from "../defines";
+import { ActionType, BdyKind, CollisionVal as C_Val, EntityEnum, type IEntityData, type IItrInfo, ItrEffect, ItrKind, OID, StateEnum, WeaponEnum } from "../defines";
 import { HitFlag } from "../defines/HitFlag";
-import type { LFW } from "../LFW";
 import { ensure } from "../utils/container_help/ensure";
 import { get_val_geter_from_collision } from "./get_val_from_collision";
 import type { IItrInfoContext } from "./IEntityDataContext";
@@ -33,14 +32,24 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
       Note:
         默认仅允许抓起眩晕的人，除非test被覆盖
         且x轴速度朝向被抓着。
-        -Gim
+          -Gim
       */
       if (itr.test) break;
       itr.test = new CondMaker<C_Val>()
-        .add(C_Val.AttackerType, "==", EE.Fighter)
-        .and(C_Val.VictimType, "==", EE.Fighter)
         .and(C_Val.VictimState, "==", StateEnum.Tired)
         .and(C_Val.AClosingSpeedX, ">", 0)
+        .done();
+      break;
+    }
+    case ItrKind.ForceCatch: {
+      /* 
+      Note:
+        被击飞中的，不能抓
+          -Gim
+      */
+      if (itr.test) break;
+      itr.test = new CondMaker<C_Val>()
+        .and(C_Val.VictimState, "!=", StateEnum.Falling)
         .done();
       break;
     }

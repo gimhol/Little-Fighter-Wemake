@@ -13,7 +13,6 @@ export * from "./handle_fall";
 export * from "./handle_healing";
 export * from "./handle_injury";
 export * from "./handle_itr_catch";
-export * from "./handle_itr_kind_force_catch";
 export * from "./handle_itr_kind_freeze";
 export * from "./handle_itr_kind_magic_flute";
 export * from "./handle_itr_kind_whirlwind";
