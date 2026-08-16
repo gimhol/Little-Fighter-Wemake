@@ -1,6 +1,6 @@
 import type { TNextFrame } from "./INextFrame";
 
-export interface IHitKeyCollection {
+export interface IHitKeyMap {
   /** 攻击键 */
   a?: TNextFrame;
 
@@ -10,20 +10,23 @@ export interface IHitKeyCollection {
   /** 防御键 */
   d?: TNextFrame;
 
-  /** 正向键 */
-  F?: TNextFrame;
-
-  /** 反向键 */
-  B?: TNextFrame;
-
   /** 上方向键 */
   U?: TNextFrame;
 
   /** 下方向键 */
   D?: TNextFrame;
 
+  /** 左方向键 */
   L?: TNextFrame;
+
+  /** 右方向键 */
   R?: TNextFrame;
+
+  /** 正向键 */
+  F?: TNextFrame;
+
+  /** 反向键 */
+  B?: TNextFrame;
 
   /** 双击跳跃键 */
   aa?: TNextFrame;

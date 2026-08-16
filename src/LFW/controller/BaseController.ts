@@ -1,4 +1,4 @@
-import type { IHitKeyCollection, IVector3, LGK, TNextFrame } from "../defines";
+import type { IHitKeyMap, IVector3, LGK, TNextFrame } from "../defines";
 import { AGK, CONFLICTS_KEY_MAP, GK, GKLabels, StateEnum as SE } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { is_bot_ctrl, is_human_ctrl } from "../entity/type_check";
@@ -219,7 +219,7 @@ export class BaseController {
   /** 
    * 抬起按键 
    * 
-   * 当按键已处于抬起状态时，将被忽略
+   * 当按键已处于抬起状态时，将被忽略dbl
    */
   key_up(...keys: LGK[]): this {
     for (const k of keys)
@@ -293,24 +293,24 @@ export class BaseController {
     }
     const entity = this.entity;
     const frame = entity.frame;
-    const { hold: hld, hit, key_down: kd_map, key_up: ku_map } = frame;
+    const { hold: hld, hit, key_down: kd, key_up: ku } = frame;
 
     const ret = this.result.clear();
 
 
-    if (kd_map && !ret.time) {
+    if (kd && !ret.time) {
       /** 相对方向的按钮判定 */
-      if (kd_map.F && this.tst('kd', F))
-        ret.fire(kd_map.F, this.keys[F].time, F, 'kd');
-      if (kd_map.B && this.tst("kd", B))
-        ret.fire(kd_map.B, this.keys[B].time, B, 'kd');
+      if (kd.F && this.tst('kd', F))
+        ret.fire(kd.F, this.keys[F].time, F, 'kd');
+      if (kd.B && this.tst("kd", B))
+        ret.fire(kd.B, this.keys[B].time, B, 'kd');
     }
-    if (ku_map && !ret.time) {
+    if (ku && !ret.time) {
       /** 相对方向的按钮判定 */
-      if (ku_map.F && this.tst("ku", F))
-        ret.fire(ku_map.F, this.keys[F].time, F, 'ku');
-      if (ku_map.B && this.tst("ku", B))
-        ret.fire(ku_map.B, this.keys[B].time, B, 'ku');
+      if (ku.F && this.tst("ku", F))
+        ret.fire(ku.F, this.keys[F].time, F, 'ku');
+      if (ku.B && this.tst("ku", B))
+        ret.fire(ku.B, this.keys[B].time, B, 'ku');
     }
     if (hit && !ret.time) {
       /** 相对方向的按钮判定 */
@@ -321,8 +321,8 @@ export class BaseController {
     }
     if (hit) {
       /** 相对方向的双击判定 */
-      if (hit.FF && this.tst("dbl", F)) ret.fire(hit.FF, this.dbc[F].time, F, 'dbc');
-      if (hit.BB && this.tst("dbl", B)) ret.fire(hit.BB, this.dbc[B].time, B, 'dbc');
+      if (hit.FF && this.tst("dbl", F)) ret.fire(hit.FF, this.dbc[F].time, F, 'dbl');
+      if (hit.BB && this.tst("dbl", B)) ret.fire(hit.BB, this.dbc[B].time, B, 'dbl');
     }
 
     /** 相对方向的按钮判定 */
@@ -334,17 +334,17 @@ export class BaseController {
     for (const name of AGK) {
       const key = this.keys[name];
 
-      if (kd_map && !ret.time) {
+      if (kd && !ret.time) {
         /** 按键判定 */
-        let act = kd_map[name];
+        let act = kd[name];
         if (act && this.tst("kd", name)) {
-          ret.fire(act, key.time, name, 'ku');
+          ret.fire(act, key.time, name, 'kd');
           break;
         }
       }
-      if (ku_map && !ret.time) {
+      if (ku && !ret.time) {
         /** 按键判定 */
-        let act = ku_map[name];
+        let act = ku[name];
         if (act && this.tst("ku", name)) {
           ret.fire(act, key.time, name, 'ku');
           break;
@@ -359,10 +359,10 @@ export class BaseController {
         }
 
         /** 双击判定 */
-        const keykey = `${name}${name}` as keyof IHitKeyCollection;
+        const keykey = `${name}${name}` as keyof IHitKeyMap;
         act = hit[keykey];
         if (act && this.tst("dbl", name)) {
-          ret.fire(act, this.dbc[name].time, name, 'dbc');
+          ret.fire(act, this.dbc[name].time, name, 'dbl');
           break;
         }
       }
@@ -371,6 +371,7 @@ export class BaseController {
         let act = hld[name];
         if (act && this.tst("hld", name)) {
           ret.fire(act, key.time, name, 'hld');
+          break;
         }
       }
       if (this.dbc[name].fired)
@@ -393,7 +394,7 @@ export class BaseController {
         if (!seq || !nf) continue;
         if (!this.sametime_keys_test(seq)) continue;
         for (let k of seq) this.keys[k as GK]?.use();
-        result.fire(nf, this.time, seq, 'seq');
+        result.fire(nf, this.time, 'd' + seq, 'seq');
         this._key_list = '';
         this._readable_key_list = ''
         return;
@@ -405,7 +406,7 @@ export class BaseController {
       for (const [seq, nf] of seqs) {
         if (!seq || !nf) continue;
         if (!this.sequence_keys_test(seq)) continue;
-        result.fire(nf, this.time, seq, 'seq');
+        result.fire(nf, this.time, 'd' + seq, 'seq');
         for (let k of seq) this.keys[k as GK]?.use();
         this._key_list = '';
         this._readable_key_list = ''

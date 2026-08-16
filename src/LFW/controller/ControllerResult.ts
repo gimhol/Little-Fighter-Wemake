@@ -7,7 +7,7 @@ export class ControllerResult {
   /** 下帧 */
   next_frame?: TNextFrame;
   /** 触发类型 */
-  kind: '' | 'dbc' | 'hld' | 'ku' | 'kd' | 'hit' | 'seq' = '';
+  kind: '' | 'dbl' | 'hld' | 'ku' | 'kd' | 'hit' | 'seq' = '';
   /** 触发按键 */
   keys: string = '';
   /** 触发时间 */

@@ -7,14 +7,13 @@ import type { IBpointInfo } from "./IBpointInfo";
 import type { IChaseInfo } from "./IChaseInfo";
 import type { ICpointInfo } from "./ICpointInfo";
 import type { IFramePic } from "./IFramePic";
-import type { IHitKeyCollection } from "./IHitKeyCollection";
-import type { IHoldKeyCollection } from "./IHoldKeyCollection";
+import type { IHitKeyMap } from "./IHitKeyMap";
 import type { IItrInfo } from "./IItrInfo";
 import type { TNextFrame } from "./INextFrame";
 import type { IOpointInfo } from "./IOpointInfo";
 import type { IQubePair } from "./IQubePair";
 import type { IVelocityInfo } from "./IVelocityInfo";
-import { type IWorldDataset, Schema_IWorldDataset_Partial, world_dataset_fields } from "./IWorldDataset";
+import { type IWorldDataset, Schema_IWorldDataset_Partial } from "./IWorldDataset";
 import type { IWpointInfo } from "./IWpointInfo";
 import type { StateEnum } from "./StateEnum";
 
@@ -146,10 +145,10 @@ export interface IFrameInfo extends IVelocityInfo {
 
 
 
-  hold?: IHoldKeyCollection;
-  hit?: IHitKeyCollection;
-  key_down?: IHoldKeyCollection;
-  key_up?: IHoldKeyCollection;
+  hold?: IHitKeyMap;
+  hit?: IHitKeyMap;
+  key_down?: IHitKeyMap;
+  key_up?: IHitKeyMap;
   seqs?: { [x in string]?: TNextFrame; };
   bdy?: IBdyInfo[];
   itr?: IItrInfo[];

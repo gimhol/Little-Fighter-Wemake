@@ -1652,9 +1652,9 @@ export class Entity {
     }
     if (this.update_catching()) return;
     if (this.update_caught()) return;
-    const { next_frame, keys: key_list, } = this.ctrl.update();
+    const { next_frame, keys, kind } = this.ctrl.update();
     if (
-      key_list === "dja" &&
+      keys === "dja" &&
       this.transforms &&
       this.transforms[1] === this._data.id &&
       this.position.y === this.ground_y
@@ -1663,6 +1663,7 @@ export class Entity {
       this.ctrl.reset_key_list();
     } else if (next_frame) {
       this.enter_frame(next_frame);
+      console.log(kind, keys)
     }
 
     if (!this.shaking && !this.motionless && !this._bearer && !this._catcher)

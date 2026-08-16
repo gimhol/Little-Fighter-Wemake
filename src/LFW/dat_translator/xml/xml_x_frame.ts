@@ -1,4 +1,4 @@
-import { FRAME_BEHAVIOR_LABEL_MAP, StateEnum, StateEnumNames, type IHitKeyCollection, type IHoldKeyCollection } from "../../defines";
+import { FRAME_BEHAVIOR_LABEL_MAP, StateEnumNames, type IHitKeyMap } from "../../defines";
 import { frame_info_new, type IFrameInfo } from "../../defines/IFrameInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
@@ -115,10 +115,10 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   ret.bpoint /**/ = merge_by_tag(el, "bpoint", xml_2_bpoint);
   ret.cpoint /**/ = merge_by_tag(el, "cpoint", xml_2_cpoint);
   ret.chase /**/ = merge_by_tag(el, "chase", xml_2_chase);
-  ret.hit /**/ = xml_to_key_collection(el, "hit") as IHitKeyCollection;
-  ret.hold /**/ = xml_to_key_collection(el, "hold") as IHoldKeyCollection;
-  ret.key_down /**/ = xml_to_key_collection(el, "key_down") as IHoldKeyCollection;
-  ret.key_up /**/ = xml_to_key_collection(el, "key_up") as IHoldKeyCollection;
+  ret.hit /**/ = xml_to_key_collection(el, "hit") as IHitKeyMap;
+  ret.hold /**/ = xml_to_key_collection(el, "hold") as IHitKeyMap;
+  ret.key_down /**/ = xml_to_key_collection(el, "key_down") as IHitKeyMap;
+  ret.key_up /**/ = xml_to_key_collection(el, "key_up") as IHitKeyMap;
   ret.seqs /**/ = xml_to_key_collection(el, "seqs");
   ret.dataset /**/ = xml_to_world_dataset(el.child_by_tag("dataset"));
 

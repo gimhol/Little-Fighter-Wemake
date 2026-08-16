@@ -1,5 +1,4 @@
-import { FacingFlag as FF, type IFrameInfo, type IHitKeyCollection, type INextFrame } from "../defines";
-import type { IHoldKeyCollection } from "../defines/IHoldKeyCollection";
+import { FacingFlag as FF, type IFrameInfo, type IHitKeyMap, type INextFrame } from "../defines";
 import { is_num, is_str } from "../utils";
 import { cook_next_frame_cost } from "./cook_next_frame_cost";
 import { add_next_frame } from "./edit_next_frame";
@@ -20,7 +19,7 @@ export class FrameEditing {
     this.frame = frame;
     return this;
   }
-  keydown(key: keyof IHoldKeyCollection | (keyof IHoldKeyCollection)[], ...nexts: (string | number | INextFrame)[]) {
+  keydown(key: keyof IHitKeyMap | (keyof IHitKeyMap)[], ...nexts: (string | number | INextFrame)[]) {
     this.frame.key_down = this.frame.key_down || {};
     const cooks = nexts.map(v => {
       if (is_str(v) || is_num(v)) return get_next_frame_by_raw_id('' + v, 'frame', 'hit', this.costs);
@@ -34,7 +33,7 @@ export class FrameEditing {
       this.frame.key_down[k] = add_next_frame(this.frame.key_down[k], ...cooks);
     return this;
   }
-  hit(key: keyof IHitKeyCollection | (keyof IHitKeyCollection)[], ...nexts: (string | number | INextFrame)[]) {
+  hit(key: keyof IHitKeyMap | (keyof IHitKeyMap)[], ...nexts: (string | number | INextFrame)[]) {
     this.frame.hit = this.frame.hit || {};
     const cooks = nexts.map(v => {
       if (is_str(v) || is_num(v)) return get_next_frame_by_raw_id('' + v, 'frame', 'hit', this.costs);
