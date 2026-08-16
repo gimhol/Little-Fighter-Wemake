@@ -50,24 +50,24 @@ const map: Record<CollisionVal, IValGetter<Collision>> = {
     const v = c.attacker.velocity.x;
     const p1 = c.attacker.position.x;
     const p2 = c.victim.position.x;
-    if (p1 > p2) return v;
-    if (p1 < p2) return -v;
+    if (p1 > p2) return -v;
+    if (p1 < p2) return v;
     return abs(-v)
   },
   [CollisionVal.AClosingSpeedY]: c => {
     const v = c.attacker.velocity.y;
     const p1 = c.attacker.position.y;
     const p2 = c.victim.position.y;
-    if (p1 > p2) return v;
-    if (p1 < p2) return -v;
+    if (p1 > p2) return -v;
+    if (p1 < p2) return v;
     return abs(-v)
   },
   [CollisionVal.AClosingSpeedZ]: c => {
     const v = c.attacker.velocity.z;
     const p1 = c.attacker.position.z;
     const p2 = c.victim.position.z;
-    if (p1 > p2) return v;
-    if (p1 < p2) return -v;
+    if (p1 > p2) return -v;
+    if (p1 < p2) return v;
     return abs(-v)
   },
 };
