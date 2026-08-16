@@ -1,5 +1,6 @@
 import { KeyStatus } from "./KeyStatus";
 import type { BaseController } from "./BaseController";
+import { GK } from "../defines";
 
 export class ControllerKeyStatus {
   readonly owner: BaseController;
@@ -12,13 +13,13 @@ export class ControllerKeyStatus {
   a: KeyStatus;
   constructor(owner: BaseController) {
     this.owner = owner;
-    this.L = new KeyStatus(this.owner);
-    this.R = new KeyStatus(this.owner);
-    this.U = new KeyStatus(this.owner);
-    this.D = new KeyStatus(this.owner);
-    this.d = new KeyStatus(this.owner);
-    this.j = new KeyStatus(this.owner);
-    this.a = new KeyStatus(this.owner);
+    this.L = new KeyStatus(this.owner, GK.L);
+    this.R = new KeyStatus(this.owner, GK.R);
+    this.U = new KeyStatus(this.owner, GK.U);
+    this.D = new KeyStatus(this.owner, GK.D);
+    this.d = new KeyStatus(this.owner, GK.d);
+    this.j = new KeyStatus(this.owner, GK.j);
+    this.a = new KeyStatus(this.owner, GK.a);
   }
   to_snapshot(): number[][] {
     return [

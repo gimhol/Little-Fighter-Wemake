@@ -1,3 +1,4 @@
+import type { GK } from "../defines";
 import type { World } from "../World";
 export interface IKeyStatusCtrl {
   readonly time: number;
@@ -16,6 +17,7 @@ export class KeyStatus {
   private _d_time: number = 0;
   private _u_time: number = 0;
   private _used: 0 | 1 = 0;
+  key: GK;
 
   to_snapshot(): number[] {
     return [
@@ -53,7 +55,8 @@ export class KeyStatus {
     return this._used;
   }
 
-  constructor(ctrl: IKeyStatusCtrl) {
+  constructor(ctrl: IKeyStatusCtrl, key: GK) {
+    this.key = key;
     this.ctrl = ctrl;
   }
   use(): number {

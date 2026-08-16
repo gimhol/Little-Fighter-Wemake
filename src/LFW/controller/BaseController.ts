@@ -10,6 +10,7 @@ import type { World } from "../World";
 import { ControllerDoubleClicks } from "./ControllerDoubleClicks";
 import { ControllerKeyStatus } from "./ControllerKeyStatus";
 import { ControllerResult } from "./ControllerResult";
+import type { KeyStatus } from "./KeyStatus";
 import { SeqKeys } from "./SeqKeys";
 enum Status {
   UP = 0,
@@ -314,15 +315,23 @@ export class BaseController {
     }
     if (hit && !ret.time) {
       /** 相对方向的按钮判定 */
-      if (hit.F && this.tst("hit", F))
-        ret.fire(hit.F, this.keys[F].use(), F, 'hit');
-      if (hit.B && this.tst("hit", B))
-        ret.fire(hit.B, this.keys[B].use(), B, 'hit');
+      if (hit.F && this.tst("hit", F)) ret.fire(hit.F, this.keys[F].use(), F, 'hit');
+      if (hit.B && this.tst("hit", B)) ret.fire(hit.B, this.keys[B].use(), B, 'hit');
+    }
+    if (me.data.hit && !ret.time) {
+      /** 相对方向的双击判定 */
+      if (me.data.hit.F && this.tst("hit", F)) ret.fire(me.data.hit.F, this.keys[F].use(), F, 'hit');
+      if (me.data.hit.B && this.tst("hit", B)) ret.fire(me.data.hit.B, this.keys[B].use(), B, 'hit');
     }
     if (hit) {
       /** 相对方向的双击判定 */
       if (hit.FF && this.tst("dbl", F)) ret.fire(hit.FF, this.dbc[F].time, F, 'dbl');
       if (hit.BB && this.tst("dbl", B)) ret.fire(hit.BB, this.dbc[B].time, B, 'dbl');
+    }
+    if (me.data.hit) {
+      /** 相对方向的双击判定 */
+      if (me.data.hit.FF && this.tst("dbl", F)) ret.fire(me.data.hit.FF, this.dbc[F].time, F, 'dbl');
+      if (me.data.hit.BB && this.tst("dbl", B)) ret.fire(me.data.hit.BB, this.dbc[B].time, B, 'dbl');
     }
 
     /** 相对方向的按钮判定 */
@@ -333,49 +342,12 @@ export class BaseController {
 
     for (const name of AGK) {
       const key = this.keys[name];
-
-      if (kd && !ret.time) {
-        /** 按键判定 */
-        let act = kd[name];
-        if (act && this.tst("kd", name)) {
-          ret.fire(act, key.time, name, 'kd');
-          break;
-        }
-      }
-      if (ku && !ret.time) {
-        /** 按键判定 */
-        let act = ku[name];
-        if (act && this.tst("ku", name)) {
-          ret.fire(act, key.time, name, 'ku');
-          break;
-        }
-      }
-      if (hit && !ret.time) {
-        /** 按键判定 */
-        let act = hit[name];
-        if (act && this.tst("hit", name)) {
-          ret.fire(act, key.use(), name, 'hit');
-          break;
-        }
-
-        /** 双击判定 */
-        const keykey = `${name}${name}` as keyof IHitKeyMap;
-        act = hit[keykey];
-        if (act && this.tst("dbl", name)) {
-          ret.fire(act, this.dbc[name].time, name, 'dbl');
-          break;
-        }
-      }
-      if (hld && !ret.time) {
-        /** 长按判定 */
-        let act = hld[name];
-        if (act && this.tst("hld", name)) {
-          ret.fire(act, key.time, name, 'hld');
-          break;
-        }
-      }
-      if (this.dbc[name].fired)
-        this.dbc[name].fired = false;
+      if (this.check_key_act(kd, 'kd', key, false)) break;
+      if (this.check_key_act(ku, 'ku', key, false)) break;
+      if (this.check_key_act(me.data.hit, 'hit', key, true)) break;
+      if (this.check_key_act(hit, 'hit', key, true)) break;
+      if (this.check_key_act(hld, 'hld', key, false)) break;
+      if (this.dbc[name].fired) this.dbc[name].fired = false;
     }
     frame?.__seq_map && this.check_hit_seqs(frame.__seq_map, ret);
     /** 这里不想支持过长的指令 */
@@ -383,10 +355,33 @@ export class BaseController {
       this._key_list = '';
       this._readable_key_list = ''
     }
-
     return ret;
   }
 
+  private check_key_act(map: IHitKeyMap | undefined, kind: 'hit' | 'ku' | 'kd' | 'hld', key: KeyStatus, use: boolean) {
+    if (!map) return false;
+    if (this.result.time) return false;
+
+    const name = key.key;
+    /** 单击判定 */
+    let act = map[name];
+    if (act && this.tst(kind, name)) {
+      const time = use ? key.use() : key.time
+      this.result.fire(act, time, name, kind);
+      return true;
+    }
+
+    if (kind != 'hit') return false;
+
+    /** 双击判定 */
+    const keykey = `${name}${name}` as keyof IHitKeyMap;
+    act = map[keykey];
+    if (act && this.tst("dbl", name)) {
+      this.result.fire(act, this.dbc[name].time, name, 'dbl');
+      return true;
+    }
+    return false;
+  }
   private check_hit_seqs(seqs: Map<string, TNextFrame>, result: ControllerResult) {
     /** 同时按键 判定 */
     if (this.keys.d.is_hit()) {
