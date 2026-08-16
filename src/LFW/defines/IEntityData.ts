@@ -1,8 +1,10 @@
+import { any, bool, fields, int, str } from "../fields";
 import { EntityEnum, type TEntityEnum } from "./EntityEnum";
 import type { IBdyInfo } from "./IBdyInfo";
 import { entity_info_new, type IEntityInfo } from "./IEntityInfo";
 import type { IFrameIndexes } from "./IFrameIndexes";
 import type { IFrameInfo } from "./IFrameInfo";
+import type { IHitKeyMap } from "./IHitKeyMap";
 import type { IItrInfo } from "./IItrInfo";
 import type { TNextFrame } from "./INextFrame";
 export type TItrPrefabs = {
@@ -22,6 +24,7 @@ export interface IEntityData {
   indexes?: IFrameIndexes;
   bdy_prefabs?: TBdyPrefabs;
   itr_prefabs?: TItrPrefabs;
+  hit?: IHitKeyMap;
   frames: Record<string, IFrameInfo>;
 
   /**
@@ -35,14 +38,30 @@ export interface IEntityData {
    * @type {?boolean} 默认值: true
    */
   processed?: boolean;
-  __pics?: number
+
+  __pics?: number;
 }
 
 export function entity_data_new(): IEntityData {
   return {
+    id: "",
     type: EntityEnum.Entity,
     frames: {},
-    id: "",
     base: entity_info_new()
   }
 }
+export const entity_data_fields = fields<IEntityData>({
+  id: str({ nullable: true }),
+  type: int({ nullable: true }),
+  alias_id: str({ nullable: true }),
+  base: str({ nullable: true }),
+  on_dead: any({ nullable: true }),
+  on_exhaustion: any({ nullable: true }),
+  indexes: any({ nullable: true }),
+  bdy_prefabs: any({ nullable: true }),
+  itr_prefabs: any({ nullable: true }),
+  hit: any({ nullable: true }),
+  frames: any({ nullable: true }),
+  processed: bool({ nullable: true }),
+  __pics: any({ nullable: true }),
+})

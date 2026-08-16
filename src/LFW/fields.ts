@@ -54,6 +54,7 @@ function w<T extends object>(type: IFieldInfo<T>['type'], ...args: IArg<T>[]): I
 export const str = assign(<T extends object>(...p: (string | Omit<IStrFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('string', ...p), w('string'))
 export const flt = assign(<T extends object>(...p: (string | Omit<IFltFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('float', ...p), w('float'))
 export const int = assign(<T extends object>(...p: (string | Omit<IIntFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('int', ...p), w('int'))
+export const bool = assign(<T extends object>(...p: (string | Omit<IIntFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('boolean', ...p), w('boolean'))
 
 export const any = assign(<T extends object>(...p: (string | Omit<IFieldInfo<T>, 'key' | 'type'>)[]): IRet<T> => w('', ...p), w(''))
 

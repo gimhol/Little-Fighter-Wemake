@@ -16,11 +16,11 @@ export function xml_2_map<T>(el: IXMLElement, tag: string | string[], reader: (e
   return Object.keys(ret).length ? ret : void 0;
 }
 
-export function xml_x_map<T>(xml: IXML, map: { [x in string]?: T | undefined } | undefined, tag: string, writer: (xml: IXML, value: T, tag: string) => IXMLElement | undefined | null, parent?: IXMLElement | null) {
+export function xml_x_map<T, K extends string | number | symbol = string | number | symbol>(xml: IXML, map: { [x in K]?: T | undefined } | undefined, tag: string, writer: (xml: IXML, value: T, tag: string) => IXMLElement | undefined | null, parent?: IXMLElement | null) {
   const ret: IXMLElement[] = [];
   for (const [key, value] of Object.entries(map ?? {})) {
     if (value == void 0) continue;
-    const el = writer(xml, value, tag);
+    const el = writer(xml, value as any, tag);
     if (!el) continue;
     if (!el.get_str("id")) el.get_str("id", key);
     if (!el.get_str("key")) el.get_str("key", key);

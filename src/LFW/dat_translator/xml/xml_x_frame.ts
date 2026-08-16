@@ -4,8 +4,6 @@ import type { IXML, IXMLElement } from "../../ditto/xml";
 import { delete_undefined } from "./delete_undefined";
 import { merge_by_tag } from "./merge_by_tag";
 import { one_or_arr } from "./one_or_arr";
-import { xml_from_key_collection } from "./xml_from_key_collection";
-import { xml_to_key_collection } from "./xml_to_key_collection";
 import { xml_to_velocity_info } from "./xml_to_velocity_info";
 import { xml_to_world_dataset } from "./xml_to_world_dataset";
 import { xml_2_bdy, xml_x_bdy } from "./xml_x_bdy";
@@ -13,6 +11,7 @@ import { xml_2_bpoint, xml_x_bpoint } from "./xml_x_bpoint";
 import { xml_2_chase, xml_x_chase } from "./xml_x_chase";
 import { xml_2_cpoint, xml_x_cpoint } from "./xml_x_cpoint";
 import { xml_2_frame_pic, xml_x_frame_pic } from "./xml_x_frame_pic";
+import { xml_2_hit_key_map, xml_x_hit_key_map } from "./xml_x_hit_key_map";
 import { xml_2_itr, xml_x_itr } from "./xml_x_itr";
 import { xml_2_t_next_frame, xml_x_t_next_frame } from "./xml_x_next_frame";
 import { xml_2_non_empty } from "./xml_x_non_empty";
@@ -49,11 +48,10 @@ export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement 
   ret.set_attr("landable", f.landable)
   ret.set_attr("facing", f.facing)
 
-
-  if (f.hit) xml_from_key_collection(xml, f.hit, 'hit').forEach(v => ret.insert(v))
-  if (f.hold) xml_from_key_collection(xml, f.hold, 'hold').forEach(v => ret.insert(v))
-  if (f.key_down) xml_from_key_collection(xml, f.key_down, 'key_down').forEach(v => ret.insert(v))
-  if (f.key_up) xml_from_key_collection(xml, f.key_up, 'key_up').forEach(v => ret.insert(v))
+  xml_x_hit_key_map(xml, f.hit, 'hit')?.forEach(v => ret.insert(v))
+  xml_x_hit_key_map(xml, f.hold, 'hold')?.forEach(v => ret.insert(v))
+  xml_x_hit_key_map(xml, f.key_down, 'key_down')?.forEach(v => ret.insert(v))
+  xml_x_hit_key_map(xml, f.key_up, 'key_up')?.forEach(v => ret.insert(v))
 
   f.bdy?.map(v => xml_x_bdy(xml, v, "bdy")).forEach(v => ret.insert(v))
   f.itr?.map(v => xml_x_itr(xml, v, "itr")).forEach(v => ret.insert(v))
@@ -115,11 +113,11 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   ret.bpoint /**/ = merge_by_tag(el, "bpoint", xml_2_bpoint);
   ret.cpoint /**/ = merge_by_tag(el, "cpoint", xml_2_cpoint);
   ret.chase /**/ = merge_by_tag(el, "chase", xml_2_chase);
-  ret.hit /**/ = xml_to_key_collection(el, "hit") as IHitKeyMap;
-  ret.hold /**/ = xml_to_key_collection(el, "hold") as IHitKeyMap;
-  ret.key_down /**/ = xml_to_key_collection(el, "key_down") as IHitKeyMap;
-  ret.key_up /**/ = xml_to_key_collection(el, "key_up") as IHitKeyMap;
-  ret.seqs /**/ = xml_to_key_collection(el, "seqs");
+  ret.hit /**/ = xml_2_hit_key_map(el, "hit") as IHitKeyMap;
+  ret.hold /**/ = xml_2_hit_key_map(el, "hold") as IHitKeyMap;
+  ret.key_down /**/ = xml_2_hit_key_map(el, "key_down") as IHitKeyMap;
+  ret.key_up /**/ = xml_2_hit_key_map(el, "key_up") as IHitKeyMap;
+  ret.seqs /**/ = xml_2_hit_key_map(el, "seqs");
   ret.dataset /**/ = xml_to_world_dataset(el.child_by_tag("dataset"));
 
   return delete_undefined(ret);
