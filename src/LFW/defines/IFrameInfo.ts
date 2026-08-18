@@ -6,7 +6,7 @@ import type { IBdyInfo } from "./IBdyInfo";
 import type { IBpointInfo } from "./IBpointInfo";
 import type { IChaseInfo } from "./IChaseInfo";
 import type { ICpointInfo } from "./ICpointInfo";
-import type { IFramePic } from "./IFramePic";
+import { Schema_IFramePic, type IFramePic } from "./IFramePic";
 import type { IHitKeyMap } from "./IHitKeyMap";
 import type { IItrInfo } from "./IItrInfo";
 import type { TNextFrame } from "./INextFrame";
@@ -285,7 +285,7 @@ export const frame_info_fields = fields<IFrameInfo>({
   id: str("帧ID", { nullable: false, maxLength: 32 }),
   name: str("帧名", { nullable: false, maxLength: 32 }),
   pic: any,
-  pics: any,
+  pics: any({ nullable: true }),
   hp: any,
   mp: any,
   state: int("状态", { nullable: false }),
@@ -400,8 +400,8 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     invisible: { type: 'number', number: { int: true, nagetive: false }, nullable: true },
     no_shadow: { type: 'number', oneof: [0, 1], nullable: true },
     jump_flag: { type: 'number', oneof: [0, 1], nullable: true },
-    pic: { type: 'object', nullable: true },// TODO!
-    pics: { type: 'array', items: 'object', nullable: true },
+    pic: { type: Schema_IFramePic.type, nullable: true },// TODO!
+    pics: { type: 'array', items: Schema_IFramePic, nullable: true },
     next: { type: 'object' },// TODO!
     width: { type: 'number' },
     height: { type: 'number' },

@@ -25,6 +25,7 @@ export class SchemaValidator {
   validate<T>(value: any, schema: ISchema<T>): value is T {
     const { type } = schema;
     const r = () => _wrong(value, schema, this._errors)
+
     if (value == null || value == void 0) {
       const ret = schema.nullable || schema.type == 'null';
       if (!ret) return r()
