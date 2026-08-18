@@ -1,8 +1,6 @@
 /*** AUTO EXPORT START ***/
 export * from "./DatMgr";
-export * from "./check_bdy";
 export * from "./check_frame";
-export * from "./check_itr";
 export * from "./check_stage_info";
 export * from "./get_import_fallbacks";
 export * from "./get_val_from_bot_ctrl";

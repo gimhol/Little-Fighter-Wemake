@@ -1,8 +1,6 @@
 import type { IEntityData, IFrameInfo } from "../defines";
 import { Schema_IFrameInfo } from "../defines";
 import { SchemaValidator } from "../utils/schema/validate_schema";
-import { check_bdy } from "./check_bdy";
-import { check_itr } from "./check_itr";
 
 /**
  * 检查frame每个字段是否正常
@@ -19,9 +17,6 @@ export function check_frame(data: Readonly<IEntityData>, frame: Readonly<IFrameI
   my_errors.push(...v.errors);
   // TODO: hold
   // TODO: hit
-
-  frame.bdy?.forEach((v, i) => check_bdy(data, frame, v, i, my_errors));
-  frame.itr?.forEach((v, i) => check_itr(data, frame, v, i, my_errors));
   // TODO: wpoint
   // TODO: bpoint
   // TODO: opoint
