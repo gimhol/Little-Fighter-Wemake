@@ -145,8 +145,8 @@ export class WorldRenderer implements IWorldRenderer {
 
     if (this.dirty) {
       this.cam_p0.copy(this.cam_p1)
-      this.cam_p1.x = this.world.current_cam_pos.x;
-      this.cam_p1.y = this.world.current_cam_pos.y;
+      this.cam_p1.x = this.world.camera.position.x;
+      this.cam_p1.y = this.world.camera.position.y;
     }
 
     this.camera.position.lerpVectors(this.cam_p0, this.cam_p1, this.dfactor)

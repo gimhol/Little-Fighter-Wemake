@@ -2,6 +2,7 @@ import { Callbacks } from './base/Callbacks';
 import { FPS } from './base/FPS';
 import { Background } from "./bg/Background";
 import { Buff } from "./buff/Buff";
+import { Camera } from './Camera';
 import { type Collision, collision_get } from "./collision/Collision";
 import { collisions_keeper } from "./collision/CollisionKeeper";
 import { BallController } from "./controller/BallController";
@@ -15,7 +16,6 @@ import {
   GONE_FRAME_INFO,
   type IBdyInfo, type IBgData, type IBounding, type IEntityData,
   type IFrameInfo, type IItrInfo,
-  type IVector2,
   type IVector3Like,
   O_ID,
   SE,
@@ -37,10 +37,9 @@ import type { IWorldCallbacks } from "./IWorldCallbacks";
 import { LFW } from "./LFW";
 import { Stage } from "./stage/Stage";
 import { Transform } from "./Transform";
-import { abs, between, floor, max, min, round, sign } from './utils/math/base';
+import { between, floor, round } from './utils/math/base';
 import { clamp } from './utils/math/clamp';
 import { Times } from './utils/Times';
-import { is_num } from './utils/type_check/is_num';
 import { WorldDataset } from "./WorldDataset";
 const CHASING_UPDATE_INTERVAL = 8;
 const MAX_DEBUG_ENTITIES = 355
@@ -85,14 +84,8 @@ export class World {
   private _chasers = new Set<BallController>();
   private _paused: 0 | 1 | 2 = 0;
   private _fn_locked: 0 | 1 = 0;
-  private _cam_v: IVector2;
-  readonly target_cam_pos: IVector2;
-  readonly current_cam_pos: IVector2;
+  readonly camera: Camera;
   /** 这种相机位置控制感觉有点问题 */
-  private _dist_cam_pos: IVector2 | null = null
-  private _lock_cam_pos: IVector2 | null = null
-
-
   public renderer: IWorldRenderer;
 
   readonly transform: Transform = new Transform()
@@ -160,17 +153,15 @@ export class World {
   get counts(): ReadonlyMap<string, number> { return this._counts }
   get game_time() { return this._game_time.value }
   get lifetime() { return this._lifetime }
-  get lock_cam_x() { return this._lock_cam_pos?.x }
+  get lock_cam_x() { return this.camera.lock_position?.x }
 
   constructor(lfw: LFW) {
     this.lfw = lfw;
-    this.target_cam_pos = Ditto.vec2();
-    this.current_cam_pos = Ditto.vec2();
-    this._cam_v = Ditto.vec2();
     this._bg = new Background(this, Defines.VOID_BG);
     this.transform.scale_to(this._bg.zoom_x, this._bg.zoom_y, this._bg.zoom_z)
     this._stage = new Stage(this, Defines.VOID_STAGE);
     this.renderer = new Ditto.WorldRender(this);
+    this.camera = new Camera(this);
     this.dataset.on_dataset_change = this.on_dataset_change.bind(this)
   }
   team_come(_team: string, x: number, y: number, z: number) {
@@ -610,7 +601,7 @@ export class World {
         case CMD.DIST_CAM: {
           const value = cmds[i += 1]
           if (value === '') {
-            this._dist_cam_pos = null;
+            this.camera.dest_position = null;
             continue;
           }
           const [x, y = 0] = value.split(',').map(Number);
@@ -618,13 +609,13 @@ export class World {
             Ditto.warn(`DIST_CAM failed, value got ${value}.`)
             continue;
           }
-          this._dist_cam_pos = Ditto.vec2(x, y);
+          this.camera.dest_position = Ditto.vec2(x, y);
           continue;
         }
         case CMD.LOCK_CAM: {
           const value = cmds[i += 1]
           if (value === '') {
-            this._lock_cam_pos = null;
+            this.camera.lock_position = null;
             continue;
           }
           const [x, y = 0] = value.split(',').map(Number);
@@ -632,11 +623,11 @@ export class World {
             Ditto.warn(`LOCK_CAM failed, value got ${value}.`)
             continue;
           }
-          if (this.current_cam_pos.x != x)
+          if (this.camera.position.x != x)
             this.callbacks.call("on_cam_move", x, y);
-          this._lock_cam_pos = Ditto.vec2(x, y);
-          this.target_cam_pos.x = x;
-          this.current_cam_pos.x = x;
+          this.camera.lock_position = Ditto.vec2(x, y);
+          this.camera.destination.x = x;
+          this.camera.position.x = x;
           continue;
         }
         case CMD.CHANGE_BG:
@@ -786,17 +777,17 @@ export class World {
     }
 
     if (local_count) {
-      this.target_cam_pos.x = round(local_x_sum / local_count);
-      this.target_cam_pos.y = -0.5 * round(local_z_sum / local_count) - this.dataset.screen_h / 2;
+      this.camera.destination.x = round(local_x_sum / local_count);
+      this.camera.destination.y = -0.5 * round(local_z_sum / local_count) - this.dataset.screen_h / 2;
     } else if (human_count) {
-      this.target_cam_pos.x = round(human_x_sum / human_count);
-      this.target_cam_pos.y = -0.5 * round(human_z_sum / human_count) - this.dataset.screen_h / 2;
+      this.camera.destination.x = round(human_x_sum / human_count);
+      this.camera.destination.y = -0.5 * round(human_z_sum / human_count) - this.dataset.screen_h / 2;
     } else if (puppet_count) {
-      this.target_cam_pos.x = round(puppet_x_sum / puppet_count);
-      this.target_cam_pos.y = -0.5 * round(puppet_z_sum / puppet_count) - this.dataset.screen_h / 2;
+      this.camera.destination.x = round(puppet_x_sum / puppet_count);
+      this.camera.destination.y = -0.5 * round(puppet_z_sum / puppet_count) - this.dataset.screen_h / 2;
     } else if (fighter_count) {
-      this.target_cam_pos.x = round(fighter_x_sum / fighter_count);
-      this.target_cam_pos.y = -0.5 * round(fighter_z_sum / fighter_count) - this.dataset.screen_h / 2;
+      this.camera.destination.x = round(fighter_x_sum / fighter_count);
+      this.camera.destination.y = -0.5 * round(fighter_z_sum / fighter_count) - this.dataset.screen_h / 2;
     }
 
     this.collisions.forEach(c => collisions_keeper.handle(c));
@@ -831,83 +822,11 @@ export class World {
   }
 
   update_camera() {
-    const old_cam_x = round(this.current_cam_pos.x);
-    const old_cam_y = round(this.current_cam_pos.y);
-    do {
-      const { cam_l, left, cam_r, right } = this.stage;
-      const min_cam_l = is_num(this._lock_cam_pos?.x) ? left : cam_l;
-      const max_cam_r = is_num(this._lock_cam_pos?.x) ? right : cam_r;
-      const max_cam_x = max_cam_r - this.dataset.screen_w;
-      let max_vx_ratio = 50;
-      let acc_x_ratio = 1;
-      this.target_cam_pos.x = clamp(this._lock_cam_pos?.x ?? this._dist_cam_pos?.x ?? this.target_cam_pos.x,
-        min_cam_l,
-        max_cam_x
-      );
-      // 当前相机超出地图范围时直接跳回边界，不缓动
-      if (this.current_cam_pos.x < min_cam_l || this.current_cam_pos.x > max_cam_x) {
-        this._cam_v.x = 0;
-        this.current_cam_pos.x = clamp(this.current_cam_pos.x, min_cam_l, max_cam_x);
-        break;
-      }
-      if (round(this.current_cam_pos.x) == round(this.target_cam_pos.x)) break
-
-      const acc_x = min(
-        this.dataset.atom_time * acc_x_ratio,
-        this.dataset.atom_time * 0.7 * (acc_x_ratio * abs(this.current_cam_pos.x - this.target_cam_pos.x)) / this.dataset.screen_w,
-      );
-      const direction_x = this.current_cam_pos.x > this.target_cam_pos.x ? -1 : 1;
-      const max_vx = direction_x * max_vx_ratio * acc_x;
-      if (sign(this._cam_v.x) !== direction_x)
-        this._cam_v.x = 0;
-      if (abs(this._cam_v.x) < abs(max_vx))
-        this._cam_v.x += acc_x * direction_x;
-      else
-        this._cam_v.x = max_vx;
-      if (direction_x < 0)
-        this.current_cam_pos.x = max(this.target_cam_pos.x, this.current_cam_pos.x + this._cam_v.x)
-      else
-        this.current_cam_pos.x = min(this.target_cam_pos.x, this.current_cam_pos.x + this._cam_v.x);
-    } while (0)
-
-    do {
-      const { height } = this.bg;
-      if (height <= Defines.MODERN_SCREEN_HEIGHT) {
-        this.current_cam_pos.y = this.target_cam_pos.y = 0;
-        break;
-      }
-      const { far } = this.stage;
-      let max_vy_ratio = 50;
-      let acc_y_ratio = 1;
-      const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT)
-      this.target_cam_pos.y = clamp(this._lock_cam_pos?.y ?? this._dist_cam_pos?.y ?? this.target_cam_pos.y, 0, cam_max_y);
-      // 当前相机超出地图范围时直接跳回边界，不缓动
-      if (this.current_cam_pos.y < 0 || this.current_cam_pos.y > cam_max_y) {
-        this._cam_v.y = 0;
-        this.current_cam_pos.y = clamp(this.current_cam_pos.y, 0, cam_max_y);
-        break;
-      }
-      const acc_y = min(
-        this.dataset.atom_time * acc_y_ratio,
-        this.dataset.atom_time * 0.7 * (acc_y_ratio * abs(this.current_cam_pos.y - this.target_cam_pos.y)) / this.dataset.screen_h,
-      );
-      if (round(this.current_cam_pos.y) == round(this.target_cam_pos.y)) break
-      const direction_y = this.current_cam_pos.y > this.target_cam_pos.y ? -1 : 1;
-      const max_vy = direction_y * max_vy_ratio * acc_y;
-      if (sign(this._cam_v.y) !== direction_y)
-        this._cam_v.y = 0;
-      if (abs(this._cam_v.y) < abs(max_vy))
-        this._cam_v.y += acc_y * direction_y;
-      else
-        this._cam_v.y = max_vy;
-      if (direction_y < 0)
-        this.current_cam_pos.y = max(this.target_cam_pos.y, this.current_cam_pos.y + this._cam_v.y)
-      else
-        this.current_cam_pos.y = min(this.target_cam_pos.y, this.current_cam_pos.y + this._cam_v.y);
-    } while (0)
-
-    const new_cam_x = round(this.current_cam_pos.x);
-    const new_cam_y = round(this.current_cam_pos.y);
+    const old_cam_x = round(this.camera.position.x);
+    const old_cam_y = round(this.camera.position.y);
+    this.camera.update();
+    const new_cam_x = round(this.camera.position.x);
+    const new_cam_y = round(this.camera.position.y);
     if (old_cam_x !== new_cam_x || old_cam_y !== new_cam_y)
       this.callbacks.call("on_cam_move", new_cam_x, new_cam_y);
   }
@@ -1021,8 +940,8 @@ export class World {
     if (this.stage.bg.id !== Defines.VOID_BG.id)
       this.stage.change_bg(Defines.VOID_BG)
     this.paused = false;
-    this._lock_cam_pos = null;
-    this._dist_cam_pos = null;
+    this.camera.lock_position = null;
+    this.camera.dest_position = null;
     this.callbacks.call('on_counts');
     this._counts.clear()
   }

@@ -241,7 +241,7 @@ export class __Modern extends BaseSounds {
     const scale = (this.lfw.world.renderer as WorldRenderer).world_node.scale.x
     const full_w = Defines.CLASSIC_SCREEN_WIDTH / scale
     const half_w = full_w / 2;
-    const viewer_x = this.lfw.world.current_cam_pos.x + half_w;
+    const viewer_x = this.lfw.world.camera.position.x + half_w;
     const sound_x = x ?? viewer_x;
     const playings = this._playings.size + 1;
     const attenuation = 1 / Math.sqrt(playings);

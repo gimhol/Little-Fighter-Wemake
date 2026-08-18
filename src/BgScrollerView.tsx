@@ -55,7 +55,7 @@ export function BgScrollerView(props: { lfw?: LFW }) {
   }, [lfw])
 
   useEffect(() => {
-    draw_cam_bar(world?.current_cam_pos.x ?? 0)
+    draw_cam_bar(world?.camera.position.x ?? 0)
   }, [draw_cam_bar, world])
 
   useCallbacks(world?.callbacks, {
@@ -77,7 +77,7 @@ export function BgScrollerView(props: { lfw?: LFW }) {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    const ox = from_world_cam_x(lfw.world.lock_cam_x ?? lfw.world.current_cam_pos.x, lfw, canvas) - e.pageX
+    const ox = from_world_cam_x(lfw.world.lock_cam_x ?? lfw.world.camera.position.x, lfw, canvas) - e.pageX
 
     const handle_pointer_event = (e: React.PointerEvent | PointerEvent) => {
       const output_x = to_world_cam_x(e.pageX + ox, lfw, canvas);

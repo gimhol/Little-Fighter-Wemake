@@ -41,14 +41,14 @@ export class CameraCtrl extends UIComponent {
       this.auto = true
     } else if (LR || UD) {
       this.auto = false
-      let { current_cam_pos: { x, y } } = this.world;
+      let { camera: { position: { x, y } } } = this.world;
       x += 5 * dt * LR;
       y += 5 * dt * UD;
       this.lfw.cmds.push(CMD.DIST_CAM, `${x},${y}`)
     }
     if (this._staring) {
       this._staring.outline_width = round((cos(this.world.lifetime) + 1) * 2.5);
-      
+
     }
     if (this.staring && (this.staring.hp <= 0 || !this.staring.mounted))
       this.focus_lr(1)
