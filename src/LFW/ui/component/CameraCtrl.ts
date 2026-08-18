@@ -36,7 +36,7 @@ export class CameraCtrl extends UIComponent {
       if (this.keys.U.is_start()) { this.focus_ud(-1); }
       if (this.keys.D.is_start()) { this.focus_ud(+1); }
     } else if (!this.keys.d.is_end()) {
-      this.lfw.push_cmd(CMD.DIST_CAM, ``)
+      this.lfw.push_cmd(CMD.DIST_CAM)
       this.staring = void 0;
       this.auto = true
     } else if (LR || UD) {
@@ -59,7 +59,7 @@ export class CameraCtrl extends UIComponent {
     }
   }
   override on_stop(): void {
-    this.lfw.push_cmd(CMD.DIST_CAM, ``)
+    this.lfw.push_cmd(CMD.DIST_CAM)
     if (this._staring) {
       this._staring.outline_width = 1;
       this._staring.outline_color = '';

@@ -35,7 +35,7 @@ export class Camera {
     this.position.y = this.destination.y = y;
   }
   undest() {
-    this._locked = null;
+    this._dested = null;
   }
   dest(x: number, y: number) {
     this._dested = Ditto.vec2(x, y);
