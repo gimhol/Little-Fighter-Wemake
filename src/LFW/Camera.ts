@@ -1,31 +1,66 @@
 import { Ditto } from '.';
-import { type IVector2, Defines } from './defines';
-import { abs, clamp, is_num, max, min, round, sign } from './utils';
+import { type IVector2, type IVector2Like, Defines } from './defines';
+import { abs, clamp, max, min, round, sign } from './utils';
 import type { World } from './World';
 
 export class Camera {
+  private _locked: IVector2 | null = null;
+  private _dested: IVector2 | null = null;
   readonly world: World;
   readonly destination: IVector2;
   readonly position: IVector2;
   readonly velocity: IVector2;
-  lock_position?: IVector2 | null = null;
-  dest_position?: IVector2 | null = null;
+
+  get locked(): Readonly<IVector2Like> | null { return this._locked }
+  get dested(): Readonly<IVector2Like> | null { return this._dested }
+
   constructor(world: World) {
     this.world = world;
     this.destination = Ditto.vec2();
     this.position = Ditto.vec2();
     this.velocity = Ditto.vec2();
   }
+  reset() {
+    this.jump_x(0);
+    this.jump_y(0);
+    this._locked = null;
+    this._dested = null;
+  }
+  jump_x(x: number) {
+    this.velocity.x = 0;
+    this.position.x = this.destination.x = x;
+  }
+  jump_y(y: number) {
+    this.velocity.y = 0;
+    this.position.y = this.destination.y = y;
+  }
+  undest() {
+    this._locked = null;
+  }
+  dest(x: number, y: number) {
+    this._dested = Ditto.vec2(x, y);
+  }
+  unlock() {
+    this._locked = null;
+  }
+  lock(x: number, y: number) {
+    this._locked = Ditto.vec2(x, y);
+  }
   update() {
+    if (this._locked) {
+      this.jump_x(this._locked.x);
+      this.jump_y(this._locked.y);
+      return;
+    }
     const { stage, bg, dataset: { atom_time, screen_w, screen_h } } = this.world;
     do {
-      const { cam_l, left, cam_r, right } = stage;
-      const min_cam_l = is_num(this.lock_position?.x) ? left : cam_l;
-      const max_cam_r = is_num(this.lock_position?.x) ? right : cam_r;
+      const { cam_l, cam_r } = stage;
+      const min_cam_l = cam_l;
+      const max_cam_r = cam_r;
       const max_cam_x = max_cam_r - screen_w;
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
-      this.destination.x = clamp(this.lock_position?.x ?? this.dest_position?.x ?? this.destination.x,
+      this.destination.x = clamp(this._dested?.x ?? this.destination.x,
         min_cam_l,
         max_cam_r - screen_w
       );
@@ -65,7 +100,7 @@ export class Camera {
       const { far } = this.world.stage;
       let max_vy_ratio = 50;
       let acc_y_ratio = 1;
-      const cam_y = this.lock_position?.y ?? this.dest_position?.y ?? this.destination.y;
+      const cam_y = this._dested?.y ?? this.destination.y;
       const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT);
       this.destination.y = clamp(cam_y, 0, cam_max_y);
       const acc_y = min(

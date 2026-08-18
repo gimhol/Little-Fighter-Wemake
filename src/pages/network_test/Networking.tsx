@@ -163,7 +163,7 @@ class Lf2NetworkDriver {
         this._f = true
       }
       if (this._f) { debugger; break; }
-      if (cmds?.length) lf2.cmds.push(...(cmds as any[]))
+      if (cmds?.length) cmds.forEach(cmd => lf2.push_cmd(cmd))
       if (!events?.length) continue;
       for (const { player_id, pressed = false, game_key = '' } of events) {
         if (!player_id) continue;

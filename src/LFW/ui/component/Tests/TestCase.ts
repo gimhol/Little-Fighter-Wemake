@@ -39,7 +39,7 @@ export class TestCase implements IState<number> {
     this.owner.lfw.change_bg('bg_4');
   }
   leave(): void {
-    this.lfw.cmds.push(CMD.DIST_CAM, '')
+    this.lfw.push_cmd(CMD.DIST_CAM, '')
     this.owner.world.clear();
     this.owner.lfw.change_bg('bg_4');
   }

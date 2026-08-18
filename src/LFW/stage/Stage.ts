@@ -239,8 +239,7 @@ export class Stage {
       this.spawn_object(object, ce);
     }
     if (is_num(phase.cam_jump_to_x)) {
-      this.world.camera.position.x = phase.cam_jump_to_x;
-      this.world.camera.destination.x = phase.cam_jump_to_x;
+      this.world.camera.jump_x(phase.cam_jump_to_x);
     }
 
     this.player_l = phase.player_l ?? 0

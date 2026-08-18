@@ -111,10 +111,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   first_ui: string = 'init';
   readonly _keys: Keys[] = [];
 
-  cmds: (CMD | D.CheatEnum | string)[] = [];
+  cmds: string[] = [];
   events: UI.LFWKeyEvent[] = [];
   broadcasts: string[] = [];
-
+  push_cmd(...words: string[]) {
+    this.cmds.push(words.join(' '));
+    return this;
+  }
   get loading(): boolean {
     return this._loading;
   }
@@ -348,7 +351,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   set_cheat(name: string | D.CheatEnum, enable: boolean = !this.is_cheat(name)) {
     if (enable == this.is_cheat(name)) return;
-    this.cmds.push(name, enable ? '1' : '');
+    this.push_cmd(name, enable ? '1' : '');
     this._cheat_keys = "";
     this._cheat_gkeys.clear();
   }
@@ -356,7 +359,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.debug('on_key_down', e)
     const key_code = e.key.toLowerCase();
     if (key_code in CMD_NAMES) {
-      this.cmds.push(key_code as CMD);
+      this.push_cmd(key_code as CMD);
       e.interrupt();
     }
 
@@ -513,7 +516,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     )
     throw error;
   }
-  
+
   private async load_data(zip: I.IZip, md5: string) {
     this._dispose_check('load_data')
 
@@ -597,15 +600,15 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return fighter;
   }
   del_puppet(player_id: string) {
-    this.cmds.push(CMD.DEL_PUPPET, player_id)
+    this.push_cmd(CMD.DEL_PUPPET, player_id)
   }
   change_bg(bg: string): void {
     this.world.change_bg(bg)
-    // this.cmds.push(CMD.CHANGE_BG, bg)
+    // this.push_cmd(CMD.CHANGE_BG, bg)
   }
   change_stage(stage: string): void {
     this.world.change_stage(stage)
-    // this.cmds.push(CMD.CHANGE_STAGE, stage)
+    // this.push_cmd(CMD.CHANGE_STAGE, stage)
   }
   goto_next_stage() {
     this.debug(`goto_next_stage`)
@@ -753,7 +756,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     if (this.is_cheat(D.CheatEnum.LF2_NET))
       list.push(D.Difficulty.Crazy)
     const next = loop_offset(list, this.world.dataset.difficulty, offset)
-    this.cmds.push(CMD.SET_DIFFICULTY, '' + next)
+    this.push_cmd(CMD.SET_DIFFICULTY, '' + next)
   }
   private update_zip_names() {
     const DATA_LIST = LFW._ZIPS.slice(2).map(v => typeof v === 'string' ? v : v.name)

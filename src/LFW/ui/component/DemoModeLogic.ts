@@ -328,8 +328,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     }
     this.lfw.world.callbacks.add(this.world_callbacks);
     this.props.cam_ctrl?.focus_lr(1);
-    this.world.camera.destination.x = cam_x;
-    this.world.camera.position.x = cam_x;
+    this.world.camera.jump_x(cam_x);
   }
   clearup() {
     this.lfw.world.stage.callbacks.del(this.stage_callbacks)

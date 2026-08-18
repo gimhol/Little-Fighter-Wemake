@@ -511,10 +511,10 @@ function App() {
     [players],
   );
 
-  useShortcut("Escape", 0, () => lfw?.cmds.push(CMD.F4));
-  useShortcut("F8", 0, () => lfw?.cmds.push(CMD.F8));
-  useShortcut("F9", 0, () => lfw?.cmds.push(CMD.F9));
-  useShortcut("F10", 0, () => lfw?.cmds.push(CMD.F10));
+  useShortcut("Escape", 0, () => lfw?.push_cmd(CMD.F4));
+  useShortcut("F8", 0, () => lfw?.push_cmd(CMD.F8));
+  useShortcut("F9", 0, () => lfw?.push_cmd(CMD.F9));
+  useShortcut("F10", 0, () => lfw?.push_cmd(CMD.F10));
   useShortcut("F11", 0, () => toggle_fullscreen());
   useShortcut("ctrl+F1", 0, () => lfw?.is_cheat(CheatEnum.GIM_INK) && set_app_state(d => { d.dev_ui_open = !d.dev_ui_open }));
   useShortcut("ctrl+F3", 0, () => lfw?.is_cheat(CheatEnum.GIM_INK) && set_app_state(d => {
@@ -630,7 +630,7 @@ function App() {
         </Show>
         <Show show={ui_id && Number(lfw?.ui_stacks[0]?.uis?.length) > 1}>
           <ToggleImgButton
-            onClick={() => lfw?.cmds.push(CMD.F4)}
+            onClick={() => lfw?.push_cmd(CMD.F4)}
             src={[img_btn_2_3]} />
         </Show>
         <ToggleImgButton
@@ -645,20 +645,20 @@ function App() {
         <Show show={bg_id !== Defines.VOID_BG.id && ui_id !== "settings"}>
           <ToggleImgButton
             checked={paused}
-            onClick={() => lfw?.cmds.push(CMD.F1)}
+            onClick={() => lfw?.push_cmd(CMD.F1)}
             src={[img_btn_2_1, img_btn_2_2]} />
         </Show>
         <Show show={bg_id !== Defines.VOID_BG.id && ui_id !== "settings" && (window as any).first_ui == 'init_demo'}>
           <ToggleImgButton
             checked={lfw?.world.dataset.playrate != 1}
-            onClick={() => lfw?.cmds.push(CMD.F5)}
+            onClick={() => lfw?.push_cmd(CMD.F5)}
             src={[img_btn_4_3, img_btn_4_3]} />
         </Show>
         <Show show={!networking}>
           <ToggleImgButton
             onClick={() => {
               if (!lfw) return;
-              lfw.cmds.push(CMD.F2)
+              lfw.push_cmd(CMD.F2)
               if (lfw.ui?.id == 'settings')
                 lfw.pop_ui_safe()
               else
@@ -871,11 +871,11 @@ function App() {
         <Combine>
           <ToggleButton
             value={paused}
-            onClick={() => lfw?.cmds.push(CMD.F1)}>
+            onClick={() => lfw?.push_cmd(CMD.F1)}>
             <>游戏暂停</>
             <>游戏暂停✓</>
           </ToggleButton>
-          <Button onClick={() => lfw?.cmds.push(CMD.F2)}>
+          <Button onClick={() => lfw?.push_cmd(CMD.F2)}>
             更新一帧
           </Button>
           <ToggleButton

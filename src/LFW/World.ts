@@ -3,6 +3,7 @@ import { FPS } from './base/FPS';
 import { Background } from "./bg/Background";
 import { Buff } from "./buff/Buff";
 import { Camera } from './Camera';
+import { CMDS } from './cmds/CMDS';
 import { type Collision, collision_get } from "./collision/Collision";
 import { collisions_keeper } from "./collision/CollisionKeeper";
 import { BallController } from "./controller/BallController";
@@ -10,8 +11,6 @@ import {
   BGG,
   CheatEnum,
   Defines,
-  Difficulty,
-  EntityGroup,
   FID,
   GONE_FRAME_INFO,
   type IBdyInfo, type IBgData, type IBounding, type IEntityData,
@@ -21,7 +20,6 @@ import {
   SE,
   WeaponEnum
 } from "./defines";
-import { CMD } from "./defines/CMD";
 import { SyncRenderEnum } from "./defines/SyncRenderEnum";
 import { Ditto } from './ditto/Instance';
 import type { IWorldRenderer } from "./ditto/render/IWorldRenderer";
@@ -29,8 +27,7 @@ import {
   Entity,
   is_bot_ctrl,
   is_fighter,
-  is_human_ctrl,
-  is_weapon
+  is_human_ctrl
 } from "./entity";
 import { Ground } from "./Ground";
 import type { IWorldCallbacks } from "./IWorldCallbacks";
@@ -45,12 +42,6 @@ const CHASING_UPDATE_INTERVAL = 8;
 const MAX_DEBUG_ENTITIES = 355
 const x_sorter = (a: Entity, b: Entity) => a.aabb_min_x - b.aabb_min_x
 
-/**
- * TODO:
- *    这个继承似乎不太好。
- *    后续提取为World::dataset
- *      - Gim
- */
 export class World {
   static readonly TAG: string = "World";
   readonly lfw: LFW;
@@ -149,11 +140,9 @@ export class World {
   set paused(v: boolean) { this.set_paused(v ? 1 : 0); }
   get fn_locked(): boolean { return this._fn_locked == 1; }
   set fn_locked(v: boolean) { this.set_fn_locked(v ? 1 : 0); }
-
   get counts(): ReadonlyMap<string, number> { return this._counts }
   get game_time() { return this._game_time.value }
   get lifetime() { return this._lifetime }
-  get lock_cam_x() { return this.camera.lock_position?.x }
 
   constructor(lfw: LFW) {
     this.lfw = lfw;
@@ -519,126 +508,13 @@ export class World {
     if (stage_data == this.stage.data) return;
     this.stage = new Stage(this, stage_data);
   }
+  get stage_limit() {
+    return this.stage.id !== Defines.VOID_STAGE.id && !this.lfw.is_cheat(CheatEnum.HERO_FT)
+  }
   protected handle_cmds() {
     const { cmds } = this.lfw;
     if (!cmds.length) return;
-    const stage_limit = () => this.stage.id !== Defines.VOID_STAGE.id && !this.lfw.is_cheat(CheatEnum.HERO_FT)
-    for (let i = 0; i < cmds.length; i++) {
-      const cmd = cmds[i];
-      switch (cmd) {
-        case CMD.SET_DIFFICULTY: {
-          const d = Number(cmds[i += 1]);
-          if (Difficulty[d]) this.dataset.difficulty = d;
-          else Ditto.warn(`SET_DIFFICULTY failed, difficulty got ${d}.`)
-          continue;
-        }
-        case CMD.DEL_PUPPET: {
-          const player_id = cmds[i += 1];
-          const entity = this.puppets.get(player_id);
-          if (entity) this.del_entity(entity);
-          else Ditto.warn('DEL_PUPPET failed, puppet not found.')
-          continue;
-        }
-        case CheatEnum.LF2_NET: // same as "case CMD.LF2_NET:"
-        case CheatEnum.HERO_FT: // same as "case CMD.HERO_FT:"
-        case CheatEnum.GIM_INK: // same as "case CMD.GIM_INK:"
-          const prev = this.dataset[cmd];
-          const enabled = this.dataset[cmd] = Number(cmds[i += 1]) ? 1 : 0;
-          if (prev == enabled) continue;
-          const cheat = Defines.CheatInfos.get(cmd)
-          if (!cheat) continue;
-          if (cheat.sound) this.lfw.sounds.play_with_load(cheat.sound);
-          this.lfw.callbacks.call("on_cheat_changed", cmd, !!enabled);
-          continue;
-        case CMD.F1: this.paused = !this.paused; continue;
-        case CMD.F2: this.set_paused(2); continue;
-        case CMD.F3: this.set_fn_locked(1); continue;
-        case CMD.F4: this.lfw.pop_ui_safe(); continue;
-        case CMD.F5: this.dataset.playrate = this.dataset.playrate === 1 ? 1000 : 1; continue;
-        case CMD.F6:
-          if (this.fn_locked || stage_limit()) continue;
-          this.add_count(CMD.F6, 1)
-          this.dataset.infinity_mp = this.dataset.infinity_mp ? 0 : 1;
-          continue;
-        case CMD.F7:
-          if (this.fn_locked || stage_limit()) continue;
-          this.add_count(CMD.F7, 1)
-          for (const e of this.entities) {
-            if (!is_fighter(e)) continue;
-            e.hp = e.hp_r = e.hp_max;
-            e.mp = e.mp_max;
-          }
-          continue;
-        case CMD.F8:
-          if (this.fn_locked || stage_limit()) continue;
-          this.add_count(CMD.F8, 1)
-          const is_stage = this.stage.id !== Defines.VOID_STAGE.id
-          const weapon_datas = this.lfw.datas.get_weapons_of_group(is_stage ? EntityGroup.StageWeapon : EntityGroup.VsWeapon)
-          for (const wd of weapon_datas) this.lfw.entities.add(wd, 1);
-          continue;
-        case CMD.F9:
-          if (this.fn_locked || stage_limit()) continue;
-          this.add_count(CMD.F9, 1)
-          for (const e of this.entities) if (is_weapon(e)) e.hp = 0;
-          continue;
-        case CMD.F10:
-          if (this.fn_locked || stage_limit()) continue;
-          this.add_count(CMD.F10, 1)
-          this.stage.kill_all()
-          continue;
-        case CMD.KILL_ENEMIES:
-          if (!stage_limit()) this.stage.kill_all()
-          continue;
-        case CMD.KILL_BOSS:
-          if (!stage_limit()) this.stage.kill_boss()
-          continue;
-        case CMD.KILL_SOLIDERS:
-          if (!stage_limit()) this.stage.kill_soliders()
-          continue;
-        case CMD.KILL_OTHERS:
-          if (!stage_limit()) this.stage.kill_others()
-          continue;
-        case CMD.DIST_CAM: {
-          const value = cmds[i += 1]
-          if (value === '') {
-            this.camera.dest_position = null;
-            continue;
-          }
-          const [x, y = 0] = value.split(',').map(Number);
-          if (isNaN(x) || isNaN(y)) {
-            Ditto.warn(`DIST_CAM failed, value got ${value}.`)
-            continue;
-          }
-          this.camera.dest_position = Ditto.vec2(x, y);
-          continue;
-        }
-        case CMD.LOCK_CAM: {
-          const value = cmds[i += 1]
-          if (value === '') {
-            this.camera.lock_position = null;
-            continue;
-          }
-          const [x, y = 0] = value.split(',').map(Number);
-          if (isNaN(x) || isNaN(y)) {
-            Ditto.warn(`LOCK_CAM failed, value got ${value}.`)
-            continue;
-          }
-          if (this.camera.position.x != x)
-            this.callbacks.call("on_cam_move", x, y);
-          this.camera.lock_position = Ditto.vec2(x, y);
-          this.camera.destination.x = x;
-          this.camera.position.x = x;
-          continue;
-        }
-        case CMD.CHANGE_BG:
-          this.change_bg(cmds.at(i += 1))
-          continue;
-
-        case CMD.CHANGE_STAGE:
-          this.change_stage(cmds.at(i += 1))
-          continue;
-      }
-    }
+    CMDS.handle(this, cmds);
   }
 
   step() {
@@ -901,7 +777,7 @@ export class World {
     };
   }
 
-  protected set_paused(v: 0 | 1 | 2) {
+  set_paused(v: 0 | 1 | 2) {
     if (this._paused === v) return;
     const changed = (!v) !== (!this._paused)
     this._paused = v;
@@ -940,8 +816,7 @@ export class World {
     if (this.stage.bg.id !== Defines.VOID_BG.id)
       this.stage.change_bg(Defines.VOID_BG)
     this.paused = false;
-    this.camera.lock_position = null;
-    this.camera.dest_position = null;
+    this.camera.reset()
     this.callbacks.call('on_counts');
     this._counts.clear()
   }

@@ -95,8 +95,8 @@ export class __Keyboard implements IKeyboard {
         if (!changed) continue;
         if (!pressed) continue;
         switch (btn_code) {
-          case GPBtnCode.Start: this.lfw.cmds.push(CMD.F1); break;
-          case GPBtnCode.Back: this.lfw.cmds.push(CMD.F4); break;
+          case GPBtnCode.Start: this.lfw.push_cmd(CMD.F1); break;
+          case GPBtnCode.Back: this.lfw.push_cmd(CMD.F4); break;
         }
       }
 

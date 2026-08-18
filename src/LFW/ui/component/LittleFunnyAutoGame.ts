@@ -106,7 +106,7 @@ export class LittleFunnyAutoGame extends UIComponent {
     this._teams[2].soldiers.length = 0
     this.world.paused = false;
     this.lfw.change_bg('')
-    this.lfw.cmds.push(CMD.LOCK_CAM, '0')
+    this.lfw.push_cmd(CMD.LOCK_CAM, '0')
     this._director.reset();
   }
   override on_pause(): void {
@@ -116,7 +116,7 @@ export class LittleFunnyAutoGame extends UIComponent {
     this._teams[1].soldiers.length = 0
     this._teams[2].boss = void 0;
     this._teams[2].soldiers.length = 0
-    this.lfw.cmds.push(CMD.LOCK_CAM, '')
+    this.lfw.push_cmd(CMD.LOCK_CAM, '')
   }
   add_random_fighter(lr: number, team: '1' | '2', data?: IEntityData) {
     if (!data) {

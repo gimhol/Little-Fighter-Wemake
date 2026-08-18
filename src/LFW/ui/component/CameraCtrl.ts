@@ -36,7 +36,7 @@ export class CameraCtrl extends UIComponent {
       if (this.keys.U.is_start()) { this.focus_ud(-1); }
       if (this.keys.D.is_start()) { this.focus_ud(+1); }
     } else if (!this.keys.d.is_end()) {
-      this.lfw.cmds.push(CMD.DIST_CAM, ``)
+      this.lfw.push_cmd(CMD.DIST_CAM, ``)
       this.staring = void 0;
       this.auto = true
     } else if (LR || UD) {
@@ -44,7 +44,7 @@ export class CameraCtrl extends UIComponent {
       let { camera: { position: { x, y } } } = this.world;
       x += 5 * dt * LR;
       y += 5 * dt * UD;
-      this.lfw.cmds.push(CMD.DIST_CAM, `${x},${y}`)
+      this.lfw.push_cmd(CMD.DIST_CAM, `${x},${y}`)
     }
     if (this._staring) {
       this._staring.outline_width = round((cos(this.world.lifetime) + 1) * 2.5);
@@ -55,11 +55,11 @@ export class CameraCtrl extends UIComponent {
 
     if (this.auto && this.staring) {
       const cam_x = this.staring.position.x - this.world.dataset.screen_w / 2
-      this.lfw.cmds.push(CMD.DIST_CAM, `${cam_x}`)
+      this.lfw.push_cmd(CMD.DIST_CAM, `${cam_x}`)
     }
   }
   override on_stop(): void {
-    this.lfw.cmds.push(CMD.DIST_CAM, ``)
+    this.lfw.push_cmd(CMD.DIST_CAM, ``)
     if (this._staring) {
       this._staring.outline_width = 1;
       this._staring.outline_color = '';

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import csses from "./BgScrollerView.module.scss";
 import { Button } from "./Component/Buttons/Button";
-import { CMD, floor, max, min } from "./LFW";
-import { LFW } from "./LFW";
+import { CMD, floor, LFW, max, min } from "./LFW";
 import { Defines } from "./LFW/defines/defines";
 import { useCallbacks } from "./pages/network_test/useCallbacks";
 
@@ -48,7 +47,7 @@ export function BgScrollerView(props: { lfw?: LFW }) {
     ctx.lineWidth = 1;
     ctx.strokeStyle = "#FFFFFF55";
     ctx.strokeRect(x + hh, hh, w, h);
-    if (typeof world.lock_cam_x === 'number') {
+    if (typeof world.camera.locked?.x === 'number') {
       ctx.fillStyle = "#FFFFFF88";
       ctx.fillRect(x + hh, hh, w, h);
     }
@@ -77,11 +76,11 @@ export function BgScrollerView(props: { lfw?: LFW }) {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    const ox = from_world_cam_x(lfw.world.lock_cam_x ?? lfw.world.camera.position.x, lfw, canvas) - e.pageX
+    const ox = from_world_cam_x(lfw.world.camera.locked?.x ?? lfw.world.camera.position.x, lfw, canvas) - e.pageX
 
     const handle_pointer_event = (e: React.PointerEvent | PointerEvent) => {
       const output_x = to_world_cam_x(e.pageX + ox, lfw, canvas);
-      lfw.cmds.push(CMD.LOCK_CAM, `${output_x}`)
+      lfw.push_cmd(CMD.LOCK_CAM, `${output_x}`)
     }
     handle_pointer_event(e);
 
@@ -102,10 +101,10 @@ export function BgScrollerView(props: { lfw?: LFW }) {
 
   const on_click_free_cam = useCallback(() => {
     if (!lfw) return;
-    const { lock_cam_x } = lfw.world;
+    const lock_cam_x = lfw.world.camera.locked?.x;
     if (typeof lock_cam_x != 'number') return;
     draw_cam_bar(lock_cam_x);
-    lfw.cmds.push(CMD.LOCK_CAM, '')
+    lfw.push_cmd(CMD.LOCK_CAM, '')
   }, [lfw, draw_cam_bar])
 
   return (
