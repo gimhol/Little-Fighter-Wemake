@@ -126,7 +126,7 @@ CMDS.register(CMD.DIST_CAM, (c) => {
   if (!nums) return c.world.camera.undest();
   const [x, y = 0] = nums;
   if (isNaN(x)) return Ditto.warn(`DIST_CAM failed, x got ${x}.`)
-  if (isNaN(y)) return Ditto.warn(`DIST_CAM failed, y got ${x}.`)
+  if (isNaN(y)) return Ditto.warn(`DIST_CAM failed, y got ${y}.`)
   c.world.camera.dest(x, y);
 })
 CMDS.register(CMD.LOCK_CAM, (c) => {
@@ -134,6 +134,6 @@ CMDS.register(CMD.LOCK_CAM, (c) => {
   if (!nums) return c.world.camera.unlock();
   const [x, y = 0] = nums;
   if (isNaN(x)) return Ditto.warn(`LOCK_CAM failed, x got ${x}.`)
-  if (isNaN(y)) return Ditto.warn(`LOCK_CAM failed, y got ${x}.`)
+  if (isNaN(y)) return Ditto.warn(`LOCK_CAM failed, y got ${y}.`)
   c.world.camera.lock(x, y);
 })
