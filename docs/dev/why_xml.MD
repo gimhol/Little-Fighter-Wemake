@@ -1,6 +1,6 @@
 # 为什么想要支持XML
 
-本来支持json/json5，这种格式其实不方便人直接进行编辑，下图会有个比较直观的比较。
+json/json5这种格式其实不方便人直接进行编辑，下图会有个比较直观的比较。
 
 ![aeedcf11a0c3f300c97f48a6ff5a8e0e.png](../image/aeedcf11a0c3f300c97f48a6ff5a8e0e.png)
 
