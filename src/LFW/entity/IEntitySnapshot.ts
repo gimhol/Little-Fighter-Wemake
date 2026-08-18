@@ -10,6 +10,7 @@ export interface IEntitySnapshot {
   wait: number;
   variant: number;
   transforms: string[] | null,
+  transform_index: number,
   lifetime: number,
   spawn_time: number,
   outline_color: string,

@@ -55,6 +55,7 @@ export class Entity {
   wait: number = 0;
   variant: number = 0;
   transforms: [IEntityData, IEntityData] | null = null;
+  transform_index: number = 0
   protected _lifetime: number = 0;
   protected _spawn_time: number = 0;
 
@@ -724,6 +725,7 @@ export class Entity {
     this._ground_y = 0;
     this.variant = 0;
     this.transforms = null;
+    this.transform_index = 0;
     this._reserve = 0
     this._mounted = 0;
     this._ghosted = 0;
@@ -1969,10 +1971,11 @@ export class Entity {
       [this._data, data] :
       this.transforms;
     if (!datas?.length) return false;
-    const curr_idx = datas.findIndex(v => v.id == this._data.id)
+    const curr_idx = this.transform_index;
     const next_idx = (curr_idx + 1) % datas.length;
     const next_data = datas[next_idx]
     if (!next_data) return false;
+    this.transform_index = next_idx;
     this.transform(next_data);
     if (next_idx === 0) {
       // TODO: 这个逻辑感觉怪怪的，后续可以改成直接在数据里写死变身后的帧
@@ -2475,6 +2478,7 @@ export class Entity {
       wait: this.wait,
       variant: this.variant,
       transforms: this.transforms?.map(v => v.id) ?? null,
+      transform_index: this.transform_index,
       lifetime: this._lifetime,
       spawn_time: this._spawn_time,
       outline_color: this._outline_color,
