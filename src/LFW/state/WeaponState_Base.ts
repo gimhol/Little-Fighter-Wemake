@@ -72,7 +72,7 @@ export class WeaponState_Base extends State_Base {
 
     // 反弹
     e.set_velocity(dvx, dvy, dvz);
-    e.is_on_ground = false;
+    e.leave_ground();
     if (
       e.state == SE.Weapon_Throwing &&
       dvy > -fast_y && dvy < fast_y &&
@@ -90,6 +90,5 @@ export class WeaponState_Base extends State_Base {
   }
   override on_leave_ground(e: Entity): void {
     e.enter_frame(Defines.NEXT_FRAME_AUTO);
-    e.is_on_ground = false;
   }
 }

@@ -31,7 +31,7 @@ export class WeaponPicking2 extends TestCase {
     });
 
     this.circle(woids, this.midX, this.midZ, 100, 100).forEach(v => {
-      v.enter_frame_by_id(v.data.indexes?.on_ground);
+      // v.enter_frame_by_id(v.data.indexes?.on_ground);
       v.attach();
     });
 

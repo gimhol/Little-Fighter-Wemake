@@ -7,7 +7,7 @@ export class WeaponState_Throwing extends WeaponState_Base {
     return e.dataset('weapon_throwing_gravity');
   }
   override enter(e: Entity, prev_frame: IFrameInfo): void {
-    e.is_on_ground = false;
+    e.leave_ground();
     this._hit_ground_weapons.add(e);
   }
   override leave(e: Entity, next_frame: IFrameInfo): void {

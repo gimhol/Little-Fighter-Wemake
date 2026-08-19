@@ -34,7 +34,7 @@ import { Ditto } from "../ditto";
 import { States } from "../state";
 import { ENTITY_STATES } from "../state/ENTITY_STATES";
 import { State_Base } from "../state/State_Base";
-import { abs, clamp, clamp_add, find, floor, is_num, max, min, pow, round, round_float } from "../utils";
+import { abs, clamp, clamp_add, eqgt, eqlt, find, floor, is_num, max, min, pow, round, round_float } from "../utils";
 import { Times } from "../utils/Times";
 import { cross_bounding } from "../utils/cross_bounding";
 import { is_f_num, is_positive, is_str } from "../utils/type_check";
@@ -119,8 +119,8 @@ export class Entity {
   public fallinjury: number = 0;
   public throwinjury: number = 0;
   public facing: TFace = 1;
-  public frame: Readonly<IFrameInfo> = GONE_FRAME_INFO;
-  protected _prev_frame: Readonly<IFrameInfo> = GONE_FRAME_INFO;
+  public frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
+  protected _prev_frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
   protected _catching: Entity | null = null;
   protected _catcher: Entity | null = null;
   protected _states: States;
@@ -561,6 +561,7 @@ export class Entity {
    * @memberof Entity
    */
   set team(v) {
+    if (v == this._team) return;
     const o = this._team;
     this._team = v;
     this.variant = Number(this._team) || 0
@@ -991,7 +992,8 @@ export class Entity {
     }
     return 0;
   }
-  set_state(state_code: number) {
+
+  set_state(state_code: number): void {
     const v = this._states.get(state_code) || this._states.fallback(this._data.type, state_code);
     if (this._state === v) return;
     this._state?.leave?.(this, this.frame);
@@ -1180,20 +1182,15 @@ export class Entity {
     this._mounted = 1;
     this._ghosted = ghost ? 1 : 0;
     this.world.add_entities(this);
-    if (this.frame.id === "0" /* EMPTY_FRAME_INFO */)
+
+    this.set_state(this.frame.state)
+
+    this.set_position(this.position.x, this.position.y, this.position.z)
+    if (this.position.y > this.ground_y) this.leave_ground();
+    else this.is_on_ground = true;
+    if (this.frame.id == FrameId.None)
       this.enter_frame(Defines.NEXT_FRAME_AUTO);
 
-    if (is_fighter(this)) {
-      const { x, z } = this.position;
-      const seg = this.world.ground.segment(this.position.x, this.position.z);
-      const y = this.world.ground.y(seg, x, z);
-      if (y >= this.position.y) {
-        this.position.y = y
-        this.is_on_ground = true
-      } else {
-        this.is_on_ground = false
-      }
-    }
     return this;
   }
 
@@ -1472,6 +1469,7 @@ export class Entity {
       holding.position.y,
       holding.position.z
     );
+    holding.team = this.team;
   }
 
   hp_recovering(): void {
@@ -1725,11 +1723,13 @@ export class Entity {
       }
       this._landing_frame = this.frame
     } else if (is_on_ground) {
+
       if (this.position.y - _ground_y > this.world.ground.step) {
         // 离地面太高
+        this.leave_ground();
         this._state?.on_leave_ground?.(this);
-        this.is_on_ground = false;
       } else {
+        // 视为 斜坡/楼梯
         this.position.y = _ground_y;
       }
     }
@@ -2093,7 +2093,7 @@ export class Entity {
   follow_bearer() {
     const { bearer } = this;
     if (!bearer) return;
-this.team = bearer.team;
+    this.team = bearer.team;
     if (this.hp <= 0 && this.bearer) {
       this.drop_holding()
       return;
@@ -2361,7 +2361,7 @@ this.team = bearer.team;
     if (_x !== null && _x !== void 0) this.prev_velocity.x = this.velocity.x = round_float(_x)
     if (_y !== null && _y !== void 0) this.prev_velocity.y = this.velocity.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.prev_velocity.z = this.velocity.z = round_float(_z)
-    if (this.velocity.y > 0) this.is_on_ground = false;
+    if (this.velocity.y > 0) this.leave_ground();
   }
   set_velocity_x(x: number) {
     this.set_velocity(x)
@@ -2410,6 +2410,13 @@ this.team = bearer.team;
     this.set_position(null, null, z)
   }
 
+  /** 离地 */
+  leave_ground(): void {
+    if (eqlt(this.position.y, this.ground_y))
+      this.position.y = round_float(this.ground_y + 0.1);
+    this.is_on_ground = false;
+  }
+
   transform(data: IEntityData) {
     if (!is_human_ctrl(this.ctrl))
       this.ctrl = this.lfw.factory.create_ctrl(data.id, this.ctrl.player_id, this);
@@ -2432,12 +2439,12 @@ this.team = bearer.team;
       cam_x += offset_x;
       x = clamp(x, cam_x, cam_r);
     }
-if (Array.isArray(sounds)) {
-    for (const sound of sounds) {
-      this.lfw.sounds.play(sound, x, y, z);
-}
+    if (Array.isArray(sounds)) {
+      for (const sound of sounds) {
+        this.lfw.sounds.play(sound, x, y, z);
+      }
     } else {
-        this.lfw.sounds.play(sounds, x, y, z);
+      this.lfw.sounds.play(sounds, x, y, z);
     }
   }
 
@@ -2574,6 +2581,7 @@ if (Array.isArray(sounds)) {
 
   read_snapshot(s: IEntitySnapshot) {
   }
+
 }
 
 const common_creator = (world: World, data: IEntityData, states?: States) => {

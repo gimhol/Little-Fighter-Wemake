@@ -21,25 +21,19 @@ export class CharacterState_Falling extends CharacterState_Base {
         ]),
       );
     }
-    const holding = e.holding
-    // TODO: calc v here.
-    if (holding) e.drop_holding();
-    if (holding?.base_type === WeaponEnum.Heavy)
-      holding.team = e.team;
+    e.catcher?.drop_catching()
+    e.drop_holding();
+
     if (e.hp <= 0 && e.fuse_bys?.length) {
       const { x: vx, y: vy, z: vz } = e.velocity;
       let next_vx = vx;
       for (const fighter of e.fuse_bys) {
-        if (fighter.position.y === 0)
-          fighter.set_position_y(1);
         next_vx *= -1
         fighter.set_velocity(next_vx, vy, vz)
       }
       e.dismiss_fusion(e.frame.id)
     }
-    if (e.catcher) e.catcher.drop_catching()
-    e.set_position(null, 0.1 + e.position.y)
-    e.is_on_ground = false
+    e.leave_ground();
   }
 
   is_bouncing_frame(e: Entity) {
