@@ -3,18 +3,6 @@ import { Entity } from "../entity/Entity";
 import { State_Base } from "./State_Base";
 
 export class CharacterState_Base extends State_Base {
-  override pre_update(e: Entity): void {
-    switch (this.state) {
-      case StateEnum.Falling:
-      case StateEnum.Caught:
-      case StateEnum.Injured:
-      case StateEnum.Frozen:
-      case StateEnum.Burning:
-        break;
-      default:
-        e.stat_recovering();
-    }
-  }
   override update(e: Entity): void {
     super.update(e)
     e.handle_ground_velocity_decay();

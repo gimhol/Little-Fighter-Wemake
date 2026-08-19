@@ -248,6 +248,9 @@ export interface IFrameInfo extends IVelocityInfo {
 
   dataset?: Partial<IWorldDataset>;
 
+  stat_recover?: number;
+  toughness_recover?: number;
+
   /* 运行时使用，为Debug预留的玩意 */
   __indicator_info?: IQubePair;
   /* 运行时使用，为渲染层预留的玩意 */
@@ -346,6 +349,8 @@ export const frame_info_fields = fields<IFrameInfo>({
       { value: 1, label: "落地触发" },
     ],
   }),
+  stat_recover: int({ nullable: true }),
+  toughness_recover: int({ nullable: true }),
   // IVelocityInfo 字段
   dvx: flt("默认速度X", { nullable: true }),
   dvy: flt("默认速度Y", { nullable: true }),
@@ -429,6 +434,8 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     broadcasts: { type: 'array', nullable: true, items: { type: 'string' } },
     facing: { type: 'number', nullable: true },
     landable: { type: 'number', nullable: true },
+    stat_recover: { type: 'number', nullable: true },
+    toughness_recover: { type: 'number', nullable: true },
     hp: { type: 'number', nullable: true },
     mp: { type: 'number', nullable: true },
 

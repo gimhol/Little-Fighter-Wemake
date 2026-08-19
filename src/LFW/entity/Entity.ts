@@ -34,7 +34,7 @@ import { Ditto } from "../ditto";
 import { States } from "../state";
 import { ENTITY_STATES } from "../state/ENTITY_STATES";
 import { State_Base } from "../state/State_Base";
-import { abs, clamp, clamp_add, eqgt, eqlt, find, floor, is_num, max, min, pow, round, round_float } from "../utils";
+import { abs, clamp, clamp_add, eqlt, find, floor, is_num, max, min, pow, round, round_float } from "../utils";
 import { Times } from "../utils/Times";
 import { cross_bounding } from "../utils/cross_bounding";
 import { is_f_num, is_positive, is_str } from "../utils/type_check";
@@ -795,7 +795,7 @@ export class Entity {
     this._toughness_r_value = this.dataset('toughness_r_value');
     this._defend_r_value = this.dataset('defend_r_value');
     this._fall_r_value = this.dataset('fall_r_value');
-    
+
     this._hp_max = this.dataset('hp_max');
     this._mp_max = this.dataset('mp_max');
     this._defend_ratio = data.base.defend_ratio ?? null
@@ -838,10 +838,12 @@ export class Entity {
   reset_armor() {
     const { armor } = this._data.base
     this.armor = armor || null;
-    this.toughness = this.toughness_max = armor?.toughness || 0;
+    this.toughness = this.toughness_max = armor?.toughness ?? 0;
     this.toughness_resting = 0;
-    this.toughness_resting_max = armor?.toughness_resting || 0;
-    this._toughness_r_tick.max = 1;
+    this.toughness_resting_max = armor?.toughness_resting ?? 0;
+    this._toughness_r_value = armor?.toughness_r_value ?? this.dataset('toughness_r_value')
+    this._toughness_r_tick.max = armor?.toughness_r_tick ?? this.dataset('toughness_r_tick');
+    this._toughness_r_tick.value = 0;
   }
 
   set_catching(v: Entity | null): this {
@@ -1443,7 +1445,6 @@ export class Entity {
       this.resting = clamp_add(this.resting, -this._atom_time, 0, this.resting_max);
       return;
     }
-    this.toughness_recovering();
     this.fall_value_recovering();
     this.defend_value_recovering();
   }
@@ -2035,7 +2036,7 @@ export class Entity {
     this.lfw.mt.mark = 'sp_1'
     const x = this.lfw.mt.range(l, r);
     const y = 2 + round_float((b + t) / 2);//this.lf2.random_in(b, t);
-    const z = max(f, n) + 2;
+    const z = max(f, n) + 3;
     return [x, y, z] as const;
   }
 

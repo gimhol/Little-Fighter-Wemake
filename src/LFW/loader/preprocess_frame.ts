@@ -3,7 +3,7 @@ import { cook_frame_indicator_info } from "../dat_translator/cook_frame_indicato
 import { make_frame_behavior } from "../dat_translator/make_frame_behavior";
 import { set_hit_flag } from "../dat_translator/set_hit_flag";
 import { Defines, EntityEnum, EntityVal as EV, FacingFlag as FF, FrameBehavior, HitFlag, type IFrameInfo, SE, StateEnum } from "../defines";
-import { is_ball_data, is_weapon_data } from "../entity";
+import { is_ball_data, is_fighter, is_weapon_data } from "../entity";
 import { read_nums } from "../ui/utils/read_nums";
 import { max, min } from "../utils";
 import { traversal } from "../utils/container_help/traversal";
@@ -26,7 +26,7 @@ const breakfall_j_expression = new CondMaker<EV>()
 export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   const { lfw, data, frame, jobs } = ctx;
   if (data.processed != false) { }
-  else if (is_ball_data(data)) preprocess_ball_frame(frame, data);
+  else if (is_ball_data(data)) { preprocess_ball_frame(frame, data); }
   else if (is_weapon_data(data)) {
     data.indexes = data.indexes || {}
     const in_the_skys: string[] = data.indexes.in_the_skys || []
@@ -58,6 +58,29 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
     if (in_the_skys.length) data.indexes.in_the_skys = in_the_skys
     if (throwings.length) data.indexes.throwings = throwings
     if (on_hands.length) data.indexes.on_hands = on_hands
+  }
+  else if (is_fighter(data)) {
+    switch (frame.state) {
+      case StateEnum.Falling:
+      case StateEnum.Caught:
+      case StateEnum.Injured:
+      case StateEnum.Frozen:
+      case StateEnum.Burning:
+        break;
+      default:
+        frame.stat_recover = 1;
+    }
+    switch (frame.state) {
+      case StateEnum.Standing:
+      case StateEnum.Walking:
+      case StateEnum.Running:
+      case StateEnum.Jump:
+      case StateEnum.Dash:
+      case StateEnum.Lying:
+      case StateEnum.Rowing:
+        frame.toughness_recover = 1;
+        break;
+    }
   }
 
   frame.width ??= frame.pic?.w ?? 0

@@ -47,6 +47,8 @@ export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement 
   ret.set_attr("behavior", f.behavior)
   ret.set_attr("landable", f.landable)
   ret.set_attr("facing", f.facing)
+  ret.set_attr("stat_recover", f.stat_recover)
+  ret.set_attr("toughness_recover", f.toughness_recover)
 
   xml_x_hit_key_map(xml, f.hit, 'hit')?.forEach(v => ret.insert(v))
   xml_x_hit_key_map(xml, f.hold, 'hold')?.forEach(v => ret.insert(v))
@@ -99,7 +101,8 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   ret.landable        /**/ = el.get_num("landable");
   ret.facing          /**/ = el.get_num("facing");
   ret.gravity_enabled /**/ = el.get_bool("gravity_enabled");
-
+  ret.stat_recover    /**/ = el.get_num("stat_recover");
+  ret.toughness_recover /**/ = el.get_num("toughness_recover");
   xml_to_velocity_info(el, ret as any);
 
   ret.next /**/ = xml_2_t_next_frame(el.children_by_tag("next"));
