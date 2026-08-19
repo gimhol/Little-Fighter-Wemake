@@ -74,7 +74,7 @@ export function make_bg_data(
   info.right = fields.width
   info.far = 2 * (fields.zboundary[0] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的远坐标
   info.near = 2 * (fields.zboundary[1] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的近坐标,
-  info.height = 0
+  // info.height = 0
   ret.id = datIndex.id ?? info.name
   ret.base = info
   ret.layers = []

@@ -30,7 +30,7 @@ export class BgRender {
     if (!this.bg) return
 
     const { base } = this.bg.data
-    const { height = 0, far = 0 } = base;
+    const { height = 600, far = 0 } = base;
 
     const z = -height * 2 + far;
 
