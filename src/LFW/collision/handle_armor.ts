@@ -28,12 +28,8 @@ export function handle_armor(collision: Collision): boolean {
     case ArmorEnum.Times: decrease_value = 1; break;
     case ArmorEnum.Injury: decrease_value = injury; break;
   }
-
-  const prev_toughness = victim.toughness;
   victim.toughness -= decrease_value;
-  
-  if (prev_toughness <= 0)
-    return false;
+  if (victim.toughness <= 0) return false;
 
   const {
     hit_sounds,

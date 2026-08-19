@@ -22,10 +22,10 @@ export class CriminalSaving1 extends TestCase {
   })
   override update(dt: number): number | void | undefined {
     this.director.update(dt)
-    for(const c of this.world.entities){
-      if(is_bot_ctrl(c.ctrl)) c.ctrl = new InvalidController("", c)
+    for (const c of this.world.entities) {
+      if (is_bot_ctrl(c.ctrl)) c.ctrl = new InvalidController("", c)
     }
-    
+
   }
   override enter(): void {
     this.director.reset();
@@ -72,3 +72,4 @@ export class CriminalSaving1 extends TestCase {
     // })
   }
 }
+

@@ -36,6 +36,7 @@ import { AllFighters } from "./Others/AllFighters";
 import { Rudolf_DFJ } from './Rudolf/Rudolf_DFJ';
 import { TestCase } from "./TestCase";
 import { CriminalSaving1 } from './Others/CriminalSaving';
+import { ArmorTest1 } from './Others/ArmorTest1';
 
 const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
   [TestCase, AllFighters], [
@@ -61,7 +62,7 @@ const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
     MoonTest
   ], [BottomsUp, MoveStayCome, BotCome, BotFollow, FasterSlowerStandUp,
   ], [
-    BotAvoiding, WeaponPicking1, WeaponPicking2, CriminalSaving1
+    BotAvoiding, WeaponPicking1, WeaponPicking2, CriminalSaving1, ArmorTest1
   ]
 ]
 export class Tests extends UIComponent {

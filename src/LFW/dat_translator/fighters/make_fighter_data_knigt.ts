@@ -11,7 +11,7 @@ export function make_fighter_data_knigt(data: IEntityData): IEntityData {
   data.base.armor = {
     hit_sounds: ["data/085.wav.mp3"],
     type: ArmorEnum.Defend,
-    toughness: 120,
+    toughness: 121,
     toughness_resting: 90,
   };
   return data;

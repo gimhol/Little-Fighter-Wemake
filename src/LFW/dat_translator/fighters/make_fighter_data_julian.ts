@@ -11,7 +11,7 @@ export function make_fighter_data_julian(data: IEntityData) {
     antifreeze: 1,
     hit_sounds: ["data/002.wav.mp3"],
     type: ArmorEnum.Defend,
-    toughness: 120,
+    toughness: 121,
     toughness_resting: 90,
   };
   for (const k in data.frames) {
