@@ -104,6 +104,7 @@ export class Entity {
   protected _toughness: number = 0;
   protected _toughness_max: number = 0;
   protected readonly _toughness_r_tick: Times = new Times();
+  protected _toughness_r_value: number = 0;
   protected _toughness_resting: number = 0;
   protected _toughness_resting_max: number = 0;
   protected _fall_value: number = 0;
@@ -791,9 +792,10 @@ export class Entity {
     this._defend_r_tick.max = this.dataset('defend_r_ticks');
     this._defend_r_tick.value = 0;
 
+    this._toughness_r_value = this.dataset('toughness_r_value');
     this._defend_r_value = this.dataset('defend_r_value');
     this._fall_r_value = this.dataset('fall_r_value');
-
+    
     this._hp_max = this.dataset('hp_max');
     this._mp_max = this.dataset('mp_max');
     this._defend_ratio = data.base.defend_ratio ?? null
@@ -1417,7 +1419,7 @@ export class Entity {
 
     if (this.toughness >= this.toughness_max) return;
     if (!this._toughness_r_tick.add(this._atom_time)) return;
-    this.toughness = clamp_add(this.toughness, this._atom_time, 0, this._toughness_max);
+    this.toughness = clamp_add(this.toughness, this._toughness_r_value, 0, this._toughness_max);
   }
 
   fall_value_recovering(): void {

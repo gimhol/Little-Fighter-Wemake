@@ -172,6 +172,8 @@ export interface IWorldDataset {
   /** 恢复值(每次回多少) */
   fall_r_value: number;
 
+  toughness_r_value: number;
+
   /** 恢复周期(每几帧回一次) */
   defend_r_ticks: number;
 
@@ -339,6 +341,7 @@ export const world_dataset_fields = fields<IWorldDataset>({
   defend_r_ticks: int("防御值恢复周期", "每几帧恢复一次防御值"),
   defend_r_value: int("防御值恢复量", "每次恢复多少防御值"),
   fall_value_max: int("摔落值", "默认摔落值"),
+  toughness_r_value: int,
   catch_time_max: flt,
   defend_value_max: flt,
   defend_ratio: flt,
@@ -437,6 +440,7 @@ const params: ISchemaMeta<IWorldDataset> = {
     catch_time_max: { type: 'number' },
     defend_value_max: { type: 'number' },
     defend_ratio: { type: 'number' },
+    toughness_r_value: { type: 'number' },
     mp_max: { type: 'number' },
     hp_max: { type: 'number' },
     resting_max: { type: 'number' },
