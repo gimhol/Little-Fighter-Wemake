@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "nekketsu_f_01",
+      type: "bg",
+      file: "bg/nekketsu_f_01/nekketsu_f_01.bg.xml",
+    }
+  ],
+}

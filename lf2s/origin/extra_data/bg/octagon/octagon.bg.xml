@@ -1,0 +1,5 @@
+<background id="bg_octagon"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd">
+  <base name="Octagon" shadow="bg/sys/bc/s.png" group="hidden" bound="0,400,-160,-40" height="450" shadowsize="37,9" zoom="2,2,2"/>
+  <layer width="400" x="0" y="288" z="-1" file="!bg/octagon/ground.png"/>
+</background>

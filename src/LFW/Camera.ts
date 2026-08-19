@@ -55,18 +55,14 @@ export class Camera {
     const { stage, bg, dataset: { atom_time, screen_w, screen_h } } = this.world;
     do {
       const { cam_l, cam_r } = stage;
-      const min_cam_l = cam_l;
-      const max_cam_r = cam_r;
-      const max_cam_x = max_cam_r - screen_w;
+      const min_cam_x = cam_l;
+      const max_cam_x = cam_r - screen_w / bg.zoom_x;
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
-      this.destination.x = clamp(this._dested?.x ?? this.destination.x,
-        min_cam_l,
-        max_cam_r - screen_w
-      );
-      if (this.position.x < min_cam_l || this.position.x > max_cam_x) {
+      this.destination.x = clamp(this._dested?.x ?? this.destination.x, min_cam_x, max_cam_x);
+      if (this.position.x < min_cam_x || this.position.x > max_cam_x) {
         this.velocity.x = 0;
-        this.position.x = clamp(this.position.x, min_cam_l, max_cam_x);
+        this.position.x = clamp(this.position.x, min_cam_x, max_cam_x);
         break;
       }
       if (round(this.position.x) == round(this.destination.x)) break;

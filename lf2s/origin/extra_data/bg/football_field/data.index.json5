@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "football_field",
+      type: "bg",
+      file: "bg/football_field/football_field.bg.xml",
+    }
+  ]
+}

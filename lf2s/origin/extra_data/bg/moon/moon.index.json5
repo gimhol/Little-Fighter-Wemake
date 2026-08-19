@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "bg_moon",
+      type: "bg",
+      file: "bg/moon/moon.bg.xml",
+    }
+  ],
+}

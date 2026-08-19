@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "bg_octagon",
+      type: "bg",
+      file: "bg/octagon/octagon.bg.xml",
+    },
+  ],
+}
