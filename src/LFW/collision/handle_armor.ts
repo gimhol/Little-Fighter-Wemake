@@ -32,7 +32,7 @@ export function handle_armor(collision: Collision): boolean {
   const prev_toughness = victim.toughness;
   victim.toughness -= decrease_value;
   
-  if (prev_toughness > 0)
+  if (prev_toughness <= 0)
     return false;
 
   const {
