@@ -1,4 +1,5 @@
 import { Factory } from "../Factory";
+import { Ground } from "../Ground";
 import type { LFW } from "../LFW";
 import { World } from "../World";
 import { Callbacks } from "../base";
@@ -249,7 +250,7 @@ export class Entity {
   renderer: any;
   puppet: boolean = false;
   jumping = { x: 0, y: 0, z: 0, t: 0 }
-  terrain: ITerrainInfo | undefined;
+  terrain: ITerrainInfo;
   protected _atom_time: number; // 帧时间步长（被 Physics/Recovery/Spawn 子模块访问）
 
 
@@ -708,6 +709,7 @@ export class Entity {
     this._data = data;
     this._states = states;
     this._atom_time = world.dataset.atom_time;
+    this.terrain = Ground.horizon;
     this.reset(data, states)
   }
   reset(data: IEntityData, states: States = ENTITY_STATES) {
@@ -716,7 +718,7 @@ export class Entity {
     this.buffs.clear();
     const { world, lfw } = this;
     this.is_on_ground = false;
-    this.terrain = void 0;
+    this.terrain = Ground.horizon;
     this._data = data;
     this.id = lfw.new_id;
     this.wait = 0;
@@ -2191,9 +2193,7 @@ export class Entity {
       if (hp) this.hp -= hp;
     }
     if (frame) {
-      if (frame.sound) {
-        this.play_sound(frame.sound, this.position)
-      }
+      this.play_sound(frame.sound, this.position)
       this.set_frame(frame);
     } else if (this.frame === EMPTY_FRAME_INFO || fallback) {
       this.set_frame(this.find_auto_frame());
@@ -2385,7 +2385,7 @@ export class Entity {
         this.enter_frame(this.frame.on_restrict)
       this._state?.on_restrict?.(this, x, y, z);
     }
-    this._ground_y = this.terrain ? this.world.ground.y(this.terrain, this.position.x, this.position.z) : 0;
+    this._ground_y = this.world.ground.y(this.terrain, this.position.x, this.position.z);
   }
 
   set_position_x(x: number) {
@@ -2423,8 +2423,8 @@ export class Entity {
       x = clamp(x, cam_x, cam_r);
     }
     for (const sound of sounds) {
-    this.lfw.sounds.play(sound, x, y, z);
-}
+      this.lfw.sounds.play(sound, x, y, z);
+    }
   }
 
   get_emitter(idx: number): Entity | undefined {

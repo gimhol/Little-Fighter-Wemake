@@ -357,7 +357,7 @@ export class World {
   restrict(e: Entity): IVector3Like {
     let { x, z, y } = e.position;
     if (e.bearer || e.catcher) {
-      e.terrain = this.ground.land;
+      e.terrain = this.ground.base;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
       this._restrict_result.z = z;
@@ -372,7 +372,7 @@ export class World {
       x = clamp(x, left, right);
     } else if (x < left - e.l_len || x > right + e.r_len) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
-      e.terrain = void 0;
+      e.terrain = this.ground.base;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
       this._restrict_result.z = z;

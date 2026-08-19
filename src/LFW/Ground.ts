@@ -10,8 +10,29 @@ export type IBlockResult = ReadonlyArray<{
 }>;
 
 export class Ground {
+  static readonly horizon: Readonly<ITerrainInfo> = {
+    id: 'horizon_0',
+    name: 'horizon_0',
+    type: TerrainEnum.Flat,
+    x1: Number.MIN_SAFE_INTEGER,
+    x2: Number.MAX_SAFE_INTEGER,
+    z1: Number.MIN_SAFE_INTEGER,
+    z2: Number.MAX_SAFE_INTEGER,
+    h1: 0,
+    h2: 0,
+  };
+  static readonly abyss: Readonly<ITerrainInfo> = {
+    id: 'ABYSS_0',
+    name: 'ABYSS_0',
+    type: TerrainEnum.Flat,
+    x1: Number.MIN_SAFE_INTEGER,
+    x2: Number.MAX_SAFE_INTEGER,
+    z1: Number.MIN_SAFE_INTEGER,
+    z2: Number.MAX_SAFE_INTEGER,
+    h1: Number.MIN_SAFE_INTEGER,
+    h2: Number.MIN_SAFE_INTEGER,
+  };
   readonly world: World;
-
   readonly step: number = 10;
   private readonly _ret = [
     { x: 0, z: 0 },
@@ -21,17 +42,7 @@ export class Ground {
   ];
   private readonly _empty = [];
   private readonly _intersectResult = { x: 0, y: 0, z: 0 };
-  readonly land: Readonly<ITerrainInfo> = {
-    id: 'GROUND_0',
-    name: 'GROUND_0',
-    type: TerrainEnum.Flat,
-    x1: Number.MIN_SAFE_INTEGER,
-    x2: Number.MAX_SAFE_INTEGER,
-    z1: Number.MIN_SAFE_INTEGER,
-    z2: Number.MAX_SAFE_INTEGER,
-    h1: 0,
-    h2: 0,
-  };
+  readonly base: Readonly<ITerrainInfo> = Ground.horizon;
 
   constructor(world: World) {
     this.world = world
@@ -61,7 +72,7 @@ export class Ground {
       if (best) return best;
     }
     // 找不到地形时返回默认平台
-    return this.land;
+    return this.base;
   }
 
   /**
@@ -137,7 +148,7 @@ export class Ground {
     prev_z: number = z,
   ): Readonly<IBlockResult> {
 
-    if (seg.id == this.land.id) return this._empty;
+    if (seg.id == this.base.id) return this._empty;
 
     let l = seg.x1 - 1;
     let r = seg.x2 + 1;
