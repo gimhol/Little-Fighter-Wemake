@@ -2192,21 +2192,7 @@ export class Entity {
     }
     if (frame) {
       if (frame.sound) {
-        let { x, y, z } = this.position;
-        if (frame.state === StateEnum.Message) {
-          let { centerx, width } = frame;
-          let { camera: { position: { x: cam_x } } } = this.world;
-          let cam_r = cam_x + this.world.dataset.screen_w;
-          const offset_x = this.facing === 1 ? centerx : width - centerx;
-          cam_r -= width - offset_x
-          cam_x += offset_x
-          x = clamp(x, cam_x, cam_r)
-        }
-        if (Array.isArray(frame.sound)) {
-          frame.sound.forEach(s => this.lfw.sounds.play(s, x, y, z))
-        } else {
-          this.lfw.sounds.play(frame.sound, x, y, z);
-        }
+        this.play_sound(frame.sound, this.position)
       }
       this.set_frame(frame);
     } else if (this.frame === EMPTY_FRAME_INFO || fallback) {
@@ -2423,13 +2409,22 @@ export class Entity {
     this.callbacks.call("on_data_changed", this._data, prev, this)
   }
 
-  play_sound(sounds: string | string[] | undefined, pos: IVector3Like = this.position) {
+  play_sound(sounds: string | string[] | undefined, pos: IVector3Like = this.position): void {
     if (!sounds?.length) return;
-    this.lfw.mt.mark = 'ps_1'
-    const sound = this.lfw.mt.pick(sounds);
-    if (!sound) return;
-    const { x, y, z } = pos;
+    let { x, y, z } = pos;
+    const { frame } = this;
+    if (frame.state === StateEnum.Message) {
+      let { centerx, width } = frame;
+      let { camera: { position: { x: cam_x } } } = this.world;
+      let cam_r = cam_x + this.world.dataset.screen_w;
+      const offset_x = this.facing === 1 ? centerx : width - centerx;
+      cam_r -= width - offset_x;
+      cam_x += offset_x;
+      x = clamp(x, cam_x, cam_r);
+    }
+    for (const sound of sounds) {
     this.lfw.sounds.play(sound, x, y, z);
+}
   }
 
   get_emitter(idx: number): Entity | undefined {
