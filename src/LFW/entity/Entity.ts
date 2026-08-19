@@ -2432,8 +2432,12 @@ this.team = bearer.team;
       cam_x += offset_x;
       x = clamp(x, cam_x, cam_r);
     }
+if (Array.isArray(sounds)) {
     for (const sound of sounds) {
       this.lfw.sounds.play(sound, x, y, z);
+}
+    } else {
+        this.lfw.sounds.play(sounds, x, y, z);
     }
   }
 
