@@ -186,7 +186,6 @@ export class UINodeRenderer implements IUINodeRenderer {
     }
     if (this._text_renderer)
       this._text_renderer.mesh.material.alpha = m.alpha;
-
     return this;
   }
 

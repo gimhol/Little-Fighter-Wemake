@@ -130,7 +130,8 @@ void main() {
   outline = max(max(abs(center - up), abs(center - down)), max(abs(center - left), abs(center - right)));
   if((outline > 0.1 && center < 0.5) || center > 0.0) {
     color = apply(color);
-    gl_FragColor = bgfg(gamma_correct(outlineColor), outlineAlpha, color.rgb, color.a);
+    // 描边 alpha 同样需要跟随 opacity 淡出（填充 alpha 已在 apply 中 × opacity）
+    gl_FragColor = bgfg(gamma_correct(outlineColor), outlineAlpha * opacity, color.rgb, color.a);
   } else {
     gl_FragColor = apply(color);
   }
