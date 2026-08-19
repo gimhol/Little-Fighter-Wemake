@@ -12,7 +12,7 @@ export function make_fighter_data_knigt(data: IEntityData): IEntityData {
     hit_sounds: ["data/085.wav.mp3"],
     type: ArmorEnum.Fall,
     toughness: 41,
-    toughness_resting: 0,
+    toughness_resting: 1,
   };
   return data;
 }
