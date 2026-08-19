@@ -69,43 +69,6 @@ export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
           data: { id: "10" }
         });
         break;
-      case ItrKind.Block:
-        bdy_list.length = 0;
-        bdy_list.push({
-          kind: 0,
-          ...set_hit_flag({}, HitFlag.AllBoth),
-          test: new CondMaker<C_Val>()
-            .not_in(
-              C_Val.ItrKind,
-              ItrKind.Block,
-              ItrKind.MagicFlute,
-              ItrKind.MagicFlute2,
-              ItrKind.Pick,
-              ItrKind.PickSecretly,
-            )
-            .and().not_in(
-              C_Val.ItrEffect,
-              ItrEffect.Ice2,
-              ItrEffect.MFire1
-            )
-            .done(),
-          z: itr.z,
-          l: itr.l,
-          x: itr.x,
-          y: itr.y,
-          w: itr.w,
-          h: itr.h,
-          actions: [{
-            type: ActionType.V_NEXT_FRAME,
-            data: {
-              id: "30"
-            }
-          }, {
-            type: ActionType.V_SOUND,
-            data: { path: e.base.dead_sounds || [] }
-          }]
-        })
-        break
     }
   }
   itr_list.push(...new_itr);
