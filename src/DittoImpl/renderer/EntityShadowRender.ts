@@ -63,7 +63,7 @@ export class EntityShadowRender {
     this._p0.copy(this._p1);
     this._p1.x = x
     this._p1.y = ground_y - z / 2
-    this._p1.z = min(bg.far, z)
+    this._p1.z = min(bg.far - 1, z)
     if (immidiate) {
       this._p0.copy(this._p1);
       this.mesh.position.copy(this._p1);
