@@ -59,13 +59,15 @@ export class UITextRenderer {
     }
 
     const m = mesh.material;
-    // alpha 跟随父级 UINodeRenderer
+    // alpha 跟随父级 UINodeRenderer（apply() 每帧同步到 opacity uniform）
     m.alpha = this.owner.mesh.material.alpha;
     // 响应 UINode 的 outline 属性，通过 shader 渲染描边
+    // 注意：update() 只在文本变化时执行，此处必须存静态值；
+    // 淡入淡出由 shader 的 outlineAlpha * opacity 每帧处理（opacity 由 apply() 同步）
     if (ui.outlineColor != null) m.outlineColor = ui.outlineColor;
     if (ui.outlineWidth != null) m.outlineWidth = ui.outlineWidth;
-    if (ui.outlineAlpha != null) m.outlineAlpha = ui.outlineAlpha * m.alpha;
-    else m.outlineAlpha = m.alpha
+    if (ui.outlineAlpha != null) m.outlineAlpha = ui.outlineAlpha;
+    else m.outlineAlpha = 1;
 
     // 根据 center 计算文字 mesh 的位置，若节点尺寸为 0 则用文字自身尺寸
     const nodeW = ui.w || mesh.text_w;
