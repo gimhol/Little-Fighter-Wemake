@@ -1631,7 +1631,7 @@ export class Entity {
       this.stat_recovering();
     if (this.frame.toughness_recover)
       this.toughness_recovering();
-  
+
     this._state?.pre_update?.(this);
     if (this.wait > 0) {
       if (
@@ -2090,6 +2090,7 @@ export class Entity {
   }
 
   pick(weapon: Entity) {
+    if (weapon.bearer) return;
     this.holding = weapon;
     weapon.bearer = this;
     weapon.follow_bearer()
