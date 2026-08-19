@@ -1627,6 +1627,11 @@ export class Entity {
         pair[1] = time + 1;
       }
     }
+    if (this.frame.stat_recover)
+      this.stat_recovering();
+    if (this.frame.toughness_recover)
+      this.toughness_recovering();
+  
     this._state?.pre_update?.(this);
     if (this.wait > 0) {
       if (
