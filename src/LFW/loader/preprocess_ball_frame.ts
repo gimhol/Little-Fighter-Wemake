@@ -1,4 +1,5 @@
 import { CondMaker, cook_ball_frame_state_3000, cook_ball_frame_state_3001, cook_ball_frame_state_3005, cook_ball_frame_state_3006 } from "../dat_translator";
+import { cook_ball_frame_state_15 } from "../dat_translator/cook_ball_frame_state_15";
 import { ActionType, C_Val, EntityEnum, type IEntityData, type IFrameInfo, ItrKind, StateEnum } from "../defines";
 import { ensure, foreach } from "../utils";
 
@@ -31,6 +32,9 @@ export function preprocess_ball_frame(frame: IFrameInfo, data: IEntityData) {
   }
   frame.gravity_enabled = frame.gravity_enabled ?? false;
   switch (frame.state) {
+    case StateEnum.Normal:
+      cook_ball_frame_state_15(data, frame);
+      break;
     case StateEnum.Ball_Flying:
       cook_ball_frame_state_3000(data, frame);
       break;

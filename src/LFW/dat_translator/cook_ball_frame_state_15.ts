@@ -11,10 +11,15 @@ import { ItrEffect } from "../defines/ItrEffect";
 import { ItrKind } from "../defines/ItrKind";
 import { ensure } from "../utils";
 import { CondMaker } from "./CondMaker";
-import { EditBdy } from "./EditBdy";
-import { cook_ball_rebound_bdy } from "./cook_ball_rebound_bdy";
+import { copy_bdy_info } from "./copy_bdy_info";
+import { edit_bdy_info } from "./edit_bdy_info";
+import { cook_ball_rebound_bdy as cook_ball_rebound_bdy } from "./cook_ball_rebound_bdy";
 import { set_hit_flag } from "./set_hit_flag";
-export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
+/**
+ * 能被角色普通反弹
+ * 能被武器挥动普通反弹
+ */
+export function cook_ball_frame_state_15(e: IEntityData, frame: IFrameInfo) {
   const bdy_list = frame.bdy ? frame.bdy : (frame.bdy = []);
   const new_bdy: IBdyInfo[] = [];
   for (const bdy of bdy_list) {
@@ -22,10 +27,15 @@ export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
       .add(C_Val.ItrKind, "!=", ItrKind.JohnShield)
       .and(C_Val.ItrKind, "!=", ItrKind.Block)
       .and((c) => c
-        .add(C_Val.AttackerType, "==", EntityEnum.Ball).or((c) => c
-          /** 被武器s击中 */
+        .add(C_Val.AttackerType, "==", EntityEnum.Ball)
+        .or(c => c
+          /** 被武器击中 */
           .add(C_Val.AttackerType, "==", EntityEnum.Weapon)
           .and(C_Val.AttackerState, "!=", StateEnum.Weapon_OnHand),
+        ).or(c => c
+          /**  */
+          .add(C_Val.AttackerType, "==", EntityEnum.Fighter)
+          .and(C_Val.AttackerState, "==", StateEnum.BurnRun),
         ),
       ).and().not_in(
         C_Val.ItrKind,
@@ -42,7 +52,8 @@ export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
       )
     if (e.id === OID.FreezeBall)
       cond.and(C_Val.AttackerIsFreezableBall, '!=', 1)
-    EditBdy.edit(bdy, {
+
+    edit_bdy_info(bdy, {
       /* 受攻击判定 */
       test: cond.done(),
       actions: [{
@@ -51,62 +62,9 @@ export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
           id: "20"
         }
       }]
-    })
+    });
+
     new_bdy.push(cook_ball_rebound_bdy(bdy));
   }
   bdy_list.push(...new_bdy);
-
-  const itr_list = frame.itr ? frame.itr : (frame.itr = []);
-  const new_itr: IItrInfo[] = [];
-  for (const itr of itr_list) {
-    switch (itr.kind) {
-      case ItrKind.Normal:
-        itr.actions = ensure(itr.actions, {
-          type: ActionType.A_NEXT_FRAME,
-          test: new CondMaker<C_Val>()
-            .add(C_Val.AttackerType, '==', EntityEnum.Ball)
-            .done(),
-          data: { id: "10" }
-        });
-        break;
-      case ItrKind.Block:
-        bdy_list.length = 0;
-        bdy_list.push({
-          kind: 0,
-          ...set_hit_flag({}, HitFlag.AllBoth),
-          test: new CondMaker<C_Val>()
-            .not_in(
-              C_Val.ItrKind,
-              ItrKind.Block,
-              ItrKind.MagicFlute,
-              ItrKind.MagicFlute2,
-              ItrKind.Pick,
-              ItrKind.PickSecretly,
-            )
-            .and().not_in(
-              C_Val.ItrEffect,
-              ItrEffect.Ice2,
-              ItrEffect.MFire1
-            )
-            .done(),
-          z: itr.z,
-          l: itr.l,
-          x: itr.x,
-          y: itr.y,
-          w: itr.w,
-          h: itr.h,
-          actions: [{
-            type: ActionType.V_NEXT_FRAME,
-            data: {
-              id: "30"
-            }
-          }, {
-            type: ActionType.V_SOUND,
-            data: { path: e.base.dead_sounds || [] }
-          }]
-        })
-        break
-    }
-  }
-  itr_list.push(...new_itr);
 }
