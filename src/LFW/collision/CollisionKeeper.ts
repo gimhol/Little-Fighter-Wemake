@@ -19,8 +19,7 @@ import { handle_rest } from "./handle_rest";
 import { handle_super_punch_me } from "./handle_super_punch_me";
 import { handle_weapon_hit_other } from "./handle_weapon_hit_other";
 import { handle_weapon_is_hit } from "./handle_weapon_is_hit";
-import { handle_weapon_is_picked } from "./handle_weapon_is_picked";
-import { handle_weapon_is_picked_secretly } from "./handle_weapon_is_picked_secretly";
+import { handle_weapon_picked } from "./handle_weapon_picked";
 import type { ICollisionHandler } from "./ICollisionHandler";
 
 export interface IHandlerConfig {
@@ -225,17 +224,10 @@ const HANDLER_CONFIGS: IHandlerConfig[] = [
   // ── 拾取武器 ──
   {
     a_type: [EntityEnum.Fighter],
-    itr: [ItrKind.Pick],
+    itr: [ItrKind.Pick, ItrKind.PickSecretly],
     v_type: [EntityEnum.Weapon],
     bdy: [BdyKind.Normal],
-    handler: handle_weapon_is_picked,
-  },
-  {
-    a_type: [EntityEnum.Fighter],
-    itr: [ItrKind.PickSecretly],
-    v_type: [EntityEnum.Weapon],
-    bdy: [BdyKind.Normal],
-    handler: handle_weapon_is_picked_secretly,
+    handler: handle_weapon_picked,
   },
 
   // ── 武器被攻击（飞行中/空中） ──

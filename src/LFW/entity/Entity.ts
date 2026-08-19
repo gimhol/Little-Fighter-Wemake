@@ -2081,9 +2081,19 @@ export class Entity {
     return this.team === other.team;
   }
 
+  pick(weapon: Entity) {
+    this.holding = weapon;
+    weapon.bearer = this;
+    weapon.follow_bearer()
+    summary_mgr.get(this.id).picking_sum += 1
+    if (!is_independent(this.team))
+      summary_mgr.get(this.team).picking_sum += 1;
+  }
+
   follow_bearer() {
-    const bearer = this.bearer;
+    const { bearer } = this;
     if (!bearer) return;
+this.team = bearer.team;
     if (this.hp <= 0 && this.bearer) {
       this.drop_holding()
       return;

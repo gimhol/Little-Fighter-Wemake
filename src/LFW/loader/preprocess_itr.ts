@@ -27,6 +27,27 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
   if (itr.catchingact) preprocess_next_frame(itr.catchingact);
   if (itr.caughtact) preprocess_next_frame(itr.caughtact);
   switch (itr.kind) {
+    case ItrKind.Pick: {
+      if (itr.test) break;
+      itr.test = new CondMaker<C_Val>()
+        .and((c) => c
+          .add(C_Val.VictimState, "==", StateEnum.Weapon_OnGround)
+          .or(C_Val.VictimState, "==", StateEnum.HeavyWeapon_OnGround)
+        )
+        .and(C_Val.AttackerHasHolder, '==', 0)
+        .and(C_Val.VictimHasHolder, '==', 0)
+        .done();
+      break;
+    }
+    case ItrKind.PickSecretly: {
+      if (itr.test) break;
+      itr.test = new CondMaker<C_Val>()
+        .add(C_Val.VictimState, "==", StateEnum.Weapon_OnGround)
+        .and(C_Val.AttackerHasHolder, '==', 0)
+        .and(C_Val.VictimHasHolder, '==', 0)
+        .done();
+      break;
+    }
     case ItrKind.Catch: {
       /*
       Note:
