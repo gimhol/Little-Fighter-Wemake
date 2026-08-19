@@ -1,3 +1,3 @@
 /*** AUTO EXPORT START ***/
-export * from "./SmallTextMesh";
+export * from "./TextMesh";
 /*** AUTO EXPORT END ***/

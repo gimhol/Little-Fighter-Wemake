@@ -97,5 +97,8 @@ export class TextMaterial extends ShaderMaterial {
 
   get outlineWidth(): number { return this.uniforms.outlineWidth.value }
   set outlineWidth(v: number) { this.uniforms.outlineWidth.value = v }
+
+  get alpha(): number { return this.uniforms.opacity.value ?? 1 }
+  set alpha(v: number) { this.uniforms.opacity.value = v }
 }
 MaterialFactory.register(TextMaterial)

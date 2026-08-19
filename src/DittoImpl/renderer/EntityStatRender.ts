@@ -7,7 +7,7 @@ import * as T from "../_t";
 import { Bar } from "./Bar";
 import type { EntityRenderer } from "./EntityRenderer";
 import { WorldRenderer } from "./WorldRenderer";
-import { SmallTextMesh } from "./meshs/SmallTextMesh";
+import { TextMesh } from "./meshs/TextMesh";
 
 const BAR_W = 40;
 const BAR_H = 3;
@@ -15,7 +15,7 @@ export const BAR_BG_W = BAR_W + 2;
 const BAR_BG_H = 1 + (BAR_H + 1) * 2 + 4;
 export class EntityStatRender implements IEntityCallbacks {
   readonly owner: EntityRenderer;
-  protected _reserve_mesh: SmallTextMesh | null = null;
+  protected _reserve_mesh: TextMesh | null = null;
   protected bars_node = new T.Object3D();
   protected bars_bg: Bar;
 
@@ -35,9 +35,9 @@ export class EntityStatRender implements IEntityCallbacks {
   world_renderer: WorldRenderer;
 
 
-  private get reserve_mesh(): SmallTextMesh {
+  private get reserve_mesh(): TextMesh {
     if (this._reserve_mesh) return this._reserve_mesh;
-    const ret = this._reserve_mesh = SmallTextMesh.get()
+    const ret = this._reserve_mesh = TextMesh.get()
     ret.name = `reserve_mesh_${this.entity.name}_${this.entity.id}`;
     this.world_renderer.world_node.add(ret)
     return ret

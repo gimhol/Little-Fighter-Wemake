@@ -3,7 +3,7 @@ import { Object3D } from "three";
 import * as T from "../_t";
 import { BAR_BG_W } from "./EntityStatRender";
 import { ENTITY_INDICATINGS } from "./INDICATINGS";
-import { SmallTextMesh } from "./meshs";
+import { TextMesh } from "./meshs";
 import { WorldRenderer } from "./WorldRenderer";
 import type { EntityRenderer } from "./EntityRenderer";
 
@@ -12,7 +12,7 @@ export class EntityCtrlRender {
   entity: Entity;
   world_renderer: WorldRenderer;
   protected _ctrl_node: Object3D | null = null;
-  protected _ctrls: Map<GameKey | 'bot' | 'keys', SmallTextMesh> | null = null;
+  protected _ctrls: Map<GameKey | 'bot' | 'keys', TextMesh> | null = null;
   constructor(owner: EntityRenderer) {
     this.owner = owner;
     this.entity = owner.entity;
@@ -24,7 +24,7 @@ export class EntityCtrlRender {
     this.world_renderer.world_node.add(this._ctrl_node);
     return this._ctrl_node;
   }
-  get ctrls(): Map<GameKey | 'bot' | 'keys', SmallTextMesh> {
+  get ctrls(): Map<GameKey | 'bot' | 'keys', TextMesh> {
     if (this._ctrls) return this._ctrls;
     const f = 7;
     const ox = -25;
@@ -43,7 +43,7 @@ export class EntityCtrlRender {
 
     const { lfw: lf2 } = this.entity;
     for (const [k, pos] of map) {
-      const mesh = SmallTextMesh.get();
+      const mesh = TextMesh.get();
       mesh.name = `key ${k}`;
       mesh.position.set(BAR_BG_W / 2 + pos.x, 10 + pos.y, pos.z);
       if (k == 'bot') {

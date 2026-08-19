@@ -1,16 +1,16 @@
 import { clamp, Entity, get_team_outline_color, get_team_text_color, round } from "@/LFW";
 import { WorldRenderer } from "./WorldRenderer";
-import { SmallTextMesh } from "./meshs/SmallTextMesh";
+import { TextMesh } from "./meshs/TextMesh";
 import type { EntityRenderer } from "./EntityRenderer";
 
 export class EntityNameRender {
   readonly owner: EntityRenderer;
-  protected _mesh: SmallTextMesh | null = null;
+  protected _mesh: TextMesh | null = null;
   protected readonly world_renderer: WorldRenderer;
   protected entity: Entity;
   protected get mesh() {
     if (this._mesh) return this._mesh;
-    const ret = this._mesh = SmallTextMesh.get()
+    const ret = this._mesh = TextMesh.get()
     ret.name = `EntityNameRender_${this.entity.name}_${this.entity.id}`;
     this.world_renderer.world_node.add(ret)
     return ret
