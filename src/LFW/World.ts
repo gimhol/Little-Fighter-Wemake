@@ -356,7 +356,7 @@ export class World {
    */
   restrict(e: Entity): IVector3Like {
     let { x, z, y } = e.position;
-    if (e.bearer || e.catcher) {
+    if (e.bearer || e.catcher || e.ghosted) {
       e.terrain = this.ground.base;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
@@ -737,7 +737,7 @@ export class World {
     e.outline_color = '';
     e.set_position(x, y, z);
     e.enter_frame_by_id(f);
-    e.attach(false);
+    e.attach(true);
   }
   etc(x: number, y: number, z: number, f: string): void {
     if (!this._etc_data) this._etc_data = this.lfw.datas.find(O_ID.Etc);
