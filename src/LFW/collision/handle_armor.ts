@@ -28,9 +28,12 @@ export function handle_armor(collision: Collision): boolean {
     case ArmorEnum.Times: decrease_value = 1; break;
     case ArmorEnum.Injury: decrease_value = injury; break;
   }
+
   const is_full = victim.toughness == victim.toughness_max;
+  const pre_toughness = victim.toughness;
   victim.toughness -= decrease_value;
-  if (!is_full && victim.toughness <= 0) return false;
+  if (!is_full && pre_toughness < decrease_value)
+    return false;
   const {
     hit_sounds,
     injury_ratio = Defines.DEFAULT_ARMOR_INJURY_RATIO,

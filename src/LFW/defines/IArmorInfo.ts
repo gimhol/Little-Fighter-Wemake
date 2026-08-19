@@ -29,6 +29,13 @@ export interface IArmorInfo {
    */
   toughness?: number;
 
+  /** 耐久度恢复度 */
+  toughness_r_value?: number;
+  
+  /** 耐久度恢复频率 */
+  toughness_r_tick?: number;
+  
+  /** 耐久度的恢复冷却 */
   toughness_resting?: number;
 
   /**
@@ -82,7 +89,6 @@ export interface IArmorInfo {
    */
   injury_ratio?: number;
 
-
   /**
    * 硬直比例
    * 默认: 3
@@ -134,6 +140,8 @@ export const armor_Info_fields = fields<IArmorInfo>({
   hit_sounds: str("", { array: true }),
   dead_sounds: str("", { array: true }),
   toughness_resting: int,
+  toughness_r_value: int,
+  toughness_r_tick: int,
 })
 export function armor_Info_new(): IArmorInfo {
   return {

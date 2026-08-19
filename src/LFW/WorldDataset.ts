@@ -116,10 +116,11 @@ export class WorldDataset implements IWorldDataset {
   UPS: number = 60;
   playrate: number = 1;
   atom_time: number = 1;
+  toughness_r_tick: number = 1;
+  toughness_r_value: number = 1;
   [CheatEnum.GIM_INK]: number = 0;
   [CheatEnum.HERO_FT]: number = 0;
   [CheatEnum.LF2_NET]: number = 0;
-  toughness_r_value: number = 1;
 
   constructor(pure: boolean = false) {
     if (!pure) {
