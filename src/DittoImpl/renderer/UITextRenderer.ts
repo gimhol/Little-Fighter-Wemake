@@ -64,7 +64,9 @@ export class UITextRenderer {
     // 响应 UINode 的 outline 属性，通过 shader 渲染描边
     if (ui.outlineColor != null) m.outlineColor = ui.outlineColor;
     if (ui.outlineWidth != null) m.outlineWidth = ui.outlineWidth;
-    if (ui.outlineAlpha != null) m.outlineAlpha = ui.outlineAlpha;
+    if (ui.outlineAlpha != null) m.outlineAlpha = ui.outlineAlpha * m.alpha;
+    else m.outlineAlpha = m.alpha
+
     // 根据 center 计算文字 mesh 的位置，若节点尺寸为 0 则用文字自身尺寸
     const nodeW = ui.w || mesh.text_w;
     const nodeH = ui.h || mesh.text_h;
