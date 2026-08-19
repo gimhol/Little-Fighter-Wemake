@@ -43,6 +43,12 @@ export enum StateEnum {
   Caught = 10,
   Injured = 11,
   Falling = 12,
+  /**
+   * [LF2 & WEMAKE]
+   * 冻结
+   * 
+   * 拥有特殊行为，见: State_Frozen
+   */
   Frozen = 13,
   Lying = 14,
 
