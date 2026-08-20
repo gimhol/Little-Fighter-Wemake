@@ -7,7 +7,46 @@ export class OutlineMaterial extends ShaderMaterial {
   static readonly KIND = MaterialKind.Outline;
   static create(): OutlineMaterial { return new OutlineMaterial(); }
   static reset(c: OutlineMaterial) { c.reset(); }
-
+  override uniforms = {
+    tex: { value: void 0 as Texture | undefined },
+    x: { value: 0 },
+    y: { value: 0 },
+    w: { value: 1 },
+    h: { value: 1 },
+    tw: { value: 1 },
+    th: { value: 1 },
+    tsw: { value: 1 },
+    tsh: { value: 1 },
+    outlineColor: { value: BLACK.clone() },
+    outlineAlpha: { value: 0 },
+    outlineWidth: { value: 0 },
+    repeatX: { value: 1 },
+    repeatY: { value: 1 },
+    offsetX: { value: 0 },
+    offsetY: { value: 0 },
+    flipX: { value: 1 },
+    flipY: { value: 1 },
+    scaleX: { value: 1 },
+    scaleY: { value: 1 },
+    scaleZ: { value: 1 },
+    opacity: { value: 1 },
+    /** 混色 */
+    mixColor: { value: BLACK.clone() },
+    /** 混色强度,一般范围:[0,1], 当为0，不混色 */
+    mixStength: { value: 0 },
+    cover: { value: false },
+    coverColor: { value: BLACK.clone() },
+    coverStength: { value: 0 },
+    gray: { value: 0 },
+    keepout: { value: true },
+    bgColor: { value: BLACK.clone() },
+    bgAlpha: { value: 0 },
+    fgColor: { value: BLACK.clone() },
+    fgAlpha: { value: 0 },
+    deburrMin: { value: 0.75 },
+    deburrMax: { value: 0.95 },
+    deburrJudge: { value: 0.75 },
+  }
   constructor() {
     super({
       vertexShader: Shaders.Vertex.Normal,
@@ -16,49 +55,42 @@ export class OutlineMaterial extends ShaderMaterial {
     })
   }
   reset(): void {
-    this.uniforms = {
-      tex: { value: void 0 },
-      x: { value: 0 },
-      y: { value: 0 },
-      w: { value: 1 },
-      h: { value: 1 },
-      tw: { value: 1 },
-      th: { value: 1 },
-      tsw: { value: 1 },
-      tsh: { value: 1 },
-      outlineColor: { value: BLACK.clone() },
-      outlineAlpha: { value: 0 },
-      outlineWidth: { value: 0 },
-      repeatX: { value: 1 },
-      repeatY: { value: 1 },
-      offsetX: { value: 0 },
-      offsetY: { value: 0 },
-      flipX: { value: 1 },
-      flipY: { value: 1 },
-      scaleX: { value: 1 },
-      scaleY: { value: 1 },
-      scaleZ: { value: 1 },
-      opacity: { value: 1 },
-      /** 混色 */
-      mixColor: { value: BLACK.clone() },
-      /** 混色强度,一般范围:[0,1], 当为0，不混色 */
-      mixStength: { value: 0 },
-      cover: { value: false },
-      coverColor: { value: BLACK.clone() },
-      coverStength: { value: 0 },
-      gray: { value: 0 },
-      keepout: { value: true },
-
-      bgColor: { value: BLACK.clone() },
-      bgAlpha: { value: 0 },
-
-      fgColor: { value: BLACK.clone() },
-      fgAlpha: { value: 0 },
-
-      deburrMin: { value: 0.75 },
-      deburrMax: { value: 0.95 },
-      deburrJudge: { value: 0.75 },
-    }
+    this.uniforms.tex.value = void 0;
+    this.uniforms.x.value = 0;
+    this.uniforms.y.value = 0;
+    this.uniforms.w.value = 1;
+    this.uniforms.h.value = 1;
+    this.uniforms.tw.value = 1;
+    this.uniforms.th.value = 1;
+    this.uniforms.tsw.value = 1;
+    this.uniforms.tsh.value = 1;
+    this.uniforms.outlineColor.value = BLACK.clone();
+    this.uniforms.outlineAlpha.value = 0;
+    this.uniforms.outlineWidth.value = 0;
+    this.uniforms.repeatX.value = 1;
+    this.uniforms.repeatY.value = 1;
+    this.uniforms.offsetX.value = 0;
+    this.uniforms.offsetY.value = 0;
+    this.uniforms.flipX.value = 1;
+    this.uniforms.flipY.value = 1;
+    this.uniforms.scaleX.value = 1;
+    this.uniforms.scaleY.value = 1;
+    this.uniforms.scaleZ.value = 1;
+    this.uniforms.opacity.value = 1;
+    this.uniforms.mixColor.value = BLACK.clone();
+    this.uniforms.mixStength.value = 0;
+    this.uniforms.cover.value = false;
+    this.uniforms.coverColor.value = BLACK.clone();
+    this.uniforms.coverStength.value = 0;
+    this.uniforms.gray.value = 0;
+    this.uniforms.keepout.value = true;
+    this.uniforms.bgColor.value = BLACK.clone();
+    this.uniforms.bgAlpha.value = 0;
+    this.uniforms.fgColor.value = BLACK.clone();
+    this.uniforms.fgAlpha.value = 0;
+    this.uniforms.deburrMin.value = 0.75;
+    this.uniforms.deburrMax.value = 0.95;
+    this.uniforms.deburrJudge.value = 0.75;
   }
   get texture(): Texture | undefined { return this.uniforms.tex.value }
   set texture(v: Texture | undefined) { this.uniforms.tex.value = v }

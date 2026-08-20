@@ -43,15 +43,7 @@ MeshFactory.register({
     return ret;
   },
   reset: (c) => {
+    c.reset()
     c.visible = false;
-
-    const m = c.material;
-    m.texture = void 0;
-    m.outlineColor = BLACK;
-    m.outlineAlpha = 0;
-    m.outlineWidth = 0;
-    m.mixColor = BLACK;
-    m.mixStrength = 0;
-    m.gray = 0;
   },
 })
