@@ -305,8 +305,8 @@ export function collision_test(c: Collision): boolean {
     )
   ) return false;
   if (
-    victim.team === attacker.team && victim.pre_emitter &&
-    victim.pre_emitter === attacker.pre_emitter &&
+    victim.team === attacker.team && victim.emitter &&
+    victim.emitter === attacker.emitter &&
     victim.spawn_time === attacker.spawn_time
   ) return false;
 

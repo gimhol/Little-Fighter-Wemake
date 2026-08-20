@@ -6,7 +6,6 @@ import { OpointSpreading } from "../../defines/OpointSpreading";
 import { ensure } from "../../utils/container_help/ensure";
 
 export function make_fb_jan_chaseh_start(frame: IFrameInfo, x: number = frame.centerx, y: number = frame.centery) {
-
   frame.opoint = ensure(frame.opoint, {
     kind: OpointKind.Normal,
     oid: OID.JanChaseh,

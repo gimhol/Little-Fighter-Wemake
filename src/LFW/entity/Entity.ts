@@ -571,7 +571,7 @@ export class Entity {
   }
 
   get src_emitter(): Entity | undefined { return this.get_emitter(0) }
-  get pre_emitter(): Entity | undefined { return this.get_emitter(this.emitters.length - 1) }
+  get emitter(): Entity | undefined { return this.get_emitter(this.emitters.length - 1) }
   get emitters(): string[] { return this._emitters; }
 
   /**
@@ -933,7 +933,7 @@ export class Entity {
 
     const { weight } = this;
     o_dvy = o_dvy / weight;
-    const ud = emitter.ctrl?.UD || 0;
+    const ud = is_fighter(emitter) ? emitter.ctrl.UD : 0;
     const { x: ovx, y: ovy, z: ovz } = offset_velocity;
     if (o_dvx > 0) o_dvx = o_dvx / weight - abs(ovz / 2);
     else o_dvx = o_dvx / weight + abs(ovz / 2);
@@ -1084,7 +1084,9 @@ export class Entity {
             count = clamp(allies.length, min, max);
             break;
           case OpointMultiEnum.Emitter:
-            allies = [this];
+            const { emitter } = this;
+            if (!emitter) break;
+            allies = [emitter];
             count = 1;
             break;
         }
@@ -1124,16 +1126,17 @@ export class Entity {
         }
         switch (multi_type) {
           case OpointMultiEnum.AccordingEnemies:
-            if (e.frame.chase && is_ball_ctrl(e.ctrl))
+            if (is_ball_ctrl(e.ctrl))
               e.ctrl.chasing = enemies[i % enemies.length];
             break;
           case OpointMultiEnum.AccordingAllies:
-            if (e.frame.chase && is_ball_ctrl(e.ctrl))
+            if (is_ball_ctrl(e.ctrl))
               e.ctrl.chasing = allies[i % allies.length];
             break;
           case OpointMultiEnum.Emitter:
-            if (e.frame.chase && is_ball_ctrl(e.ctrl))
-              e.ctrl.chasing = this;
+            if (is_ball_ctrl(e.ctrl))
+              e.ctrl.chasing = allies[0];
+            break;
         }
         if (opoint.inherit_speed_x)
           e.set_velocity_x(e.velocity.x + this.velocity.x * opoint.inherit_speed_x);

@@ -105,7 +105,7 @@ export const collision_action_handlers: IActionHandler = {
     const { attacker } = c;
     switch (a.data.target) {
       case 1: t = attacker.src_emitter; break;
-      case 2: t = attacker.pre_emitter; break;
+      case 2: t = attacker.emitter; break;
       case 3: t = attacker.bearer; break;
       case 0: default: t = attacker; break;
     }
