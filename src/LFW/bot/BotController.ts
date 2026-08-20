@@ -84,15 +84,26 @@ export class BotController extends BaseController {
   get av(): Entity | undefined { return this.avoidings.get()?.entity }
   get bot_state(): BSE { return this.fsm.state?.key || BSE.Idle }
   get dataset() { return this._dataset }
-  get stand_atk_b_x() {
-    const en = this.chasings.get()?.entity;
-    if (!en) return 0;
-    if (is_weapon(en)) return this.dataset.pick_weapon_b_x;
-    return -8; // TODO?
+  
+  get atk_f_x() {
+    switch (this.entity.state) {
+      case StateEnum.Running: return this.r_atk_x;
+      case StateEnum.Dash: return this.d_atk_max_x;
+      case StateEnum.Jump: return this.j_atk_x;
+    }
+    return this.w_atk_f_x;
+  }
+  get atk_b_x() {
+    switch (this.entity.state) {
+      case StateEnum.Running: return -8;
+      case StateEnum.Dash: return this.d_atk_min_x;
+      case StateEnum.Jump: return -8;
+    }
+    return this.w_atk_b_x;
   }
 
   /** 地面攻击触发范围X */
-  get stand_atk_f_x() {
+  get w_atk_f_x() {
     const en = this.chasings.get()?.entity;
     if (!en) return 0;
     if (is_weapon(en)) return this.dataset.pick_weapon_f_x;
@@ -109,8 +120,14 @@ export class BotController extends BaseController {
     if (
       wt === WT.Heavy
     ) return 200 * this.entity.strength;
-
     return this.dataset.w_atk_x
+  }
+
+  get w_atk_b_x() {
+    const en = this.chasings.get()?.entity;
+    if (!en) return 0;
+    if (is_weapon(en)) return this.dataset.pick_weapon_b_x;
+    return -8; // TODO?
   }
 
   /** 跑攻触发范围X */
@@ -174,7 +191,7 @@ export class BotController extends BaseController {
     return this.dataset.j_atk_x;
   }
   /** 最近站立攻击距离 */
-  get atk_m_x() {
+  get w_atk_m_x() {
     const wt = this.entity.holding?.base_type
     if (
       wt === WT.Baseball ||
@@ -182,7 +199,7 @@ export class BotController extends BaseController {
     ) return 100;
     return this.dataset.w_atk_m_x
   }
-  get atk_r_x() {
+  get w_atk_r_x() {
     const wt = this.entity.holding?.base_type
     if (
       wt === WT.Baseball ||
@@ -205,12 +222,12 @@ export class BotController extends BaseController {
   }
 
   w_atk_too_far(o: Entity) {
-    const { atk_r_x } = this;
+    const { w_atk_r_x: atk_r_x } = this;
     const abs_dx = abs(this.me.position.x - o.position.x)
     return atk_r_x > 0 && atk_r_x < abs_dx
   }
   w_atk_too_close(o: Entity) {
-    const { atk_m_x } = this;
+    const { w_atk_m_x: atk_m_x } = this;
     const abs_dx = abs(this.me.position.x - o.position.x)
     return atk_m_x > 0 && atk_m_x > abs_dx
   }
@@ -422,7 +439,7 @@ export class BotController extends BaseController {
     if (me.ground_y != me.position.y) return false;
 
     if (bot_state === BSE.Avoiding)
-      return this.atk_r_x > 0 && !this.w_atk_too_far(av)
+      return this.w_atk_r_x > 0 && !this.w_atk_too_far(av)
     return this.w_atk_too_close(av)
   }
 
