@@ -14,12 +14,15 @@ export enum OpointMultiEnum {
   AccordingEnemies = 0,
 
   /**
-   * 根据队友数量生成
+   * 根据存活队友角色数量生成(不包含自己/与自己的发射者)
    * @see {IOpointInfo.multi}
    */
   AccordingAllies = 1,
+
+  Emitter = 2,
 }
 export const OpointMultiEnumDescriptions: Record<OpointMultiEnum, string> = {
   [OpointMultiEnum.AccordingEnemies]: "",
   [OpointMultiEnum.AccordingAllies]: "",
+  [OpointMultiEnum.Emitter]: "",
 }

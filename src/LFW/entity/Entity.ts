@@ -1072,9 +1072,20 @@ export class Entity {
             count = clamp(enemies.length, min, max);
             break;
           case OpointMultiEnum.AccordingAllies:
-            allies = this.world.list_entities(`af_${this.team}`, (o) => is_fighter(o) && this.team == o.team && o.hp > 0);
+            allies = this.world.list_entities(`af_${this.team}`, (o) => {
+              if (!is_fighter(o)) return false;
+              if (this.team != o.team) return false;
+              if (o.hp <= 0) return false;
+              if (o == this) return false;
+              if (o == this.src_emitter) return false;
+              return true
+            });
             if (skip_zero && !allies.length) break;
             count = clamp(allies.length, min, max);
+            break;
+          case OpointMultiEnum.Emitter:
+            allies = [this];
+            count = 1;
             break;
         }
       }
@@ -1120,6 +1131,9 @@ export class Entity {
             if (e.frame.chase && is_ball_ctrl(e.ctrl))
               e.ctrl.chasing = allies[i % allies.length];
             break;
+          case OpointMultiEnum.Emitter:
+            if (e.frame.chase && is_ball_ctrl(e.ctrl))
+              e.ctrl.chasing = this;
         }
         if (opoint.inherit_speed_x)
           e.set_velocity_x(e.velocity.x + this.velocity.x * opoint.inherit_speed_x);
