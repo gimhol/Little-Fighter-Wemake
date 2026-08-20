@@ -8,12 +8,6 @@ export class OutlineMaterial extends ShaderMaterial {
   static create(): OutlineMaterial { return new OutlineMaterial(); }
   static reset(c: OutlineMaterial) { c.reset(); }
 
-  protected _outlineColor = BLACK.clone();
-  protected _coverColor = BLACK.clone();
-  protected _mixColor = BLACK.clone();
-  protected _bgColor = BLACK.clone();
-  protected _fgColor = BLACK.clone();
-
   constructor() {
     super({
       vertexShader: Shaders.Vertex.Normal,
@@ -32,7 +26,7 @@ export class OutlineMaterial extends ShaderMaterial {
       th: { value: 1 },
       tsw: { value: 1 },
       tsh: { value: 1 },
-      outlineColor: { value: this._outlineColor },
+      outlineColor: { value: BLACK.clone() },
       outlineAlpha: { value: 0 },
       outlineWidth: { value: 0 },
       repeatX: { value: 1 },
@@ -46,19 +40,19 @@ export class OutlineMaterial extends ShaderMaterial {
       scaleZ: { value: 1 },
       opacity: { value: 1 },
       /** 混色 */
-      mixColor: { value: this._mixColor },
+      mixColor: { value: BLACK.clone() },
       /** 混色强度,一般范围:[0,1], 当为0，不混色 */
       mixStength: { value: 0 },
       cover: { value: false },
-      coverColor: { value: this._coverColor },
+      coverColor: { value: BLACK.clone() },
       coverStength: { value: 0 },
       gray: { value: 0 },
       keepout: { value: true },
 
-      bgColor: { value: this._bgColor },
+      bgColor: { value: BLACK.clone() },
       bgAlpha: { value: 0 },
 
-      fgColor: { value: this._fgColor },
+      fgColor: { value: BLACK.clone() },
       fgAlpha: { value: 0 },
 
       deburrMin: { value: 0.75 },
@@ -70,30 +64,30 @@ export class OutlineMaterial extends ShaderMaterial {
   set texture(v: Texture | undefined) { this.uniforms.tex.value = v }
   get alpha(): number { return this.uniforms.opacity.value ?? 1 }
   set alpha(v: number) { this.uniforms.opacity.value = v }
-  get outlineColor(): Color { return this._outlineColor }
-  set outlineColor(v: ColorRepresentation) { this._outlineColor.set(v) }
+  get outlineColor(): Color { return this.uniforms.outlineColor.value }
+  set outlineColor(v: ColorRepresentation) { this.uniforms.outlineColor.value.set(v) }
   get outlineAlpha(): number { return this.uniforms.outlineAlpha.value }
   set outlineAlpha(v: number) { this.uniforms.outlineAlpha.value = v }
   get gray(): number { return this.uniforms.gray.value }
   set gray(v: number) { this.uniforms.gray.value = v }
   get outlineWidth(): number { return this.uniforms.outlineWidth.value }
   set outlineWidth(v: number) { this.uniforms.outlineWidth.value = v }
-  get coverColor(): Color { return this._coverColor }
-  set coverColor(v: ColorRepresentation) { this._coverColor.set(v) }
+  get coverColor(): Color { return this.uniforms.coverColor.value }
+  set coverColor(v: ColorRepresentation) { this.uniforms.coverColor.value.set(v) }
   get coverStength(): number { return this.uniforms.coverStength.value }
   set coverStength(v: number) { this.uniforms.coverStength.value = v }
   get cover(): boolean { return this.uniforms.cover.value }
   set cover(v: boolean) { this.uniforms.cover.value = v }
-  get mixColor(): Color { return this._mixColor }
-  set mixColor(v: ColorRepresentation) { this._mixColor.set(v) }
+  get mixColor(): Color { return this.uniforms.mixColor.value }
+  set mixColor(v: ColorRepresentation) { this.uniforms.mixColor.value.set(v) }
   get mixStrength(): number { return this.uniforms.mixStength.value }
   set mixStrength(v: number) { this.uniforms.mixStength.value = v }
-  get bgColor(): Color { return this._bgColor }
-  set bgColor(v: ColorRepresentation) { this._bgColor.set(v) }
+  get bgColor(): Color { return this.uniforms.bgColor.value }
+  set bgColor(v: ColorRepresentation) { this.uniforms.bgColor.value.set(v) }
   get bgAlpha(): number { return this.uniforms.bgAlpha.value }
   set bgAlpha(v: number) { this.uniforms.bgAlpha.value = v }
-  get fgColor(): Color { return this._fgColor }
-  set fgColor(v: ColorRepresentation) { this._fgColor.set(v); }
+  get fgColor(): Color { return this.uniforms.fgColor.value }
+  set fgColor(v: ColorRepresentation) { this.uniforms.fgColor.value.set(v) }
   get fgAlpha(): number { return this.uniforms.fgAlpha.value }
   set fgAlpha(v: number) { this.uniforms.fgAlpha.value = v }
   get x(): number { return this.uniforms.x.value }
