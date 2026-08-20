@@ -1,8 +1,9 @@
 import { BufferGeometry, Mesh, MeshBasicMaterial } from "../../_t";
 import { get_static_plane_geometry } from "../GeometryKeeper";
-import { OutlineMaterial } from "../materials/OutlineMaterial";
+import { BLACK } from "../materials/OutlineMaterial";
 import { InstFactory, type Kind } from "../../../LFW/base/InstFactory";
 import { MaterialFactory, MaterialKind } from "./MaterialFactory";
+import { OutlineMesh } from "../meshs/OutlineMesh";
 export enum MeshKind {
   Invalid = 0,
   Blood = 'Blood',
@@ -32,16 +33,25 @@ MeshFactory.register({
   reset: (c: Mesh) => { },
 })
 
-const BODY_GEOMETRY = get_static_plane_geometry(1, 1, 0.5, -0.5);
+
 MeshFactory.register({
   kind: MeshKind.Entity,
-  cls: Mesh<BufferGeometry, OutlineMaterial>,
+  cls: OutlineMesh,
   create: () => {
-    const m = MaterialFactory.get(MaterialKind.Outline, OutlineMaterial);
-    m.outlineWidth = 1;
-    const ret = new Mesh(BODY_GEOMETRY, m);
+    const ret = new OutlineMesh();
     ret.visible = false;
     return ret;
   },
-  reset: (c: Mesh) => { },
+  reset: (c) => {
+    c.visible = false;
+
+    const m = c.material;
+    m.texture = void 0;
+    m.outlineColor = BLACK;
+    m.outlineAlpha = 0;
+    m.outlineWidth = 0;
+    m.mixColor = BLACK;
+    m.mixStrength = 0;
+    m.gray = 0;
+  },
 })

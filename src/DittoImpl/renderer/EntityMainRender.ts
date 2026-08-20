@@ -7,6 +7,7 @@ import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
 import { MeshFactory, MeshKind } from "./factory";
 import { OutlineMaterial } from "./materials/OutlineMaterial";
+import { OutlineMesh } from "./meshs/OutlineMesh";
 import type { WorldRenderer } from "./WorldRenderer";
 
 const get_img_map = (lfw: LFW, data: IEntityData, out: Map<string, RImageInfo>): void => {
@@ -28,8 +29,8 @@ export class EntityMainRender {
   protected images = new Map<string, RImageInfo>();
   protected entity: Entity;
   protected node = new Object3D();
-  protected meshs: Mesh<BufferGeometry, OutlineMaterial>[] = [
-    MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>)
+  protected meshs: OutlineMesh[] = [
+    MeshFactory.get(MeshKind.Entity, OutlineMesh)
   ];
   protected blood_mesh = MeshFactory.get(MeshKind.Blood, Mesh<BufferGeometry, MeshBasicMaterial>);
   protected file_variants = new Map<string, string[]>();
@@ -101,7 +102,7 @@ export class EntityMainRender {
       let mesh = this.meshs[i + 1];
       if (i <= pics_count) {
         if (!mesh) {
-          mesh = MeshFactory.get(MeshKind.Entity, Mesh<BufferGeometry, OutlineMaterial>);
+          mesh = MeshFactory.get(MeshKind.Entity, OutlineMesh);
           this.meshs[i + 1] = mesh;
           this.node.add(mesh)
         }
