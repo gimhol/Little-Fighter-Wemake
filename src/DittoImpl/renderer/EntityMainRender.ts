@@ -70,6 +70,7 @@ export class EntityMainRender {
     this.p1.set(0, 0, 0);
     this.shaking = 0;
     this.shaking_x = 0;
+    this.render_effect_time = -1;
     const { data } = entity;
     this.file_variants.clear();
     const files = this.files = data.base.files ?? {};
