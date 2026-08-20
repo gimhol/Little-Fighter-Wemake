@@ -23,8 +23,8 @@ import { Freeze_DFA } from './Freeze/Freeze_DFA';
 import { Freeze_DFJ } from './Freeze/Freeze_DFJ';
 import { Freeze_DUJ } from './Freeze/Freeze_DUJ';
 import { Freeze_DVJ } from './Freeze/Freeze_DVJ';
-import { Jan_DUA } from './Jan/Jan_DUA';
-import { Jan_DUJ } from './Jan/Jan_DUJ';
+import { Jan_DUA, Jan_DUA_2 } from './Jan/Jan_DUA';
+import { Jan_DUJ, Jan_DUJ_2 } from './Jan/Jan_DUJ';
 import { Julian_DFA } from './Julian/Julian_DFA';
 import { Julian_DFJ } from './Julian/Julian_DFJ';
 import { Julian_DUJ } from './Julian/Julian_DUJ';
@@ -47,7 +47,9 @@ const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
     Bat_DUJ_0, Bat_DUJ_1, Bat_DUJ_2, Bat_DUJ_3
   ], [
     Jan_DUA,
-    Jan_DUJ
+    Jan_DUA_2,
+    Jan_DUJ,
+    Jan_DUJ_2
   ], [
     Henry_DUJ
   ], [
