@@ -54,10 +54,13 @@ export function handle_itr_normal_bdy_normal(collision: Collision) {
       const [vx, vy, vz] = calc_itr_velocity(collision)
       victim.set_velocity(vx, vy, vz)
       const [x, y, z] = victim.spark_point(a_cube, b_cube)
+
       if (itr.effect === ItrEffect.Sharp && is_fighter(victim)) {
         victim.world.spark(x, y, z, SparkEnum.Bleed);
-      } else {
+      } else if (is_fighter(victim)) {
         victim.world.spark(x, y, z, SparkEnum.Hit);
+      } else {
+        victim.world.spark(x, y, z, SparkEnum.SilentHit);
       }
 
       const ic = StateEnum.Caught === victim.state;

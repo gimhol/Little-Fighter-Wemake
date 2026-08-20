@@ -20,8 +20,8 @@ export function handle_ball_is_hit_a(collision: Collision): void {
   }
   victim.world.spark(...victim.spark_point(a_cube, b_cube),
     itr.fall && itr.fall > Defines.DEFAULT_FALL_VALUE_CRITICAL ?
-      SparkEnum.CriticalHit :
-      SparkEnum.Hit
+      SparkEnum.SilentCriticalHit :
+      SparkEnum.SilentHit
   );
   victim.play_sound(victim.data.base.hit_sounds)
 }
@@ -36,8 +36,8 @@ export function handle_ball_is_hit_b(collision: Collision): void {
   victim.set_velocity(0, 0, 0)
   victim.world.spark(...victim.spark_point(a_cube, b_cube),
     itr.fall && itr.fall > Defines.DEFAULT_FALL_VALUE_CRITICAL ?
-      SparkEnum.CriticalHit :
-      SparkEnum.Hit
+      SparkEnum.SilentCriticalHit :
+      SparkEnum.SilentHit
   );
   victim.play_sound(victim.data.base.hit_sounds)
 }
