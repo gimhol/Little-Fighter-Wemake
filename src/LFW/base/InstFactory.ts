@@ -28,15 +28,15 @@ export abstract class InstFactory<T> {
     const kkey = `${kind.toString()}##${key}`
     return this.instances.get(kkey) as C // unsafe cast
   }
-  register(creator: IInstCreator<T> | IInstCls<T>): void {
+  register<B extends T = T>(creator: IInstCreator<B> | IInstCls<B>): void {
     const { TAG } = this;
     if (!creator)
       throw new Error(`[${TAG}::register] failed! creator is null or undefined`);
     let kind: Kind | undefined;
     let cls: new (...args: any) => T;
     let create: () => T;
-    let reset: (c: T) => void;
-    let init: ((c: T) => unknown) | undefined;
+    let reset: (c: B) => void;
+    let init: ((c: B) => unknown) | undefined;
     if (typeof creator === 'function') {
       cls = creator;
       kind = creator.KIND;
