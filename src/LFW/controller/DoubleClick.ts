@@ -30,7 +30,8 @@ export class DoubleClick<D> {
   }
   reset() {
     this.time = 0;
-    this.data = [void 0, void 0];
+    this.data[0] = void 0;
+    this.data[1] = void 0;
     this.fired = false;
   }
 
