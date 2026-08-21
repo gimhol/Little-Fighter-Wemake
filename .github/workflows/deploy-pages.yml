@@ -27,6 +27,8 @@ jobs:
           ref: main
           fetch-depth: 0
           fetch-tags: true
+          # 仓库所有 *.png/*.wav/*.zip 等用 Git LFS 管理，必须拉取真实内容，否则构建出的资源是损坏的
+          lfs: true
 
       # 检出 main 上最近一个含 tag 的提交来构建；没有 tag 时退回 main 最新提交
       - name: Checkout latest tagged commit
@@ -37,6 +39,7 @@ jobs:
           else
             echo "Building from tag: $TAG"
             git checkout "$TAG"
+            git lfs pull
           fi
           echo "BUILD_TAG=$TAG" >> "$GITHUB_ENV"
 
