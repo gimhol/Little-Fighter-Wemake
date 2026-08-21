@@ -1,5 +1,5 @@
 import { warn } from "console";
-import { X_OK } from "constants";
+import { R_OK } from "constants";
 import { accessSync, mkdirSync, writeFileSync } from "fs";
 import { parase_indexes } from "../../../src/LFW/dat_translator/parase_indexes";
 import type { IDataLists, ITempDataLists } from "../../../src/LFW/defines/IDataLists";
@@ -17,7 +17,7 @@ export async function convert_data_txt(src_dir: string, out_dir: string, index_f
 )`)
   const suffix = conf().OUT_TYPE ?? 'json5'
   try {
-    accessSync(index_file, X_OK)
+    accessSync(index_file, R_OK)
   } catch (e) {
     const message = [
       `data.txt not found, path:`,

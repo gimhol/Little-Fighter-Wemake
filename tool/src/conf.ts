@@ -243,7 +243,7 @@ function read_conf(file?: string, handle_new_conf?: (conf: IConf) => void): ICon
   // 确定是否存在可读写的配置文件
   for (const conf_file of conf_files) {
     try {
-      accessSync(conf_file, constants.X_OK)
+      accessSync(conf_file, constants.R_OK)
       conf.CONF_FILE = resolve(conf_file)
     } catch (e) {
       Logger.debug(`Cannot access "${conf_file}".`)
@@ -256,7 +256,7 @@ function read_conf(file?: string, handle_new_conf?: (conf: IConf) => void): ICon
   let conf_file_exists = false;
   // 再次检查配置文件是否存在
   try {
-    accessSync(conf.CONF_FILE, constants.X_OK)
+    accessSync(conf.CONF_FILE, constants.R_OK)
     conf_file_exists = true
   } catch (e) {
   }
