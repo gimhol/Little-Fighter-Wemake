@@ -1,8 +1,10 @@
 name: Deploy to GitHub Pages
 
 on:
+  # 打新 tag 时才触发构建（如 v0.1.46）
   push:
-    branches: [main]
+    tags:
+      - '*'
   workflow_dispatch:
 
 # 允许 deploy-pages 写 Pages 环境
