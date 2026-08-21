@@ -46,7 +46,8 @@ export class DoubleClick<D> {
   }
 
   from_snapshot(s: IDoubleClickSnapshot<D>) {
-    this.data = [...s.data];
+    this.data[0] = s.data[0];
+    this.data[1] = s.data[1];
     this.time = s.time;
     this.used = s.used;
     this.fired = s.fired;
