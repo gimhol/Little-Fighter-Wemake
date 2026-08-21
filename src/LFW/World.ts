@@ -90,6 +90,7 @@ export class World {
   readonly puppets = new Map<string, Entity>();
   readonly puppet_teams = new Set<string>();
   readonly collisions = new Map<string, Collision>()
+  private _alive_players = new Set<Entity>();
   public has_players_alive: boolean = false;
   TU: number = 1;
   get bg() { return this._bg; }
@@ -202,6 +203,7 @@ export class World {
       this.entities.push(e);
       this.entity_map.set(e.id, e)
       this.renderer.add_entity(e);
+      this.mark_players_alive(e, is_human_ctrl(e.ctrl) && e.hp > 0);
     }
   }
 
@@ -517,6 +519,12 @@ export class World {
     CMDS.handle(this, cmds);
   }
 
+  mark_players_alive(e: Entity, is_alive: boolean) {
+    if (is_alive) this._alive_players.add(e);
+    else this._alive_players.delete(e);
+    this.has_players_alive = this._alive_players.size > 0;
+  }
+
   step() {
     this._entities_map.clear();
     this.transform.update();
@@ -546,7 +554,6 @@ export class World {
       this.buffs.delete(key);
     }
 
-    this.has_players_alive = false
     let offset = 0;
     let puppet_x_sum = 0;
     let puppet_z_sum = 0;
@@ -573,9 +580,6 @@ export class World {
         ++offset
         continue;
       }
-
-      if (!this.has_players_alive && a.hp > 0 && is_human_ctrl(a.ctrl))
-        this.has_players_alive = true;
 
       a.update();
       const {
@@ -670,6 +674,7 @@ export class World {
 
     for (const entity of this._gones) {
       this.entity_map.delete(entity.id)
+      this.mark_players_alive(entity, false)
       if (is_fighter(entity))
         this.callbacks.call("on_fighter_del", entity);
       const player = this.lfw.players.get(entity.ctrl.player_id)
@@ -795,6 +800,8 @@ export class World {
     this.stop_update();
     this.stop_render();
     this.del_entities(Array.from(this.entities));
+    this._alive_players.clear();
+    this.has_players_alive = false;
     this.renderer.dispose();
     this.callbacks.clear()
   }
@@ -817,6 +824,8 @@ export class World {
       this.stage.change_bg(Defines.VOID_BG)
     this.paused = false;
     this.camera.reset()
+    this._alive_players.clear();
+    this.has_players_alive = false;
     this.callbacks.call('on_counts');
     this._counts.clear()
   }
