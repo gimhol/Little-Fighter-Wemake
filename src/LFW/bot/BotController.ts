@@ -84,7 +84,7 @@ export class BotController extends BaseController {
   get av(): Entity | undefined { return this.avoidings.get()?.entity }
   get bot_state(): BSE { return this.fsm.state?.key || BSE.Idle }
   get dataset() { return this._dataset }
-  
+
   get atk_f_x() {
     switch (this.entity.state) {
       case StateEnum.Running: return this.r_atk_x;
@@ -765,6 +765,7 @@ export class BotController extends BaseController {
   follow(e: Entity): void {
     this.following = e;
     this.goingto = null;
+    this.behavior = BotBehavior.Move;
   }
   move(): void {
     this.behavior = BotBehavior.Move;
@@ -772,6 +773,7 @@ export class BotController extends BaseController {
   }
   stay(): void {
     this.behavior = BotBehavior.Stay;
+    this.goingto ??= this.entity.position.clone();
     this.following = null;
   }
   goto(x: number, y: number, z: number): void {

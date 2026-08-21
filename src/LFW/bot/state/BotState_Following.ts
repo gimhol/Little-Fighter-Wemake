@@ -1,4 +1,5 @@
 import { AGK, BSE, GK, StateEnum } from "../../defines";
+import { BotBehavior } from "../BotController";
 import { BotState_Base } from "./BotState";
 
 
@@ -45,7 +46,7 @@ export class BotState_Following extends BotState_Base {
     }
     // TODO: 是不是该想个办法让持续位移招式（dennis d>j）停下来？
 
-    if (c.goingto) c.cancel_goto();
+    if (c.goingto && c.behavior !== BotBehavior.Stay) c.cancel_goto();
     return BSE.Idle;
   }
 }

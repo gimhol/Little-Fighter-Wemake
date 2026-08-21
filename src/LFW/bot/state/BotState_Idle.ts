@@ -1,6 +1,7 @@
-import { AGK, GK, SE, WeaponEnum as WT } from "../../defines";
+import { AGK, Defines, GK, SE, WeaponEnum as WT } from "../../defines";
 import { max, min, round } from '../../utils/math/base';
 import { BSE } from "../../defines/BotStateEnum";
+import { BotBehavior } from "../BotController";
 import { BotState_Base } from "./BotState";
 
 export class BotState_Idle extends BotState_Base {
@@ -18,6 +19,14 @@ export class BotState_Idle extends BotState_Base {
     this.max_x = round(this.me.lfw.mt.range(midx, player_r))
     this.min_z = round(this.me.lfw.mt.range(far, midz))
     this.max_z = round(this.me.lfw.mt.range(midz, near))
+
+    const { goingto, behavior } = this.ctrl;
+    if (behavior === BotBehavior.Stay && goingto) {
+      this.min_x = round(goingto.x - Defines.AI_COME_RANGE_IN_X);
+      this.max_x = round(goingto.x + Defines.AI_COME_RANGE_IN_X);
+      this.min_z = round(goingto.z - Defines.AI_COME_RANGE_IN_Z);
+      this.max_z = round(goingto.z + Defines.AI_COME_RANGE_IN_Z);
+    }
   }
   override leave(): void {
     const { c, me } = this;
