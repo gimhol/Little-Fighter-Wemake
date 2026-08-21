@@ -14,7 +14,7 @@
 基于nodejs开发，经测试bun和deno也都可以运行。
 你可能想要用自己的设备作为联机服务器。
 
-- 下载: [server.cjs](https://github.com/gimhol/little-fighter-2-WEMAKE/releases/tag/v0.1.0)
+- 下载: [server.cjs](https://github.com/gimhol/Little-Fighter-Wemake/releases/tag/v0.1.0)
 
 - 安装运行环境(选一个即可): [Node.js](https://nodejs.org/) | [Bun](https://bun.sh/) | [Deno](https://deno.com/)
 

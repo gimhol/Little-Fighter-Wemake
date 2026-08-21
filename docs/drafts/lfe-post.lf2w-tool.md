@@ -61,6 +61,6 @@ Make sure they can run correctly in the command line.[/b]
 Otherwise, you will have to figure out how to convert the pictures and audio into PNG and MP3 by yourself, so technically speaking, you can also do this by yourself and zip it in...
 
 I will try to package and upload "lf2w-tool" in each release. 
-You can find them in the [url=https://github.com/gimhol/little-fighter-2-WEMAKE/releases]Github release[/url].
+You can find them in the [url=https://github.com/gimhol/Little-Fighter-Wemake/releases]Github release[/url].
 
 [/spoiler]

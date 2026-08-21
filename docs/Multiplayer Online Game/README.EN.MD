@@ -14,7 +14,7 @@ My server is hosted on Alibaba Cloud in Guangzhou, and the device configuration 
 The server is based on Node.js. Through testing, it has been found that both Bun and Deno can also run it.
 You may want to use your own device as the online server.
 
-- Download: [server.cjs](https://github.com/gimhol/little-fighter-2-WEMAKE/releases/tag/v0.1.0)
+- Download: [server.cjs](https://github.com/gimhol/Little-Fighter-Wemake/releases/tag/v0.1.0)
 
 - Install a runtime environment (choose one): [Node.js](https://nodejs.org/) | [Bun](https://bun.sh/) | [Deno](https://deno.com/)
 

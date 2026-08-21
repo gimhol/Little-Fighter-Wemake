@@ -4,7 +4,7 @@
 
 [中文](./README.MD) | [English](./README.EN.MD)  
 
-try it at [https://lf.gim.ink/](https://lf.gim.ink/) | GitHub Pages preview: [https://gimhol.github.io/little-fighter-2-WEMAKE/](https://gimhol.github.io/little-fighter-2-WEMAKE/)
+try it at [https://lf.gim.ink/](https://lf.gim.ink/) | GitHub Pages preview: [https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/)
 
 Think this project is pretty good? Consider starring it!
 
@@ -20,7 +20,7 @@ Think this project is pretty good? Consider starring it!
 - [Multiplayer Online Game](./docs/Multiplayer%20Online%20Game/README.EN.MD)
 - [Building and Running](./docs/Build%20Instructions/README.EN.MD)
 - [Custom Game](./docs/Custom%20Game/README.MD)
-- [Feedback & Discussions](https://github.com/gimhol/little-fighter-2-WEMAKE/discussions)
+- [Feedback & Discussions](https://github.com/gimhol/Little-Fighter-Wemake/discussions)
 
 ## Screenshots
 
@@ -38,7 +38,7 @@ Think this project is pretty good? Consider starring it!
 
 ## GitHub Actions Auto Deployment
 
-The project is automatically built and deployed to GitHub Pages via [GitHub Actions](./.github/workflows/deploy-pages.yml). You can also play it directly at [https://gimhol.github.io/little-fighter-2-WEMAKE/](https://gimhol.github.io/little-fighter-2-WEMAKE/).
+The project is automatically built and deployed to GitHub Pages via [GitHub Actions](./.github/workflows/deploy-pages.yml). You can also play it directly at [https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/).
 
 - **Trigger**: Pushing a new tag (e.g. `v0.1.46`) triggers the build automatically. You can also trigger it manually from the Actions tab (`workflow_dispatch`).
 - **Build flow**: Checks out the latest tagged commit on main → installs dependencies → builds game data (`data.zip` / `prel.zip`) → builds the frontend → deploys to Pages.
@@ -67,7 +67,7 @@ Install git-lfs first (Windows: `winget install GitHub.GitLFS`; macOS: `brew ins
 git lfs install
 
 # Clone (LFS files are fetched automatically)
-git clone https://github.com/gimhol/little-fighter-2-WEMAKE.git
+git clone https://github.com/gimhol/Little-Fighter-Wemake.git
 
 # For an existing clone: make sure LFS files are materialized (real files, not pointers)
 git lfs pull

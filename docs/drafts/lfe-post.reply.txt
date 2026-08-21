@@ -20,7 +20,7 @@ Note: For security reasons, remember to revert this setting after use!
 If your server supports HTTPS access, you can refer to the link below to configure the certificate.
 
 "Multiplayer Online Game"
-https://github.com/gimhol/little-fighter-2-WEMAKE/blob/main/docs/Multiplayer%20Online%20Game/README.EN.MD
+https://github.com/gimhol/Little-Fighter-Wemake/blob/main/docs/Multiplayer%20Online%20Game/README.EN.MD
 
 By the way, You can perform the following checks:
 - Whether port is occupied by other programs
@@ -41,4 +41,4 @@ Or, You can deploy this web page on your own server.
 I will try my best to package it for each release. 
 You can check it at the address below.
 
-https://github.com/gimhol/little-fighter-2-WEMAKE/releases
+https://github.com/gimhol/Little-Fighter-Wemake/releases

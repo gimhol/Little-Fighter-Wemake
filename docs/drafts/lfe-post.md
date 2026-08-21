@@ -36,7 +36,7 @@ I think I'll pass for now.
 
 However, everyone is still welcome to run this project and give it a try.
 
-Project repository: https://github.com/gimhol/little-fighter-2-WEMAKE
+Project repository: https://github.com/gimhol/Little-Fighter-Wemake
 [/spoiler]
 
 [spoiler=Some screenshots]
@@ -60,11 +60,11 @@ The server is based on nodejs. Through testing, it can also run on Bun and Deno.
 
 If you want to run your own server, download "server.cjs" from the following link:
 
-https://github.com/gimhol/little-fighter-2-WEMAKE/releases
+https://github.com/gimhol/Little-Fighter-Wemake/releases
 
 Then run "node ./server.cjs".
 
-more details: [url=https://github.com/gimhol/little-fighter-2-WEMAKE/blob/main/docs/Multiplayer%20Online%20Game/README.EN.MD]Multiplayer Online Game[/url]
+more details: [url=https://github.com/gimhol/Little-Fighter-Wemake/blob/main/docs/Multiplayer%20Online%20Game/README.EN.MD]Multiplayer Online Game[/url]
 [/spoiler]
 
 [spoiler=What's Next?]
@@ -121,7 +121,7 @@ About Custom game
 [img]https://lf.gim.ink/docs/image/custom_game_guide_1.en.png[/img]
 You can download the "original data package" in Figure 2 to try out this feature.
 
-more details: [url=https://github.com/gimhol/little-fighter-2-WEMAKE/blob/main/docs/Custom%20Game/README.EN.MD]Custom Game[/url]
+more details: [url=https://github.com/gimhol/Little-Fighter-Wemake/blob/main/docs/Custom%20Game/README.EN.MD]Custom Game[/url]
 [/spoiler]
 
 [spoiler=2025-01-18: v0.1.5 release]

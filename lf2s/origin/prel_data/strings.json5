@@ -37,7 +37,7 @@
     "tutorial.dialog_16": [ "Very good... I've learned your moves...", "…………" ],
     "tutorial.dialog_17": [ "I'll take over the path ahead of you. DIE!!" ],
     waiting_others_players: "Waiting for other players...",
-    goto_github_url: "https://github.com/gimhol/little-fighter-2-WEMAKE",
+    goto_github_url: "https://github.com/gimhol/Little-Fighter-Wemake",
     "char_menu.player_colon": "Player：",
     "char_menu.fighter_colon": "Fighter：",
     "char_menu.team_colon": "Team：",

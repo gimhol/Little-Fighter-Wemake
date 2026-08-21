@@ -116,7 +116,7 @@
       pos: "789, 445",
       component: ["OpacityHover(0,1)"],
       actions: {
-        click: ["sound(ok)", "link_to(https://github.com/gimhol/little-fighter-2-WEMAKE)"],
+        click: ["sound(ok)", "link_to(https://github.com/gimhol/Little-Fighter-Wemake)"],
       },
     },
   ],

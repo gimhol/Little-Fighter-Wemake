@@ -25,7 +25,7 @@ async function main() {
   await exec_cmd(npm, ['run', 'build'])
   const { version } = await fs.readFile("./package.json").then(b => JSON.parse(b.toString()))
   const output_dir = `./release/${version}`
-  const outzip_path = `./release/Little-Fighter-2-Wemake-${version}.zip`
+  const outzip_path = `./release/Little-Fighter-Wemake-${version}.zip`
   await fs.mkdir(`${output_dir}/frontend`, { recursive: true }).catch(e => e)
   await fs.cp("./dist", `${output_dir}/frontend`, { recursive: true })
   await fs.cp("./tool/dist/tool.cjs", `${output_dir}/tool.cjs`)

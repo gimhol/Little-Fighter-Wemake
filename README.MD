@@ -6,7 +6,7 @@
 
 觉得这个项目还不错？Star⭐支持一下吧！
 
-直接开试 [https://lf.gim.ink/](https://lf.gim.ink/) | GitHub Pages 预览：[https://gimhol.github.io/little-fighter-2-WEMAKE/](https://gimhol.github.io/little-fighter-2-WEMAKE/)
+直接开试 [https://lf.gim.ink/](https://lf.gim.ink/) | GitHub Pages 预览：[https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/)
 
 **玩法、美术、音效音乐来自"Litter Fighter 2", 原作：Marti Wong，Starsky Wong.**
 
@@ -18,7 +18,7 @@
 - [多人联机游戏](./docs/Multiplayer%20Online%20Game/README.MD)
 - [构建与运行](./docs/Build%20Instructions/README.MD)
 - [自定义游戏](./docs/Custom%20Game/README.MD)
-- [功能建议、体验反馈](https://github.com/gimhol/little-fighter-2-WEMAKE/discussions)
+- [功能建议、体验反馈](https://github.com/gimhol/Little-Fighter-Wemake/discussions)
 
 ## 截图
 
@@ -41,7 +41,7 @@
 
 ## GitHub Actions 自动部署
 
-项目通过 [GitHub Actions](./.github/workflows/deploy-pages.yml) 自动构建并部署到 GitHub Pages，[https://gimhol.github.io/little-fighter-2-WEMAKE/](https://gimhol.github.io/little-fighter-2-WEMAKE/) 也能直接游玩。
+项目通过 [GitHub Actions](./.github/workflows/deploy-pages.yml) 自动构建并部署到 GitHub Pages，[https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/) 也能直接游玩。
 
 - **触发方式**：推送新 tag（如 `v0.1.46`）时自动触发，也可以在 Actions 页面手动触发（`workflow_dispatch`）。
 - **构建流程**：检出 main 上最近一个带 tag 的提交 → 安装依赖 → 构建游戏数据（`data.zip` / `prel.zip`）→ 构建前端 → 部署到 Pages。
@@ -70,7 +70,7 @@
 git lfs install
 
 # 克隆（会自动拉取 LFS 文件）
-git clone https://github.com/gimhol/little-fighter-2-WEMAKE.git
+git clone https://github.com/gimhol/Little-Fighter-Wemake.git
 
 # 已克隆的仓库：确保 LFS 文件已物化（内容为真实文件而非指针）
 git lfs pull
