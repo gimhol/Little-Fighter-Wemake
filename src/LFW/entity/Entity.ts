@@ -1441,6 +1441,8 @@ export class Entity {
   }
   toughness_recovering(): void {
     if (this.toughness_resting > 0) {
+      if (!this.frame.toughness_recover)
+        return
       this.toughness_resting = clamp_add(
         this.toughness_resting,
         -this._atom_time,
@@ -1473,6 +1475,7 @@ export class Entity {
 
   stat_recovering(): void {
     if (this.resting > 0) {
+      if (!this.frame.stat_recover) return;
       this.resting = clamp_add(this.resting, -this._atom_time, 0, this.resting_max);
       return;
     }
@@ -1658,10 +1661,8 @@ export class Entity {
         pair[1] = time + 1;
       }
     }
-    if (this.frame.stat_recover)
-      this.stat_recovering();
-    if (this.frame.toughness_recover)
-      this.toughness_recovering();
+    this.stat_recovering();
+    this.toughness_recovering();
 
     this._state?.pre_update?.(this);
     if (this.wait > 0) {

@@ -3,7 +3,7 @@ import { cook_frame_indicator_info } from "../dat_translator/cook_frame_indicato
 import { make_frame_behavior } from "../dat_translator/make_frame_behavior";
 import { set_hit_flag } from "../dat_translator/set_hit_flag";
 import { Defines, EntityEnum, EntityVal as EV, FacingFlag as FF, FrameBehavior, HitFlag, type IFrameInfo, SE, StateEnum } from "../defines";
-import { is_ball_data, is_fighter, is_weapon_data } from "../entity";
+import { is_ball_data, is_fighter_data, is_weapon_data } from "../entity";
 import { read_nums } from "../ui/utils/read_nums";
 import { max, min } from "../utils";
 import { traversal } from "../utils/container_help/traversal";
@@ -59,7 +59,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
     if (throwings.length) data.indexes.throwings = throwings
     if (on_hands.length) data.indexes.on_hands = on_hands
   }
-  else if (is_fighter(data)) {
+  if (is_fighter_data(data)) {
     switch (frame.state) {
       case StateEnum.Falling:
       case StateEnum.Caught:
@@ -68,7 +68,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
       case StateEnum.Burning:
         break;
       default:
-        frame.stat_recover = 1;
+        frame.stat_recover ??= 1;
     }
     switch (frame.state) {
       case StateEnum.Standing:
@@ -78,7 +78,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
       case StateEnum.Dash:
       case StateEnum.Lying:
       case StateEnum.Rowing:
-        frame.toughness_recover = 1;
+        frame.toughness_recover ??= 1;
         break;
     }
   }
