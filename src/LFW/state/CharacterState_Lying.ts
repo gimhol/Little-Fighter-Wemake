@@ -8,13 +8,10 @@ export class CharacterState_Lying extends CharacterState_Base {
   constructor(state: StateEnum = StateEnum.Lying) {
     super(state)
   }
-  private a_map = new Map<string, number>()
-  private d_map = new Map<string, number>()
-  private c_map = new Map<string, number>()
   override enter(e: Entity, prev_frame: IFrameInfo): void {
-    this.a_map.delete(e.id)
-    this.d_map.delete(e.id)
-    this.c_map.delete(e.id)
+    e.lying_a_count = 0;
+    e.lying_d_count = 0;
+    e.lying_c_count = 0;
     e.ctrl.reset_key_list();
     const holding = e.holding
     if (holding) e.drop_holding();
@@ -28,20 +25,20 @@ export class CharacterState_Lying extends CharacterState_Base {
   override update(e: Entity): void {
     super.update(e);
     do {
-      const count_c = this.c_map.get(e.id) ?? 0;
-      const count_a = this.a_map.get(e.id) ?? 0
+      const count_c = e.lying_c_count;
+      const count_a = e.lying_a_count;
       const pressing_a = !e.ctrl.is_end(GK.a)
-      this.a_map.set(e.id, count_a + 1)
+      e.lying_a_count = count_a + 1;
       if (count_a && count_a % 2 && pressing_a && e.wait > 0) {
-        this.c_map.set(e.id, count_c + 1);
+        e.lying_c_count = count_c + 1;
         e.wait = round_float(e.wait - e.world.dataset.atom_time);
         break;
       }
-      const count_d = this.d_map.get(e.id) ?? 0
+      const count_d = e.lying_d_count;
       const pressing_d = !e.ctrl.is_end(GK.d)
-      this.d_map.set(e.id, count_d + 1)
+      e.lying_d_count = count_d + 1;
       if (count_d && count_d % 2 && pressing_d) {
-        this.c_map.set(e.id, count_c + 1);
+        e.lying_c_count = count_c + 1;
         e.wait = round_float(e.wait + e.world.dataset.atom_time);
       }
     } while (0)
@@ -60,7 +57,7 @@ export class CharacterState_Lying extends CharacterState_Base {
     }
     if (e.wakeup_invuln) { // 关键角色起身的闪烁无敌时间
       // 提前或延迟起身都会降低无敌闪烁时间?
-      // const count_c = this.c_map.get(e.id) ?? 0;
+      // const count_c = e.lying_c_count;
       const count_c = 0;
       e.blinking = (e.world.dataset.lying_blink_time - count_c);
     }

@@ -161,6 +161,15 @@ export class Entity {
   public shaking: number = 0;
 
   /**
+   * 燃烧/坠落状态中，本次是否已弹跳过（防止重复弹跳）
+   */
+  public bounced: boolean = false;
+  public lying_a_count: number = 0;
+  public lying_d_count: number = 0;
+  public lying_c_count: number = 0;
+  public drop_hurted: boolean = false;
+
+  /**
    * 抓人剩余值
    *
    * 当抓住一个被击晕的人时，此值充满。
@@ -779,6 +788,11 @@ export class Entity {
     this.superpunchs.clear()
     this.motionless = 0;
     this.shaking = 0;
+    this.bounced = false;
+    this.lying_a_count = 0;
+    this.lying_d_count = 0;
+    this.lying_c_count = 0;
+    this.drop_hurted = false;
     this._states = states;
     this._hp_r_tick.max = this.dataset('hp_r_ticks')
     this._hp_r_tick.value = 0;
@@ -2589,6 +2603,11 @@ export class Entity {
       arest: this._arest,
       motionless: this.motionless,
       shaking: this.shaking,
+      bounced: this.bounced,
+      lying_a_count: this.lying_a_count,
+      lying_d_count: this.lying_d_count,
+      lying_c_count: this.lying_c_count,
+      drop_hurted: this.drop_hurted,
       catch_time: this._catch_time,
       catch_time_max: this._catch_time_max,
       invisible_duration: this._invisible_duration,
@@ -2606,6 +2625,11 @@ export class Entity {
   }
 
   read_snapshot(s: IEntitySnapshot) {
+    this.bounced = s.bounced;
+    this.lying_a_count = s.lying_a_count;
+    this.lying_d_count = s.lying_d_count;
+    this.lying_c_count = s.lying_c_count;
+    this.drop_hurted = s.drop_hurted;
   }
 
 }

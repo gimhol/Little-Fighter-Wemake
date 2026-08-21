@@ -4,12 +4,6 @@ import { round_float } from "../utils";
 import { State_Base } from "./State_Base";
 
 export class WeaponState_Base extends State_Base {
-  /**
-   * 用于确保丢出的武器只受一次跌落伤害
-   * @protected
-   * @type {Set<Entity>}
-   */
-  protected _hit_ground_weapons: Set<Entity> = new Set<Entity>();
   override get_auto_frame(e: Entity): IFrameInfo | undefined {
     const { frames, indexes } = e.data;
     if (!indexes) return void 0;
@@ -53,8 +47,8 @@ export class WeaponState_Base extends State_Base {
     const dvx = round_float(vx * bounce_x);
     const dvz = round_float(vz * bounce_z);
 
-    if (this._hit_ground_weapons.has(e)) {
-      this._hit_ground_weapons.delete(e);
+    if (!e.drop_hurted) {
+      e.drop_hurted = true;
       if (base.drop_hurt) {
         e.hp = e.hp - base.drop_hurt;
         e.hp_r = e.hp_r - base.drop_hurt;

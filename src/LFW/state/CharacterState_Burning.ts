@@ -5,12 +5,12 @@ import { abs } from "../utils/math";
 import { CharacterState_Base } from "./CharacterState_Base";
 
 export class CharacterState_Burning extends CharacterState_Base {
-  private _bouncings = new Set<Entity>()
   constructor() {
     super(StateEnum.Burning)
   }
   override enter(e: Entity, prev_frame: IFrameInfo): void {
     super.update(e);
+    e.bounced = false;
     if (e.catcher) e.catcher.drop_catching()
   }
   override update(e: Entity): void {
@@ -20,7 +20,7 @@ export class CharacterState_Burning extends CharacterState_Base {
   }
   override leave(e: Entity, next_frame: IFrameInfo): void {
     super.leave(e, next_frame);
-    this._bouncings.delete(e)
+    e.bounced = false;
   }
   override on_landing(e: Entity, velocity: IVector3): void {
     const { on_landing } = e.frame;
@@ -33,14 +33,14 @@ export class CharacterState_Burning extends CharacterState_Base {
       data: { indexes },
     } = e;
     if (
-      !this._bouncings.has(e) && (
+      !e.bounced && (
         vy <= e.world.dataset.cha_bc_tst_spd_y ||
         abs(vx) > e.world.dataset.cha_bc_tst_spd_x
       )
     ) {
       e.enter_frame_by_id(indexes?.bouncing?.[-1][1]);
       e.set_velocity_y(e.world.dataset.cha_bc_spd)
-      this._bouncings.add(e)
+      e.bounced = true;
     } else {
       e.enter_frame_by_id(indexes?.lying?.[-1]);
     }

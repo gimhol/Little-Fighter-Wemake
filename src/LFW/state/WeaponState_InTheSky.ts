@@ -5,10 +5,7 @@ import { WeaponState_Base } from "./WeaponState_Base";
 
 export class WeaponState_InTheSky extends WeaponState_Base {
   override enter(e: Entity, prev_frame: IFrameInfo): void {
-    this._hit_ground_weapons.add(e);
-  }
-  override leave(e: Entity, next_frame: IFrameInfo): void {
-    this._hit_ground_weapons.delete(e);
+    e.drop_hurted = false;
   }
   override on_landing(e: Entity, velocity: IVector3): void {
     const { on_landing } = e.frame;

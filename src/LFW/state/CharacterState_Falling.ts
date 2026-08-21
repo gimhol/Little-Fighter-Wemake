@@ -6,11 +6,11 @@ import { CharacterState_Base } from "./CharacterState_Base";
 
 export class CharacterState_Falling extends CharacterState_Base {
   private _bouncing_frames_map = new Map<string, Set<string>>();
-  private _bouncings = new Set<Entity>()
   constructor(state: StateEnum = StateEnum.Falling) {
     super(state)
   }
   override enter(e: Entity, prev_frame: IFrameInfo): void {
+    e.bounced = false;
     e.ctrl.reset_key_list();
     if (!this._bouncing_frames_map.has(e.data.id) && e.data.indexes?.bouncing) {
       this._bouncing_frames_map.set(
@@ -66,7 +66,7 @@ export class CharacterState_Falling extends CharacterState_Base {
   }
   override leave(e: Entity, next_frame: IFrameInfo): void {
     super.leave(e, next_frame);
-    this._bouncings.delete(e)
+    e.bounced = false;
     e.fall_value = e.fall_value_max;
     e.defend_value = e.defend_value_max;
     e.resting = e.resting_max
@@ -91,14 +91,14 @@ export class CharacterState_Falling extends CharacterState_Base {
       facing;
     const { y: vy, x: vx } = velocity;
     if (
-      !this._bouncings.has(e) && (
+      !e.bounced && (
         vy <= e.world.dataset.cha_bc_tst_spd_y ||
         abs(vx) > e.world.dataset.cha_bc_tst_spd_x
       )
     ) {
       e.enter_frame_by_id(indexes?.bouncing?.[d][1]);
       e.set_velocity_y(e.world.dataset.cha_bc_spd)
-      this._bouncings.add(e)
+      e.bounced = true;
     } else {
       e.enter_frame_by_id(indexes?.lying?.[d]);
     }

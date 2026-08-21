@@ -79,6 +79,11 @@ export interface IEntitySnapshot {
   arest: number;
   motionless: number;
   shaking: number;
+  bounced: boolean;
+  lying_a_count: number;
+  lying_d_count: number;
+  lying_c_count: number;
+  drop_hurted: boolean;
   catch_time: number;
   catch_time_max: number | null;
   invisible_duration: number;
