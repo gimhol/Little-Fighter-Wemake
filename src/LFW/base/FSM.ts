@@ -1,5 +1,6 @@
 import { Callbacks } from "./Callbacks";
 import { NoEmitCallbacks } from "./NoEmitCallbacks";
+import type { IFSMSnapshot } from "./IFSMSnapshot";
 
 export interface IState<K extends string | number = string | number> {
   name?: string;
@@ -100,5 +101,22 @@ export class FSM<
     if (!next_state) return;
 
     this.set_state(next_state);
+  }
+  to_snapshot(): IFSMSnapshot<K> {
+    return {
+      name: this._name,
+      state_key: this._state?.key,
+      prev_state_key: this._prev_state?.key,
+      time: this._time,
+      state_time: this._state_time,
+    };
+  }
+  from_snapshot(s: IFSMSnapshot<K>): this {
+    this._name = s.name;
+    this._time = s.time;
+    this._state_time = s.state_time;
+    this._prev_state = s.prev_state_key === void 0 ? void 0 : this._state_map.get(s.prev_state_key);
+    this._state = s.state_key === void 0 ? void 0 : this._state_map.get(s.state_key);
+    return this;
   }
 }

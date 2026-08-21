@@ -5,6 +5,7 @@ export * from "./FPS";
 export * from "./FSM";
 export * from "./Graves";
 export * from "./IActionHandler";
+export * from "./IFSMSnapshot";
 export * from "./InstFactory";
 export * from "./NoEmitCallbacks";
 export * from "./dedup";
