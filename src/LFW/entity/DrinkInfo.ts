@@ -173,17 +173,17 @@ export class DrinkInfo {
 
   from_snapshot(s: IDrinkInfoSnapshot) {
     this.hp_h_ticks.read_snapshot(s.hp_h_ticks)
-    this.hp_h_value = this.hp_h_value
-    this.hp_h_total = this.hp_h_total
-    this.hp_h = this.hp_h
+    this.hp_h_value = s.hp_h_value
+    this.hp_h_total = s.hp_h_total
+    this.hp_h = s.hp_h
     this.hp_r_ticks.read_snapshot(s.hp_r_ticks)
-    this.hp_r_total = this.hp_r_total
-    this.hp_r_value = this.hp_r_value
-    this.hp_r = this.hp_r
+    this.hp_r_total = s.hp_r_total
+    this.hp_r_value = s.hp_r_value
+    this.hp_r = s.hp_r
     this.mp_h_ticks.read_snapshot(s.mp_h_ticks)
-    this.mp_h_value = this.mp_h_value
-    this.mp_h_total = this.mp_h_total
-    this.mp_h = this.mp_h
+    this.mp_h_value = s.mp_h_value
+    this.mp_h_total = s.mp_h_total
+    this.mp_h = s.mp_h
   }
 }
 
