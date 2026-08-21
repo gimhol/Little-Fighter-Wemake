@@ -113,6 +113,7 @@ export class EntityMainRender {
       }
     }
     this.meshs.length = (pics_count + 1);
+    for (const mesh of this.meshs) mesh.reset();
 
     this.blood_mesh.visible = false;
     this.blood_mesh.name = `Blood: ${this.entity.name}`;
