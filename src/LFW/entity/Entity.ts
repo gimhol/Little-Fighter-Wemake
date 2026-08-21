@@ -2126,6 +2126,7 @@ export class Entity {
 
   pick(weapon: Entity) {
     if (weapon.bearer) return;
+    if (this.holding) return;
     this.holding = weapon;
     weapon.bearer = this;
     weapon.follow_bearer()
