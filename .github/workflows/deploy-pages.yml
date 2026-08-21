@@ -1,0 +1,88 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 允许 deploy-pages 写 Pages 环境
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      # 检出 main 上最近一个含 tag 的提交来构建；没有 tag 时退回 main 最新提交
+      - name: Checkout latest tagged commit
+        run: |
+          if ! TAG=$(git describe --tags --abbrev=0 2>/dev/null); then
+            echo "::warning::No tag found on main, building from latest commit"
+            TAG=""
+          else
+            echo "Building from tag: $TAG"
+            git checkout "$TAG"
+          fi
+          echo "BUILD_TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 编译 tool 工具（供 make-data-zip / make-prel 使用）
+      - name: Build tool
+        run: npm run build:tool
+
+      # 从 lf2s/origin 生成 public/data.zip(.json) 与 public/prel.zip(.json)
+      - name: Build game data
+        run: npm run build:data
+
+      - name: Build prel data
+        run: npm run build:prel
+
+      # tsc -b && vite build -> dist/
+      - name: Build app
+        run: npm run build
+
+      # 防止 Jekyll 忽略下划线开头的文件/目录
+      - name: Add .nojekyll
+        run: touch dist/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
