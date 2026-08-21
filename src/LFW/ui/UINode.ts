@@ -1,6 +1,6 @@
 import { LFW } from "../LFW";
 import { Callbacks, type IDebugging, make_debugging } from "../base";
-import type { IVector3, IVector3Like } from "../defines";
+import type { IStyle, IVector3, IVector3Like } from "../defines";
 import { Ditto as D, ImageInfo, type IUINodeRenderer, TextInfo } from "../ditto";
 import { Times } from '../utils/Times';
 import { round } from '../utils/math/base';
@@ -8,6 +8,7 @@ import { round_float } from '../utils/math/round_float';
 import { is_num } from '../utils/type_check/is_num';
 import type { ICookedUIInfo } from "./ICookedUIInfo";
 import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
+import type { IUIInfo } from "./IUIInfo.dat";
 import type { IUICallback } from "./IUICallback";
 import type { IUIKeyEvent } from "./IUIKeyEvent";
 import { LF2PointerEvent } from "./LF2PointerEvent";
@@ -31,6 +32,15 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   readonly data: Readonly<ICookedUIInfo>;
+  /**
+   * 原始UI数据（合并模板后）
+   *
+   * 用于判断节点在UI数据中是否显式声明了某些属性（如 size）。
+   *
+   * @type {Readonly<IUIInfo> | undefined}
+   * @memberof UINode
+   */
+  readonly raw: Readonly<IUIInfo> | undefined;
   protected _outlineColor: string | undefined;
   protected _outlineWidth: number | undefined;
   protected _outlineAlpha: number | undefined;
@@ -64,7 +74,15 @@ export class UINode implements IDebugging {
   readonly size: IVector3 = new D.Vector3();
   readonly center: IVector3 = new D.Vector3()
 
-  text: TextInfo | null = null
+  protected _text: TextInfo | null = null;
+  /** 上次自动适配尺寸时的文本+样式签名，用于跳过内容未变化的重复测量 */
+  protected _auto_size_key?: string;
+
+  get text(): TextInfo | null { return this._text; }
+  set text(v: TextInfo | null) {
+    this._text = v;
+    this.auto_size_by_text(v);
+  }
   image: ImageInfo | null = null
   color: string = '';
   readonly style: Style = new Style();
@@ -347,6 +365,7 @@ export class UINode implements IDebugging {
   constructor(lfw: LFW, data: ICookedUIInfo, parent?: UINode) {
     this.lfw = lfw;
     this.data = Object.freeze(data);
+    this.raw = data.raw;
     this._parent = parent;
     this._root = parent?.root ?? this;
     this._disabled = this.data.disabled == true
@@ -366,6 +385,56 @@ export class UINode implements IDebugging {
     if (this.data.style) this.style.assign(this.data.style)
     make_debugging(this)
   }
+
+  /**
+   * 设置文本
+   *
+   * 若原始UI数据未显式设置 size，将按文本内容动态调整节点尺寸。
+   *
+   * @param {string} text 文本内容
+   * @param {(IStyle | null)} [style] 文本样式，缺省使用节点样式
+   * @return {this}
+   * @memberof UINode
+   */
+  set_text(text: string, style?: IStyle | null): this {
+    this.text = new TextInfo({ text, style: style ?? this.style });
+    return this;
+  }
+
+  /**
+   * 当原始UI数据未显式设置 size 时，根据文本内容动态调整节点尺寸
+   *
+   * @protected
+   * @param {(TextInfo | null)} v
+   * @memberof UINode
+   */
+  protected auto_size_by_text(v: TextInfo | null) {
+    if (!v || this.raw?.size || !this.parent) { this._auto_size_key = void 0; return; }
+    const key = this._text_size_key(v);
+    if (this._auto_size_key === key) return;
+    this._auto_size_key = key;
+    const ti = (v.w && v.h)
+      ? v
+      : this.lfw.images.measure_text(this.lfw.string(v.text), v.style);
+    this.resize((ti.w || 0) / (ti.scale || 1), (ti.h || 0) / (ti.scale || 1));
+  }
+
+  /**
+   * 生成“文本+样式”签名，用于跳过内容未变化的重复测量
+   *
+   * @protected
+   * @param {TextInfo} v
+   * @return {string}
+   * @memberof UINode
+   */
+  protected _text_size_key(v: TextInfo): string {
+    const s = v.style;
+    const text = this.lfw.string(v.text);
+    return s instanceof Style
+      ? `${text}\u0000v${s.version}`
+      : `${text}\u0000${JSON.stringify(s ?? {})}`;
+  }
+
   move_to_global(x: number, y: number, z: number): this {
     if (!this.parent) { this.move_to(x, y, z); return this; }
     const g = this.parent.global_pos
@@ -605,7 +674,7 @@ export class UINode implements IDebugging {
     if (
       this._prev_size.x !== this.size.x ||
       this._prev_size.y !== this.size.y ||
-      this._prev_center.x !== this.center.y ||
+      this._prev_center.x !== this.center.x ||
       this._prev_center.y !== this.center.y ||
       this._prev_pos.x !== this.pos.x ||
       this._prev_pos.y !== this.pos.y ||
@@ -618,7 +687,7 @@ export class UINode implements IDebugging {
 
       this._prev_size.x = this.size.x
       this._prev_size.y = this.size.y
-      this._prev_center.x = this.center.y
+      this._prev_center.x = this.center.x
       this._prev_center.y = this.center.y
       this._prev_pos.x = this.pos.x
       this._prev_pos.y = this.pos.y

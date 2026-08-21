@@ -170,6 +170,7 @@ export async function cook_ui_info(
     outlineAlpha: void 0,
     opacity: void 0,
   };
+  ret.raw = raw;
   const parse_str = (v: string | undefined) => parse_ui_value(ret, String, v) ?? void 0
   const parse_boolean = (v: string | boolean | undefined) => parse_ui_value(ret, Boolean, v) ?? void 0
   const parse_num = (v: string | number | undefined) => parse_ui_value(ret, Number, v) ?? void 0

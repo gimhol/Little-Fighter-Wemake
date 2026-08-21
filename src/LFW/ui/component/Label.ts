@@ -1,7 +1,6 @@
 import type { IStyle } from "../../defines";
-import { TextInfo } from "../../ditto/image/TextInfo";
 import { UIComponent } from "./UIComponent";
-
+/** @deprecated node.set_text */
 export class Label extends UIComponent {
   static override readonly TAGS: string[] = ["Label", "Text"];
   get text(): string { return this.node.text?.text ?? '' }
@@ -11,10 +10,12 @@ export class Label extends UIComponent {
   override on_start(): void {
     this.style = this.node.style;
   }
+  /** @deprecated node.set_text */
   set_text(v: string): this {
-    this.node.text = new TextInfo({ text: v, style: this.node.style });
+    this.node.set_text(v);
     return this;
   }
+  /** @deprecated */
   preload(_texts: string[]): this {
     return this;
   }

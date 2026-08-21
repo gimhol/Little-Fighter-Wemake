@@ -183,7 +183,7 @@
       items: [ { color: "rgb(0,204,255)", template: "bar_inner" } ],
     },
     {
-      i18n: "Template(com)",
+      i18n: "NONE",
       center: "0,0",
       outlineColor: "#005A8E",
       outlineWidth: 2,

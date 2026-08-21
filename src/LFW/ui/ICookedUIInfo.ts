@@ -9,6 +9,7 @@ import type { IUIInfo, TUIActionPlace } from "./IUIInfo.dat";
 export interface ICookedUIInfo extends IUIInfo {
   id: string;
   name: string;
+  raw?: IUIInfo;
   pos: [number, number, number];
   scale: [number, number, number];
   center: [number, number, number];
