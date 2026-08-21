@@ -1510,6 +1510,10 @@ export class Entity {
       holding.position.z
     );
     holding.team = this.team;
+    /*
+    避免掉落的武器能被相同攻击对象立刻打中
+    */
+    for (const [, v] of this.vrests) holding.add_v_rest(collision_clone(v));
   }
 
   hp_recovering(): void {
