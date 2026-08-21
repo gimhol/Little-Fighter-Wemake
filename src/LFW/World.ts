@@ -113,7 +113,9 @@ export class World {
     v.enter_phase(0);
     for (const e of this.entities) {
       const { ctrl } = e;
-      if (is_bot_ctrl(ctrl)) ctrl.cancel_goto()
+      if (!is_bot_ctrl(ctrl)) continue;
+      if (!ctrl.goingto) continue;
+      ctrl.goto(e.position.x, e.position.y, e.position.z)
     }
   }
   on_dataset_change(k: string, curr: any, prev: any) {
