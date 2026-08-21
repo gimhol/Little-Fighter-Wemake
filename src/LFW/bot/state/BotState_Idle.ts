@@ -60,6 +60,18 @@ export class BotState_Idle extends BotState_Base {
       c.key_up(GK.U, GK.D)
     }
 
+    const watching = c.watching;
+    if (
+      watching?.mounted &&
+      me.state === SE.Standing &&
+      my_x >= this.min_x && my_x <= this.max_x &&
+      my_z >= this.min_z && my_z <= this.max_z
+    ) {
+      const wx = watching.position.x;
+      if (wx > my_x && me.facing < 0) c.click(GK.R);
+      else if (wx < my_x && me.facing > 0) c.click(GK.L);
+    }
+
     /* 概率停跑 */
     if (me.frame.state === SE.Running && c.desire('idle_stop_run') < 100) {
       c.click(me.facing > 0 ? GK.L : GK.R);

@@ -64,6 +64,7 @@ export class BotController extends BaseController {
   behavior: BotBehavior = BotBehavior.Move;
   goingto: IVector3 | null = null;
   following: Entity | null = null;
+  watching: Entity | null = null;
   en_out_of_range: boolean = false;
   protected _bot_id: string | undefined;
   protected _bot: IBotData | undefined;
@@ -337,6 +338,11 @@ export class BotController extends BaseController {
    * @memberof BotController
    */
   should_chase(e: Entity): boolean {
+    // 正在注视的对象已失效(死亡/消失/回到可追击范围)时置空
+    if (this.watching === e) {
+      if (!e.mounted || e.hp <= 0 || !this.is_leave_chase_range(e))
+        this.watching = null;
+    }
     const { entity: me } = this;
     if (!me.mounted) return false
     if (!e.mounted) return false
@@ -392,15 +398,17 @@ export class BotController extends BaseController {
         return true
       return false;
     }
-    if (this.is_leave_chase_range(e))
-      return false
     if (e_state == StateEnum.Lying)
       return false;
     if (e.invisible) return false
     if (e.blinking) return false
     if (e.invulnerable) return false
-    if (me.ground_y != me.position.y) return true
+    if (!me.is_on_ground) return true
 
+    if (this.is_leave_chase_range(e)) {
+      this.watching = e;
+      return false
+    }
     if (this.bot_state === BSE.Avoiding) {
       // 已拉开一定距离，攻击
       return this.w_atk_too_far(e)
@@ -553,7 +561,9 @@ export class BotController extends BaseController {
     if (!me.mounted || !other.mounted) {
       this.avoidings.clear();
       this.chasings.clear();
-      this.defends.clear()
+      this.defends.clear();
+      if (other == this.watching)
+        this.watching = null;
       return
     }
     if (is_fighter(other)) {
@@ -688,6 +698,8 @@ export class BotController extends BaseController {
 
   override update() {
     this.check_bot();
+    if (this.watching?.mounted == 0)
+      this.watching = null;
     if (this.dummy) {
       dummy_updaters[this.dummy]?.update(this);
     } else {
