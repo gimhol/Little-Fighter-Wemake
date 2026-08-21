@@ -762,6 +762,7 @@ export class BotController extends BaseController {
     })
     return ks;
   }
+  /* “指令”系列感觉实现得不太对 -Gim */
   follow(e: Entity): void {
     this.following = e;
     this.goingto = null;
@@ -769,6 +770,7 @@ export class BotController extends BaseController {
   }
   move(): void {
     this.behavior = BotBehavior.Move;
+    this.goingto = null;
     this.following = null;
   }
   stay(): void {
@@ -776,11 +778,8 @@ export class BotController extends BaseController {
     this.goingto ??= this.entity.position.clone();
     this.following = null;
   }
-  goto(x: number, y: number, z: number): void {
+  come(x: number, y: number, z: number): void {
     this.goingto = Ditto.vec3(x, y, z)
     this.following = null
-  }
-  cancel_goto(): void {
-    this.goingto = null;
   }
 }

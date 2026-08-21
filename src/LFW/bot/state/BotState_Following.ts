@@ -45,8 +45,6 @@ export class BotState_Following extends BotState_Base {
       this.ctrl.key_down(me.facing < 0 ? GK.R : GK.L)
     }
     // TODO: 是不是该想个办法让持续位移招式（dennis d>j）停下来？
-
-    if (c.goingto && c.behavior !== BotBehavior.Stay) c.cancel_goto();
     return BSE.Idle;
   }
 }

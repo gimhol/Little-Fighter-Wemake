@@ -115,7 +115,7 @@ export class World {
       const { ctrl } = e;
       if (!is_bot_ctrl(ctrl)) continue;
       if (!ctrl.goingto) continue;
-      ctrl.goto(e.position.x, e.position.y, e.position.z)
+      ctrl.come(e.position.x, e.position.y, e.position.z)
     }
   }
   on_dataset_change(k: string, curr: any, prev: any) {
@@ -160,7 +160,7 @@ export class World {
     for (const e of this.entities) {
       const { ctrl, team } = e;
       if (_team === team && is_bot_ctrl(ctrl)) {
-        ctrl.goto(x, y, z)
+        ctrl.come(x, y, z)
       }
     }
   }
