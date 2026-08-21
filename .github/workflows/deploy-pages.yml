@@ -57,6 +57,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # GitHub runner 默认没有 ffmpeg（音频转 MP3 需要），一并装 imagemagick（BMP 转 PNG）
+      - name: Install ffmpeg & imagemagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+
       # 编译 tool 工具（供 make-data-zip / make-prel 使用）
       - name: Build tool
         run: npm run build:tool

@@ -41,6 +41,7 @@ export async function convert_audio(dst_path: string, src_path: string) {
   const { FFMPEG_CMD, FFMPEG_OPTS } = conf();
   if (!FFMPEG_CMD) return;
   const real_cmd = find_real_cmd(FFMPEG_CMD);
+  if (!real_cmd) return; // ffmpeg 缺失时跳过转换（与图片转换行为一致），避免 spawn('') 崩溃
   info("Convert audio", src_path, "=>\n    " + dst_path);
   await fs.rm(dst_path, { recursive: true, force: true }).catch(() => void 0);
   const args = [
