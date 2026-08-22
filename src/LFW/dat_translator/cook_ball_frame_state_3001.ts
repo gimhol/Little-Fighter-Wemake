@@ -2,19 +2,17 @@ import { OID, StateEnum } from "../defines";
 import { ActionType } from "../defines/actions/ActionType";
 import { CollisionVal as C_Val } from "../defines/CollisionVal";
 import { EntityEnum } from "../defines/EntityEnum";
-import { HitFlag } from "../defines/HitFlag";
 import type { IBdyInfo } from "../defines/IBdyInfo";
-import type { IEntityData } from "../defines/IEntityData";
-import type { IFrameInfo } from "../defines/IFrameInfo";
 import type { IItrInfo } from "../defines/IItrInfo";
 import { ItrEffect } from "../defines/ItrEffect";
 import { ItrKind } from "../defines/ItrKind";
+import type { IFrameInfoContext } from "../loader/IEntityDataContext";
 import { ensure } from "../utils";
 import { CondMaker } from "./CondMaker";
+import { cook_ball_bdy_rebound } from "./cook_ball_bdy_rebound";
 import { EditBdy } from "./EditBdy";
-import { cook_ball_rebound_bdy } from "./cook_ball_rebound_bdy";
-import { set_hit_flag } from "./set_hit_flag";
-export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
+export function cook_ball_frame_state_3001(ctx: IFrameInfoContext) {
+  const { data: e, frame } = ctx;
   const bdy_list = frame.bdy ? frame.bdy : (frame.bdy = []);
   const new_bdy: IBdyInfo[] = [];
   for (const bdy of bdy_list) {
@@ -52,7 +50,7 @@ export function cook_ball_frame_state_3001(e: IEntityData, frame: IFrameInfo) {
         }
       }]
     })
-    new_bdy.push(cook_ball_rebound_bdy(bdy));
+    new_bdy.push(cook_ball_bdy_rebound({ ...ctx, bdy, index: -1 }));
   }
   bdy_list.push(...new_bdy);
 

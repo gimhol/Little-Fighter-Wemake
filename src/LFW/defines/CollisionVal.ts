@@ -75,6 +75,10 @@ export enum CollisionVal {
   AClosingSpeedY = "a_closing_speed_y",
   /* 接近的速度Z，大于0时，“攻击者”速度朝向“受击者” */
   AClosingSpeedZ = "a_closing_speed_z",
+  /** 谁射的attacker */
+  AEmitter = "a_emitter",
+  /** 谁射的victim */
+  VEmitter = "v_emitter",
 }
 export const CollisionValDescriptions: Record<CollisionVal, string> = {
   [CollisionVal.AttackerType]: "",
@@ -117,6 +121,8 @@ export const CollisionValDescriptions: Record<CollisionVal, string> = {
   [CollisionVal.AClosingSpeedX]: "",
   [CollisionVal.AClosingSpeedY]: "",
   [CollisionVal.AClosingSpeedZ]: "",
+  [CollisionVal.AEmitter]: "",
+  [CollisionVal.VEmitter]: "",
 }
 export const C_Val = CollisionVal;
 export type C_Val = CollisionVal;

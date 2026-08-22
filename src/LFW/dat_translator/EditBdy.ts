@@ -1,6 +1,7 @@
-import { bdy_kind_name } from "../defines";
+import { bdy_info_fields, bdy_kind_name } from "../defines";
 import { get_hit_flag_name } from "../defines/HitFlag";
 import type { IBdyInfo } from "../defines/IBdyInfo";
+import { reorder_keys } from "../fields";
 const { parse, stringify } = JSON
 export class EditBdy<T extends Partial<IBdyInfo>> {
   readonly raw: T;
@@ -27,6 +28,7 @@ export class EditBdy<T extends Partial<IBdyInfo>> {
       delete this.raw.kind;
       delete this.raw.kind_name;
     }
+    reorder_keys(this.raw, bdy_info_fields);
     return this
   }
   edit(fields: Partial<IBdyInfo>) {

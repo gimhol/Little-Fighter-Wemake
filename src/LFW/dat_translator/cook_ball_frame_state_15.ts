@@ -1,70 +1,35 @@
-import { OID, StateEnum } from "../defines";
-import { ActionType } from "../defines/actions/ActionType";
-import { CollisionVal as C_Val } from "../defines/CollisionVal";
-import { EntityEnum } from "../defines/EntityEnum";
-import { HitFlag } from "../defines/HitFlag";
+import { BdyKind, HitFlag, OID } from "../defines";
 import type { IBdyInfo } from "../defines/IBdyInfo";
-import type { IEntityData } from "../defines/IEntityData";
-import type { IFrameInfo } from "../defines/IFrameInfo";
-import type { IItrInfo } from "../defines/IItrInfo";
-import { ItrEffect } from "../defines/ItrEffect";
-import { ItrKind } from "../defines/ItrKind";
-import { ensure } from "../utils";
-import { CondMaker } from "./CondMaker";
-import { copy_bdy_info } from "./copy_bdy_info";
-import { edit_bdy_info } from "./edit_bdy_info";
-import { cook_ball_rebound_bdy as cook_ball_rebound_bdy } from "./cook_ball_rebound_bdy";
-import { set_hit_flag } from "./set_hit_flag";
+import type { IFrameInfoContext } from "../loader/IEntityDataContext";
+import { cook_ball_bdy_get_hit } from "./cook_ball_bdy_get_hit";
+import { cook_ball_bdy_rebound } from "./cook_ball_bdy_rebound";
+import { EditBdy } from "./EditBdy";
+
 /**
  * 能被角色普通反弹
  * 能被武器挥动普通反弹
  */
-export function cook_ball_frame_state_15(e: IEntityData, frame: IFrameInfo) {
+export function cook_ball_frame_state_15(ctx: IFrameInfoContext) {
+  const { frame } = ctx;
   const bdy_list = frame.bdy ? frame.bdy : (frame.bdy = []);
   const new_bdy: IBdyInfo[] = [];
-  for (const bdy of bdy_list) {
-    const cond = new CondMaker<C_Val>()
-      .add(C_Val.ItrKind, "!=", ItrKind.JohnShield)
-      .and(C_Val.ItrKind, "!=", ItrKind.Block)
-      .and((c) => c
-        .add(C_Val.AttackerType, "==", EntityEnum.Ball)
-        .or(c => c
-          /** 被武器击中 */
-          .add(C_Val.AttackerType, "==", EntityEnum.Weapon)
-          .and(C_Val.AttackerState, "!=", StateEnum.Weapon_OnHand),
-        ).or(c => c
-          /**  */
-          .add(C_Val.AttackerType, "==", EntityEnum.Fighter)
-          .and(C_Val.AttackerState, "==", StateEnum.BurnRun),
-        ),
-      ).and().not_in(
-        C_Val.ItrKind,
-        ItrKind.Block,
-        ItrKind.MagicFlute,
-        ItrKind.MagicFlute2,
-        ItrKind.Pick,
-        ItrKind.PickSecretly,
-      )
-      .and().not_in(
-        C_Val.ItrEffect,
-        ItrEffect.Ice2,
-        ItrEffect.MFire1
-      )
-    if (e.id === OID.FreezeBall)
-      cond.and(C_Val.AttackerIsFreezableBall, '!=', 1)
+  for (let i = 0; i < bdy_list.length; i++) {
+    const bdy = bdy_list[i];
+    if (bdy.kind != BdyKind.Normal) continue;
 
-    edit_bdy_info(bdy, {
-      /* 受攻击判定 */
-      test: cond.done(),
-      actions: [{
-        type: ActionType.V_NEXT_FRAME,
-        data: {
-          id: "20"
-        }
-      }]
-    });
+    if (ctx.data.id == OID.FreezeColumn) {
+      /* 
+      NOTE: 冰柱能被自己队伍物品相同朝向的 打到似乎是特殊ID的缘故 -Gim
+      */
+      EditBdy.edit(bdy, { hit_flag: HitFlag.AllBoth })
+    }
 
-    new_bdy.push(cook_ball_rebound_bdy(bdy));
+
+    /* ball 被打到消失的bdy */
+    bdy_list[i] = cook_ball_bdy_get_hit({ ...ctx, bdy, index: i });
+    /* ball 被打到反弹的bdy */
+    new_bdy.push(cook_ball_bdy_rebound({ ...ctx, bdy, index: -1 }));
+
   }
   bdy_list.push(...new_bdy);
 }

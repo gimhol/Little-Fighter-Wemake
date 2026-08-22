@@ -1,9 +1,11 @@
 import { CondMaker, cook_ball_frame_state_3000, cook_ball_frame_state_3001, cook_ball_frame_state_3005, cook_ball_frame_state_3006 } from "../dat_translator";
 import { cook_ball_frame_state_15 } from "../dat_translator/cook_ball_frame_state_15";
-import { ActionType, C_Val, EntityEnum, type IEntityData, type IFrameInfo, ItrKind, StateEnum } from "../defines";
+import { ActionType, C_Val, EntityEnum, ItrKind, StateEnum } from "../defines";
 import { ensure, foreach } from "../utils";
+import type { IFrameInfoContext } from "./IEntityDataContext";
 
-export function preprocess_ball_frame(frame: IFrameInfo, data: IEntityData) {
+export function preprocess_ball_frame(ctx: IFrameInfoContext) {
+  const { data, frame } = ctx;
   if (frame.itr) {
     for (const itr of frame.itr) {
       if (itr.kind === ItrKind.JohnShield) {
@@ -33,19 +35,19 @@ export function preprocess_ball_frame(frame: IFrameInfo, data: IEntityData) {
   frame.gravity_enabled = frame.gravity_enabled ?? false;
   switch (frame.state) {
     case StateEnum.Ball_Flying:
-      cook_ball_frame_state_3000(data, frame);
+      cook_ball_frame_state_3000(ctx);
       break;
     case StateEnum.Ball_Hitting:
-      cook_ball_frame_state_3001(data, frame);
+      cook_ball_frame_state_3001(ctx);
       break;
     case StateEnum.Ball_3005:
-      cook_ball_frame_state_3005(data, frame);
+      cook_ball_frame_state_3005(ctx);
       break;
     case StateEnum.Ball_3006:
-      cook_ball_frame_state_3006(data, frame);
+      cook_ball_frame_state_3006(ctx);
       break;
     default:
-      cook_ball_frame_state_15(data, frame);
+      cook_ball_frame_state_15(ctx);
   }
   foreach(frame.itr, itr => {
     switch (itr.kind as ItrKind) {

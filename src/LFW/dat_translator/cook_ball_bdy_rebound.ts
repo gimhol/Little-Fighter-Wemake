@@ -1,12 +1,20 @@
 import { type IBdyInfo, ActionType, CollisionVal as C_Val, EntityEnum, HitFlag, ItrEffect, ItrKind, StateEnum } from "../defines";
+import type { IBdyInfoContext } from "../loader/IEntityDataContext";
 import { CondMaker } from "./CondMaker";
 import { EditBdy } from "./EditBdy";
-import { set_hit_flag } from "./set_hit_flag";
 
-export function cook_ball_rebound_bdy(bdy: IBdyInfo) {
+/**
+ * 拷贝一份bdy，将其改为响应反弹的bdy
+ *
+ * @export
+ * @param {IBdyInfo} bdy 源bdy
+ * @return {IBdyInfo} 新的bdy
+ */
+export function cook_ball_bdy_rebound(ctx: IBdyInfoContext): IBdyInfo {
+  const { bdy } = ctx;
   return EditBdy.clone(bdy, {
     /* 反弹判定 */
-    ...set_hit_flag({}, HitFlag.AllBoth),
+    hit_flag: HitFlag.AllBoth,
     test: new CondMaker<C_Val>()
       .wrap((c) => c
         // 敌方角色的攻击反弹气功波

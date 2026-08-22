@@ -1,14 +1,14 @@
-import type { IFrameInfo } from "../defines/IFrameInfo";
-import { ItrKind } from "../defines/ItrKind";
+import { ActionType } from "../defines/actions/ActionType";
 import { CollisionVal as C_Val } from "../defines/CollisionVal";
-import type { IEntityData } from "../defines/IEntityData";
+import { ItrKind } from "../defines/ItrKind";
 import { StateEnum } from "../defines/StateEnum";
-import { CondMaker } from "./CondMaker";
+import type { IFrameInfoContext } from "../loader/IEntityDataContext";
 import { ensure } from "../utils";
 import { foreach } from "../utils/container_help/foreach";
-import { ActionType } from "../defines/actions/ActionType";
+import { CondMaker } from "./CondMaker";
 
-export function cook_ball_frame_state_3005(e: IEntityData, frame: IFrameInfo) {
+export function cook_ball_frame_state_3005(ctx: IFrameInfoContext) {
+  const { frame } = ctx;
   if (frame.bdy) {
     for (const bdy of frame.bdy) {
       bdy.actions = bdy.actions || [];

@@ -26,7 +26,7 @@ const breakfall_j_expression = new CondMaker<EV>()
 export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   const { lfw, data, frame, jobs } = ctx;
   if (data.processed != false) { }
-  else if (is_ball_data(data)) { preprocess_ball_frame(frame, data); }
+  else if (is_ball_data(data)) { preprocess_ball_frame(ctx); }
   else if (is_weapon_data(data)) {
     data.indexes = data.indexes || {}
     const in_the_skys: string[] = data.indexes.in_the_skys || []

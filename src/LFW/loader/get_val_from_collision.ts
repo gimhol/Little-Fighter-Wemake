@@ -67,9 +67,11 @@ const map: Record<CollisionVal, IValGetter<Collision>> = {
     const p1 = c.attacker.position.z;
     const p2 = c.victim.position.z;
     if (p1 > p2) return -v;
-    if (p1 < p2) return v;
+    if (p1 < p2) return v; 
     return abs(-v)
   },
+  [CollisionVal.AEmitter]: c => c.attacker.emitter?.id ?? '',
+  [CollisionVal.VEmitter]: c => c.victim.emitter?.id ?? '',
 };
 export const get_val_geter_from_collision: IValGetterGetter<Collision> = (
   word: string,
