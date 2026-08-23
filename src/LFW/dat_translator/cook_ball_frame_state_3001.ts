@@ -25,7 +25,7 @@ export function cook_ball_frame_state_3001(ctx: IFrameInfoContext) {
           .add(C_Val.AttackerType, "==", EntityEnum.Weapon)
           .and(C_Val.AttackerState, "!=", StateEnum.Weapon_OnHand),
         ),
-      ).and().not_in(
+      ).and_not_in(
         C_Val.ItrKind,
         ItrKind.Block,
         ItrKind.MagicFlute,
@@ -33,7 +33,7 @@ export function cook_ball_frame_state_3001(ctx: IFrameInfoContext) {
         ItrKind.Pick,
         ItrKind.PickSecretly,
       )
-      .and().not_in(
+      .and_not_in(
         C_Val.ItrEffect,
         ItrEffect.Ice2,
         ItrEffect.MFire1

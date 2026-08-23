@@ -230,8 +230,7 @@ export function make_fighter_data(ctx: IDatContext): IEntityData {
               facing: FF.Ctrl,
               expression: new CondMaker<EV>()
                 .add(EV.Catching, "==", 1)
-                .and()
-                .wrap((c) => {
+                .and((c) => {
                   return c
                     .add(EV.PressFB, "!=", 0)
                     .or(EV.PressUD, "!=", 0);

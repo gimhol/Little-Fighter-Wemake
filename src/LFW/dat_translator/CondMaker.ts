@@ -1,91 +1,96 @@
 import type { TBinOp } from "../defines/BinOp";
-import { is_str } from "../utils/type_check";
-export class CondMaker<T extends string = string> {
-  readonly is_cond = true;
-  static is = (v: any): v is CondMaker => v?.is_cond === true;
-  private _parts: (string | CondMaker)[] = [];
-  add(func: (c: CondMaker<T>) => CondMaker<T>): this;
-  add(word: T, op: TBinOp, value: any): this;
-  add(
-    arg1: T | ((c: CondMaker<T>) => CondMaker<T>),
-    op?: TBinOp,
-    value?: any,
-  ): this {
-    if (typeof arg1 !== "function") this._parts.push(`${arg1}${op}${value}`);
-    else this._parts.push(arg1(new CondMaker()));
-    return this;
-  }
-  not(): this;
-  not(func: (c: CondMaker<T>) => CondMaker<T>): this;
-  not(func?: (c: CondMaker<T>) => CondMaker<T>): this {
-    if (func) {
-      this._parts.push("!", func(new CondMaker()));
-    } else {
-      this._parts.unshift('!(')
-      this._parts.push(')')
-    }
-    return this;
-  }
-  wrap(func: (c: CondMaker<T>) => CondMaker<T>): this {
-    this._parts.push(func(new CondMaker()));
-    return this;
-  }
-  one_of(word: T, ...values: (string | number)[]): this {
-    return this.wrap((c) => {
-      for (const v of values) c = c.or(word, "==", v);
-      return c;
-    });
-  }
-  not_in(word: T, ...values: (string | number)[]): this {
-    return this.wrap((c) => {
-      for (const v of values) c.and(word, "!=", v);
-      return c;
-    });
-  }
-  private _any(
-    word?: T | ((c: CondMaker<T>) => CondMaker<T>),
-    op?: TBinOp | (string | number)[],
-    value?: any,
-  ): this {
-    if (typeof word === "function") return this.wrap(word);
-    else if (word !== void 0)
-      if (Array.isArray(op)) return this.one_of(word, ...op);
-      else if (op !== void 0 && value !== void 0)
-        return this.add(word, op, value);
-    return this;
-  }
-  or(): this;
-  or(func: (c: CondMaker<T>) => CondMaker<T>): this;
-  or(word: T, op: TBinOp, value: any): this;
-  or(
-    word?: T | ((c: CondMaker<T>) => CondMaker<T>),
-    op?: TBinOp | (string | number)[],
-    value?: any,
-  ): this {
-    this._parts.length && this._parts.push("|");
-    return this._any(word, op, value);
+type Value = string | number | boolean;
+export interface EditCond<V1 extends Value = Value, V2 extends Value = Value> {
+  (c: CondMaker<V1, V2>): unknown;
+}
+
+export class CondMaker<V1 extends Value = Value, V2 extends Value = Value> {
+  readonly __is_cond_maker__ = true;
+  static readonly TAG = 'CondMaker'
+  static readonly is = (v: any): v is CondMaker => v?.__is_cond_maker__ === true;
+  private parts: (Value | TBinOp | CondMaker)[] = [];
+
+  private opok(func: string, ...op: (string | undefined)[]): void {
+    const last = this.parts[this.parts.length - 1];
+    if (op.some(v => v === last))
+      return;
+    throw new Error(
+      `[CondMaker::${func}] missing operator: "${CondMaker.is(last) ? last.done() : last}" ` +
+      `Use .and(...)/.or(...) between conditions. ` +
+      `Current: "${this.done()}"`
+    )
   }
 
-  and(): this;
-  and(func: (c: CondMaker<T>) => CondMaker<T>): this;
-  and(word: T, op: TBinOp, value: any): this;
-  and(
-    word?: T | ((c: CondMaker<T>) => CondMaker<T>),
-    op?: TBinOp,
-    value?: any,
-  ): this {
-    this._parts.length && this._parts.push("&");
-    return this._any(word, op, value);
+  add(func: EditCond<V1, V2>): this;
+  add(v1: V1, op: TBinOp, v2: V2): this;
+  add(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this
+  add(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this {
+    if (typeof p1 === "function") return this.wrap(p1);
+    this.opok('add', void 0, '||', '&&');
+    this.parts.push(`${p1}${p2}${p3}`);
+    return this;
+  }
+
+  not(func: EditCond<V1, V2>): this {
+    this.opok('not', void 0, '||', '&&');
+    this.parts.push("!");
+    this.wrap(func);
+    return this;
+  }
+
+  wrap(func: EditCond<V1, V2>): this {
+    this.opok('wrap', void 0, '||', '&&', '!');
+    const c1 = new CondMaker();
+    const c2 = func(c1);
+    this.parts.push(c2 instanceof CondMaker ? c2 : c1)
+    return this;
+  }
+
+  one_of(v1: V1, ...v2: V2[]): this {
+    this.opok('one_of', void 0, '||', '&&', '!');
+    return this.wrap(c => v2.forEach(v => c.or(v1, "==", v)));
+  }
+  and_one_of(v1: V1, ...v2: V2[]): this {
+    return this.and(c => v2.forEach(v => c.or(v1, "==", v)));
+  }
+  or_one_of(v1: V1, ...v2: V2[]): this {
+    return this.or(c => v2.forEach(v => c.or(v1, "==", v)));
+  }
+
+  not_in(v1: V1, ...v2: V2[]): this {
+    this.opok('not_in', void 0, '||', '&&', '!');
+    return this.wrap(c => v2.forEach(v => c.and(v1, "!=", v)));
+  }
+  and_not_in(v1: V1, ...v2: V2[]): this {
+    return this.and(c => v2.forEach(v => c.and(v1, "!=", v)));
+  }
+  or_not_in(v1: V1, ...v2: V2[]): this {
+    return this.or(c => v2.forEach(v => c.and(v1, "!=", v)));
+  }
+
+  or(func: EditCond<V1, V2>): this;
+  or(v1: V1, op: TBinOp, v2: V2): this;
+  or(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this {
+    this.parts.length && this.parts.push("||");
+    return this.add(p1, p2, p3);
+  }
+
+  and(func: EditCond<V1, V2>): this;
+  and(v1: V1, op: TBinOp, v2: V2): this;
+  and(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this {
+    this.parts.length && this.parts.push("&&");
+    return this.add(p1, p2, p3);
+  }
+
+  toString(): string {
+    return `${CondMaker.TAG} { text: ${this.done()} }`
   }
   done(): string {
-    let ret = this._parts
-      .map((v) => (is_str(v) ? v : `(${v.done()})`))
-      .join("");
-    ret = ret.replace(/\s|\n|\r/g, ""); // remove empty char;
-
-    // remove redundant bracket;
-    if (this._parts.length === 1 && CondMaker.is(this._parts[0]))
-      ret = ret.replace(/^\(|\)$/g, "");
+    let ret = ''
+    if (this.parts.length === 1 && CondMaker.is(this.parts[0]))
+      ret = this.parts[0].done();
+    else
+      ret = this.parts.map(v => CondMaker.is(v) ? `(${v.done()})` : `${v}`.trim()).join("").replace(/\n|\r/g, "").trim()
     return ret;
   }
 }

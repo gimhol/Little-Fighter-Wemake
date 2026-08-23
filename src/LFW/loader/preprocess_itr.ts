@@ -95,8 +95,7 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
       itr.test = itr.test ?? new CondMaker<C_Val>()
         .add(C_Val.AttackerHasHolder, "==", 0)
         .and(C_Val.VictimHasHolder, "==", 0)
-        .and()
-        .one_of(
+        .and_one_of(
           C_Val.VictimState,
           StateEnum.Weapon_OnGround,
           StateEnum.HeavyWeapon_OnGround,
