@@ -246,8 +246,8 @@ export class Ball_3006_vs_JohnShield extends TestCase {
     this.fighters[1].stat_bar_type = StatBarType.None
   }
 }
-export class Ball_3000_vs_Many_Punch extends TestCase {
-  override name: string = 'Ball_3000_vs_Many_Punch'
+export class Ball_3000_vs_ManyPunch extends TestCase {
+  override name: string = 'Ball_3000_vs_ManyPunch'
   readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
@@ -273,8 +273,8 @@ export class Ball_3000_vs_Many_Punch extends TestCase {
     this.fighters[1].stat_bar_type = StatBarType.None
   }
 }
-export class Ball_3005_vs_Many_Punch extends TestCase {
-  override name: string = 'Ball_3005_vs_Many_Punch'
+export class Ball_3005_vs_ManyPunch extends TestCase {
+  override name: string = 'Ball_3005_vs_ManyPunch'
   readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
@@ -300,8 +300,8 @@ export class Ball_3005_vs_Many_Punch extends TestCase {
     this.fighters[1].stat_bar_type = StatBarType.None
   }
 }
-export class Ball_3006_vs_Many_Punch extends TestCase {
-  override name: string = 'Ball_3006_vs_Many_Punch'
+export class Ball_3006_vs_ManyPunch extends TestCase {
+  override name: string = 'Ball_3006_vs_ManyPunch'
   readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Jump)
@@ -318,6 +318,83 @@ export class Ball_3006_vs_Many_Punch extends TestCase {
     super.enter();
     this.director.reset();
     this.fighters = this.hori([OID.Henry, OID.Davis], this.midX, this.midZ, 450);
+    this.fighters[0].team = T_E.Team_1
+    this.fighters[0].mp = this.fighters[0].mp_max = 99999;
+    this.fighters[0].stat_bar_type = StatBarType.None
+    this.fighters[1].team = T_E.Team_2
+    this.fighters[1].mp = this.fighters[1].mp_max = 99999;
+    this.fighters[1].facing = -1;
+    this.fighters[1].stat_bar_type = StatBarType.None
+  }
+}
+
+
+export class Ball_3000_vs_BurnRun extends TestCase {
+  override name: string = 'Ball_3000_vs_BurnRun'
+  readonly director = new ActionDirector()
+    .offset(500, () => {
+      this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
+      this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
+    })
+    .sort();
+
+  override update(dt: number): number | void | undefined {
+    this.director.update(dt);
+  }
+  override enter(): void {
+    super.enter();
+    this.director.reset();
+    this.fighters = this.hori([OID.Davis, OID.Firen], this.midX, this.midZ, 450);
+    this.fighters[0].team = T_E.Team_1
+    this.fighters[0].mp = this.fighters[0].mp_max = 99999;
+    this.fighters[0].stat_bar_type = StatBarType.None
+    this.fighters[1].team = T_E.Team_2
+    this.fighters[1].mp = this.fighters[1].mp_max = 99999;
+    this.fighters[1].facing = -1;
+    this.fighters[1].stat_bar_type = StatBarType.None
+  }
+}
+export class Ball_3005_vs_BurnRun extends TestCase {
+  override name: string = 'Ball_3005_vs_BurnRun'
+  readonly director = new ActionDirector()
+    .offset(500, () => {
+      this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
+      this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
+    })
+    .sort();
+
+  override update(dt: number): number | void | undefined {
+    this.director.update(dt);
+  }
+  override enter(): void {
+    super.enter();
+    this.director.reset();
+    this.fighters = this.hori([OID.Henry, OID.Firen], this.midX, this.midZ, 450);
+    this.fighters[0].team = T_E.Team_1
+    this.fighters[0].mp = this.fighters[0].mp_max = 99999;
+    this.fighters[0].stat_bar_type = StatBarType.None
+    this.fighters[1].team = T_E.Team_2
+    this.fighters[1].mp = this.fighters[1].mp_max = 99999;
+    this.fighters[1].facing = -1;
+    this.fighters[1].stat_bar_type = StatBarType.None
+  }
+}
+export class Ball_3006_vs_BurnRun extends TestCase {
+  override name: string = 'Ball_3006_vs_BurnRun'
+  readonly director = new ActionDirector()
+    .offset(500, () => {
+      this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Jump)
+      this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
+    })
+    .sort();
+
+  override update(dt: number): number | void | undefined {
+    this.director.update(dt);
+  }
+  override enter(): void {
+    super.enter();
+    this.director.reset();
+    this.fighters = this.hori([OID.Henry, OID.Firen], this.midX, this.midZ, 450);
     this.fighters[0].team = T_E.Team_1
     this.fighters[0].mp = this.fighters[0].mp_max = 99999;
     this.fighters[0].stat_bar_type = StatBarType.None

@@ -37,7 +37,7 @@ import { Rudolf_DFJ } from './Rudolf/Rudolf_DFJ';
 import { TestCase } from "./TestCase";
 import { CriminalSaving1 } from './Others/CriminalSaving';
 import { ArmorTest1 } from './Others/ArmorTest1';
-import { Ball_3000_vs_Ball_3000, Ball_3000_vs_Ball_3005, Ball_3000_vs_Ball_3006, Ball_3000_vs_JohnShield, Ball_3000_vs_Many_Punch, Ball_3005_vs_Ball_3005, Ball_3005_vs_Ball_3006, Ball_3005_vs_JohnShield, Ball_3005_vs_Many_Punch, Ball_3006_vs_Ball_3006, Ball_3006_vs_JohnShield, Ball_3006_vs_Many_Punch } from './Ball/Ball';
+import { Ball_3000_vs_Ball_3000, Ball_3000_vs_Ball_3005, Ball_3000_vs_Ball_3006, Ball_3000_vs_BurnRun, Ball_3000_vs_JohnShield, Ball_3000_vs_ManyPunch, Ball_3005_vs_Ball_3005, Ball_3005_vs_Ball_3006, Ball_3005_vs_BurnRun, Ball_3005_vs_JohnShield, Ball_3005_vs_ManyPunch, Ball_3006_vs_Ball_3006, Ball_3006_vs_BurnRun, Ball_3006_vs_JohnShield, Ball_3006_vs_ManyPunch } from './Ball/Ball';
 
 const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
   [TestCase, AllFighters], [
@@ -70,7 +70,8 @@ const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
     Ball_3000_vs_Ball_3000, Ball_3000_vs_Ball_3005, Ball_3000_vs_Ball_3006,
     Ball_3005_vs_Ball_3005, Ball_3005_vs_Ball_3006, Ball_3006_vs_Ball_3006,
     Ball_3000_vs_JohnShield, Ball_3005_vs_JohnShield, Ball_3006_vs_JohnShield,
-    Ball_3000_vs_Many_Punch, Ball_3005_vs_Many_Punch, Ball_3006_vs_Many_Punch,
+    Ball_3000_vs_ManyPunch, Ball_3005_vs_ManyPunch, Ball_3006_vs_ManyPunch,
+    Ball_3000_vs_BurnRun, Ball_3005_vs_BurnRun, Ball_3006_vs_BurnRun,
   ]
 ]
 export class Tests extends UIComponent {
