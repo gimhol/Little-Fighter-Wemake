@@ -3,7 +3,7 @@ import { is_entity } from "../entity";
 import { Randoming } from "../helper";
 import { round } from "../utils";
 const dvx_arr = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
-const dvy_arr = [1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5];
+const dvy_arr = [1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6];
 
 let randoming_dvx: Randoming<number> | null = null;
 let randoming_dvy: Randoming<number> | null = null;
