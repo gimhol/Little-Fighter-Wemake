@@ -1,5 +1,4 @@
 import { GK, O_ID, TeamEnum } from "../../../../defines";
-import { Entity } from "../../../../entity";
 import { ActionDirector } from "../ActionDirector";
 import { TestCase } from "../TestCase";
 

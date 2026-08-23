@@ -13,6 +13,7 @@ import {
   Defines,
   EMPTY_FRAME_INFO,
   EntityEnum, EntityGroup, FacingFlag,
+  FrameBehavior,
   FrameId,
   GK,
   GONE_FRAME_INFO,
@@ -2165,7 +2166,7 @@ export class Entity {
     }
 
     if (wp_a.weaponact !== this.frame.id) {
-      // 还原wpoint丢失的情况
+      // fallback=true 用于 还原wpoint丢失的情况
       this.enter_frame_by_id(wp_a.weaponact, true);
     }
 
@@ -2215,12 +2216,12 @@ export class Entity {
         round(y + cy_a - wa_y),
         round(z + wa_z),
       )
-      this.enter_frame(nf);
       const vz = bearer.ctrl ? bearer.ctrl.UD * (dvz || 0) : 0;
       dvx = strength * dvx / weight;
       dvy = strength * dvy / weight;
       const vx = (dvx - abs(vz / 2)) * this.facing;
       this.set_velocity(vx, dvy, vz);
+      this.enter_frame(nf);
       return;
     }
   }

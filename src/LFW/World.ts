@@ -25,9 +25,11 @@ import { Ditto } from './ditto/Instance';
 import type { IWorldRenderer } from "./ditto/render/IWorldRenderer";
 import {
   Entity,
+  is_ball,
   is_bot_ctrl,
   is_fighter,
-  is_human_ctrl
+  is_human_ctrl,
+  is_weapon
 } from "./entity";
 import { Ground } from "./Ground";
 import type { IWorldCallbacks } from "./IWorldCallbacks";
@@ -369,18 +371,29 @@ export class World {
     }
     const [left, right, near, far] = this.get_bound(e);
     z = clamp(z, far, near)
-    if (e.base_type === WeaponEnum.Drink) {
+    if (is_fighter(e)) {
+      x = clamp(x, left, right);
+    } else if (is_weapon(e)) {
       const { drink_l, drink_r } = this.stage;
       x = clamp(x, drink_l, drink_r);
-    } else if (is_fighter(e)) {
-      x = clamp(x, left, right);
-    } else if (x < left - e.l_len || x > right + e.r_len) {
-      e.enter_frame(Defines.NEXT_FRAME_GONE);
-      e.terrain = this.ground.base;
-      this._restrict_result.x = x;
-      this._restrict_result.y = y;
-      this._restrict_result.z = z;
-      return this._restrict_result;
+
+      if (e.is_on_ground && x < left - e.l_len || x > right + e.r_len) {
+        e.enter_frame(Defines.NEXT_FRAME_GONE);
+        e.terrain = this.ground.base;
+        this._restrict_result.x = x;
+        this._restrict_result.y = y;
+        this._restrict_result.z = z;
+        return this._restrict_result;
+      }
+    } else if (is_ball(e)) {
+      if (x < left - 800 - e.l_len || x > right + 800 + e.r_len) {
+        e.enter_frame(Defines.NEXT_FRAME_GONE);
+        e.terrain = this.ground.base;
+        this._restrict_result.x = x;
+        this._restrict_result.y = y;
+        this._restrict_result.z = z;
+        return this._restrict_result;
+      }
     }
 
     // 检查路径是否穿过阻挡地形（处理超快速移动穿墙）

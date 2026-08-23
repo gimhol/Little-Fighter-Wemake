@@ -104,8 +104,8 @@ export class Stage {
     this.width = bg.width;
     this.depth = bg.depth;
     this.middle = bg.middle;
-    this.drink_l = -1200;
-    this.drink_r = bg.width + 1200
+    this.drink_l = Number.MIN_SAFE_INTEGER;
+    this.drink_r = Number.MAX_SAFE_INTEGER;
     return this.world.bg = bg;
   }
 

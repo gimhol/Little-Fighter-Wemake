@@ -38,6 +38,7 @@ import { TestCase } from "./TestCase";
 import { CriminalSaving1 } from './Others/CriminalSaving';
 import { ArmorTest1 } from './Others/ArmorTest1';
 import { Ball_3000_vs_Ball_3000, Ball_3000_vs_Ball_3005, Ball_3000_vs_Ball_3006, Ball_3000_vs_BurnRun, Ball_3000_vs_JohnShield, Ball_3000_vs_ManyPunch, Ball_3005_vs_Ball_3005, Ball_3005_vs_Ball_3006, Ball_3005_vs_BurnRun, Ball_3005_vs_JohnShield, Ball_3005_vs_ManyPunch, Ball_3006_vs_Ball_3006, Ball_3006_vs_BurnRun, Ball_3006_vs_JohnShield, Ball_3006_vs_ManyPunch } from './Ball/Ball';
+import { Boomerang_1_1, Boomerang_1_2, Boomerang_1_3, Boomerang_1_4, Boomerang_1_5, Boomerang_1_6, Boomerang_2_1, Boomerang_2_2, Boomerang_2_3, Boomerang_2_4, Boomerang_2_5, Boomerang_2_6, Boomerang_3_1, Boomerang_3_2, Boomerang_3_3, Boomerang_3_4, Boomerang_3_5, Boomerang_3_6 } from './Weapons/Boomerang';
 
 const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
   [TestCase, AllFighters], [
@@ -72,6 +73,13 @@ const CASE_GROUPS: IClazz<TestCase, [Tests]>[][] = [
     Ball_3000_vs_JohnShield, Ball_3005_vs_JohnShield, Ball_3006_vs_JohnShield,
     Ball_3000_vs_ManyPunch, Ball_3005_vs_ManyPunch, Ball_3006_vs_ManyPunch,
     Ball_3000_vs_BurnRun, Ball_3005_vs_BurnRun, Ball_3006_vs_BurnRun,
+  ], [
+    Boomerang_1_1, Boomerang_1_2, Boomerang_1_3, 
+    Boomerang_1_4, Boomerang_1_5, Boomerang_1_6,
+    Boomerang_2_1, Boomerang_2_2, Boomerang_2_3, 
+    Boomerang_2_4, Boomerang_2_5, Boomerang_2_6,
+    Boomerang_3_1, Boomerang_3_2, Boomerang_3_3, 
+    Boomerang_3_4, Boomerang_3_5, Boomerang_3_6
   ]
 ]
 export class Tests extends UIComponent {
