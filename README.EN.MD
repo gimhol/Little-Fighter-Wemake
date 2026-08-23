@@ -4,7 +4,7 @@
 
 [中文](./README.MD) | [English](./README.EN.MD)  
 
-try it at [https://lf.gim.ink/](https://lf.gim.ink/) | GitHub Pages preview: [https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/)
+[Play Release Version](https://lf.gim.ink/latest) | [Play Preview Version](https://gimhol.github.io/Little-Fighter-Wemake/) | [Others](https://lf.gim.ink/)
 
 Think this project is pretty good? Consider starring it!
 

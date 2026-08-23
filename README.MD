@@ -4,9 +4,9 @@
 
 [中文](README.MD) | [English](README.EN.MD)
 
-觉得这个项目还不错？Star⭐支持一下吧！
+[玩正式版](https://lf.gim.ink/latest) | [玩预览版](https://gimhol.github.io/Little-Fighter-Wemake/) | [其他？](https://lf.gim.ink/)
 
-直接开试 [https://lf.gim.ink/](https://lf.gim.ink/) | GitHub Pages 预览：[https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/)
+觉得这个项目还不错？Star 支持一下吧.
 
 **玩法、美术、音效音乐来自"Litter Fighter 2", 原作：Marti Wong，Starsky Wong.**
 
