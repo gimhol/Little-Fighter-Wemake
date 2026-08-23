@@ -19,10 +19,11 @@ export function handle_injury(c: Collision, scale = 1, keep_toughness = false) {
   const real_injury_r = prev_hp_r - victim.hp_r;
   if (!keep_toughness) victim.toughness = 0;
 
-  const _attacker = attacker.src_emitter || attacker;
+  const _attacker = attacker.src_emitter ? c.world.find_entity(attacker.src_emitter) : attacker;
   c.injury = injury;
   c.injury_r = injury_r;
   c.real_injury = real_injury;
   c.real_injury_r = real_injury_r;
+  if (!_attacker) return;
   summary_mgr.apply_damage(_attacker, injury, victim, prev_hp);
 }

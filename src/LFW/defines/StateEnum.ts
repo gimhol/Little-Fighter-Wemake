@@ -282,6 +282,8 @@ export const StateEnumDescriptions: Record<StateEnum, string> = {
 }
 export const SE = StateEnum;
 export type SE = StateEnum;
+export const S_E = StateEnum;
+export type S_E = StateEnum;
 export const ATTCKING_STATES: readonly StateEnum[] = [
   StateEnum.Attacking,
   StateEnum.Ball_3005,

@@ -581,8 +581,8 @@ export class Entity {
     ++this._render_effect_time;
   }
 
-  get src_emitter(): Entity | undefined { return this.get_emitter(0) }
-  get emitter(): Entity | undefined { return this.get_emitter(this.emitters.length - 1) }
+  get src_emitter(): string | undefined { return this._emitters[0] }
+  get emitter(): string | undefined { return this._emitters[this.emitters.length - 1] }
   get emitters(): string[] { return this._emitters; }
 
   /**
@@ -1094,7 +1094,7 @@ export class Entity {
               if (this.team != o.team) return false;
               if (o.hp <= 0) return false;
               if (o == this) return false;
-              if (o == this.src_emitter) return false;
+              if (o.id == this.src_emitter) return false;
               return true
             });
             if (skip_zero && !allies.length) break;
@@ -1103,7 +1103,9 @@ export class Entity {
           case OpointMultiEnum.Emitter:
             const { emitter } = this;
             if (!emitter) break;
-            allies = [emitter];
+            const e = this.world.find_entity(emitter);
+            if (!e) break;
+            allies = [e];
             count = 1;
             break;
         }

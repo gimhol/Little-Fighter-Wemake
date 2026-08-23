@@ -104,8 +104,8 @@ export const collision_action_handlers: IActionHandler = {
     let t: Entity | undefined | null;
     const { attacker } = c;
     switch (a.data.target) {
-      case 1: t = attacker.src_emitter; break;
-      case 2: t = attacker.emitter; break;
+      case 1: t = attacker.src_emitter ? c.world.find_entity(attacker.src_emitter) : void 0; break;
+      case 2: t = attacker.emitter ? c.world.find_entity(attacker.emitter) : void 0; break;
       case 3: t = attacker.bearer; break;
       case 0: default: t = attacker; break;
     }
