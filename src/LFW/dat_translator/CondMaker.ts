@@ -28,6 +28,32 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
       `Current: "${this.done()}"`
     )
   }
+  private assert_value(v: unknown, where: string): asserts v is CondValue {
+    const t = typeof v;
+    if (t !== 'string' && t !== 'number' && t !== 'boolean')
+      throw new Error(
+        `[CondMaker::${where}] invalid operand: ${JSON.stringify(v)} (${t}). ` +
+        `Operands must be string | number | boolean.`
+      );
+  }
+  private assert_op(op: unknown, where: string): asserts op is CondBinOp {
+    if (typeof op !== 'string' || op.length === 0)
+      throw new Error(
+        `[CondMaker::${where}] invalid operator: ${JSON.stringify(op)}. ` +
+        `Operator must be a non-empty string.`
+      );
+    if (op === '||' || op === '&&' || op === '!')
+      throw new Error(
+        `[CondMaker::${where}] reserved operator: "${op}". ` +
+        `"||" / "&&" / "!" are reserved as logical separators and cannot be used as comparison operators.`
+      );
+  }
+  private assert_fn(fn: unknown, where: string): asserts fn is Function {
+    if (typeof fn !== 'function')
+      throw new Error(
+        `[CondMaker::${where}] expected a function, got: ${fn === null ? 'null' : typeof fn}.`
+      );
+  }
   private child(): CondMaker<V1, V2> {
     const c = new CondMaker<V1, V2>();
     c.term = this.term;
@@ -46,6 +72,7 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
     return this;
   }
   term_format(fn: CondTermFormatter): this {
+    this.assert_fn(fn, 'term_format');
     this.term = fn;
     return this;
   }
@@ -63,6 +90,9 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
         `Use .add(v1, op, v2) / .and(v1, op, v2) / .or(v1, op, v2). ` +
         `Current: "${this.done()}"`
       );
+    this.assert_value(p1, 'add');
+    this.assert_value(p3, 'add');
+    this.assert_op(p2, 'add');
     if (this.quote_on) {
       const v1 = typeof p1 == 'string' ? this.quote(p1) : p1;
       const v2 = typeof p3 == 'string' ? this.quote(p3) : p3;
@@ -74,6 +104,7 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
   }
 
   not(func: CondEdit<V1, V2>): this {
+    this.assert_fn(func, 'not');
     this.opok('not', void 0, '||', '&&');
     this.parts.push("!");
     this.wrap(func);
@@ -81,6 +112,7 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
   }
 
   wrap(func: CondEdit<V1, V2>): this {
+    this.assert_fn(func, 'wrap');
     this.opok('wrap', void 0, '||', '&&', '!');
     const c1 = this.child();
     const c2 = func(c1);
@@ -89,24 +121,54 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
   }
 
   one_of(v1: V1, ...v2: V2[]): this {
+    this.assert_value(v1, 'one_of');
+    if (!v2.length)
+      throw new Error(
+        `[CondMaker::one_of] at least one value is required (got: one_of(${v1})).`
+      );
     this.opok('one_of', void 0, '||', '&&', '!');
     return this.wrap(c => v2.forEach(v => c.or(v1, "==", v)));
   }
   and_one_of(v1: V1, ...v2: V2[]): this {
+    this.assert_value(v1, 'and_one_of');
+    if (!v2.length)
+      throw new Error(
+        `[CondMaker::and_one_of] at least one value is required (got: and_one_of(${v1})).`
+      );
     return this.and(c => v2.forEach(v => c.or(v1, "==", v)));
   }
   or_one_of(v1: V1, ...v2: V2[]): this {
+    this.assert_value(v1, 'or_one_of');
+    if (!v2.length)
+      throw new Error(
+        `[CondMaker::or_one_of] at least one value is required (got: or_one_of(${v1})).`
+      );
     return this.or(c => v2.forEach(v => c.or(v1, "==", v)));
   }
 
   not_in(v1: V1, ...v2: V2[]): this {
+    this.assert_value(v1, 'not_in');
+    if (!v2.length)
+      throw new Error(
+        `[CondMaker::not_in] at least one value is required (got: not_in(${v1})).`
+      );
     this.opok('not_in', void 0, '||', '&&', '!');
     return this.wrap(c => v2.forEach(v => c.and(v1, "!=", v)));
   }
   and_not_in(v1: V1, ...v2: V2[]): this {
+    this.assert_value(v1, 'and_not_in');
+    if (!v2.length)
+      throw new Error(
+        `[CondMaker::and_not_in] at least one value is required (got: and_not_in(${v1})).`
+      );
     return this.and(c => v2.forEach(v => c.and(v1, "!=", v)));
   }
   or_not_in(v1: V1, ...v2: V2[]): this {
+    this.assert_value(v1, 'or_not_in');
+    if (!v2.length)
+      throw new Error(
+        `[CondMaker::or_not_in] at least one value is required (got: or_not_in(${v1})).`
+      );
     return this.or(c => v2.forEach(v => c.and(v1, "!=", v)));
   }
 
