@@ -50,15 +50,19 @@ export class Background {
     this.zoom_z = info.zoom_z ?? 1;
   }
 
+  private _layer_data_index = 0;
   private add_layer(info: IBgLayerInfo) {
+    const data_index = this._layer_data_index++;
     let { x, loop = 0 } = info;
     if (loop <= 0) {
-      this._layers.push(new Layer(this, info))
+      this._layers.push(new Layer(this, info, data_index))
       return;
     } else {
       const right = this.width + loop;
+      let loop_index = 0;
       for (x -= loop; x < right; x += loop) {
-        this._layers.push(new Layer(this, { ...info, x }));
+        this._layers.push(new Layer(this, { ...info, x }, data_index, loop_index));
+        loop_index++;
       }
     }
   }
@@ -71,6 +75,7 @@ export class Background {
 
   dispose() {
     this._layers.length = 0
+    this._layer_data_index = 0
   }
 }
 

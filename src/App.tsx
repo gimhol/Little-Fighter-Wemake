@@ -199,7 +199,7 @@ function App() {
 
   useEffect(() => {
     if (!lfw) return;
-    lfw.world.dataset.bg_flags = bg_flags ? 1 : 0;
+    lfw.world.dataset.bg_flags = bg_flags;
   }, [bg_flags]);
 
   const [fast_forward, set_fast_forward] = useState(false);

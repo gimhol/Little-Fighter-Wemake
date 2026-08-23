@@ -13,4 +13,5 @@ export const ENTITY_INDICATINGS: Record<Indicating, number> = {
 };
 export const BG_INDICATINGS = {
   terrain: 1,
+  layer: 2,
 } as const;

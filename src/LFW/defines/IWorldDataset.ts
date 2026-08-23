@@ -368,7 +368,7 @@ export const world_dataset_fields = fields<IWorldDataset>({
   itr_fall: int,
   outline_enabled: int({ min: 0, max: 1 }),
   entity_flags: int,
-  bg_flags: int({ min: 0, max: 1 }),
+  bg_flags: int({ min: 0, max: 3 }),
   UPS: int({ min: 1, max: 120 }),
   playrate: flt({ min: 0.01, max: 1000 }),
   atom_time: flt,

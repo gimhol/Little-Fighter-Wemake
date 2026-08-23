@@ -1,5 +1,6 @@
 /*** AUTO EXPORT START ***/
 export * from "./Bar";
+export * from "./BgLayerIndicator";
 export * from "./BgLayerRender";
 export * from "./BgRender";
 export * from "./EntityCtrlRender";

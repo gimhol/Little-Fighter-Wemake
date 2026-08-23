@@ -7,6 +7,7 @@ import { CSS2DRenderer, Camera, Object3D, OrthographicCamera, Scene, Vector3, We
 import { BgRender } from "./BgRender";
 import { EntityRenderer } from "./EntityRenderer";
 import { TerrainIndicator } from "./TerrainIndicator";
+import { BG_INDICATINGS } from "./INDICATINGS";
 import csses from "./styles.module.scss";
 
 export class WorldRenderer implements IWorldRenderer {
@@ -29,6 +30,10 @@ export class WorldRenderer implements IWorldRenderer {
   protected scene: Scene = new Scene();
   protected renderer_w: number = 0;
   protected renderer_h: number = 0;
+  /** 渲染缓冲尺寸（LineMaterial.resolution 需要与之匹配，否则线宽错误） */
+  get renderer_size() {
+    return { w: this.renderer_w, h: this.renderer_h };
+  }
   indicators: number = 0;
 
   private cam_p0 = new Vector3()
@@ -167,8 +172,10 @@ export class WorldRenderer implements IWorldRenderer {
     if (entity_flags != this.indicators)
       this.indicators = entity_flags;
     this.bg_render.render(dt);
-    this.bg_flags.set_visible(!!this.world.dataset.bg_flags);
+    const { bg_flags } = this.world.dataset;
+    this.bg_flags.set_visible(!!(bg_flags & BG_INDICATINGS.terrain));
     this.bg_flags.render();
+    this.bg_render.set_indicator_visible(!!(bg_flags & BG_INDICATINGS.layer));
     this.render_entities(dt);
     for (const ui_stack of this.lfw.ui_stacks)
       ui_stack.ui?.renderer.render(dt)

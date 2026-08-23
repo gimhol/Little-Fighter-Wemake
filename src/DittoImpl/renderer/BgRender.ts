@@ -46,14 +46,13 @@ export class BgRender {
 
     for (const layer of this.bg.layers) {
       const layer_render = new BgLayerRender(this, layer)
+      this.layers.push(layer_render);
 
       if (layer.info.absolute) {
         this.cam_node.add(layer_render.mesh);
       } else {
         this.root_node.add(layer_render.mesh);
       }
-      if (!layer.is_static())
-        this.layers.push(layer_render);
     }
     this.world_renderer.bg_container.add(this.root_node, this.cam_node);
   }
@@ -70,6 +69,10 @@ export class BgRender {
       cam_node.position.x = cam_x;
     }
     for (const layer of layers) layer.render(dt);
+  }
+
+  set_indicator_visible(v: boolean): void {
+    for (const l of this.layers) l.set_indicator_visible(v);
   }
 
   release(): void {

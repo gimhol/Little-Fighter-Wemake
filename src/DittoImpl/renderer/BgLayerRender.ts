@@ -2,6 +2,7 @@ import type { Layer } from "@/LFW/bg/Layer";
 import * as T from "../_t";
 import { MeshBasicMaterial } from "../_t";
 import type { BgRender } from "./BgRender";
+import { BgLayerIndicator } from "./BgLayerIndicator";
 import { get_static_plane_geometry } from "./GeometryKeeper";
 import { MaterialKind as Kind, MaterialFactory } from "./factory";
 
@@ -10,6 +11,9 @@ export class BgLayerRender {
   readonly mesh: T.Mesh;
   readonly layer: Layer;
   readonly bg_render: BgRender;
+  readonly indicators: BgLayerIndicator;
+  readonly width: number;
+  readonly height: number;
   protected offsetX: number = 0;
   protected offsetY: number = 0;
   constructor(bg_render: BgRender, layer: Layer) {
@@ -21,6 +25,8 @@ export class BgLayerRender {
     const pic = file ? lf2.images.find(file)?.pic : null
     const w = pic?.w ?? info.w ?? info.width;
     const h = pic?.h ?? info.h ?? info.height;
+    this.width = w;
+    this.height = h;
 
     const k = `bg_l_${file ?? color}`
     const m = MaterialFactory.get(Kind.Basic, MeshBasicMaterial, k, (m) => {
@@ -40,6 +46,11 @@ export class BgLayerRender {
     this.mesh.position.set(x, y, z);
     this.offsetX = 0;
     this.offsetY = 0;
+    this.indicators = new BgLayerIndicator(this);
+  }
+
+  set_indicator_visible(v: boolean): void {
+    this.indicators.set_visible(v);
   }
 
   render(dt: number): void {
@@ -48,6 +59,7 @@ export class BgLayerRender {
       info: { absolute, offsetAnimX, offsetAnimY }
     } = this.layer;
     this.mesh.visible = visible;
+    this.indicators.update();
     if (offsetAnimX !== void 0) this.offsetX += (dt / 1000) * offsetAnimX;
     if (offsetAnimY !== void 0) this.offsetY += (dt / 1000) * offsetAnimY;
     if (absolute) return;
