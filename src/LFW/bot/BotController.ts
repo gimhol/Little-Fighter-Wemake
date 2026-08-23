@@ -338,6 +338,9 @@ export class BotController extends BaseController {
    * @memberof BotController
    */
   should_chase(e: Entity): boolean {
+    if (this.entity.catching) 
+      return this.entity.catching == e;
+    
     // 正在注视的对象已失效(死亡/消失/回到可追击范围)时置空
     if (this.watching === e) {
       if (!e.mounted || e.hp <= 0 || !this.is_leave_chase_range(e))

@@ -1,4 +1,4 @@
-import { AGK, Defines, GK, StateEnum, WeaponEnum, WT } from "../../defines";
+import { AGK, Defines, E_E, GK, StateEnum, WeaponEnum, WT } from "../../defines";
 import { BotStateEnum, BSE } from "../../defines/BotStateEnum";
 import { is_fighter, is_weapon } from "../../entity";
 import { abs, between, round } from '../../utils/math/base';
@@ -78,7 +78,7 @@ export class BotState_Chasing extends BotState_Base {
     const z_ok = between(rz, c.dataset.w_atk_min_z, c.dataset.w_atk_max_z)
 
     // 随机跳
-    if (!x_ok || !z_ok) this.random_jumping();
+    if ((!x_ok || !z_ok) && en.data.type == E_E.Fighter) this.random_jumping();
 
     /** 持有武器的类型 */
     const wt = me.holding?.base_type;
