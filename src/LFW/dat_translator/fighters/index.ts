@@ -13,7 +13,7 @@ export * from "./make_fighter_data_jan";
 export * from "./make_fighter_data_john";
 export * from "./make_fighter_data_julian";
 export * from "./make_fighter_data_justin";
-export * from "./make_fighter_data_knigt";
+export * from "./make_fighter_data_knight";
 export * from "./make_fighter_data_louis";
 export * from "./make_fighter_data_louisex";
 export * from "./make_fighter_data_mark";

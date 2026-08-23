@@ -15,7 +15,7 @@ import { make_fighter_data_jan } from "./fighters/make_fighter_data_jan";
 import { make_fighter_data_john } from "./fighters/make_fighter_data_john";
 import { make_fighter_data_julian } from "./fighters/make_fighter_data_julian";
 import { make_fighter_data_justin } from "./fighters/make_fighter_data_justin";
-import { make_fighter_data_knigt } from "./fighters/make_fighter_data_knigt";
+import { make_fighter_data_knight } from "./fighters/make_fighter_data_knight";
 import { make_fighter_data_mark } from "./fighters/make_fighter_data_mark";
 import { make_fighter_data_monk } from "./fighters/make_fighter_data_monk";
 import { make_fighter_data_rudolf } from "./fighters/make_fighter_data_rudolf";
@@ -38,7 +38,7 @@ export function make_fighter_special(data: IEntityData): IEntityData {
     case OID.Firzen: return make_fighter_data_firzen(data);
     case OID.LouisEX: return make_fighter_data_louisex(data);
     case OID.Bat: return make_fighter_data_bat(data);
-    case OID.Knight: return make_fighter_data_knigt(data);
+    case OID.Knight: return make_fighter_data_knight(data);
     case OID.Louis: return make_fighter_data_louis(data);
     case OID.Rudolf: return make_fighter_data_rudolf(data);
     case OID.Deep: return make_fighter_data_deep(data);

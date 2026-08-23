@@ -12,7 +12,7 @@ export function make_fighter_data_julian(data: IEntityData) {
     hit_sounds: ["data/002.wav.mp3"],
     type: ArmorEnum.Defend,
     toughness: 60,
-    toughness_resting: 20,
+    toughness_resting: 18,
   };
   for (const k in data.frames) {
     data.frames[k].opoint?.forEach((opoint) => {

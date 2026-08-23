@@ -33,7 +33,7 @@ export class ArmorTest1 extends TestCase {
       f.key_role = true;
     })
     this.fighters[0].name = '3rd atk hit'
-    this.fighters[1].name = '4th atk hit'
+    this.fighters[1].name = '3rd atk hit'
     this.fighters[2].name = '2rd atk hit'
     this.fighters[3].name = '2rd atk hit'
     this.fighters[4].name = '2rd atk hit'
