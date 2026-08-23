@@ -5,6 +5,7 @@ export interface IJudger<T> {
   run(arg: T): boolean;
   readonly text: string;
   readonly err?: string;
+  debug?(): string;
 }
 export interface IValGetter<T> {
   (e: T, word: string, op: TBinOp): any;

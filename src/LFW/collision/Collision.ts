@@ -1,6 +1,7 @@
 import type { LFW } from "../LFW";
 import type { World } from "../World";
 import { ENTITY_PRIORITY_MAP, HitFlag, ItrKind, type IBdyInfo, type IBounding, type IFrameInfo, type IItrInfo, } from "../defines";
+import { Ditto } from "../ditto";
 import type { Entity } from "../entity";
 import { abs, max } from "../utils/math/base";
 import { collisions_keeper } from "./CollisionKeeper";
@@ -310,7 +311,15 @@ export function collision_test(c: Collision): boolean {
     victim.spawn_time === attacker.spawn_time
   ) return false;
 
-  if (bdy.__tester?.run(c) === false) return false;
-  if (itr.__tester?.run(c) === false) return false;
+  if (bdy.__tester) {
+    const ret = bdy.__tester.run(c);
+    if (c.lfw.dev && bdy.__tester.debug) Ditto.Log('bdy.__tester:', bdy.__tester.debug())
+    if (!ret) return false;
+  }
+  if (itr.__tester) {
+    const ret = itr.__tester.run(c);
+    if (c.lfw.dev && itr.__tester.debug) Ditto.Log('itr.__tester:', itr.__tester.debug())
+    if (!ret) return false;
+  }
   return collisions_keeper.load_handlers(c);
 }
