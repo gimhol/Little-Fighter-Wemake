@@ -635,17 +635,17 @@ export class World {
         temp_entities.push(a);
       }
     }
-    this.entities.length = this.entities.length - offset
-
-    let divider = 0;
+    const len = this.entities.length = this.entities.length - offset
     this.entities.sort(x_sorter);
-    temp_entities.length = 0;
-    for (let i = 0; i < this.entities.length; i++) {
+
+    for (let i = 0; i < len; i++) {
       const a = this.entities[i];
       if (a.ghosted) continue;
-      for (let j = divider; j < temp_entities.length; j++) {
-        const b = temp_entities[j];
-        if (b.aabb_max_x < a.aabb_min_x) { divider = j + 1; continue; }
+
+      for (let j = i + 1; j < len; j++) {
+        const b = this.entities[j];
+        if (b.ghosted) continue;
+        if (a.aabb_max_x < b.aabb_min_x) break;
         if (a.aabb_max_z < b.aabb_min_z || b.aabb_max_z < a.aabb_min_z) continue;
         // 细致的碰撞判定
         const c1 = collision_get(a, b);
@@ -655,7 +655,6 @@ export class World {
         if (c1 && p1 <= p2) this.add_collision(c1)
         if (c2 && p2 <= p1) this.add_collision(c2)
       }
-      temp_entities.push(a);
     }
 
     if (local_count) {
