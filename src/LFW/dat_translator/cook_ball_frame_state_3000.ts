@@ -4,8 +4,8 @@ import type { IBdyInfo } from "../defines/IBdyInfo";
 import { ItrKind } from "../defines/ItrKind";
 import type { IFrameInfoContext } from "../loader/IEntityDataContext";
 import { ensure } from "../utils";
-import { cook_ball_bdy_get_hit } from "./cook_ball_bdy_get_hit";
-import { cook_ball_bdy_rebound } from "./cook_ball_bdy_rebound";
+import { cook_ball_bdy_get_hit_to_frame_20 } from "./cook_ball_bdy_get_hit_to_frame_20";
+import { cook_ball_bdy_get_hit_to_frame_30 } from "./cook_ball_bdy_get_hit_to_frame_30";
 import { EditBdy } from "./EditBdy";
 
 
@@ -25,9 +25,9 @@ export function cook_ball_frame_state_3000(ctx: IFrameInfoContext) {
     }
 
     /* ball 被打到消失的bdy */
-    bdy_list[i] = cook_ball_bdy_get_hit({ ...ctx, bdy, index: i });
+    bdy_list[i] = cook_ball_bdy_get_hit_to_frame_20({ ...ctx, bdy, index: i });
     /* ball 被打到反弹的bdy */
-    new_bdy.push(cook_ball_bdy_rebound({ ...ctx, bdy, index: -1 }));
+    new_bdy.push(cook_ball_bdy_get_hit_to_frame_30({ ...ctx, bdy, index: -1 }));
   }
   bdy_list.push(...new_bdy);
 
