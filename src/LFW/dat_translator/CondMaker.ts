@@ -1,14 +1,13 @@
-import type { TBinOp } from "../defines/BinOp";
-type Value = string | number | boolean;
-export interface EditCond<V1 extends Value = Value, V2 extends Value = Value> {
-  (c: CondMaker<V1, V2>): unknown;
+export type CondBinOp = "==" | ">=" | "<=" | "!=" | "<" | ">"
+export type CondValue = string | number | boolean;
+export interface CondEdit<V1 extends CondValue = CondValue, V2 extends CondValue = CondValue, BinOp extends CondBinOp = CondBinOp> {
+  (c: CondMaker<V1, V2, BinOp>): unknown;
 }
-
-export class CondMaker<V1 extends Value = Value, V2 extends Value = Value> {
+export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = CondValue, BinOp extends CondBinOp = CondBinOp> {
   readonly __is_cond_maker__ = true;
   static readonly TAG = 'CondMaker'
   static readonly is = (v: any): v is CondMaker => v?.__is_cond_maker__ === true;
-  private parts: (Value | TBinOp | CondMaker)[] = [];
+  private parts: (CondValue | BinOp | CondMaker)[] = [];
 
   private opok(func: string, ...op: (string | undefined)[]): void {
     const last = this.parts[this.parts.length - 1];
@@ -21,24 +20,24 @@ export class CondMaker<V1 extends Value = Value, V2 extends Value = Value> {
     )
   }
 
-  add(func: EditCond<V1, V2>): this;
-  add(v1: V1, op: TBinOp, v2: V2): this;
-  add(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this
-  add(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this {
+  add(func: CondEdit<V1, V2>): this;
+  add(v1: V1, op: BinOp, v2: V2): this;
+  add(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this
+  add(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this {
     if (typeof p1 === "function") return this.wrap(p1);
     this.opok('add', void 0, '||', '&&');
     this.parts.push(`${p1}${p2}${p3}`);
     return this;
   }
 
-  not(func: EditCond<V1, V2>): this {
+  not(func: CondEdit<V1, V2>): this {
     this.opok('not', void 0, '||', '&&');
     this.parts.push("!");
     this.wrap(func);
     return this;
   }
 
-  wrap(func: EditCond<V1, V2>): this {
+  wrap(func: CondEdit<V1, V2>): this {
     this.opok('wrap', void 0, '||', '&&', '!');
     const c1 = new CondMaker();
     const c2 = func(c1);
@@ -68,16 +67,16 @@ export class CondMaker<V1 extends Value = Value, V2 extends Value = Value> {
     return this.or(c => v2.forEach(v => c.and(v1, "!=", v)));
   }
 
-  or(func: EditCond<V1, V2>): this;
-  or(v1: V1, op: TBinOp, v2: V2): this;
-  or(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this {
+  or(func: CondEdit<V1, V2>): this;
+  or(v1: V1, op: BinOp, v2: V2): this;
+  or(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this {
     this.parts.length && this.parts.push("||");
     return this.add(p1, p2, p3);
   }
 
-  and(func: EditCond<V1, V2>): this;
-  and(v1: V1, op: TBinOp, v2: V2): this;
-  and(p1: V1 | EditCond<V1, V2>, p2?: TBinOp, p3?: V2): this {
+  and(func: CondEdit<V1, V2>): this;
+  and(v1: V1, op: BinOp, v2: V2): this;
+  and(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this {
     this.parts.length && this.parts.push("&&");
     return this.add(p1, p2, p3);
   }
