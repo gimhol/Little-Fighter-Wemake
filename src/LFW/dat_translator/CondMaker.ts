@@ -1,14 +1,23 @@
-export type CondBinOp = "==" | ">=" | "<=" | "!=" | "<" | ">"
+export type CondBinOp = "==" | ">=" | "<=" | "!=" | "<" | ">" | (string & {})
 export type CondValue = string | number | boolean;
-export interface CondEdit<V1 extends CondValue = CondValue, V2 extends CondValue = CondValue, BinOp extends CondBinOp = CondBinOp> {
-  (c: CondMaker<V1, V2, BinOp>): unknown;
+export interface CondTermFormatter {
+  (v1: CondValue, op: string, v2: CondValue): string;
 }
-export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = CondValue, BinOp extends CondBinOp = CondBinOp> {
+export interface CondEdit<V1 extends CondValue = CondValue, V2 extends CondValue = CondValue> {
+  (c: CondMaker<V1, V2>): CondMaker<V1, V2> | void;
+}
+export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = CondValue> {
   readonly __is_cond_maker__ = true;
   static readonly TAG = 'CondMaker'
   static readonly is = (v: any): v is CondMaker => v?.__is_cond_maker__ === true;
-  private parts: (CondValue | BinOp | CondMaker)[] = [];
-
+  private quote_on = false;
+  private quote_char = '"';
+  private quote(v: string): string {
+    if (!this.quote_on) return v;
+    return `${this.quote_char}${v.split(this.quote_char).join('\\' + this.quote_char)}${this.quote_char}`;
+  }
+  private parts: (string | CondMaker<V1, V2>)[] = [];
+  private term: CondTermFormatter = (v1, op, v2) => `${v1}${op}${v2}`;
   private opok(func: string, ...op: (string | undefined)[]): void {
     const last = this.parts[this.parts.length - 1];
     if (op.some(v => v === last))
@@ -19,14 +28,48 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
       `Current: "${this.done()}"`
     )
   }
+  private child(): CondMaker<V1, V2> {
+    const c = new CondMaker<V1, V2>();
+    c.term = this.term;
+    c.quote_on = this.quote_on;
+    c.quote_char = this.quote_char;
+    return c;
+  }
+  quote_strings(on: boolean = true, quote: '"' | "'" = '"'): this {
+    if (quote != '"' && quote != "'")
+      throw new Error(
+        `[CondMaker::quote_strings] unsupported quote character: "${quote}". ` +
+        `Only '"' (double quote) or "'" (single quote) is allowed.`
+      )
+    this.quote_on = !!on;
+    this.quote_char = quote;
+    return this;
+  }
+  term_format(fn: CondTermFormatter): this {
+    this.term = fn;
+    return this;
+  }
 
   add(func: CondEdit<V1, V2>): this;
-  add(v1: V1, op: BinOp, v2: V2): this;
-  add(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this
-  add(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this {
+  add(v1: V1, op: CondBinOp, v2: V2): this;
+  add(p1: V1 | CondEdit<V1, V2>, p2?: CondBinOp, p3?: V2): this
+  add(p1: V1 | CondEdit<V1, V2>, p2?: CondBinOp, p3?: V2): this {
     if (typeof p1 === "function") return this.wrap(p1);
     this.opok('add', void 0, '||', '&&');
-    this.parts.push(`${p1}${p2}${p3}`);
+    if (p1 == void 0 || p2 == void 0 || p3 == void 0)
+      throw new Error(
+        `[CondMaker::add] incomplete comparison: missing operator or value` +
+        `(got: add(${p1}, ${p2}, ${p3})). ` +
+        `Use .add(v1, op, v2) / .and(v1, op, v2) / .or(v1, op, v2). ` +
+        `Current: "${this.done()}"`
+      );
+    if (this.quote_on) {
+      const v1 = typeof p1 == 'string' ? this.quote(p1) : p1;
+      const v2 = typeof p3 == 'string' ? this.quote(p3) : p3;
+      this.parts.push(this.term(v1, p2, v2));
+    } else {
+      this.parts.push(this.term(p1, p2, p3));
+    }
     return this;
   }
 
@@ -39,7 +82,7 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
 
   wrap(func: CondEdit<V1, V2>): this {
     this.opok('wrap', void 0, '||', '&&', '!');
-    const c1 = new CondMaker();
+    const c1 = this.child();
     const c2 = func(c1);
     this.parts.push(c2 instanceof CondMaker ? c2 : c1)
     return this;
@@ -68,15 +111,15 @@ export class CondMaker<V1 extends CondValue = CondValue, V2 extends CondValue = 
   }
 
   or(func: CondEdit<V1, V2>): this;
-  or(v1: V1, op: BinOp, v2: V2): this;
-  or(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this {
+  or(v1: V1, op: CondBinOp, v2: V2): this;
+  or(p1: V1 | CondEdit<V1, V2>, p2?: CondBinOp, p3?: V2): this {
     this.parts.length && this.parts.push("||");
     return this.add(p1, p2, p3);
   }
 
   and(func: CondEdit<V1, V2>): this;
-  and(v1: V1, op: BinOp, v2: V2): this;
-  and(p1: V1 | CondEdit<V1, V2>, p2?: BinOp, p3?: V2): this {
+  and(v1: V1, op: CondBinOp, v2: V2): this;
+  and(p1: V1 | CondEdit<V1, V2>, p2?: CondBinOp, p3?: V2): this {
     this.parts.length && this.parts.push("&&");
     return this.add(p1, p2, p3);
   }
