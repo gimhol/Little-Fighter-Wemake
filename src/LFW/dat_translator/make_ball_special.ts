@@ -152,30 +152,6 @@ export function make_ball_special(data: IEntityData) {
         })
       })
       break;
-    case OID.Bat:
-    case OID.Template:
-    case OID.Julian:
-    case OID.Firzen:
-    case OID.LouisEX:
-    case OID.Justin:
-    case OID.Knight:
-    case OID.Jan:
-    case OID.Monk:
-    case OID.Sorcerer:
-    case OID.Jack:
-    case OID.Mark:
-    case OID.Hunter:
-    case OID.Bandit:
-    case OID.Deep:
-    case OID.John:
-    case OID.Henry:
-    case OID.Rudolf:
-    case OID.Louis:
-    case OID.Firen:
-    case OID.Freeze:
-    case OID.Dennis:
-    case OID.Woody:
-    case OID.Davis:
     case OID.Weapon0:
     case OID.Weapon2:
     case OID.Weapon4:

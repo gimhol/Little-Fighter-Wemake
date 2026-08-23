@@ -58,49 +58,6 @@ export function make_fighter_special(data: IEntityData): IEntityData {
     case OID.John: return make_fighter_data_john(data);
     case OID.Template: break;
     case OID.Bandit: data.base.group = ensure(data.base.group, EntityGroup._3000); break;
-
-    // not charctor, ignore it;
-    case OID.Weapon0:
-    case OID.Weapon2:
-    case OID.Weapon4:
-    case OID.Weapon5:
-    case OID.Weapon6:
-    case OID.Weapon1:
-    case OID.Weapon3:
-    case OID.Weapon8:
-    case OID.Weapon9:
-    case OID.Weapon10:
-    case OID.Weapon11:
-    case OID.Criminal:
-    case OID.JohnBall:
-    case OID.HenryArrow1:
-    case OID.RudolfWeapon:
-    case OID.DeepBall:
-    case OID.HenryWind:
-    case OID.DennisBall:
-    case OID.WoodyBall:
-    case OID.DavisBall:
-    case OID.HenryArrow2:
-    case OID.FreezeBall:
-    case OID.FirenBall:
-    case OID.FirenFlame:
-    case OID.FreezeColumn:
-    case OID.Weapon7:
-    case OID.JohnBiscuit:
-    case OID.DennisChase:
-    case OID.JackBall:
-    case OID.JanChaseh:
-    case OID.JanChase:
-    case OID.FirzenChasef:
-    case OID.FirzenChasei:
-    case OID.FirzenBall:
-    case OID.BatBall:
-    case OID.BatChase:
-    case OID.JustinBall:
-    case OID.JulianBall:
-    case OID.JulianBall2:
-    case OID.Etc:
-    case OID.BrokenWeapon:
       break;
   }
   return data;
