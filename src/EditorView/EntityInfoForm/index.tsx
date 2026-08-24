@@ -14,7 +14,7 @@ const data_new = entity_info_new;
 const ALL_FIELDS = entity_info_fields
 const BASE_FIELD_KEYS: FieldKeysRow<Data>[] = [
   ['type', "group", 'name'],
-  ['ce', 'weight', 'strength'],
+  ['ce', 'weight'],
   ['jump_height', 'jump_distance', 'jump_distancez'],
   ['dash_height', 'dash_distance', 'dash_distancez'],
   ['rowing_height', 'rowing_distance'],
