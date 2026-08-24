@@ -654,7 +654,6 @@ export class World {
     for (let i = 0; i < len; i++) {
       const a = this.entities[i];
       if (a.ghosted) continue;
-
       for (let j = i + 1; j < len; j++) {
         const b = this.entities[j];
         if (b.ghosted) continue;

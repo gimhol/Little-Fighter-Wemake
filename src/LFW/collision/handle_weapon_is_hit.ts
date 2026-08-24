@@ -43,8 +43,7 @@ export function handle_weapon_is_hit(collision: Collision): void {
     attacker.data.id === OID.Weapon_Stick &&
     is_base_ball
   ) {
-    const s = attacker.strength
-    vx = attacker.facing * s * 2 // fast!
+    vx = attacker.facing * 2 // fast!
     victim.lfw.mt.mark = 'hwih_2'
     victim.enter_frame_by_id(victim.data.indexes?.throwings?.[0])
     victim.set_velocity(vx)

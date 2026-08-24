@@ -51,11 +51,6 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
   weight?: number
 
   /**
-   * 角色力气，决定能丢多远
-   */
-  strength?: number
-
-  /**
    * 所属组
    *
    * @see {Defines.EntityGroup}
@@ -231,7 +226,6 @@ export const entity_info_fields = fields<IEntityInfo>({
   dead_sounds: any,
   armor: any,
   weight: flt('重量', '目前为武器重量', { nullable: true }),
-  strength: flt('力气', '目前为角色力气', { nullable: true }),
   bot_id: any,
   bot: any,
   portraits: any,

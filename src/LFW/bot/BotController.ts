@@ -113,14 +113,14 @@ export class BotController extends BaseController {
     if (
       wt === WT.Baseball ||
       wt === WT.Drink
-    ) return 800 * this.entity.strength;
+    ) return 800;
     if (
       wt === WT.Stick ||
       wt === WT.Knife
     ) return 90;
     if (
       wt === WT.Heavy
-    ) return 200 * this.entity.strength;
+    ) return 200;
     return this.dataset.w_atk_x
   }
 
@@ -139,10 +139,10 @@ export class BotController extends BaseController {
     if (
       wt === WT.Baseball ||
       wt === WT.Drink
-    ) return 800 * this.entity.strength;
+    ) return 800;
     if (
       wt === WT.Heavy
-    ) return 200 * this.entity.strength;
+    ) return 200;
 
     if (
       wt === WT.Stick ||
@@ -160,7 +160,7 @@ export class BotController extends BaseController {
     if (
       wt === WT.Baseball ||
       wt === WT.Drink
-    ) return sp + 100 * this.entity.strength;
+    ) return sp + 100;
     if (
       wt === WT.Stick ||
       wt === WT.Knife
@@ -184,11 +184,11 @@ export class BotController extends BaseController {
     if (
       wt === WT.Baseball ||
       wt === WT.Drink
-    ) return 200 * this.entity.strength;
+    ) return 200;
     if (
       wt === WT.Stick ||
       wt === WT.Knife
-    ) return 110 * this.entity.strength;
+    ) return 110;
     return this.dataset.j_atk_x;
   }
   /** 最近站立攻击距离 */
@@ -338,9 +338,9 @@ export class BotController extends BaseController {
    * @memberof BotController
    */
   should_chase(e: Entity): boolean {
-    if (this.entity.catching) 
+    if (this.entity.catching)
       return this.entity.catching == e;
-    
+
     // 正在注视的对象已失效(死亡/消失/回到可追击范围)时置空
     if (this.watching === e) {
       if (!e.mounted || e.hp <= 0 || !this.is_leave_chase_range(e))

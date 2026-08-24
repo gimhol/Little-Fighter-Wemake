@@ -702,9 +702,6 @@ export class Entity {
     if (v == this._arest) return;
     this._arest = round_float(v);
   }
-  get strength(): number {
-    return this.data.base.strength ?? 1;
-  }
   get weight(): number {
     return this.data.base.weight ?? 1;
   }
@@ -2175,7 +2172,6 @@ export class Entity {
       centerx: cx_b, centery: cy_b,
     } = this.frame;
 
-    const strength = this._data.base.strength || 1;
     const weight = this._data.base.weight || 1;
     let { dvx, dvy, dvz } = wp_a;
     const { x, y, z } = bearer.position;
@@ -2217,8 +2213,8 @@ export class Entity {
         round(z + wa_z),
       )
       const vz = bearer.ctrl ? bearer.ctrl.UD * (dvz || 0) : 0;
-      dvx = strength * dvx / weight;
-      dvy = strength * dvy / weight;
+      dvx = dvx / weight;
+      dvy = dvy / weight;
       const vx = (dvx - abs(vz / 2)) * this.facing;
       this.set_velocity(vx, dvy, vz);
       this.enter_frame(nf);
