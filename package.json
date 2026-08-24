@@ -36,6 +36,7 @@
     "___flow___": "___flow___",
     "flow": "npm run build && npm run deploy",
     "flow:rn": "npm run build && npm run deploy:rn",
+    "changelog": "node scripts/merge-changelog.mjs",
     "build:ext": "node scripts/build-extension.mjs",
     "build:ext:zip": "node scripts/build-extension.mjs --zip",
     "pack:ext": "node scripts/package-extension.mjs",
