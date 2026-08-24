@@ -50,11 +50,11 @@
     "json5": "ts-json-schema-generator --path src/LFW/ui/IUIInfo.dat.ts --type IUIInfo > .vscode/schema/ui.schema.json5",
     "json6": "ts-json-schema-generator --path src/LFW/defines/IItrInfo.ts --type IItrInfo > .vscode/schema/itr.schema.json5",
     "__OTHERS___": "__OTHERS___",
-    "save:rn": "node ./script/save-rn.mjs",
-    "load:rn": "node ./script/load-rn.mjs",
-    "exports:lf2": "node ./script/auto-exports.mjs ./src/LFW",
-    "exports:ditto": "node ./script/auto-exports.mjs ./src/DittoImpl",
-    "register:components": "node ./script/auto-components.mjs",
+    "save:rn": "node ./scripts/save-rn.mjs",
+    "load:rn": "node ./scripts/load-rn.mjs",
+    "exports:lf2": "node ./scripts/auto-exports.mjs ./src/LFW",
+    "exports:ditto": "node ./scripts/auto-exports.mjs ./src/DittoImpl",
+    "register:components": "node ./scripts/auto-components.mjs",
     "auto": "npm run exports:lf2 && npm run exports:ditto && npm run register:components"
   },
   "dependencies": {

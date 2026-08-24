@@ -8,6 +8,7 @@ export * from "./IAction_Defend";
 export * from "./IAction_Error";
 export * from "./IAction_Fusion";
 export * from "./IAction_NextFrame";
+export * from "./IAction_None";
 export * from "./IAction_ReboundVX";
 export * from "./IAction_SetProp";
 export * from "./IAction_Sound";

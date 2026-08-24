@@ -1,5 +1,6 @@
 /*** AUTO EXPORT START ***/
 export * from "./DatMgr";
+export * from "./IEntityDataContext";
 export * from "./check_frame";
 export * from "./check_stage_info";
 export * from "./get_import_fallbacks";

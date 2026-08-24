@@ -74,6 +74,7 @@ export async function auto_exports(dir) {
     if (file === `index.ts`) continue;
     if (file === `_.ts`) continue;
     if (file.endsWith(`.test.ts`)) continue;
+    if (file.endsWith(`.d.ts`)) continue; // 跳过类型声明文件（如 globals.d.ts）
     const sub = `${dir}/${file}`
     const s = await fs.stat(sub)
     if (s.isFile() && file.endsWith('.ts')) {
@@ -114,6 +115,16 @@ export async function auto_exports(dir) {
       }
     } else {
       throw `${dir}/index.ts is not file`;
+    }
+  } else {
+    // 无导出内容时，清理纯 auto-export 的空 index.ts
+    const s = await fs.stat(`${dir}/index.ts`).catch(() => null)
+    if (s?.isFile()) {
+      const buf = await fs.readFile(`${dir}/index.ts`);
+      const str = buf.toString().trim()
+      if (sig.some(([a, b]) => str.startsWith(a) && str.endsWith(b))) {
+        await fs.rm(`${dir}/index.ts`)
+      }
     }
   }
   return lines.length;

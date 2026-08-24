@@ -56,7 +56,7 @@ export default defineConfig({
     watch: {
       ignored: [
         './.vscode/**', './temp/**', './art/**', './docs/**', './lf2s/**',
-        './server/**', './script/**', './release/**'
+        './server/**', './scripts/**', './release/**'
       ]
     }
   },
