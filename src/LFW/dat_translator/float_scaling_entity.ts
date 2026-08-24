@@ -56,7 +56,7 @@ export function float_scaling_entity(ret: IEntityData) {
   ([
     'jump_height', 'jump_distance', 'jump_distancez', 'dash_height',
     'dash_distance', 'dash_distancez', 'rowing_height', 'rowing_distance',
-    'strength', 'weight'
+    'weight'
   ] as const).forEach(k => {
     if (is_num(ret.base[k])) ret.base[k] = floor(10000 * ret.base[k]);
   });
