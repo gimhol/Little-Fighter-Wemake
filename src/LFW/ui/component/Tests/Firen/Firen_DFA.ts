@@ -5,7 +5,7 @@ import { TestCase } from "../TestCase";
 
 export class Firen_DFA extends TestCase {
   override name: string = 'Firen D>A+A+A';
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .insert(50, () => {
       this.entities[0]?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Attack).key_down(GK.Down);
       this.entities[1]?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Attack);
@@ -18,9 +18,7 @@ export class Firen_DFA extends TestCase {
     .wait(500)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     this.entities = this.verti_3(O_ID.Firen, 50);

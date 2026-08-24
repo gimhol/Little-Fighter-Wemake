@@ -4,16 +4,14 @@ import { TestCase } from '../TestCase';
 
 export class WeaponPicking1 extends TestCase {
   override name: string = 'Weapon Picking 1 (Weapon Spawn Earlier)';
-  readonly director = new ActionDirector().offset(1000, () => {
+  override readonly director = new ActionDirector().offset(1000, () => {
     this.fighters.forEach(v => v.ctrl.ck(GK.a));
   }).repeat(9999, 1500, () => {
     this.fighters.forEach(v => v.ctrl.kd(GK.L).ku(GK.R));
   }, () => {
     this.fighters.forEach(v => v.ctrl.kd(GK.R).ku(GK.L));
   });
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     this.owner.lfw.change_bg('bg_1');

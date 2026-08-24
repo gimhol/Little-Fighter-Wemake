@@ -7,7 +7,7 @@ import { TestCase } from '../TestCase';
 
 export class CriminalSaving1 extends TestCase {
   override name: string = 'CriminalSaving 1';
-  director = new ActionDirector().offset(300, () => {
+override readonly director = new ActionDirector().offset(300, () => {
     this.fighters[1].ctrl.click(GK.Attack)
     this.fighters[4].ctrl.click(GK.Attack)
   }).offset(300, () => {
@@ -21,7 +21,7 @@ export class CriminalSaving1 extends TestCase {
     this.fighters.forEach(f => f.ctrl.key_up(...AGK))
   })
   override update(dt: number): number | void | undefined {
-    this.director.update(dt)
+    super.update(dt);
     for (const c of this.world.entities) {
       if (is_bot_ctrl(c.ctrl)) c.ctrl = new InvalidController("", c)
     }

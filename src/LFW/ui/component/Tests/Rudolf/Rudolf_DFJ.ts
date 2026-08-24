@@ -4,7 +4,7 @@ import { TestCase } from "../TestCase";
 
 export class Rudolf_DFJ extends TestCase {
   override name: string = 'Rudolf J + ^|v + D + D>J';
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(100, () => {
       this.entities.forEach(v => v.ctrl.click(GK.j))
     })
@@ -19,9 +19,7 @@ export class Rudolf_DFJ extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset()
     this.entities = this.hori_2(O_ID.Rudolf, 100)

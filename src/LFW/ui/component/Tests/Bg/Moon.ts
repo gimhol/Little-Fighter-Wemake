@@ -9,7 +9,7 @@ export class MoonTest extends TestCase {
   louis1?: Entity | null;
   louis2?: Entity | null;
   louis3?: Entity | null;
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(100,
       () => {
         this.louis1?.ctrl.key_down(GK.j).key_down(GK.a);
@@ -31,9 +31,7 @@ export class MoonTest extends TestCase {
     .times(999)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.owner.world.clear();
     this.owner.lfw.change_bg('bg_moon');

@@ -5,7 +5,7 @@ import { ActionDirector } from "../ActionDirector";
 
 export class Firen_DFJ extends TestCase {
   override name: string = 'Firen D>J'
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(500,
       () => this.entities[0]?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Jump),
       () => this.entities[0]?.ctrl.key_up(...AGK).key_down(GK.Up),
@@ -17,9 +17,7 @@ export class Firen_DFJ extends TestCase {
     )
     .sort()
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt)
-  }
+
   override enter(): void {
     this.director.reset();
     do {

@@ -7,7 +7,7 @@ import { TestCase } from "../TestCase";
 export class Bat_DUJ_0 extends TestCase {
   override name: string = 'Bat D^J'
   bat: Entity | null = null
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(500, () => {
       this.bat?.ctrl.click(GK.d, GK.U, GK.j);
     })
@@ -15,9 +15,7 @@ export class Bat_DUJ_0 extends TestCase {
     .times(1000)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -75,7 +73,7 @@ export class Bat_DUJ_2 extends TestCase {
 export class Bat_DUJ_3 extends TestCase {
   override name: string = 'Bat D^J (Many Enemies)'
   bat: Entity | null = null
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(0, () => {
       this.bat?.ctrl.click(GK.d, GK.U, GK.j);
     })
@@ -83,9 +81,7 @@ export class Bat_DUJ_3 extends TestCase {
     .times(1000)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();

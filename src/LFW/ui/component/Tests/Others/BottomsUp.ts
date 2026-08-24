@@ -6,7 +6,7 @@ import { TestCase } from "../TestCase";
 export class BottomsUp extends TestCase {
   override name: string = 'Bottoms Up Drop Test (Alcohol Abuse Results in Harm to Your Health)'
   figters: Entity[] = []
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(1000,
       () => {
         this.figters.forEach(v => v.ctrl.click(GK.Attack))
@@ -17,9 +17,7 @@ export class BottomsUp extends TestCase {
     )
     .sort()
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt)
-  }
+
   override enter(): void {
     this.director.reset();
     this.figters = [

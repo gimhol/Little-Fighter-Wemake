@@ -1,5 +1,5 @@
 <background id="pixel_ruler"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd">
   <base name="Pixel Ruler" shadow="bg/sys/bc/s.png" group="hidden" bound="0,2000,-600,0" height="450" shadowsize="37,9"/>
-  <layer width="2000" x="0" y="250" z="-1" file="!bg/pixel_ruler/ground.png"/>
+  <layer width="2000" x="0" y="350" z="-1" file="!bg/pixel_ruler/ground.png"/>
 </background>

@@ -5,7 +5,7 @@ import { TestCase } from "../TestCase";
 
 export class Ball_3000_vs_Ball_3000 extends TestCase {
   override name: string = 'Ball_3000_vs_Ball_3000'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Attack)
@@ -16,9 +16,7 @@ export class Ball_3000_vs_Ball_3000 extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -35,7 +33,7 @@ export class Ball_3000_vs_Ball_3000 extends TestCase {
 
 export class Ball_3000_vs_Ball_3005 extends TestCase {
   override name: string = 'Ball_3000_vs_Ball_3005'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Attack)
@@ -45,9 +43,7 @@ export class Ball_3000_vs_Ball_3005 extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -64,7 +60,7 @@ export class Ball_3000_vs_Ball_3005 extends TestCase {
 
 export class Ball_3000_vs_Ball_3006 extends TestCase {
   override name: string = 'Ball_3000_vs_Ball_3006'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
@@ -74,9 +70,7 @@ export class Ball_3000_vs_Ball_3006 extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -93,16 +87,14 @@ export class Ball_3000_vs_Ball_3006 extends TestCase {
 
 export class Ball_3005_vs_Ball_3005 extends TestCase {
   override name: string = 'Ball_3005_vs_Ball_3005'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Attack)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -119,16 +111,14 @@ export class Ball_3005_vs_Ball_3005 extends TestCase {
 
 export class Ball_3005_vs_Ball_3006 extends TestCase {
   override name: string = 'Ball_3005_vs_Ball_3006'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -145,16 +135,14 @@ export class Ball_3005_vs_Ball_3006 extends TestCase {
 
 export class Ball_3006_vs_Ball_3006 extends TestCase {
   override name: string = 'Ball_3006_vs_Ball_3006'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Jump)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -171,16 +159,14 @@ export class Ball_3006_vs_Ball_3006 extends TestCase {
 
 export class Ball_3000_vs_JohnShield extends TestCase {
   override name: string = 'Ball_3000_vs_JohnShield'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -197,16 +183,14 @@ export class Ball_3000_vs_JohnShield extends TestCase {
 
 export class Ball_3005_vs_JohnShield extends TestCase {
   override name: string = 'Ball_3005_vs_JohnShield'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -223,16 +207,14 @@ export class Ball_3005_vs_JohnShield extends TestCase {
 
 export class Ball_3006_vs_JohnShield extends TestCase {
   override name: string = 'Ball_3006_vs_JohnShield'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Jump)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -248,7 +230,7 @@ export class Ball_3006_vs_JohnShield extends TestCase {
 }
 export class Ball_3000_vs_ManyPunch extends TestCase {
   override name: string = 'Ball_3000_vs_ManyPunch'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
     })
@@ -257,9 +239,7 @@ export class Ball_3000_vs_ManyPunch extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -275,7 +255,7 @@ export class Ball_3000_vs_ManyPunch extends TestCase {
 }
 export class Ball_3005_vs_ManyPunch extends TestCase {
   override name: string = 'Ball_3005_vs_ManyPunch'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
     })
@@ -284,9 +264,7 @@ export class Ball_3005_vs_ManyPunch extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -302,7 +280,7 @@ export class Ball_3005_vs_ManyPunch extends TestCase {
 }
 export class Ball_3006_vs_ManyPunch extends TestCase {
   override name: string = 'Ball_3006_vs_ManyPunch'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Jump)
     })
@@ -311,9 +289,7 @@ export class Ball_3006_vs_ManyPunch extends TestCase {
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -331,16 +307,14 @@ export class Ball_3006_vs_ManyPunch extends TestCase {
 
 export class Ball_3000_vs_BurnRun extends TestCase {
   override name: string = 'Ball_3000_vs_BurnRun'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -356,16 +330,14 @@ export class Ball_3000_vs_BurnRun extends TestCase {
 }
 export class Ball_3005_vs_BurnRun extends TestCase {
   override name: string = 'Ball_3005_vs_BurnRun'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Attack)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();
@@ -381,16 +353,14 @@ export class Ball_3005_vs_BurnRun extends TestCase {
 }
 export class Ball_3006_vs_BurnRun extends TestCase {
   override name: string = 'Ball_3006_vs_BurnRun'
-  readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(500, () => {
       this.fighters[0].ctrl.click(GK.Defend, GK.Right, GK.Jump)
       this.fighters[1].ctrl.click(GK.Defend, GK.Left, GK.Jump)
     })
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();

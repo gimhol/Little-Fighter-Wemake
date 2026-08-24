@@ -9,7 +9,7 @@ import { Entity } from "../../../../entity";
 export class BotFollow extends TestCase {
   override name: string = 'Bot Response FOLLOW(DJJJ)';
   figters: Entity[] = [];
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(50,
       () => this.figters[0].ctrl.click(GK.Defend),
       () => this.figters[0].ctrl.click(GK.Jump),
@@ -20,9 +20,7 @@ export class BotFollow extends TestCase {
       () => this.figters[0].ctrl.key_down(GK.L).key_up(GK.R)
     ).wait(6000).times(10000);
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     this.figters = this.hori_2(O_ID.Mark, 350);

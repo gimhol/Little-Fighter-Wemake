@@ -5,14 +5,12 @@ import { TestCase } from '../TestCase';
 
 export class ArmorTest1 extends TestCase {
   override name: string = 'Armor Test 1';
-  director = new ActionDirector().offset(300).repeat(999, 3, () => {
+override readonly director = new ActionDirector().offset(300).repeat(999, 3, () => {
     for (const f of this.fighters)
       f.ctrl.click(GK.Attack)
   })
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
 
   override enter(): void {
     this.director.reset();

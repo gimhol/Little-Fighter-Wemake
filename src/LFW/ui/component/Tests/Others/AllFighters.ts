@@ -6,7 +6,7 @@ import { TestCase } from '../TestCase';
 
 export class AllFighters extends TestCase {
   override name: string = 'All Fighters';
-  readonly director = new ActionDirector().offset(2000, () => {
+  override readonly director = new ActionDirector().offset(2000, () => {
     this.fighters.forEach(v => {
       if (!v.team) v.team = '1';
       else if (v.team == TE.Max) v.team = '';
@@ -14,9 +14,7 @@ export class AllFighters extends TestCase {
     })
   }).times(9999);
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter();
     this.director.reset();

@@ -9,7 +9,7 @@ export class Freeze_DFA extends TestCase {
   freeze1?: Entity | null;
   freeze2?: Entity | null;
   freeze3?: Entity | null;
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .insert(50, () => {
       this.freeze1?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Attack).key_down(GK.Down);
       this.freeze2?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Attack);
@@ -22,9 +22,7 @@ export class Freeze_DFA extends TestCase {
     .wait(500)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     const freezes = this.verti_3(O_ID.Freeze, 50);

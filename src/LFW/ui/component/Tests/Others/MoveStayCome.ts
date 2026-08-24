@@ -8,7 +8,7 @@ import { Entity } from "../../../../entity";
 export class MoveStayCome extends TestCase {
   override name: string = 'MOVE(DADA) / STAY(DDDD) / COME(DJDJ) / FOLLOW(DJJJ)';
   figters: Entity[] = [];
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(50, () => {
       this.figters.forEach(v => v.ctrl.click(GK.Defend))
     }).offset(50, () => {
@@ -27,9 +27,7 @@ export class MoveStayCome extends TestCase {
       this.figters[2].ctrl.click(GK.Attack)
       this.figters[3].ctrl.click(GK.Jump)
     });
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt)
-  }
+
   override enter(): void {
     this.director.reset();
     this.figters = this.hori(O_ID.Template, this.midX, this.midZ, 320, 4)

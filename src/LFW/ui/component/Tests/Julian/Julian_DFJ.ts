@@ -6,7 +6,7 @@ import { TestCase } from "../TestCase";
 export class Julian_DFJ extends TestCase {
   override name: string = 'Julian D>J'
   julian?: Entity | null;
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(700,
       () => this.julian?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Jump),
       () => this.julian?.ctrl.key_up(...AGK).click(GK.Defend, GK.Right, GK.Jump).key_down(GK.Down),
@@ -17,9 +17,7 @@ export class Julian_DFJ extends TestCase {
       () => this.julian?.ctrl.key_up(...AGK)
     ).sort()
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt)
-  }
+
   override enter(): void {
     this.director.reset()
     do {

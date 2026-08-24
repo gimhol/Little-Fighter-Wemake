@@ -1,14 +1,16 @@
 import type { IState } from "../../../base";
-import { OID } from "../../../defines/OID";
 import { CMD } from "../../../defines/CMD";
+import { OID } from "../../../defines/OID";
 import { Entity } from "../../../entity";
 import { round_float } from "../../../utils/math/round_float";
+import { ActionDirector } from "./ActionDirector";
 import type { Tests } from "./Tests";
 
 export class TestCase implements IState<number> {
   static key = -1;
   readonly key: number = ++TestCase.key;
   readonly owner: Tests;
+  readonly director = new ActionDirector();
   entities: Entity[] = [];
   fighters: Entity[] = [];
   weapons: Entity[] = [];
@@ -32,9 +34,12 @@ export class TestCase implements IState<number> {
     this.owner = owner;
   }
   update(dt: number): number | void | undefined {
-
+    if (!this.world.paused) this.director.update(dt);
   }
   enter(): void {
+    this.director.reset();
+    this.world.camera.undest()
+    this.world.camera.unlock()
     this.owner.world.clear();
     this.owner.lfw.change_bg('bg_4');
   }

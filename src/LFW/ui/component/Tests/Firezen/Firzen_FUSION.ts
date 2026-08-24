@@ -7,7 +7,7 @@ export class Firzen_FUSION extends TestCase {
   override name: string = 'Firzen = Freeze + Firen'
   firen?: Entity | null;
   freze?: Entity | null;
-  director = new ActionDirector().offset(1000, () => {
+override readonly director = new ActionDirector().offset(1000, () => {
     this.firen?.ctrl.db_hit(GK.R).key_up(GK.R)
     this.freze?.ctrl.db_hit(GK.L).key_up(GK.L)
   }).offset(6000, () => {
@@ -15,9 +15,7 @@ export class Firzen_FUSION extends TestCase {
     this.freze?.ctrl.click(GK.d, GK.j, GK.a)
   }).times(1)
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     const [firen, freze] = this.spawns(O_ID.Firen, O_ID.Freeze);

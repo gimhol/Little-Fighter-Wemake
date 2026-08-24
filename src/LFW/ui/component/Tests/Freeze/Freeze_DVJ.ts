@@ -6,7 +6,7 @@ import { TestCase } from "../TestCase";
 export class Freeze_DVJ extends TestCase {
   override name: string = 'Freeze DvJ';
   freezes: Entity[] = [];
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(500,
       () => {
         this.freezes[0]?.ctrl.key_up(...AGK).click(GK.Defend, GK.Down, GK.Jump)
@@ -17,9 +17,7 @@ export class Freeze_DVJ extends TestCase {
     .times(1000)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     this.freezes = this.hori_3(O_ID.Freeze)

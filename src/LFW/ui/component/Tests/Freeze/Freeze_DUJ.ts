@@ -10,7 +10,7 @@ export class Freeze_DUJ extends TestCase {
   freeze1?: Entity | null;
   freeze2?: Entity | null;
   freeze3?: Entity | null;
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(100,
       () => {
         this.freeze1?.ctrl.key_up(...AGK).click(GK.Defend, GK.Up, GK.Jump);
@@ -25,9 +25,7 @@ export class Freeze_DUJ extends TestCase {
     .wait(500)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     const freezes = this.hori_3(O_ID.Freeze)

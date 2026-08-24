@@ -9,7 +9,7 @@ import { TestCase } from '../TestCase';
 export class BotCome extends TestCase {
   override name: string = 'Bot Response COME(DJDJ)';
   figters: Entity[] = [];
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(50,
       () => this.figters[0].ctrl.click(GK.Defend),
       () => this.figters[0].ctrl.click(GK.Jump),
@@ -22,9 +22,7 @@ export class BotCome extends TestCase {
       () => this.figters[1].ctrl.click(GK.Jump)
     ).wait(1500).times(10000);
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     this.figters = this.hori_2(O_ID.Mark, 350);

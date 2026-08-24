@@ -4,7 +4,7 @@ import { TestCase } from "../TestCase";
 
 export class Firen_DVJ extends TestCase {
   override name: string = 'Firen DvJ';
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(500,
       () => {
         this.entities[0]?.ctrl.key_up(...AGK).click(GK.Defend, GK.Down, GK.Jump)
@@ -19,9 +19,7 @@ export class Firen_DVJ extends TestCase {
     .wait(500)
     .sort();
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     this.director.reset();
     this.entities = this.hori_3(O_ID.Firen)

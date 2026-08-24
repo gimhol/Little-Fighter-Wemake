@@ -7,7 +7,7 @@ import { Entity, StatBarType } from "../../../../entity";
 export class FasterSlowerStandUp extends TestCase {
   override name: string = 'Press A/D faster or slower to stand up';
   figters: Entity[] = [];
-  director = new ActionDirector()
+override readonly director = new ActionDirector()
     .offset(10, () => {
       this.figters.forEach(v => v.ctrl.key_up(...AGK))
     }).offset(500, () => {
@@ -20,9 +20,7 @@ export class FasterSlowerStandUp extends TestCase {
       this.figters[2].ctrl.key_down(GK.Defend)
     }).wait(15000).times(10000);
 
-  override update(dt: number): number | void | undefined {
-    this.director.update(dt);
-  }
+
   override enter(): void {
     super.enter()
     this.director.reset();
