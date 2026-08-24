@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "bg_pixel_ruler",
+      type: "bg",
+      file: "bg/pixel_ruler/pixel_ruler.bg.xml",
+    }
+  ],
+}
