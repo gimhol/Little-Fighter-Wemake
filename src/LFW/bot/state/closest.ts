@@ -13,9 +13,10 @@ export function closest(me: Entity, ...list: (Entity | undefined)[]): Entity | u
       abs(me.position.x - it.position.x) +
       abs(me.position.z - it.position.z)
     );
-    if (ret && d < distance) continue;
-    ret = it;
-    distance = d;
+    if (!ret || d < distance) {
+      ret = it;
+      distance = d;
+    }
   }
   return ret;
 }
