@@ -3,6 +3,18 @@ import path from 'path';
 import http from 'http';
 import https from 'https';
 
+function formatSize(bytes) {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  return `${bytes} B`;
+}
+
+function formatSpeed(bytesPerSec) {
+  if (bytesPerSec >= 1024 * 1024) return `${(bytesPerSec / 1024 / 1024).toFixed(2)} MB/s`;
+  if (bytesPerSec >= 1024) return `${(bytesPerSec / 1024).toFixed(2)} KB/s`;
+  return `${bytesPerSec.toFixed(0)} B/s`;
+}
+
 export async function download(url, dir = __dirname, options = {}) {
   // 默认配置
   const {
@@ -38,24 +50,31 @@ export async function download(url, dir = __dirname, options = {}) {
         // 总大小
         const totalSize = parseInt(res.headers['content-length'], 10) || 0;
         let downloadedSize = 0;
+        const startTime = Date.now();
 
         // 写入流
         const writeStream = fs.createWriteStream(savePath);
         res.pipe(writeStream);
 
-        // 进度条
-        if (showProgress && totalSize > 0) {
-          res.on('data', (chunk) => {
-            downloadedSize += chunk.length;
+        // 统计与进度条（含下载速度）
+        res.on('data', (chunk) => {
+          downloadedSize += chunk.length;
+          if (showProgress && totalSize > 0) {
             const percent = ((downloadedSize / totalSize) * 100).toFixed(2);
-            process.stdout.write(`\r下载进度：${percent}% (${downloadedSize}/${totalSize} bytes)`);
-          });
-        }
+            const elapsed = (Date.now() - startTime) / 1000 || 1;
+            const speed = downloadedSize / elapsed;
+            process.stdout.write(
+              `\r下载进度：${percent}% (${formatSize(downloadedSize)}/${formatSize(totalSize)}) 速度：${formatSpeed(speed)}`
+            );
+          }
+        });
 
         // 完成
         writeStream.on('finish', () => {
           writeStream.close();
-          console.log(`\n✅ 下载完成：${savePath}`);
+          const elapsed = (Date.now() - startTime) / 1000 || 1;
+          const speed = downloadedSize / elapsed;
+          console.log(`\n下载完成：${savePath} (${formatSize(downloadedSize)}) 平均速度：${formatSpeed(speed)}`);
           resolve(savePath);
         });
 
@@ -86,7 +105,7 @@ export async function download(url, dir = __dirname, options = {}) {
       return await execute(attempt);
     } catch (err) {
       if (attempt > retry) throw err;
-      console.log(`\n⚠️  下载失败，${attempt}/${retry} 重试：${err.message}`);
+      console.log(`\n下载失败，${attempt}/${retry} 重试：${err.message}`);
       attempt++;
       await new Promise(r => setTimeout(r, 1000 * attempt));
     }
