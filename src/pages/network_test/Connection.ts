@@ -246,14 +246,16 @@ export class Connection {
         break;
       }
       case MsgEnum.Ping: {
-        this._rtt = Date.now() - resp.time;
+        if (resp.client === this._client?.id)
+          this._rtt = Date.now() - resp.time;
         this.callbacks.call("on_ping", resp, this);
         break;
       }
     }
   }
   ping() {
-    this.send(MsgEnum.Ping, { time: Date.now() })
+    // 携带上次测得的真实 RTT，供房间内其他成员显示
+    this.send(MsgEnum.Ping, { time: Date.now(), rtt: this._rtt || void 0 })
   }
   start_ping_job() {
     this.stop_ping_job();

@@ -31,7 +31,7 @@ export interface IMsgReqMap {
   [MsgEnum.ListClients]: IReqListClients,
   [MsgEnum.RoomPwd]: IReqRoomPwd,
   [MsgEnum.Dataset]: IReqDataset,
-  [MsgEnum.Ping]: IReq<MsgEnum.Ping> & { time: number, client?: string },
+  [MsgEnum.Ping]: IReq<MsgEnum.Ping> & { time: number, client?: string, rtt?: number },
 }
 export interface IMsgRespMap {
   [MsgEnum.ClientInfo]: IRespClientInfo,
@@ -51,5 +51,5 @@ export interface IMsgRespMap {
   [MsgEnum.ListClients]: IRespListClients,
   [MsgEnum.RoomPwd]: IRespRoomPwd,
   [MsgEnum.Dataset]: IRespDataset,
-  [MsgEnum.Ping]: IResp<MsgEnum.Ping> & { time: number, client?: string },
+  [MsgEnum.Ping]: IResp<MsgEnum.Ping> & { time: number, client?: string, rtt?: number },
 }

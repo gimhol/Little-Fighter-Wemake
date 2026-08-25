@@ -1,18 +1,19 @@
-import { type ForwardedRef, forwardRef, type HTMLAttributes, useEffect, useMemo, useRef, useState } from "react";
-import { Connection } from "./Connection";
-import { useRoom } from "./useRoom";
-import Frame from "@/Component/Frame";
-import { Flex } from "@/Component/Flex";
-import { Strong, Text } from "@/Component/Text";
-import { Divider } from "@/Component/Divider";
-import List from "rc-virtual-list";
-import Show from "@/Component/Show";
 import { Button } from "@/Component/Buttons/Button";
-import { MsgEnum } from "@/Net";
-import { useFloating, useForwardedRef } from "@fimagine/dom-hooks";
-import { useTranslation } from "react-i18next";
+import { Divider } from "@/Component/Divider";
+import { Flex } from "@/Component/Flex";
+import Frame from "@/Component/Frame";
 import { Input } from "@/Component/Input";
+import Show from "@/Component/Show";
+import { Strong, Text } from "@/Component/Text";
+import { type IRoomInfo, MsgEnum } from "@/Net";
+import type { IRoomClientInfo } from "@/Net/IRoomClientInfo";
+import { useFloating, useForwardedRef } from "@fimagine/dom-hooks";
+import List from "rc-virtual-list";
+import { type ForwardedRef, forwardRef, type HTMLAttributes, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Connection } from "./Connection";
 import { useCallbacks } from "./useCallbacks";
+import { useRoom } from "./useRoom";
 export interface IRoomBoxProps extends HTMLAttributes<HTMLDivElement> {
   conn?: Connection | null
 }
@@ -30,6 +31,7 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
     )
     return { players, me, owner, all_ready, is_owner: me === owner } as const
   }, [room])
+  
   const [countdown, set_countdown] = useState(5);
   const [ref_floating_view, on_ref] = useForwardedRef(f_ref)
   useFloating({
@@ -37,15 +39,6 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
     target: ref_floating_view.current,
     followPercent: true,
   })
-  const ref_rtts = useRef<{ [x in string]?: HTMLSpanElement | null }>({})
-
-  useCallbacks(conn?.callbacks, {
-    on_ping: (resp, conn) => {
-      if (!resp.client) return
-      const el = ref_rtts.current[resp.client];
-      if (el) el.innerText = `${conn.rtt}ms`
-    }
-  }, [])
 
   useEffect(() => {
     let sec = 5
@@ -62,6 +55,7 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
     }, 1000)
     return () => clearInterval(tid)
   }, [all_ready, conn, is_owner])
+
   const { t } = useTranslation()
   return (
     <Frame {..._p} ref={on_ref}>
@@ -85,35 +79,7 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
         }
       </Flex>
       <List data={players} itemKey={r => r.id!} styles={{ verticalScrollBarThumb: { backgroundColor: 'rgba(255,255,255,0.3)' } }}>
-        {(other, index) => {
-          const client_id = '' + other.id
-          const is_self = other.id === conn?.client?.id
-          return (
-            <Flex direction='column' align='stretch' gap={5}>
-              <Flex gap={10} align='center' justify='space-between' style={{ margin: 5 }}>
-                <Text>
-                  {other.name}
-                </Text>
-                <Text ref={r => { ref_rtts.current[client_id] = r }} />
-                <Text style={{ opacity: 0.5, verticalAlign: 'middle' }}>
-                  {is_self ? `(${t('yourself')})` : ''}
-                  {other.id == room?.owner?.id ? '👑' : ''}
-                </Text>
-                <Flex align='center'>
-                  <Show show={owner?.id === me?.id && !is_self}>
-                    <Button
-                      variants={['no_border', 'no_round', 'no_shadow']}
-                      onClick={() => conn?.send(MsgEnum.Kick, { client_id: other.id })}>
-                      {t('kick')}
-                    </Button>
-                  </Show>
-                  <Text> {other.ready ? t('ready_completed') : t('not_ready')} </Text>
-                </Flex>
-              </Flex>
-              <Divider />
-            </Flex>
-          )
-        }}
+        {m => <RoomMemberRow member={m} conn={conn} room={room} />}
       </List>
       {
         all_ready ?
@@ -137,6 +103,61 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
   )
 }
 
+interface IRoomMemberRowProps {
+  member: Required<IRoomClientInfo>;
+  conn?: Connection | null;
+  room?: IRoomInfo | null;
+}
+function RoomMemberRow(props: IRoomMemberRowProps) {
+  const { t } = useTranslation();
+  const ref_rtt = useRef<HTMLSpanElement | null>(null)
+  const { member, conn, room } = props
+  const is_self = member.id === conn?.client?.id;
 
+  useCallbacks(conn?.callbacks, {
+    on_ping: (resp, conn) => {
+      if (resp.client !== member.id) return
+      const el = ref_rtt.current;
+      if (!el) return;
+      if (resp.client === conn.client?.id)
+        el.innerText = `${conn.rtt}ms`
+      else if (typeof resp.rtt === 'number')
+        el.innerText = `${resp.rtt}ms`
+    }
+  }, [member.id])
+
+  const { me, owner } = useMemo(() => {
+    const players = room?.clients ?? []
+    const me = players.find(v => v.id == conn?.client?.id) || null;
+    const owner = players.find(v => v.id == room?.owner?.id) || null;
+    return { me, owner } as const
+  }, [room])
+
+  return (
+    <Flex direction='column' align='stretch' gap={5}>
+      <Flex gap={10} align='center' justify='space-between' style={{ margin: 5 }}>
+        <Text>
+          {member.name}
+        </Text>
+        <Text ref={ref_rtt} />
+        <Text style={{ opacity: 0.5, verticalAlign: 'middle' }}>
+          {is_self ? `(${t('yourself')})` : ''}
+          {member.id == room?.owner?.id ? '👑' : ''}
+        </Text>
+        <Flex align='center'>
+          <Show show={owner?.id === me?.id && !is_self}>
+            <Button
+              variants={['no_border', 'no_round', 'no_shadow']}
+              onClick={() => conn?.send(MsgEnum.Kick, { client_id: member.id })}>
+              {t('kick')}
+            </Button>
+          </Show>
+          <Text> {member.ready ? t('ready_completed') : t('not_ready')} </Text>
+        </Flex>
+      </Flex>
+      <Divider />
+    </Flex>
+  )
+}
 export const RoomBox = forwardRef<HTMLDivElement, IRoomBoxProps>(_RoomBox)
 

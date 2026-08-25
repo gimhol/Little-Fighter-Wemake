@@ -254,9 +254,9 @@ export class Client {
         break;
       case MsgEnum.Ping:
         if (ensure_player_info(this, req))
-          this.resp(req.type, req.pid, { time: req.time, client: this.id })
+          this.resp(req.type, req.pid, { time: req.time, client: this.id, rtt: req.rtt })
         if (this.room)
-          this.room.broadcast(req.type, { time: req.time, client: this.id }, this)
+          this.room.broadcast(req.type, { time: req.time, client: this.id, rtt: req.rtt }, this)
         break;
     }
   }
