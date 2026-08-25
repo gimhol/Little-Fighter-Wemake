@@ -41,15 +41,6 @@ Think this project is pretty good? Consider starring it!
 The project is automatically built and deployed to GitHub Pages via [GitHub Actions](./.github/workflows/deploy-pages.yml). You can also play it directly at [https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/).
 
 - **Trigger**: Pushing a new tag (e.g. `v0.1.46`) triggers the build automatically. You can also trigger it manually from the Actions tab (`workflow_dispatch`).
-- **Build flow**: Checks out the latest tagged commit on main → installs dependencies → builds game data (`data.zip` / `prel.zip`) → builds the frontend → deploys to Pages.
-- **Release steps**:
-
-  ```bash
-  git tag v0.1.47
-  git push origin v0.1.47
-  ```
-
-  After pushing, wait for the Actions build to finish, then play the latest version at the URL above.
 
 ## Git LFS Usage
 

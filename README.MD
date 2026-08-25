@@ -44,15 +44,6 @@
 项目通过 [GitHub Actions](./.github/workflows/deploy-pages.yml) 自动构建并部署到 GitHub Pages，[https://gimhol.github.io/Little-Fighter-Wemake/](https://gimhol.github.io/Little-Fighter-Wemake/) 也能直接游玩。
 
 - **触发方式**：推送新 tag（如 `v0.1.46`）时自动触发，也可以在 Actions 页面手动触发（`workflow_dispatch`）。
-- **构建流程**：检出 main 上最近一个带 tag 的提交 → 安装依赖 → 构建游戏数据（`data.zip` / `prel.zip`）→ 构建前端 → 部署到 Pages。
-- **发布步骤**：
-
-  ```bash
-  git tag v0.1.47
-  git push origin v0.1.47
-  ```
-
-  推送后等待 Actions 构建完成，即可通过上面的地址游玩最新版本。
 
 ## Git LFS 使用说明
 
