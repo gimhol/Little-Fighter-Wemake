@@ -15,7 +15,8 @@ export interface IMersenneTwisterInfo {
   mark: string;
 }
 export class MersenneTwister {
-  private _debugging: boolean = false;
+  mark: string = '';
+  debugging: boolean = false;
   private _matrix: number = 0x9908B0DF;
   private _upper_mask: number = 0x80000000;
   private _lower_mask: number = 0x7FFFFFFF;
@@ -23,7 +24,6 @@ export class MersenneTwister {
   private _index: number = _n + 1;
   private _seed: number = 0;
   private _times: number = 0;
-  mark: string = '';
 
   get matrix(): number { return this._matrix; }
   get upper_mask(): number { return this._upper_mask; }
@@ -45,7 +45,7 @@ export class MersenneTwister {
       mark: this.mark,
     }
   }
-  
+
   load(info: IMersenneTwisterInfo): this {
     this._matrix = info.matrix
     this._upper_mask = info.upper_mask
@@ -63,7 +63,7 @@ export class MersenneTwister {
   }
 
   reset(seed: number, debuging: boolean = false): this {
-    this._debugging = debuging;
+    this.debugging = debuging;
     this.mark = ''
     this._seed = seed;
     this._times = 0;
@@ -95,7 +95,7 @@ export class MersenneTwister {
   }
 
   // 提取伪随机数
-  public int(debugging = this._debugging): number {
+  public int(): number {
     if (this._index >= _n) this.twist();
     let y = this._mt[this._index++]!;
     // 额外的位操作以改善分布
@@ -104,40 +104,43 @@ export class MersenneTwister {
     y ^= (y << 15) & 0xEFC60000;
     y ^= (y >>> 18);
     const ret = y >>> 0; // 确保返回32位无符号整数
-    if (debugging) mt_cases.push(this.mark, 'int', ret)
+    if (this.debugging) mt_cases.push(this.mark, 'int', ret)
     ++this._times;
     return ret
   }
-
+  public case(...any: any[]) {
+    if (!this.debugging) return;
+    mt_cases.push(this.mark, ...any)
+  }
   /** 生成[0,1)范围内的浮点数 */
-  public float(debugging = mt_cases.debugging): number {
-    const ret = floor_float(this.int(false) / (0xFFFFFFFF + 1));
-    if (debugging) mt_cases.push(this.mark, 'float', ret)
+  public float(): number {
+    const ret = floor_float(this.int() / (0xFFFFFFFF + 1));
+    if (this.debugging) mt_cases.push(this.mark, 'float', ret)
     return ret;
   }
 
   /** 生成[min, max)范围内的整数 */
-  public range(min: number, max: number, debugging = this._debugging): number {
-    const ret = floor(this.float(false) * (max - min)) + min
-    if (debugging) mt_cases.push(this.mark, 'range', min, max, ret)
+  public range(min: number, max: number, debugging = this.debugging): number {
+    const ret = floor(this.float() * (max - min)) + min
+    if (this.debugging) mt_cases.push(this.mark, 'range', min, max, ret)
     return ret;
   }
 
   /**  */
-  public pick<T>(a: T | T[] | undefined, debugging = this._debugging): T | undefined {
+  public pick<T>(a: T | T[] | undefined, debugging = this.debugging): T | undefined {
     if (!a) return void 0;
     if (!Array.isArray(a)) return a
     const index = this.range(0, a.length, false)
-    if (debugging) mt_cases.push(this.mark, 'pick', a.length, index)
+    if (this.debugging) mt_cases.push(this.mark, 'pick', a.length, index)
     return a[index]
   }
 
   /**  */
-  public take<T>(a: T | T[] | undefined, debugging = this._debugging): T | undefined {
+  public take<T>(a: T | T[] | undefined, debugging = this.debugging): T | undefined {
     if (!a) return void 0;
     if (!Array.isArray(a)) return a
     const index = this.range(0, a.length, false)
-    if (debugging) mt_cases.push(this.mark, 'take', a.length, index)
+    if (this.debugging) mt_cases.push(this.mark, 'take', a.length, index)
     return a.splice(index, 1)[0];
   }
 }

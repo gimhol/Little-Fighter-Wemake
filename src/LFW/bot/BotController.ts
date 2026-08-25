@@ -233,18 +233,18 @@ export class BotController extends BaseController {
     return atk_m_x > 0 && atk_m_x > abs_dx
   }
 
-  should_run(target: IVector2Like): -1 | 1 | 0 {
-    this.desire(`should_run`)
+  should_run(where: string, target: IVector2Like): -1 | 1 | 0 {
+    this.desire(where)
     if (!target) return 0;
     let dx = round(abs(this.entity.position.x - target.x) - this.dataset.r_x_min)
     let should_run = false
     const r_x_r = this.dataset.r_x_max - this.dataset.r_x_min
     if (r_x_r === 0) {
-      should_run = this.desire(`rr2 ${dx}`) < this.dataset.r_x_min;
+      should_run = this.desire(`${where}1`) < this.dataset.r_x_min;
     } else {
       dx = round(clamp(dx, 0, r_x_r) / r_x_r)
       const min = this.dataset.r_desire_min + (this.dataset.r_desire_max - this.dataset.r_desire_min) * dx
-      should_run = this.desire(`rr1`) < min;
+      should_run = this.desire(`${where}#${dx}`) < min;
     }
     if (dx < 0) should_run = false;
     if (!should_run) return 0;
@@ -743,7 +743,7 @@ export class BotController extends BaseController {
   handle_action(action: IBotAction | undefined): LGK[] | false {
     if (!action) return false
     const { desire: _desire, desire_step = 0, desire_base = 0 } = action;
-    const action_desire = this.action_desire(action.keys.join());
+    const action_desire = this.action_desire(`act#${action.keys.join()}`);
     const desire = _desire != void 0 ? _desire :
       (desire_base + desire_step * (this.difficulty - 1))
     if (!desire || action_desire > desire) return false;
@@ -796,5 +796,16 @@ export class BotController extends BaseController {
   come(x: number, y: number, z: number): void {
     this.goingto = Ditto.vec3(x, y, z)
     this.following = null
+  }
+
+  _false(mark: string, arg1: number): false {
+    this.lfw.mt.mark = mark
+    this.lfw.mt.case(`ret=false`, arg1)
+    return false;
+  }
+  _true(mark: string, arg1: number): true {
+    this.lfw.mt.mark = mark
+    this.lfw.mt.case(`ret=true`, arg1)
+    return true;
   }
 }

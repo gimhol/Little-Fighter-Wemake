@@ -1,5 +1,5 @@
 
-import { GK, is_ball_ctrl, is_bot_ctrl, LFW, LFWKeyEvent, PlayerInfo, world_dataset_fields, type IWorldDataset } from "@/LFW";
+import { GK, is_bot_ctrl, LFW, LFWKeyEvent, PlayerInfo, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { bot_cases, mt_cases, sus_cases } from "@/LFW/cases_instances";
 import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
@@ -94,6 +94,7 @@ class Lf2NetworkDriver {
       }
     }
     const debugging = !0
+    lf2.mt.debugging = debugging;
     bot_cases.debug(debugging);
     mt_cases.debug(debugging)
     sus_cases.debug(debugging)
@@ -173,8 +174,8 @@ class Lf2NetworkDriver {
       cmds: lf2.cmds,
       events: req_events
     }
-    if (this._p.debugging) req._r = mt_cases.submit()
-    if (this._r.debugging) req._p = Array.from(lf2.world.entities).map((e, i) => {
+    if (this._r.debugging) req._r = mt_cases.submit()
+    if (this._p.debugging) req._p = Array.from(lf2.world.entities).map((e, i) => {
       const { x, y, z } = e.position;
       const b = is_bot_ctrl(e.ctrl) ? (e.ctrl.fsm.state?.key ?? '') : 'b';
       return '[' + [i, e.frame.id, b, x, y, z].join(', ') + ']'

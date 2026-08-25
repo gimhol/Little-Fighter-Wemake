@@ -1,5 +1,4 @@
 import { AGK, BSE, GK, StateEnum } from "../../defines";
-import { BotBehavior } from "../BotController";
 import { BotState_Base } from "./BotState";
 
 
@@ -29,7 +28,7 @@ export class BotState_Following extends BotState_Base {
     const { x: en_x, z: en_z } = pos;
 
 
-    const should_run = me.frame.state == StateEnum.Walking && this.ctrl.should_run(pos)
+    const should_run = me.frame.state == StateEnum.Walking && this.ctrl.should_run('sr_f', pos)
     if (should_run) c.db_hit(should_run > 0 ? GK.R : GK.L)
     else if (my_x < en_x - 10) c.key_down(GK.R).key_up(GK.L);
     else if (my_x > en_x + 10) c.key_down(GK.L).key_up(GK.R);

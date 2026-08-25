@@ -1,10 +1,10 @@
 
-import { is_ball, is_weapon } from "../../entity";
 import type { IState } from "../../base/FSM";
 import { bot_cases } from "../../cases_instances";
 import { GK, SE, StateEnum, type LGK } from "../../defines";
 import { BotStateEnum } from "../../defines/BotStateEnum";
 import type { Difficulty } from "../../defines/Difficulty";
+import { is_ball, is_weapon } from "../../entity";
 import type { Entity } from "../../entity/Entity";
 import type { Stage } from "../../stage/Stage";
 import type { World } from "../../World";
@@ -37,7 +37,6 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
       c.click(GK.j)
     return ret
   }
-
   random_jumping(where: string): boolean {
     const c = this.ctrl;
     const { state } = c.entity.frame;
@@ -61,25 +60,26 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
   enter?(): void;
   leave?(): void;
 
+
   /**
    * 防御
    * 
    * @returns 当防御时返回true，否则返回false 
    */
-  handle_defends(where: string): boolean {
+  handle_defends(mark: string): boolean {
     const { ctrl: c } = this;
     const me = c.entity;
 
-    if (!me.frame.bdy?.length) return false;
-    if (me.blinking) return false;
-    if (me.invisible) return false;
-    if (me.invulnerable) return false;
+    if (!me.frame.bdy?.length) return c._false(mark, 1);
+    if (me.blinking) return c._false(mark, 2);
+    if (me.invisible) return c._false(mark, 3);
+    if (me.invulnerable) return c._false(mark, 4);
 
     const target = c.defends.get();
-    if (!target) return false;
+    if (!target) return c._false(mark, 5);
 
     // TODO: 不可防御的攻击
-    if (!target.defendable) return false
+    if (!target.defendable) return c._false(mark, 6);
 
     do {
       // TODO: 是否需要更细致的判定itr kind?
@@ -100,7 +100,7 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
           )
         )
       ) {
-        return false
+        return c._false(mark, 7);
       }
       // TODO: 武器?
     } while (0)
@@ -109,18 +109,18 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     const dx = target.x - me.position.x;
     const en_facing = target.facing;
 
-    if (c.desire(where) >= c.defend_desire) {
+    if (c.desire(mark) >= c.defend_desire) {
       // TODO: 是否会存在倒着飞的玩意?
-      if (dx >= 0 && en_facing < 0 && me.facing < 0)
+      if (dx > 0 && en_facing < 0 && me.facing < 0)
         c.click(GK.R);
-
-      if (dx <= 0 && en_facing > 0 && me.facing > 0)
+      if (dx < 0 && en_facing > 0 && me.facing > 0)
         c.click(GK.L)
 
       c.click(GK.d)
-      return true
+      return c._true(mark, 8);
     }
-    return me.state == StateEnum.Defend;
+    const ret = me.state == StateEnum.Defend
+    return ret ? c._true(mark, 9) : c._true(mark, 9);
   }
 
   handle_block(): boolean {

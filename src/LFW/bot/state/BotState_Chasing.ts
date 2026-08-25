@@ -101,7 +101,7 @@ export class BotState_Chasing extends BotState_Base {
       case StateEnum.Standing:
       case StateEnum.Walking: {
         if (!c.en_out_of_range) {
-          const r_desire = c.should_run(en.position);
+          const r_desire = c.should_run('sr_c', en.position);
           if (!r_desire) break;
           if (r_desire > 0) c.db_hit(GK.R).end(GK.R).key_up(GK.L);
           else if (r_desire < 0) c.db_hit(GK.L).end(GK.L).key_up(GK.R);
