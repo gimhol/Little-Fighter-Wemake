@@ -15,9 +15,9 @@ export class BotState_Following extends BotState_Base {
       return BSE.Idle;
     if (s.is_stage_finish)
       return BSE.StageEnd;
-    if (this.handle_defends()) return;
+    if (this.handle_defends('hd_f')) return;
     if (this.handle_block()) return;
-    this.random_jumping();
+    this.random_jumping('rj_f');
 
     const { ctrl: c } = this;
     const me = c.entity;

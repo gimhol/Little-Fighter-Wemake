@@ -29,19 +29,19 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
   closest(...list: (Entity | undefined)[]): Entity | undefined {
     return closest(this.me, ...list);
   }
-  wanted_jumping(): boolean {
+  wanted_jumping(where: string): boolean {
     const c = this.ctrl;
-    const desire = c.desire('wj_1')
+    const desire = c.desire(where)
     const ret = desire < c.dataset.jump_desire * 2
     if (ret)
       c.click(GK.j)
     return ret
   }
 
-  random_jumping(): boolean {
+  random_jumping(where: string): boolean {
     const c = this.ctrl;
     const { state } = c.entity.frame;
-    const desire = c.desire('rj_1')
+    const desire = c.desire(where)
     switch (state) {
       case StateEnum.Running: {
         const ret = desire < c.dataset.dash_desire;
@@ -66,7 +66,7 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
    * 
    * @returns 当防御时返回true，否则返回false 
    */
-  handle_defends(): boolean {
+  handle_defends(where: string): boolean {
     const { ctrl: c } = this;
     const me = c.entity;
 
@@ -109,7 +109,7 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     const dx = target.x - me.position.x;
     const en_facing = target.facing;
 
-    if (c.desire('handle_defends') >= c.defend_desire) {
+    if (c.desire(where) >= c.defend_desire) {
       // TODO: 是否会存在倒着飞的玩意?
       if (dx >= 0 && en_facing < 0 && me.facing < 0)
         c.click(GK.R);

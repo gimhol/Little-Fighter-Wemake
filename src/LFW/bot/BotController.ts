@@ -236,15 +236,15 @@ export class BotController extends BaseController {
   should_run(target: IVector2Like): -1 | 1 | 0 {
     this.desire(`should_run`)
     if (!target) return 0;
-    let dx = abs(this.entity.position.x - target.x) - this.dataset.r_x_min
+    let dx = round(abs(this.entity.position.x - target.x) - this.dataset.r_x_min)
     let should_run = false
     const r_x_r = this.dataset.r_x_max - this.dataset.r_x_min
     if (r_x_r === 0) {
+      should_run = this.desire(`rr2 ${dx}`) < this.dataset.r_x_min;
+    } else {
       dx = round(clamp(dx, 0, r_x_r) / r_x_r)
       const min = this.dataset.r_desire_min + (this.dataset.r_desire_max - this.dataset.r_desire_min) * dx
       should_run = this.desire(`rr1`) < min;
-    } else {
-      should_run = this.desire(`rr2 ${dx}`) < this.dataset.r_x_min;
     }
     if (dx < 0) should_run = false;
     if (!should_run) return 0;

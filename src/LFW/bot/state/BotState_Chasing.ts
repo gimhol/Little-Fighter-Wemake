@@ -25,7 +25,7 @@ export class BotState_Chasing extends BotState_Base {
       return BSE.Following;
 
     if (this.handle_bot_actions()) return;
-    if (this.handle_defends()) return;
+    if (this.handle_defends('hd_c')) return;
     this.handle_block()
 
     if (!en) return BSE.Idle;
@@ -78,7 +78,7 @@ export class BotState_Chasing extends BotState_Base {
     const z_ok = between(rz, c.dataset.w_atk_min_z, c.dataset.w_atk_max_z)
 
     // 随机跳
-    if ((!x_ok || !z_ok) && en.data.type == E_E.Fighter) this.random_jumping();
+    if ((!x_ok || !z_ok) && en.data.type == E_E.Fighter) this.random_jumping('rj_c');
 
     /** 持有武器的类型 */
     const wt = me.holding?.base_type;

@@ -40,7 +40,7 @@ export class BotState_Idle extends BotState_Base {
     if (c.is_leave_goto_range(me))
       return BSE.Following;
     if (this.handle_bot_actions()) return;
-    if (this.handle_defends()) return;
+    if (this.handle_defends('hd_i')) return;
 
     const { x: my_x, z: my_z } = me.position;
     // 空闲时远离边界

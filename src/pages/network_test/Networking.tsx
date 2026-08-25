@@ -1,5 +1,5 @@
 
-import { GK, LFW, LFWKeyEvent, PlayerInfo, world_dataset_fields, type IWorldDataset } from "@/LFW";
+import { GK, is_ball_ctrl, is_bot_ctrl, LFW, LFWKeyEvent, PlayerInfo, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { bot_cases, mt_cases, sus_cases } from "@/LFW/cases_instances";
 import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
@@ -81,6 +81,7 @@ class Lf2NetworkDriver {
     const { conn, lf2 } = this;
     const me = conn?.client;
     if (!conn || !lf2 || !me) return;
+    lf2.world.sleep();
     const clients = conn.room?.clients
     if (clients?.length) {
       for (const client of clients) {
@@ -92,7 +93,7 @@ class Lf2NetworkDriver {
         }
       }
     }
-    const debugging = !1
+    const debugging = !0
     bot_cases.debug(debugging);
     mt_cases.debug(debugging)
     sus_cases.debug(debugging)
@@ -173,7 +174,11 @@ class Lf2NetworkDriver {
       events: req_events
     }
     if (this._p.debugging) req._r = mt_cases.submit()
-    if (this._r.debugging) req._p = Array.from(lf2.world.entities).map(e => `(${e.position.x}, ${e.position.y}, ${e.position.z})`).join(', ')
+    if (this._r.debugging) req._p = Array.from(lf2.world.entities).map((e, i) => {
+      const { x, y, z } = e.position;
+      const b = is_bot_ctrl(e.ctrl) ? (e.ctrl.fsm.state?.key ?? '') : 'b';
+      return '[' + [i, e.frame.id, b, x, y, z].join(', ') + ']'
+    }).join(', ')
     if (this._a.debugging) req._a = bot_cases.submit();
     if (this._s.debugging) req._s = sus_cases.submit();
     if (!this._f) conn.send(MsgEnum.Tick, req);

@@ -21,7 +21,7 @@ export class BotState_Avoiding extends BotState_Base {
       return BSE.Following;
     const { en, av } = this
     if (this.handle_bot_actions()) return;
-    if (this.handle_defends()) return;
+    if (this.handle_defends('hd_a')) return;
 
     if (!av) return BSE.Idle;
 
@@ -71,7 +71,7 @@ export class BotState_Avoiding extends BotState_Base {
     const in_danger_x = (av_x > av_danger_r && me_x > av_edge_r && av_x < me_x) !== (av_x < av_danger_l && me_x < av_edge_l && av_x > me_x)
     const in_danger_z = (av_z > av_danger_b && me_z > av_edge_b && av_z < me_z) !== (av_z < av_danger_t && me_x < av_edge_t && av_z > me_z)
     const me_in_danger = in_danger_x && in_danger_z;
-    let is_jumping = me_in_danger ? this.wanted_jumping() : this.random_jumping()
+    let is_jumping = me_in_danger ? this.wanted_jumping('wj_a') : this.random_jumping('rj_a')
     let jump_desire = 0;
     if (me.frame.state === StateEnum.Running && in_danger_x && !is_jumping) {
       // 停跑很容易被攻击，这里跳
