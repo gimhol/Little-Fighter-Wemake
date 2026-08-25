@@ -1,6 +1,6 @@
 
 import { GK, is_bot_ctrl, LFW, LFWKeyEvent, PlayerInfo, world_dataset_fields, type IWorldDataset } from "@/LFW";
-import { bot_cases, mt_cases, sus_cases } from "@/LFW/cases_instances";
+import { mt_cases, sus_cases } from "@/LFW/cases_instances";
 import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
 import { useStateRef } from "@fimagine/dom-hooks/dist/useStateRef";
@@ -95,7 +95,6 @@ class Lf2NetworkDriver {
     }
     const debugging = !0
     lf2.mt.debugging = debugging;
-    bot_cases.debug(debugging);
     mt_cases.debug(debugging)
     sus_cases.debug(debugging)
     this._p.debugging = debugging
@@ -181,9 +180,9 @@ class Lf2NetworkDriver {
     if (this._p.debugging) req._p = Array.from(lf2.world.entities).map((e, i) => {
       const { x, y, z } = e.position;
       const b = is_bot_ctrl(e.ctrl) ? (e.ctrl.fsm.state?.key ?? '') : 'b';
-      return '[' + [i, e.frame.id, b, x, y, z].join(', ') + ']'
+      return '[' + [e.id, e.name, e.data.type, e.frame.id, b, x, y, z].join(', ') + ']'
     }).join(', ')
-    if (this._a.debugging) req._a = bot_cases.submit();
+    if (this._a.debugging) req._a = '';
     if (this._s.debugging) req._s = sus_cases.submit();
     if (!this._f) conn.send(MsgEnum.Tick, req);
     lf2.cmds.length = 0;
@@ -212,7 +211,7 @@ class Lf2NetworkDriver {
         console.error(`suspicious not equal!`, reqs.map(v => v._s))
         this._f = true
       }
-      if (this._f) { debugger; break; }
+      if (this._f) { break; }
       if (cmds?.length) cmds.forEach(cmd => lf2.push_cmd(cmd))
       if (!events?.length) continue;
       for (const { player_id, pressed = false, game_key = '' } of events) {

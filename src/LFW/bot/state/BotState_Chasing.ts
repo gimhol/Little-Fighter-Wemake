@@ -24,7 +24,7 @@ export class BotState_Chasing extends BotState_Base {
     if (this.ctrl.is_leave_goto_range(me))
       return BSE.Following;
 
-    if (this.handle_bot_actions()) return;
+    if (this.handle_bot_actions('hba_c')) return;
     if (this.handle_defends('hd_c')) return;
     this.handle_block()
 

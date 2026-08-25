@@ -20,7 +20,7 @@ export class BotState_Avoiding extends BotState_Base {
     if (c.is_leave_goto_range(me))
       return BSE.Following;
     const { en, av } = this
-    if (this.handle_bot_actions()) return;
+    if (this.handle_bot_actions('hba_a')) return;
     if (this.handle_defends('hd_a')) return;
 
     if (!av) return BSE.Idle;

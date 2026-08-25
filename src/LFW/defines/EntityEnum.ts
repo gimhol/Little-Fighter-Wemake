@@ -1,10 +1,10 @@
 import { HitFlag } from "./HitFlag";
 
 export enum EntityEnum {
-  Entity  /**/ = HitFlag.Ohters,
-  Fighter /**/ = HitFlag.Fighter,
-  Weapon  /**/ = HitFlag.Weapon,
-  Ball    /**/ = HitFlag.Ball,
+  Entity  /**/ = HitFlag.Ohters,  // 4
+  Fighter /**/ = HitFlag.Fighter, // 8
+  Weapon  /**/ = HitFlag.Weapon,  // 16
+  Ball    /**/ = HitFlag.Ball,    // 32
 }
 export const E_E = EntityEnum;
 export type E_E = EntityEnum;

@@ -1,10 +1,8 @@
 
 import type { IState } from "../../base/FSM";
-import { bot_cases } from "../../cases_instances";
-import { GK, SE, StateEnum, type LGK } from "../../defines";
+import { GK, StateEnum, type LGK } from "../../defines";
 import { BotStateEnum } from "../../defines/BotStateEnum";
 import type { Difficulty } from "../../defines/Difficulty";
-import { is_ball, is_weapon } from "../../entity";
 import type { Entity } from "../../entity/Entity";
 import type { Stage } from "../../stage/Stage";
 import type { World } from "../../World";
@@ -103,7 +101,7 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     return !!me.blockers.size
   }
 
-  handle_bot_actions(): boolean {
+  handle_bot_actions(where: string): boolean {
     const { ctrl: c } = this;
     const me = c.entity;
     const { bot } = me.data.base
@@ -113,26 +111,25 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     let action_ids = bot.frames?.[me.frame.id]
     if (action_ids) for (const aid of action_ids) {
       const action = bot.actions[aid];
-      const keys = this.ctrl.handle_action(action)
+      const keys = this.ctrl.handle_action(where + '1', action)
       if (keys) keys_list.push(keys)
     }
 
     action_ids = bot.states?.[me.state]
     if (action_ids) for (const aid of action_ids) {
       const action = bot.actions[aid];
-      const keys = this.ctrl.handle_action(action)
+      const keys = this.ctrl.handle_action(where + '2', action)
       if (keys) keys_list.push(keys)
     }
 
     if (!keys_list.length) return false
 
-    me.lfw.mt.mark = 'hba_2'
+    me.lfw.mt.mark = where
     const keys = me.lfw.mt.pick(keys_list)
     if (keys?.length) {
       this.ctrl.key_up(...keys).start(...keys).end(...keys)
-      bot_cases.push(keys.join())
+      me.lfw.mt.case('keys', keys.join())
     }
-
     return true
   }
 

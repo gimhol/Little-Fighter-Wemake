@@ -726,11 +726,14 @@ export class BotController extends BaseController {
     const ret = super.update();
 
     if (this.lfw.mt.debugging) {
-      this._case('bot',
-        `chasings=` + this.chasings.targets.map(v => v.entity.id).join(),
-        `avoidings=` + this.avoidings.targets.map(v => v.entity.id).join(),
-        `defends=` + this.defends.targets.map(v => v.entity.id).join()
-      )
+      const a = this.avoidings.targets;
+      const c = this.chasings.targets;
+      const d = this.defends.targets;
+      const msg = '' +
+        + `${a.length ? `a=[${a.map(v => v.entity.id).join()}] ` : ''}`
+        + `${c.length ? `c=[${c.map(v => v.entity.id).join()}] ` : ''}`
+        + `${d.length ? `d=[${d.map(v => v.entity.id).join()}] ` : ''}`
+      this._case(`bot(${this.me.id}#${this.me.name})`, msg.trim())
     }
     return ret;
   }
@@ -749,10 +752,10 @@ export class BotController extends BaseController {
     return false;
   }
 
-  handle_action(action: IBotAction | undefined): LGK[] | false {
+  handle_action(where: string, action: IBotAction | undefined): LGK[] | false {
     if (!action) return false
     const { desire: _desire, desire_step = 0, desire_base = 0 } = action;
-    const action_desire = this.action_desire(`act#${action.keys.join()}`);
+    const action_desire = this.action_desire(`act#${where}#${action.keys.join()}`);
     const desire = _desire != void 0 ? _desire :
       (desire_base + desire_step * (this.difficulty - 1))
     if (!desire || action_desire > desire) return false;
