@@ -109,8 +109,8 @@ class Lf2NetworkDriver {
     lf2.pointings.enabled = false
     lf2.keyboard.enabled = false
     lf2.mt.reset(resp.seed ?? 0, debugging)
-    // 重置实体 id / 队伍计数器，保证两端实体 id、队伍 id 一致
-    lf2.reset_new_id(100)
+
+    lf2.reset_new_id()
     lf2.reset_new_team()
 
     if (this.is_owner())
