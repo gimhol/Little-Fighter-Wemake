@@ -141,11 +141,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   get new_id() { return `${++this.__id}` }
 
-  reset_new_id(v: number = 100) {
-    this.__id = v;
-    return this;
-  }
   get new_team() { return `team_${++this.__team}` }
+
   readonly world: World;
 
   /**
@@ -179,6 +176,15 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   readonly keyboard: I.IKeyboard;
   readonly pointings: I.IPointings;
 
+  reset_new_team() {
+    this.__team = Number(D.TeamEnum.Max);
+    return this;
+  }
+
+  reset_new_id() {
+    this.__id = 100;
+    return this;
+  }
   /**
    * 获取玩家信息
    * 
