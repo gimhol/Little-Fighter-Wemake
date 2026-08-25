@@ -41,7 +41,11 @@ import { Times } from './utils/Times';
 import { WorldDataset } from "./WorldDataset";
 const CHASING_UPDATE_INTERVAL = 8;
 const MAX_DEBUG_ENTITIES = 355
-const x_sorter = (a: Entity, b: Entity) => a.aabb_min_x - b.aabb_min_x
+const x_sorter = (a: Entity, b: Entity) => {
+  const d = a.aabb_min_x - b.aabb_min_x;
+  if (d !== 0) return d;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
 
 export class World {
   static readonly TAG: string = "World";

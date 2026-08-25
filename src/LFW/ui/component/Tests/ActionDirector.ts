@@ -5,7 +5,8 @@ export interface IWork {
 }
 export interface IAction {
   time: number;
-  work: IWork
+  work: IWork;
+  seq: number;
 }
 export class ActionDirector {
 
@@ -14,6 +15,7 @@ export class ActionDirector {
   private _lifetime: number = 0;
   private _times: number = 1;
   private _curr: number = 0;
+  private _seq: number = 0;
   get lifetime() { return this._lifetime; }
   get end_time() {
     return this._actions.at(this._actions.length - 1)?.time ?? 0
@@ -38,14 +40,14 @@ export class ActionDirector {
     return this.repeat(0, delay, ...works);
   }
   insert(time: number, work: IWork): this {
-    this._actions.push({ time, work });
+    this._actions.push({ time, work, seq: this._seq++ });
     return this;
   }
   wait(duration: number) {
     return this.insert(this.end_time + duration, () => { });
   }
   sort(): this {
-    this._actions.sort((a, b) => a.time > b.time ? 1 : -1);
+    this._actions.sort((a, b) => a.time - b.time || a.seq - b.seq);
     return this;
   }
   update(dt: number) {
