@@ -190,6 +190,18 @@ export class Client {
         ) this.room?.start(this, req)
         break;
       }
+      case MsgEnum.Dataset: {
+        if (
+          ensure_player_info(this, req) &&
+          ensure_in_room(this, req) &&
+          ensure_room_owner(this, req)
+        ) {
+          const { dataset } = req;
+          this.resp(req.type, req.pid, {} as any).catch(() => void 0);
+          this.room?.broadcast(req.type, { dataset }, this);
+        }
+        break;
+      }
       case MsgEnum.ListRooms: {
         if (
           ensure_player_info(this, req)

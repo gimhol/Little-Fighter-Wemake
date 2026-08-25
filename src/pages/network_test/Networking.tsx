@@ -1,7 +1,7 @@
 
-import { GK, LFW, LFWKeyEvent, PlayerInfo } from "@/LFW";
+import { GK, LFW, LFWKeyEvent, PlayerInfo, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { bot_cases, mt_cases, sus_cases } from "@/LFW/cases_instances";
-import { type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, MsgEnum, type TInfo } from "@/Net";
+import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
 import { useStateRef } from "@fimagine/dom-hooks/dist/useStateRef";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -52,6 +52,31 @@ class Lf2NetworkDriver {
   _p = new Tester<string | null | undefined>(null);
   _a = new Tester<string | null | undefined>(null);
   _s = new Tester<string | null | undefined>(null);
+  protected _applying_dataset = false;
+  protected _reverting = false;
+  is_owner() {
+    const { conn } = this;
+    if (!conn) return false
+    const { room, client: me } = conn;
+    if (!room || !me) return false;
+    return room.owner?.id === me.id;
+  }
+
+  on_dataset_change(k?: keyof IWorldDataset, _value?: unknown, prev?: unknown) {
+    const { conn, lf2 } = this;
+    if (!conn || !lf2) return;
+    if (this.is_owner()) {
+      conn.send(MsgEnum.Dataset, { dataset: lf2.world.dataset.dump_dataset() }).catch(() => void 0)
+      return;
+    }
+    if (this._applying_dataset || this._reverting) return;
+    if (typeof k === 'undefined') return;
+    this._reverting = true;
+    (lf2.world.dataset as any)[k] = prev;
+    this._reverting = false;
+    console.warn(`仅房主可修改世界数据集: ${String(k)} 已回滚`)
+  }
+
   on_room_start(resp: IRespRoomStart) {
     const { conn, lf2 } = this;
     const me = conn?.client;
@@ -82,9 +107,25 @@ class Lf2NetworkDriver {
     lf2.pointings.enabled = false
     lf2.keyboard.enabled = false
     lf2.mt.reset(resp.seed ?? 0, debugging)
+
+    if (this.is_owner())
+      this.on_dataset_change()
   }
   update_dataset(resp: IRespDataset) {
-    // resp.
+    const { lf2 } = this;
+    if (!lf2) return;
+    const incoming = resp.dataset;
+    if (!incoming) return;
+    const { dataset } = lf2.world;
+    const local_only = new Set<keyof IWorldDataset>(['sync_render']);
+    this._applying_dataset = true;
+    for (const key of world_dataset_fields.keys()) {
+      if (local_only.has(key)) continue;
+      const value = (incoming as any)[key];
+      if (typeof value !== 'undefined')
+        (dataset as any)[key] = value;
+    }
+    this._applying_dataset = false;
   }
   update_client(resp: IRespClientInfo) {
     const { lf2 } = this;
@@ -218,6 +259,10 @@ export function Networking(props: INetworkingProps) {
       if (lf2.zips.length < 1) return;
       conn?.send(MsgEnum.Tick, { seq: 0 });
     }
+  }, [lf2, conn])
+
+  useCallbacks(lf2?.world.callbacks, {
+    on_dataset_change: (k, value, prev) => updater.on_dataset_change(k, value, prev),
   }, [lf2, conn])
 
   useEffect(() => {
