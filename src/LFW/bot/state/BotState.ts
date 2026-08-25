@@ -78,34 +78,6 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     const target = c.defends.get();
     if (!target) return c._false(mark, 5);
 
-    // TODO: 不可防御的攻击
-    if (!target.defendable) return c._false(mark, 6);
-
-    do {
-      // TODO: 是否需要更细致的判定itr kind?
-      if (!me.frame.itr?.length) break;
-      const pt = target.entity
-      const { state: pt_state } = target.entity.frame
-      if (
-        (
-          is_ball(pt) ||
-          is_weapon(pt)
-        ) && (
-          (
-            pt_state >= SE.Ball_Flying &&
-            pt_state <= SE.Ball_Disappear
-          ) || (
-            pt_state == SE.HeavyWeapon_InTheSky ||
-            pt_state == SE.Weapon_Throwing
-          )
-        )
-      ) {
-        return c._false(mark, 7);
-      }
-      // TODO: 武器?
-    } while (0)
-
-
     const dx = target.x - me.position.x;
     const en_facing = target.facing;
 

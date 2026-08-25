@@ -140,6 +140,11 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return this._ui_loaded;
   }
   get new_id() { return `${++this.__id}` }
+
+  reset_new_id(v: number = 100) {
+    this.__id = v;
+    return this;
+  }
   get new_team() { return `team_${++this.__team}` }
   readonly world: World;
 

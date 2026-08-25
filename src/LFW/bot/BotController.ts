@@ -723,7 +723,16 @@ export class BotController extends BaseController {
       }
       this.fsm.update(1)
     }
-    return super.update();
+    const ret = super.update();
+
+    if (this.lfw.mt.debugging) {
+      this._case('bot',
+        `chasings=` + this.chasings.targets.map(v => v.entity.id).join(),
+        `avoidings=` + this.avoidings.targets.map(v => v.entity.id).join(),
+        `defends=` + this.defends.targets.map(v => v.entity.id).join()
+      )
+    }
+    return ret;
   }
   lock_when_stand_and_rest() {
     if (
@@ -797,15 +806,18 @@ export class BotController extends BaseController {
     this.goingto = Ditto.vec3(x, y, z)
     this.following = null
   }
-
-  _false(mark: string, arg1: number): false {
+  _case(mark: string, ...args: any[]): void {
     this.lfw.mt.mark = mark
-    this.lfw.mt.case(`ret=false`, arg1)
+    this.lfw.mt.case(...args)
+  }
+  _false(mark: string, ...args: any[]): false {
+    this.lfw.mt.mark = mark
+    this.lfw.mt.case(`ret=false`, ...args)
     return false;
   }
-  _true(mark: string, arg1: number): true {
+  _true(mark: string, ...args: any[]): true {
     this.lfw.mt.mark = mark
-    this.lfw.mt.case(`ret=true`, arg1)
+    this.lfw.mt.case(`ret=true`, ...args)
     return true;
   }
 }
