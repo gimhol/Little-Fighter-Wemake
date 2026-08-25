@@ -148,6 +148,7 @@ class Lf2NetworkDriver {
   on_tick(resp: IRespTick | IRespKeyTick) {
     const { conn, lf2 } = this;
     if (!conn || !lf2) return;
+    if (this._f) return;
     if (typeof resp.seq !== 'number') return;
     if (resp.seq === 0) {
       lf2.keyboard.enabled = true
@@ -211,7 +212,10 @@ class Lf2NetworkDriver {
         console.error(`suspicious not equal!`, reqs.map(v => v._s))
         this._f = true
       }
-      if (this._f) { break; }
+      if (this._f) {
+        this.lf2?.world.sleep();
+        break;
+      }
       if (cmds?.length) cmds.forEach(cmd => lf2.push_cmd(cmd))
       if (!events?.length) continue;
       for (const { player_id, pressed = false, game_key = '' } of events) {

@@ -308,6 +308,7 @@ export class World {
         if (real_dt < fix_radio * ideally_dt) return;
         if (this._sleeping) return;
         this.before_update?.();
+        if (this._sleeping) return;
         this.step();
         this._lifetime++;
         this.lfw.events.length = 0;
