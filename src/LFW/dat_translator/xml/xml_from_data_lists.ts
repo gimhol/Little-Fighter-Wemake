@@ -1,6 +1,6 @@
 import type { IDataLists } from "../../defines/IDataLists";
 import type { IXMLElement, IXML } from "../../ditto/xml";
-import { xml_from_dat_index } from "./xml_from_dat_index";
+import { xml_x_dat_index } from "./xml_x_dat_index";
 
 /**
  * 序列化整个数据索引列表为 XML
@@ -46,7 +46,7 @@ export function xml_from_data_lists(xml: IXML, lists: IDataLists): IXMLElement {
   for (const [tag, items] of groups) {
     if (!items?.length) continue;
     for (const item of items) {
-      root.insert(xml_from_dat_index(xml, item, tag));
+      root.insert(xml_x_dat_index(xml, item, tag));
     }
   }
 
