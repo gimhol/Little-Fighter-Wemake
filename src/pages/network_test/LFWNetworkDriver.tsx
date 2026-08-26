@@ -200,13 +200,12 @@ export class LFWNetworkDriver {
       this._randoms && this.sync_check(this._randoms, _r, resp);
       this._objects && this.sync_check(this._objects, _p, resp);
       this._suspicious && this.sync_check(this._suspicious, _s, resp);
-      if (this._failed) world.sleep();
       if (this._failed) break;
     }
-    if (this._failed) {
-      this.dump_snapshots();
-      return;
-    }
+    if (this._failed) this.dump_snapshots();
+    if (this._failed) world.sleep();
+    if (this._failed) return;
+
     this._snapshot1?.capture(lf2.world.entities)
     for (const req of reqs) {
       const { cmds, events } = req;
