@@ -29,6 +29,7 @@ type Data = IEntityData | IBgData;
 
 interface IDataListMap {
   background: IBgData[];
+  bots: IBotData[];
   objects: IEntityData[];
   [EntityEnum.Entity]: IEntityData[];
   [EntityEnum.Fighter]: IEntityData[];
@@ -39,6 +40,7 @@ interface IDataListMap {
 const create_data_list_map = (): IDataListMap => ({
   background: [Defines.VOID_BG],
   objects: [],
+  bots: [],
   [EntityEnum.Entity]: [],
   [EntityEnum.Fighter]: [],
   [EntityEnum.Weapon]: [],
@@ -136,11 +138,9 @@ class Inner {
       }
     })
   }
-
   private check_cancelled() {
     if (this.cancelled) throw new Error("cancelled");
   }
-
   private async solve_index_files(index_files: string[]): Promise<IDataLists> {
     this.check_cancelled();
     const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [] }
@@ -169,7 +169,6 @@ class Inner {
     }
     return data;
   }
-
   async load(index_files: string[]) {
     for (const k of Object.keys(Defines.BuiltIn_Imgs)) {
       const src = (Defines.BuiltIn_Imgs as any)[k];
@@ -206,6 +205,7 @@ class Inner {
       this.bot_map.set(id, bot_data);
       if (id != file) this.bot_map.set(file, bot_data);
       if (id != bot_data.id) this.bot_map.set(bot_data.id, bot_data);
+      this.datas.bots.push(bot_data)
     }
 
     for (const { id, file, alias, skipped } of data.objects) {
@@ -280,16 +280,6 @@ export class DatMgr {
     this.lfw = lfw;
     this._inner = new Inner(this, ++this._inner_id);
   }
-  find_group(group: string) {
-    const f = (v: IEntityData) => v.base.group?.some(g => g === group)
-    return {
-      characters: this.fighters.filter(f),
-      weapons: this.weapons.filter(f),
-      entity: this.entities.filter(f),
-      balls: this.balls.filter(f),
-    };
-  }
-
   load(index_files: string[]): Promise<void> {
     return this._inner.load(index_files);
   }
@@ -300,6 +290,9 @@ export class DatMgr {
 
   clear(): void {
     this._inner = new Inner(this, ++this._inner_id);
+  }
+  get bots(): IBotData[] {
+    return this._inner.datas.bots
   }
   get objects(): IEntityData[] {
     return this._inner.datas.objects;
@@ -332,10 +325,10 @@ export class DatMgr {
   get_randoming_by_group(group: string) {
     let ret = this._inner.randomings.get(group);
     if (ret) return ret
-    const { entity } = this.find_group(group);
+    const objects = this.get_objects_of_group(group);
     this._inner.randomings.set(
       group,
-      ret = new Randoming(entity, this.lfw.mt)
+      ret = new Randoming(objects, this.lfw.mt)
     );
     return ret
   }
@@ -381,7 +374,11 @@ export class DatMgr {
       ? this.backgrounds.find((v) => v.id === arg_0)
       : this.backgrounds.find(arg_0);
   }
-
+  get_objects_of_group(group: string): IEntityData[] {
+    return this.objects.filter(
+      (v) => v.base.group && v.base.group.indexOf(group) >= 0,
+    );
+  }
   get_fighters_of_group(group: string): IEntityData[] {
     return this.fighters.filter(
       (v) => v.base.group && v.base.group.indexOf(group) >= 0,
