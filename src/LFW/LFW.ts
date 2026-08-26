@@ -12,7 +12,7 @@ import { AGK } from './defines/GameKey';
 import type { IGameZipInfo } from "./defines/IFullGameZipInfo";
 import * as I from "./ditto";
 import { Entity } from './entity/Entity';
-import { is_fighter } from './entity/type_check';
+import { is_ball_data, is_entity_data, is_fighter, is_fighter_data, is_weapon_data } from './entity/type_check';
 import { Factory } from "./Factory";
 import * as Helper from "./helper";
 import { I18N } from "./I18N";
@@ -65,7 +65,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   static get instance() { return LFW.instances[0] }
   static get world() { return this.instance?.world }
-  static get objects() { return this.instance?.entities }
+  static get objects() { return this.instance?.objects }
+  static get entities() { return this.instance?.entities }
   static get fighters() { return this.instance?.fighters }
   static get weapons() { return this.instance?.weapons }
   static get balls() { return this.instance?.balls }
@@ -167,7 +168,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   ]);
   readonly fighters = new Helper.CharactersHelper(this);
   readonly weapons = new Helper.WeaponsHelper(this);
-  readonly entities = new Helper.EntitiesHelper(this);
+  readonly entities = new Helper.ObjectsHelper(this);
+  readonly objects = new Helper.ObjectsHelper(this);
   readonly balls = new Helper.BallsHelper(this);
   readonly uis = new Helper.UIHelper(this)
   readonly datas: DatMgr;
@@ -548,25 +550,22 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     await this.datas.load(index_files);
 
     this._dispose_check('load_data')
-    for (const d of this.datas.fighters) {
+    const regist = (helper: any, d: D.IEntityData) => {
       const name = d.base.name?.toLowerCase() ?? d.type + "_id_" + d.id;
-      (this.fighters as any)[`add_${name}`] = (num?: number, team?: string) => this.fighters.add(d, num, team);
-      (this.entities as any)[`add_${name}`] = (num?: number, team?: string) => this.fighters.add(d, num, team);
+      Object.defineProperty(helper, `add_${name}`, {
+        configurable: true, enumerable: false, writable: true,
+        value: (num?: number, team?: string) => helper.add(d, num, team),
+      });
     }
-    for (const d of this.datas.weapons) {
-      const name = d.base.name?.toLowerCase() ?? d.type + "_id_" + d.id;
-      (this.weapons as any)[`add_${name}`] = (num?: number, team?: string) => this.weapons.add(d, num, team);
-      (this.entities as any)[`add_${name}`] = (num?: number, team?: string) => this.weapons.add(d, num, team);
+
+    for (const d of this.datas.objects) {
+      if (is_fighter_data(d)) regist(this.fighters, d);
+      if (is_ball_data(d)) regist(this.balls, d);
+      if (is_weapon_data(d)) regist(this.weapons, d);
+      if (is_entity_data(d)) regist(this.entities, d);
+      regist(this.objects, d);
     }
-    for (const d of this.datas.balls) {
-      const name = d.base.name?.toLowerCase() ?? d.type + "_id_" + d.id;
-      (this.balls as any)[`add_${name}`] = (num?: number, team?: string) => this.balls.add(d, num, team);
-      (this.entities as any)[`add_${name}`] = (num?: number, team?: string) => this.balls.add(d, num, team);
-    }
-    for (const d of this.datas.entity) {
-      const name = d.base.name?.toLowerCase() ?? d.type + "_id_" + d.id;
-      (this.entities as any)[`add_${name}`] = (num?: number, team?: string) => this.entities.add(d, num, team);
-    }
+
     if (zip) {
       const bgms = zip.file(/bgm\/.*?\.mp3$/)
       for (const bgm of bgms) {

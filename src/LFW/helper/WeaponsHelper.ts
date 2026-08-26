@@ -1,10 +1,10 @@
 import type { IEntityData } from "../defines/IEntityData";
 import { Entity } from "../entity/Entity";
 import { is_weapon } from "../entity/type_check";
-import { EntitiesHelper } from "./EntitiesHelper";
+import { ObjectsHelper } from "./EntitiesHelper";
 import { Randoming } from "./Randoming";
 
-export class WeaponsHelper extends EntitiesHelper {
+export class WeaponsHelper extends ObjectsHelper {
   readonly random_map = new Map<string, Randoming<IEntityData>>()
   readonly random_d_map = new Map<string, Randoming<IEntityData>>()
   override get all(): Entity[] {

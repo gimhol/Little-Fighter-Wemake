@@ -2,10 +2,10 @@ import { Factory } from "../Factory";
 import { LFW } from "../LFW";
 import { BotController } from "../bot/BotController";
 import { BallController } from "../controller/BallController";
-import { xml_to_data_lists } from "../dat_translator/xml/xml_to_data_lists";
-import { xml_to_stage_info_list } from "../dat_translator/xml/xml_x_stage_info";
+import { xml_2_data_lists } from "../dat_translator/xml/xml_to_data_lists";
 import { xml_2_bg_data, xml_x_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
+import { xml_to_stage_info_list } from "../dat_translator/xml/xml_x_stage_info";
 import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IStageInfo } from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
 import { Defines } from "../defines/defines";
@@ -27,8 +27,9 @@ import { preprocess_stage } from "./preprocess_stage";
 
 type Data = IEntityData | IBgData;
 
-export interface IDataListMap {
+interface IDataListMap {
   background: IBgData[];
+  objects: IEntityData[];
   [EntityEnum.Entity]: IEntityData[];
   [EntityEnum.Fighter]: IEntityData[];
   [EntityEnum.Weapon]: IEntityData[];
@@ -37,6 +38,7 @@ export interface IDataListMap {
 
 const create_data_list_map = (): IDataListMap => ({
   background: [Defines.VOID_BG],
+  objects: [],
   [EntityEnum.Entity]: [],
   [EntityEnum.Fighter]: [],
   [EntityEnum.Weapon]: [],
@@ -80,7 +82,7 @@ class Inner {
     const ctx: IEntityDataContext = { lfw: this.lfw, data, jobs, errors: [] };
     return preprocess_entity_data(ctx).then(r => r as IEntityData);
   }
-  private _add_alias(alias: string, data: IEntityData) {
+  private _add_alias_object(alias: string, data: IEntityData) {
     const prev = this.alias_map.get(alias)
     if (prev) {
       Ditto.warn(
@@ -92,7 +94,7 @@ class Inner {
     }
     this.alias_map.set(alias, data);
   }
-  private _add_obj(id: string, data: IEntityData) {
+  private _add_object(id: string, data: IEntityData) {
     const prev = this.data_map.get(id)
     if (prev) {
       Ditto.warn(
@@ -108,12 +110,11 @@ class Inner {
     if (idx < 0) list.push(data); else list[idx] = data;
 
     {
-      const list = this.datas[EntityEnum.Entity]
+      const list = this.datas.objects;
       const idx = list.findIndex(v => v.id === data.id)
       if (idx < 0) list.push(data); else list[idx] = data;
     }
   }
-
   private _add_bg(data: IBgData) {
     const list = this.datas[data.type];
     const idx = list.findIndex(v => v.id === data.id);
@@ -136,12 +137,46 @@ class Inner {
     })
   }
 
+  private check_cancelled() {
+    if (this.cancelled) throw new Error("cancelled");
+  }
+
+  private async solve_index_files(index_files: string[]): Promise<IDataLists> {
+    this.check_cancelled();
+    const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [] }
+    for (const file of index_files) {
+      this.check_cancelled();
+
+      let partial: Partial<IDataLists>;
+      const f = file.toLowerCase()
+      if (f.endsWith(".xml")) {
+        const [el] = await this.lfw.import_xml(file, true)
+        this.check_cancelled();
+        partial = xml_2_data_lists(el);
+      } else if (f.endsWith(".json") || f.endsWith(".json5")) {
+        const [result] = await this.lfw.import_json<Partial<IDataLists>>(file, true)
+        partial = result
+      } else {
+        Ditto.warn(`UNSUPPORTED DAT INDEX FILE, SKIPPED: ${file}`)
+        continue;
+      }
+      this.check_cancelled();
+      const { objects = [], backgrounds = [], stages = [], bots = [] } = partial;
+      data.objects.push(...objects)
+      data.backgrounds.push(...backgrounds)
+      data.stages.push(...stages)
+      data.bots.push(...bots)
+    }
+    return data;
+  }
+
   async load(index_files: string[]) {
     for (const k of Object.keys(Defines.BuiltIn_Imgs)) {
       const src = (Defines.BuiltIn_Imgs as any)[k];
       if (!is_non_blank_str(src)) continue;
       this.lfw.emit_progress(`${src}`, 0);
       await this.lfw.images.load_img(src, src);
+      if (this.cancelled) throw new Error("cancelled");
     }
     for (const k of Object.keys(Defines.BuiltIn_Dats)) {
       const src = (Defines.BuiltIn_Dats as any)[k];
@@ -149,21 +184,10 @@ class Inner {
       this.lfw.emit_progress(`${src}`, 0);
       const raw = await this.lfw.import_json<IEntityData>(src).then(r => r[0])
       const cooked = await this._cook_data(raw) as IEntityData;
-      this._add_obj(src, cooked);
+      this._add_object(src, cooked);
+      if (this.cancelled) throw new Error("cancelled");
     }
-    const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [] }
-    for (const file of index_files) {
-      const partial: Partial<IDataLists> = file.endsWith(".xml")
-        ? xml_to_data_lists((await this.lfw.import_xml(file, true))[0])
-        : await this.lfw.import_json<Partial<IDataLists>>(file, true)
-          .then(r => r[0]).catch(e => { Ditto.warn(`FAIL TO LOAD DAT INDEX ${file}, ` + e); return {} as Partial<IDataLists> });
-      const { objects = [], backgrounds = [], stages = [], bots = [] } = partial;
-      data.objects.push(...objects)
-      data.backgrounds.push(...backgrounds)
-      data.stages.push(...stages)
-      data.bots.push(...bots)
-    }
-
+    const data = await this.solve_index_files(index_files);
     if (this.cancelled) throw new Error("cancelled");
     for (const { id, file, skipped } of data.bots) {
       if (skipped) continue;
@@ -193,10 +217,10 @@ class Inner {
           ? xml_2_entity_data((await this.lfw.import_xml(file, true))[0])
           : await this.lfw.import_json<IEntityData>(file, true).then(r => r[0]);
         const cooked = await this._cook_data(raw) as IEntityData;
-        this._add_obj(id, cooked);
-        if (id != file) this._add_obj(file, cooked);
-        if (id != cooked.id) this._add_obj(cooked.id, cooked);
-        if (alias) this._add_alias(alias, cooked)
+        this._add_object(id, cooked);
+        if (id != file) this._add_object(file, cooked);
+        if (id != cooked.id) this._add_object(cooked.id, cooked);
+        if (alias) this._add_alias_object(alias, cooked)
       } catch (e) {
         throw new Error(`fail to load obj: ${file}, reason: ${e}`)
       }
@@ -224,6 +248,7 @@ class Inner {
         : await this.lfw.import_json<IStageInfo[]>(stage_file.file, true)
           .then(r => r[0])
           .catch(e => { Ditto.warn(`FAILED TO LOAD STATE: ${stage_file.file}`); return [] as IStageInfo[] });
+      if (this.cancelled) throw new Error("cancelled");
       this.lfw.emit_progress(`${stage_file.file}`, 100);
       for (const stage of stage_datas) {
         stages.push(preprocess_stage(stage))
@@ -255,14 +280,12 @@ export class DatMgr {
     this.lfw = lfw;
     this._inner = new Inner(this, ++this._inner_id);
   }
-
-
   find_group(group: string) {
     const f = (v: IEntityData) => v.base.group?.some(g => g === group)
     return {
       characters: this.fighters.filter(f),
       weapons: this.weapons.filter(f),
-      entity: this.entity.filter(f),
+      entity: this.entities.filter(f),
       balls: this.balls.filter(f),
     };
   }
@@ -272,27 +295,29 @@ export class DatMgr {
   }
 
   dispose(): void {
-    ++this._inner_id;
+    this._inner = new Inner(this, ++this._inner_id);
   }
 
   clear(): void {
     this._inner = new Inner(this, ++this._inner_id);
   }
-
-  get fighters() {
+  get objects(): IEntityData[] {
+    return this._inner.datas.objects;
+  }
+  get fighters(): IEntityData[] {
     return this._inner.datas[EntityEnum.Fighter];
   }
-  get weapons() {
+  get weapons(): IEntityData[] {
     return this._inner.datas[EntityEnum.Weapon];
+  }
+  get balls(): IEntityData[] {
+    return this._inner.datas[EntityEnum.Ball];
+  }
+  get entities(): IEntityData[] {
+    return this._inner.datas[EntityEnum.Entity];
   }
   get backgrounds() {
     return this._inner.datas.background;
-  }
-  get balls() {
-    return this._inner.datas[EntityEnum.Ball];
-  }
-  get entity() {
-    return this._inner.datas[EntityEnum.Entity];
   }
   get stages(): IStageInfo[] {
     return this._inner.stages;
@@ -331,8 +356,8 @@ export class DatMgr {
     arg_0: string | IFindPredicate<IEntityData>,
   ): IEntityData | undefined {
     return is_str(arg_0)
-      ? this.entity.find((v) => v.id === arg_0)
-      : this.entity.find(arg_0);
+      ? this.entities.find((v) => v.id === arg_0)
+      : this.entities.find(arg_0);
   }
 
   find_fighter(id: string): IEntityData | undefined;

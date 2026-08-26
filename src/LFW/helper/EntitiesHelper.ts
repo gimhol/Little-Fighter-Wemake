@@ -4,7 +4,7 @@ import { Entity } from "../entity/Entity";
 import { LFW } from "../LFW";
 import { Randoming } from "./Randoming";
 
-export class EntitiesHelper {
+export class ObjectsHelper {
   readonly lfw: LFW;
   readonly team_randoming: Randoming<TeamEnum>;
 

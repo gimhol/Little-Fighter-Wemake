@@ -1,9 +1,9 @@
 
 import { Entity } from "../entity/Entity";
 import { is_ball } from "../entity/type_check";
-import { EntitiesHelper } from "./EntitiesHelper";
+import { ObjectsHelper } from "./EntitiesHelper";
 
-export class BallsHelper extends EntitiesHelper {
+export class BallsHelper extends ObjectsHelper {
 
   /**
    * 列出场地上类型为Ball的实体

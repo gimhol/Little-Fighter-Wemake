@@ -2,9 +2,9 @@
 import type { IEntityData } from "../defines";
 import { Entity } from "../entity/Entity";
 import { is_fighter } from "../entity/type_check";
-import { EntitiesHelper } from "./EntitiesHelper";
+import { ObjectsHelper } from "./EntitiesHelper";
 
-export class CharactersHelper extends EntitiesHelper {
+export class CharactersHelper extends ObjectsHelper {
   override get all(): Entity[] {
     const ret: Entity[] = [];
     this.lfw.world.entities.forEach((v) => is_fighter(v) && ret.push(v));
