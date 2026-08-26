@@ -17,8 +17,7 @@ import {
   type IFrameInfo, type IItrInfo,
   type IVector3Like,
   O_ID,
-  SE,
-  WeaponEnum
+  SE
 } from "./defines";
 import { SyncRenderEnum } from "./defines/SyncRenderEnum";
 import { Ditto } from './ditto/Instance';
@@ -122,15 +121,6 @@ export class World {
   }
   on_dataset_change(k: string, curr: any, prev: any) {
     this.callbacks.call('on_dataset_change', k as any, curr, prev, this)
-    if (
-      k === 'sync_render' ||
-      k === 'UPS' ||
-      k === 'atom_time' ||
-      k === 'playrate'
-    ) {
-      this.start_render();
-      this.start_update();
-    }
   };
   get player_l() { return this.stage.player_l; }
   get player_r() { return this.stage.player_r; }
@@ -250,17 +240,20 @@ export class World {
     }
   }
   start_render() {
+    const { sync_render } = this.dataset
+    const { FPS } = this;
     if (this._render_worker_id) Ditto.Render.del(this._render_worker_id);
-    if (this.dataset.sync_render == SyncRenderEnum.Sync) return;
-    if (this.dataset.sync_render == SyncRenderEnum.Half) return;
-
-
+    if (sync_render == SyncRenderEnum.Sync) return;
+    if (sync_render == SyncRenderEnum.Half) return;
     let prev_time = 0;
     let fix_radio = 1;
-    let ideally_dt = 1000 / this.FPS;
-    let fps = this.FPS
-
+    let ideally_dt = 1000 / FPS;
+    let fps = FPS;
     const on_render = (time: number) => {
+      if (prev_time == 0) {
+        prev_time = time;
+        return;
+      }
       const real_dt = time - prev_time;
       if (real_dt < fix_radio * ideally_dt) return;
       this.render_once(real_dt);
@@ -329,6 +322,16 @@ export class World {
         this._UPS.update(real_dt);
         fix_radio = 1 - clamp(6 * (UPS - this._UPS.value) / UPS, 0, 1);
         prev_time = time;
+
+        if (
+          this.dataset.playrate !== playrate ||
+          this.dataset.UPS !== UPS ||
+          this.dataset.atom_time !== atom_time ||
+          this.dataset.sync_render !== sync_render
+        ) {
+          this.start_update();
+          this.start_render();
+        }
       } catch (e: any) {
         Ditto.warn(e)
         if (e.errors) Ditto.warn(e.errors)

@@ -24,6 +24,14 @@ class Tester<V> {
   private v0: V;
   private comparer = (a: V, b: V) => a === b;
   debugging = false
+  result: {
+    v1: V;
+    v0: V;
+    pos?: number;
+    frag_v1?: string;
+    frag_v0?: string;
+  } | null = null;
+
   constructor(first: V, comparer?: typeof this.comparer) {
     this.v1 = this.v0 = first;
     if (comparer) this.comparer = comparer;
@@ -39,8 +47,31 @@ class Tester<V> {
       this.v1 = value;
       return true;
     }
-    return this.v1 === value
+    if (this.v1 === value) {
+      this.result = null
+      return true;
+    }
+
+    this.result = {
+      v1: this.v1,
+      v0: value,
+      ...diff_string(this.v1, value),
+    }
+    return false;
   }
+}
+
+function diff_string(a: unknown, b: unknown): { pos: number; frag_v1: string; frag_v0: string } | Record<string, never> {
+  if (typeof a !== 'string' || typeof b !== 'string') return {};
+  let pos = 0;
+  const max = Math.min(a.length, b.length);
+  while (pos < max && a[pos] === b[pos]) pos++;
+  const from = Math.max(0, pos - 16);
+  return {
+    pos,
+    frag_v1: a.slice(from, pos + 16),
+    frag_v0: b.slice(from, pos + 16),
+  };
 }
 
 class Lf2NetworkDriver {
@@ -76,7 +107,6 @@ class Lf2NetworkDriver {
     this._reverting = false;
     console.warn(`仅房主可修改世界数据集: ${String(k)} 已回滚`)
   }
-
   on_room_start(resp: IRespRoomStart) {
     const { conn, lf2 } = this;
     const me = conn?.client;
@@ -198,18 +228,22 @@ class Lf2NetworkDriver {
       const { cmds, events, _r, _p, _a, _s } = req;
       if (!this._a.test(_a)) {
         console.error(`bot acations not equal!`, reqs.map(v => v._a))
+        console.error(this._a.result)
         this._f = true
       }
       if (!this._r.test(_r)) {
         console.error(`randoms not equal!`, reqs.map(v => v._r))
+        console.error(this._r.result)
         this._f = true
       }
       if (!this._p.test(_p)) {
         console.error(`positons not equal!`, reqs.map(v => v._p))
+        console.error(this._p.result)
         this._f = true
       }
       if (!this._s.test(_s)) {
         console.error(`suspicious not equal!`, reqs.map(v => v._s))
+        console.error(this._s.result)
         this._f = true
       }
       if (this._f) {

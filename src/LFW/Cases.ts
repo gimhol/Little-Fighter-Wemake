@@ -1,5 +1,6 @@
 export class Cases {
   readonly name: string;
+  readonly separator = '￥'
   readonly cases: string[] = [];
   protected times: number = 0;
   protected _debuging: boolean = false;
@@ -19,8 +20,8 @@ export class Cases {
     const v = args.length ? `:(${args.join()})` : ''
     this.cases.push(`${m}${v}`);
   }
-  submit(s = '; '): string {
-    const ret = this.cases.join(s)
+  submit(): string {
+    const ret = this.cases.join(this.separator)
     this.cases.length = 0;
     return ret;
   }
