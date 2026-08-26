@@ -1,16 +1,20 @@
-import { GK, LFW, LFWKeyEvent, PlayerInfo, is_bot_ctrl, mt_cases, sus_cases, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { md5 } from "@/DittoImpl";
+import { GK, LFW, LFWKeyEvent, PlayerInfo, is_bot_ctrl, mt_cases, sus_cases, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
 import type { Connection } from "./Connection";
+import { EntitySnapshotBuffer } from "./EntitySnapshotBuffer";
 import { SyncChecker } from "./SyncChecker";
 
 export class LFWNetworkDriver {
   static readonly TAG = 'Lf2NetworkDriver';
+  debugging: boolean = true;
   conn?: Connection | null;
   lf2?: LFW | null;
   resp?: IRespTick | IRespKeyTick | null;
   _failed: boolean = false;
+  _snapshot1?: EntitySnapshotBuffer = new EntitySnapshotBuffer();
+  _snapshot2?: EntitySnapshotBuffer = new EntitySnapshotBuffer();
   _datas: SyncChecker = new SyncChecker('datas');
   _randoms?: SyncChecker;
   _objects?: SyncChecker;
@@ -55,11 +59,10 @@ export class LFWNetworkDriver {
         }
       }
     }
-    const debugging = !0;
-    lf2.mt.debugging = debugging;
-    mt_cases.debug(debugging);
-    sus_cases.debug(debugging);
-    if (debugging) {
+    lf2.mt.debugging = this.debugging;
+    mt_cases.debug(this.debugging);
+    sus_cases.debug(this.debugging);
+    if (this.debugging) {
       this._objects = new SyncChecker('objects');
       this._events = new SyncChecker('events');
       this._randoms = new SyncChecker('randoms');
@@ -71,7 +74,7 @@ export class LFWNetworkDriver {
     lf2.set_ui({ id: "network_loading" });
     lf2.pointings.enabled = false;
     lf2.keyboard.enabled = false;
-    lf2.mt.reset(resp.seed ?? 0, debugging);
+    lf2.mt.reset(resp.seed ?? 0, this.debugging);
 
     lf2.reset_new_id();
     lf2.reset_new_team();
@@ -191,7 +194,7 @@ export class LFWNetworkDriver {
     this._events?.reset();
     this._suspicious?.reset();
     for (const req of reqs) {
-      const { cmds, events, _d, _r, _p, _a, _s } = req;
+      const { _d, _r, _p, _a, _s } = req;
       if (seq == 0) this.sync_check(this._datas, _d, resp)
       this._events && this.sync_check(this._events, _a, resp);
       this._randoms && this.sync_check(this._randoms, _r, resp);
@@ -199,6 +202,14 @@ export class LFWNetworkDriver {
       this._suspicious && this.sync_check(this._suspicious, _s, resp);
       if (this._failed) world.sleep();
       if (this._failed) break;
+    }
+    if (this._failed) {
+      this.dump_snapshots();
+      return;
+    }
+    this._snapshot1?.capture(lf2.world.entities)
+    for (const req of reqs) {
+      const { cmds, events } = req;
       if (cmds?.length) cmds.forEach(cmd => lf2.push_cmd(cmd));
       if (!events?.length) continue;
       for (const { player_id, pressed = false, game_key = '' } of events) {
@@ -209,7 +220,30 @@ export class LFWNetworkDriver {
       }
     }
   };
-  after_update = () => this.lf2?.world.sleep();
+  after_update = () => {
+    const { lf2 } = this;
+    if (!lf2) return;
+    this._snapshot2?.capture(lf2.world.entities);
+    lf2.world.sleep();
+  };
+  private dump_snapshots() {
+    const { _snapshot1, _snapshot2 } = this;
+    if (!_snapshot1 || !_snapshot2) return;
+    const data = {
+      game_time: this.lf2?.world.game_time,
+      snapshot1: this._snapshot1?.to_readable(),
+      snapshot2: this._snapshot2?.to_readable(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lf2-snapshot-${data.game_time ?? Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
   private sync_check(checker: SyncChecker, value: string | undefined, resp: IRespTick | IRespKeyTick) {
     if (!checker.test(value)) return;
     checker.print_error();

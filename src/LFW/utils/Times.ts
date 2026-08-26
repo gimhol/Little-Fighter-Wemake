@@ -66,6 +66,20 @@ export class Times {
     if (v < this._min) this._value = this._max;
     return ret;
   }
+  write_nums(nums: number[], i: number): void {
+    nums[i] = this._value;
+    nums[i + 1] = this._min;
+    nums[i + 2] = this._max;
+    nums[i + 3] = this._lifes;
+    nums[i + 4] = this._remains;
+  }
+  read_nums(nums: number[], i: number): void {
+    this._value = nums[i];
+    this._min = nums[i + 1];
+    this._max = nums[i + 2];
+    this._lifes = nums[i + 3];
+    this._remains = nums[i + 4];
+  }
   to_snapshot(): ITimesSnapshot {
     return {
       nums: [

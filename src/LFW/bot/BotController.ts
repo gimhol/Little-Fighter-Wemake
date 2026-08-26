@@ -700,6 +700,8 @@ export class BotController extends BaseController {
   }
 
   override update() {
+    if (this.lfw.mt.debugging)
+      this._case(`bot_update_${this.me.id}_${this.me.name}`)
     this.check_bot();
     if (this.watching?.mounted == 0)
       this.watching = null;
@@ -723,8 +725,10 @@ export class BotController extends BaseController {
       }
       this.fsm.update(1)
     }
+    if (this.lfw.mt.debugging)
+      if (this.queue.length)
+        this._case(`bot_keys`, this.queue.join(';'))
     const ret = super.update();
-
     if (this.lfw.mt.debugging) {
       const a = this.avoidings.targets;
       const c = this.chasings.targets;
@@ -733,7 +737,9 @@ export class BotController extends BaseController {
         + `${a.length ? `a=[${a.map(v => v.entity.id).join()}] ` : ''}`
         + `${c.length ? `c=[${c.map(v => v.entity.id).join()}] ` : ''}`
         + `${d.length ? `d=[${d.map(v => v.entity.id).join()}] ` : ''}`
-      this._case(`bot(${this.me.id}#${this.me.name})`, msg.trim())
+      if (msg) this._case(`bot_target`, msg.trim())
+      if (ret.result?.frame) this._case(`bot_nf`, ret.result?.frame.id)
+      this._case(`bot_update_end_${this.me.id}_${this.me.name}`)
     }
     return ret;
   }

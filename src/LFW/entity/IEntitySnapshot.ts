@@ -1,6 +1,5 @@
 
-import type { ICollisionSnapshot } from "../collision/ICollisionSnapshot";
-import type { IVector3Like } from "../defines";
+import type { IArmorInfo, IDeadJoin, IVector3Like } from "../defines";
 import type { ITimesSnapshot } from "../utils/ITimesSnapshot";
 import type { IDrinkInfoSnapshot } from "./IDrinkInfoSnapshot";
 import { StatBarType } from "./StatBarType";
@@ -20,6 +19,7 @@ export interface IEntitySnapshot {
   mix_color: string;
   mix_strength: number;
   greyscale: number;
+  prev_position: IVector3Like,
   position: IVector3Like,
   prev_velocity: IVector3Like,
   velocity: IVector3Like,
@@ -46,6 +46,7 @@ export interface IEntitySnapshot {
   toughness: number;
   toughness_max: number;
   toughness_r_tick: ITimesSnapshot;
+  toughness_r_value: number;
   toughness_resting: number;
   toughness_resting_max: number;
   fall_value: number;
@@ -67,6 +68,8 @@ export interface IEntitySnapshot {
   catcher: string | undefined;
   aabb_x1: number;
   aabb_x2: number;
+  aabb_z1: number;
+  aabb_z2: number;
   name: string | null;
   team: string;
   mp: number;
@@ -94,6 +97,11 @@ export interface IEntitySnapshot {
   name_visible: boolean | null;
   wakeup_invuln: boolean | null;
   dead_gone: boolean | null;
+  dead_join: IDeadJoin | null;
   ctrl_visible: boolean | null;
+  ground_y: number;
+  prev_ground_y: number;
+  is_on_ground: boolean;
+  armor: IArmorInfo | null;
   jumping: { x: number, y: number, z: number, t: number }
 }

@@ -16,9 +16,9 @@ export class Cases {
     this.cases.length = 0
   }
   push(mark: string, ...args: any[]): void {
-    const m = `[${mark || ''}#${++this.times}]`
-    const v = args.length ? `:(${args.join()})` : ''
-    this.cases.push(`${m}${v}`);
+    //"mark(100)￥mark(101):[aa,bb,cc]"
+    const v = args.length ? `:[${args.join()}]` : ''
+    this.cases.push(`${mark}(${++this.times})${v}`);
   }
   submit(): string {
     const ret = this.cases.join(this.separator)

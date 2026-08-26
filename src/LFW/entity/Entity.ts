@@ -41,8 +41,8 @@ import { cross_bounding } from "../utils/cross_bounding";
 import { is_f_num, is_positive, is_str } from "../utils/type_check";
 import { DrinkInfo } from "./DrinkInfo";
 import { EnterFrameResult } from "./EnterFrameResult";
+import { NSlot, SSlot, from_tri, num_or_null, to_tri } from "./EntitySnapshot";
 import type { IEntityCallbacks } from "./IEntityCallbacks";
-import type { IEntitySnapshot } from "./IEntitySnapshot";
 import { StatBarType } from "./StatBarType";
 import { summary_mgr } from "./SummaryMgr";
 import { calc_v } from "./calc_v";
@@ -2527,117 +2527,239 @@ export class Entity {
     return itr.fall ?? this.dataset('itr_fall')
   }
 
-  to_snapshot(): IEntitySnapshot {
+  to_snapshot(nums: number[], strs: string[]): void {
+    nums[NSlot.WAIT] = this.wait;
+    nums[NSlot.VARIANT] = this.variant;
+    nums[NSlot.TRANSFORM_INDEX] = this.transform_index;
+    nums[NSlot.LIFETIME] = this._lifetime;
+    nums[NSlot.SPAWN_TIME] = this._spawn_time;
+    nums[NSlot.RESERVE] = this._reserve;
+    nums[NSlot.MOUNTED] = this._mounted;
+    nums[NSlot.GHOSTED] = this._ghosted;
+    nums[NSlot.RESTING] = this._resting;
+    nums[NSlot.RESTING_MAX] = this._resting_max ?? NaN;
+    nums[NSlot.TOUGHNESS] = this._toughness;
+    nums[NSlot.TOUGHNESS_MAX] = this._toughness_max;
+    nums[NSlot.TOUGHNESS_R_VALUE] = this._toughness_r_value;
+    nums[NSlot.TOUGHNESS_RESTING] = this._toughness_resting;
+    nums[NSlot.TOUGHNESS_RESTING_MAX] = this._toughness_resting_max;
+    nums[NSlot.FALL_VALUE] = this._fall_value;
+    nums[NSlot.FALL_VALUE_MAX] = this._fall_value_max ?? NaN;
+    nums[NSlot.FALL_R_VALUE] = this._fall_r_value;
+    nums[NSlot.DEFEND_VALUE] = this._defend_value;
+    nums[NSlot.DEFEND_VALUE_MAX] = this._defend_value_max ?? NaN;
+    nums[NSlot.DEFEND_R_VALUE] = this._defend_r_value;
+    nums[NSlot.HEALING] = this._healing;
+    nums[NSlot.DEFEND_RATIO] = this._defend_ratio ?? NaN;
+    
+    nums[NSlot.FALLINJURY] = this.fallinjury;
+    nums[NSlot.THROWINJURY] = this.throwinjury;
+    nums[NSlot.FACING] = this.facing;
 
-    const vrests: [string, string][] = []
-    this.vrests.forEach((v, k) => vrests.push([k, v.id]))
+    nums[NSlot.POS_X] = this.position.x;
+    nums[NSlot.POS_Y] = this.position.y;
+    nums[NSlot.POS_Z] = this.position.z;
+    nums[NSlot.PREV_POS_X] = this.prev_position.x;
+    nums[NSlot.PREV_POS_Y] = this.prev_position.y;
+    nums[NSlot.PREV_POS_Z] = this.prev_position.z;
+    nums[NSlot.VEL_X] = this.velocity.x;
+    nums[NSlot.VEL_Y] = this.velocity.y;
+    nums[NSlot.VEL_Z] = this.velocity.z;
+    nums[NSlot.PREV_VEL_X] = this.prev_velocity.x;
+    nums[NSlot.PREV_VEL_Y] = this.prev_velocity.y;
+    nums[NSlot.PREV_VEL_Z] = this.prev_velocity.z;
 
-    const blockers: [string, string][] = []
-    this.blockers.forEach((v, k) => blockers.push([k, v.id]))
+    nums[NSlot.MP] = this._mp;
+    nums[NSlot.MP_MAX] = this._mp_max;
+    nums[NSlot.HP] = this._hp;
+    nums[NSlot.HP_R] = this._hp_r;
+    nums[NSlot.HP_MAX] = this._hp_max;
 
-    const superpunchs: [string, string][] = []
-    this.superpunchs.forEach((v, k) => superpunchs.push([k, v.id]))
-    const ret: IEntitySnapshot = {
-      id: this.id,
-      wait: this.wait,
-      variant: this.variant,
-      transforms: this.transforms?.map(v => v.id) ?? null,
-      transform_index: this.transform_index,
-      lifetime: this._lifetime,
-      spawn_time: this._spawn_time,
-      outline_color: this._outline_color,
-      outline_alpha: this._outline_alpha,
-      outline_width: this._outline_width,
-      outline_enabled: this._outline_enabled,
-      mix_color: this._mix_color,
-      mix_strength: this._mix_strength,
-      greyscale: this._greyscale,
-      position: { x: this.position.x, y: this.position.y, z: this.position.z },
-      prev_velocity: { x: this.prev_velocity.x, y: this.prev_velocity.y, z: this.prev_velocity.z },
-      velocity: { x: this.velocity.x, y: this.velocity.y, z: this.velocity.z },
-      copies: Array.from(this.copies),
-      vrests,
-      blockers,
-      superpunchs,
-      emitters: [...this.emitters],
-      data: this._data.id,
-      reserve: this._reserve,
-      mounted: this._mounted,
-      ghosted: this._ghosted,
-      landing_frame: this._landing_frame?.id,
-      hp_r_tick: this._hp_r_tick.to_snapshot(),
-      mp_r_tick: this._mp_r_tick.to_snapshot(),
-      drink: this.drink?.to_snapshot() ?? null,
-      fuse_bys: this.fuse_bys?.map(v => v.id),
-      dismiss_time: this.dismiss_time,
-      dismiss_data: this.dismiss_data?.id,
-      stat_bar_type: this._stat_bar_type,
-      resting: this._resting,
-      resting_max: this._resting_max,
-      resting_tick: this._resting_tick.to_snapshot(),
-      toughness: this._toughness,
-      toughness_max: this._toughness_max,
-      toughness_r_tick: this._toughness_r_tick.to_snapshot(),
-      toughness_resting: this._toughness_resting,
-      toughness_resting_max: this._toughness_resting_max,
-      fall_value: this._fall_value,
-      fall_value_max: this._fall_value_max,
-      fall_r_tick: this._fall_r_tick.to_snapshot(),
-      fall_r_value: this._fall_r_value,
-      defend_value: this._defend_value,
-      defend_value_max: this._defend_value_max,
-      defend_r_tick: this._defend_r_tick.to_snapshot(),
-      defend_r_value: this._defend_r_value,
-      healing: this._healing,
-      defend_ratio: this._defend_ratio,
-      fallinjury: this.fallinjury,
-      throwinjury: this.throwinjury,
-      facing: this.facing,
-      frame: this.frame.id,
-      prev_frame: this._prev_frame.id,
-      catching: this._catching?.id,
-      catcher: this._catcher?.id,
-      aabb_x1: this.aabb_min_x,
-      aabb_x2: this.aabb_max_x,
-      name: this._name,
-      team: this._team,
-      mp: this._mp,
-      mp_max: this._mp_max ?? null,
-      hp: this._hp,
-      hp_r: this._hp_r,
-      hp_max: this._hp_max,
-      bearer: this._bearer?.id ?? null,
-      holding: this._holding?.id ?? null,
-      arest: this._arest,
-      motionless: this.motionless,
-      shaking: this.shaking,
-      bounced: this.bounced,
-      lying_a_count: this.lying_a_count,
-      lying_d_count: this.lying_d_count,
-      lying_c_count: this.lying_c_count,
-      drop_hurted: this.drop_hurted,
-      catch_time: this._catch_time,
-      catch_time_max: this._catch_time_max,
-      invisible_duration: this._invisible_duration,
-      invulnerable_duration: this._invulnerable_duration,
-      blinking_duration: this._blinking_duration,
-      after_blink: this._after_blink,
-      key_role: this._key_role,
-      name_visible: this._name_visible,
-      wakeup_invuln: this._wakeup_invuln,
-      dead_gone: this._dead_gone,
-      ctrl_visible: this._ctrl_visible,
-      jumping: { ...this.jumping },
-    }
-    return ret;
+    nums[NSlot.AREST] = this._arest;
+    nums[NSlot.MOTIONLESS] = this.motionless;
+    nums[NSlot.SHAKING] = this.shaking;
+
+    nums[NSlot.CATCH_TIME] = this._catch_time;
+    nums[NSlot.CATCH_TIME_MAX] = this._catch_time_max ?? NaN;
+    nums[NSlot.DISMISS_TIME] = this.dismiss_time ?? NaN;
+
+    nums[NSlot.INVISIBLE_DURATION] = this._invisible_duration;
+    nums[NSlot.INVULNERABLE_DURATION] = this._invulnerable_duration;
+    nums[NSlot.BLINKING_DURATION] = this._blinking_duration;
+
+    nums[NSlot.JUMP_X] = this.jumping.x;
+    nums[NSlot.JUMP_Y] = this.jumping.y;
+    nums[NSlot.JUMP_Z] = this.jumping.z;
+    nums[NSlot.JUMP_T] = this.jumping.t;
+
+    nums[NSlot.GROUND_Y] = this._ground_y;
+    nums[NSlot.PREV_GROUND_Y] = this._prev_ground_y;
+
+    nums[NSlot.AABB_MIN_X] = this.aabb_min_x;
+    nums[NSlot.AABB_MAX_X] = this.aabb_max_x;
+    nums[NSlot.AABB_MIN_Z] = this.aabb_min_z;
+    nums[NSlot.AABB_MAX_Z] = this.aabb_max_z;
+    nums[NSlot.L_LEN] = this.l_len;
+    nums[NSlot.R_LEN] = this.r_len;
+
+    nums[NSlot.STAT_BAR_TYPE] = this._stat_bar_type ?? NaN;
+
+    this._hp_r_tick.write_nums(nums, NSlot.HP_R_TICK_VALUE);
+    this._mp_r_tick.write_nums(nums, NSlot.MP_R_TICK_VALUE);
+    this._resting_tick.write_nums(nums, NSlot.RESTING_TICK_VALUE);
+    this._toughness_r_tick.write_nums(nums, NSlot.TOUGHNESS_R_TICK_VALUE);
+    this._fall_r_tick.write_nums(nums, NSlot.FALL_R_TICK_VALUE);
+    this._defend_r_tick.write_nums(nums, NSlot.DEFEND_R_TICK_VALUE);
+
+    nums[NSlot.BOUNCED] = this.bounced ? 1 : 0;
+    nums[NSlot.LYING_A_COUNT] = this.lying_a_count;
+    nums[NSlot.LYING_D_COUNT] = this.lying_d_count;
+    nums[NSlot.LYING_C_COUNT] = this.lying_c_count;
+    nums[NSlot.DROP_HURTED] = this.drop_hurted ? 1 : 0;
+    nums[NSlot.IS_ON_GROUND] = this.is_on_ground ? 1 : 0;
+    nums[NSlot.KEY_ROLE] = to_tri(this._key_role);
+    nums[NSlot.NAME_VISIBLE] = to_tri(this._name_visible);
+    nums[NSlot.WAKEUP_INVULN] = to_tri(this._wakeup_invuln);
+    nums[NSlot.DEAD_GONE] = to_tri(this._dead_gone);
+    nums[NSlot.CTRL_VISIBLE] = to_tri(this._ctrl_visible);
+
+    strs[SSlot.ID] = this.id;
+    strs[SSlot.DATA_ID] = this._data.id;
+    strs[SSlot.FRAME_ID] = this.frame.id;
+    strs[SSlot.PREV_FRAME_ID] = this._prev_frame.id;
+    strs[SSlot.LANDING_FRAME_ID] = this._landing_frame?.id ?? '';
+    strs[SSlot.CATCHING_ID] = this._catching?.id ?? '';
+    strs[SSlot.CATCHER_ID] = this._catcher?.id ?? '';
+    strs[SSlot.BEARER_ID] = this._bearer?.id ?? '';
+    strs[SSlot.HOLDING_ID] = this._holding?.id ?? '';
+    strs[SSlot.TEAM] = this._team;
+    strs[SSlot.NAME] = this._name ?? '';
+    strs[SSlot.AFTER_BLINK] = this._after_blink ?? '';
+    strs[SSlot.DISMISS_DATA_ID] = this.dismiss_data?.id ?? '';
+    strs[SSlot.TRANSFORM_0_ID] = this.transforms?.[0]?.id ?? '';
+    strs[SSlot.TRANSFORM_1_ID] = this.transforms?.[1]?.id ?? '';
   }
 
-  read_snapshot(s: IEntitySnapshot) {
-    this.bounced = s.bounced;
-    this.lying_a_count = s.lying_a_count;
-    this.lying_d_count = s.lying_d_count;
-    this.lying_c_count = s.lying_c_count;
-    this.drop_hurted = s.drop_hurted;
+  read_snapshot(nums: number[], strs: string[]): void {
+    this.wait = nums[NSlot.WAIT];
+    this.variant = nums[NSlot.VARIANT];
+    this.transform_index = nums[NSlot.TRANSFORM_INDEX];
+    this._lifetime = nums[NSlot.LIFETIME];
+    this._spawn_time = nums[NSlot.SPAWN_TIME];
+
+    this._reserve = nums[NSlot.RESERVE];
+    this._mounted = nums[NSlot.MOUNTED];
+    this._ghosted = nums[NSlot.GHOSTED];
+
+    this._resting = nums[NSlot.RESTING];
+    this._resting_max = num_or_null(nums[NSlot.RESTING_MAX]);
+    this._toughness = nums[NSlot.TOUGHNESS];
+    this._toughness_max = nums[NSlot.TOUGHNESS_MAX];
+    this._toughness_r_value = nums[NSlot.TOUGHNESS_R_VALUE];
+    this._toughness_resting = nums[NSlot.TOUGHNESS_RESTING];
+    this._toughness_resting_max = nums[NSlot.TOUGHNESS_RESTING_MAX];
+
+    this._fall_value = nums[NSlot.FALL_VALUE];
+    this._fall_value_max = num_or_null(nums[NSlot.FALL_VALUE_MAX]);
+    this._fall_r_value = nums[NSlot.FALL_R_VALUE];
+    this._defend_value = nums[NSlot.DEFEND_VALUE];
+    this._defend_value_max = num_or_null(nums[NSlot.DEFEND_VALUE_MAX]);
+    this._defend_r_value = nums[NSlot.DEFEND_R_VALUE];
+    this._healing = nums[NSlot.HEALING];
+    this._defend_ratio = num_or_null(nums[NSlot.DEFEND_RATIO]);
+
+    this.fallinjury = nums[NSlot.FALLINJURY];
+    this.throwinjury = nums[NSlot.THROWINJURY];
+    this.facing = nums[NSlot.FACING] as TFace;
+
+    this.position.set(nums[NSlot.POS_X], nums[NSlot.POS_Y], nums[NSlot.POS_Z]);
+    this.prev_position.set(nums[NSlot.PREV_POS_X], nums[NSlot.PREV_POS_Y], nums[NSlot.PREV_POS_Z]);
+    this.velocity.set(nums[NSlot.VEL_X], nums[NSlot.VEL_Y], nums[NSlot.VEL_Z]);
+    this.prev_velocity.set(nums[NSlot.PREV_VEL_X], nums[NSlot.PREV_VEL_Y], nums[NSlot.PREV_VEL_Z]);
+
+    this._mp = nums[NSlot.MP];
+    this._mp_max = nums[NSlot.MP_MAX];
+    this._hp = nums[NSlot.HP];
+    this._hp_r = nums[NSlot.HP_R];
+    this._hp_max = nums[NSlot.HP_MAX];
+
+    this._arest = nums[NSlot.AREST];
+    this.motionless = nums[NSlot.MOTIONLESS];
+    this.shaking = nums[NSlot.SHAKING];
+
+    this._catch_time = nums[NSlot.CATCH_TIME];
+    this._catch_time_max = num_or_null(nums[NSlot.CATCH_TIME_MAX]);
+    this.dismiss_time = num_or_null(nums[NSlot.DISMISS_TIME]);
+
+    this._invisible_duration = nums[NSlot.INVISIBLE_DURATION];
+    this._invulnerable_duration = nums[NSlot.INVULNERABLE_DURATION];
+    this._blinking_duration = nums[NSlot.BLINKING_DURATION];
+
+    this.jumping.x = nums[NSlot.JUMP_X];
+    this.jumping.y = nums[NSlot.JUMP_Y];
+    this.jumping.z = nums[NSlot.JUMP_Z];
+    this.jumping.t = nums[NSlot.JUMP_T];
+
+    this._ground_y = nums[NSlot.GROUND_Y];
+    this._prev_ground_y = nums[NSlot.PREV_GROUND_Y];
+
+    this.aabb_min_x = nums[NSlot.AABB_MIN_X];
+    this.aabb_max_x = nums[NSlot.AABB_MAX_X];
+    this.aabb_min_z = nums[NSlot.AABB_MIN_Z];
+    this.aabb_max_z = nums[NSlot.AABB_MAX_Z];
+    this.l_len = nums[NSlot.L_LEN];
+    this.r_len = nums[NSlot.R_LEN];
+
+    const st = nums[NSlot.STAT_BAR_TYPE];
+    this._stat_bar_type = Number.isNaN(st) ? null : st as StatBarType;
+
+    this._hp_r_tick.read_nums(nums, NSlot.HP_R_TICK_VALUE);
+    this._mp_r_tick.read_nums(nums, NSlot.MP_R_TICK_VALUE);
+    this._resting_tick.read_nums(nums, NSlot.RESTING_TICK_VALUE);
+    this._toughness_r_tick.read_nums(nums, NSlot.TOUGHNESS_R_TICK_VALUE);
+    this._fall_r_tick.read_nums(nums, NSlot.FALL_R_TICK_VALUE);
+    this._defend_r_tick.read_nums(nums, NSlot.DEFEND_R_TICK_VALUE);
+
+    this.bounced = nums[NSlot.BOUNCED] !== 0;
+    this.lying_a_count = nums[NSlot.LYING_A_COUNT];
+    this.lying_d_count = nums[NSlot.LYING_D_COUNT];
+    this.lying_c_count = nums[NSlot.LYING_C_COUNT];
+    this.drop_hurted = nums[NSlot.DROP_HURTED] !== 0;
+    this.is_on_ground = nums[NSlot.IS_ON_GROUND] !== 0;
+    this._key_role = from_tri(nums[NSlot.KEY_ROLE]);
+    this._name_visible = from_tri(nums[NSlot.NAME_VISIBLE]);
+    this._wakeup_invuln = from_tri(nums[NSlot.WAKEUP_INVULN]);
+    this._dead_gone = from_tri(nums[NSlot.DEAD_GONE]);
+    this._ctrl_visible = from_tri(nums[NSlot.CTRL_VISIBLE]);
+
+    this.id = strs[SSlot.ID];
+    const data = this.lfw.datas.find(strs[SSlot.DATA_ID]);
+    if (data) this._data = data;
+    this.frame = this.find_frame_by_id(strs[SSlot.FRAME_ID]) ?? this.frame;
+    this._prev_frame = this.find_frame_by_id(strs[SSlot.PREV_FRAME_ID]) ?? this._prev_frame;
+    this._landing_frame = strs[SSlot.LANDING_FRAME_ID]
+      ? (this.find_frame_by_id(strs[SSlot.LANDING_FRAME_ID]) ?? null)
+      : null;
+    this._catching = this.world.entity_map.get(strs[SSlot.CATCHING_ID]) ?? null;
+    this._catcher = this.world.entity_map.get(strs[SSlot.CATCHER_ID]) ?? null;
+    this._bearer = this.world.entity_map.get(strs[SSlot.BEARER_ID]) ?? null;
+    this._holding = this.world.entity_map.get(strs[SSlot.HOLDING_ID]) ?? null;
+    this._team = strs[SSlot.TEAM];
+    this._name = strs[SSlot.NAME] || null;
+    this._after_blink = strs[SSlot.AFTER_BLINK] || null;
+    this.dismiss_data = strs[SSlot.DISMISS_DATA_ID]
+      ? (this.lfw.datas.find(strs[SSlot.DISMISS_DATA_ID]) ?? null)
+      : null;
+
+    const t0 = strs[SSlot.TRANSFORM_0_ID];
+    const t1 = strs[SSlot.TRANSFORM_1_ID];
+    if (t0 && t1) {
+      const d0 = this.lfw.datas.find(t0);
+      const d1 = this.lfw.datas.find(t1);
+      this.transforms = d0 && d1 ? [d0, d1] : null;
+    } else {
+      this.transforms = null;
+    }
   }
 
 }

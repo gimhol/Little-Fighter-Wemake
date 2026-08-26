@@ -37,13 +37,13 @@ export class SyncChecker {
     let pos = 0;
     const max = Math.min(baseline.length, current.length);
     while (pos < max && baseline[pos] === current[pos]) pos++;
-    const from = Math.max(0, pos - 16);
+    const from = Math.max(0, pos - 100);
     return this.result = {
       baseline,
       current,
       pos,
-      frag_baseline: baseline.slice(from, pos + 16),
-      frag_current: current.slice(from, pos + 16),
+      frag_baseline: baseline.slice(from, pos + 100),
+      frag_current: current.slice(from, pos + 100),
     };
   }
   print_error(): void {
