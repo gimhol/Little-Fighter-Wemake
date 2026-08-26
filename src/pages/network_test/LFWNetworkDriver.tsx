@@ -1,5 +1,5 @@
 import { md5 } from "@/DittoImpl";
-import { GK, LFW, LFWKeyEvent, PlayerInfo, is_bot_ctrl, mt_cases, sus_cases, world_dataset_fields, type IWorldDataset } from "@/LFW";
+import { EntityEnum, GK, LFW, LFWKeyEvent, PlayerInfo, is_bot_ctrl, mt_cases, sus_cases, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
 import type { Connection } from "./Connection";
@@ -60,8 +60,6 @@ export class LFWNetworkDriver {
       }
     }
     lf2.mt.debugging = this.debugging;
-    mt_cases.debug(this.debugging);
-    sus_cases.debug(this.debugging);
     if (this.debugging) {
       this._objects = new SyncChecker('objects');
       this._events = new SyncChecker('events');
@@ -180,11 +178,13 @@ export class LFWNetworkDriver {
     }
     if (this._events) req._a = `game_time=${lf2.world.game_time}`;
     if (this._randoms) req._r = mt_cases.submit();
-    if (this._objects) req._p = Array.from(lf2.world.entities).map((e, i) => {
+    if (this._objects) req._p = Array.from(lf2.world.entities).map((e) => {
       const { x, y, z } = e.position;
-      const b = is_bot_ctrl(e.ctrl) ? (e.ctrl.fsm.state?.key ?? '') : 'b';
-      return '[' + [e.id, e.name, e.data.type, e.frame.id, b, x, y, z].join(', ') + ']';
-    }).join(', ');
+      const { x: vx, y: vy, z: vz } = e.velocity;
+      const t = EntityEnum[e.data.type]
+      const b = is_bot_ctrl(e.ctrl) ? e.ctrl.fsm.state?.key : 'x';
+      return [t, e.id, e.name, e.frame.id, b, x, y, z, vx, vy, vz].join('_');
+    }).join('￥');
     if (this._suspicious) req._s = sus_cases.submit();
     if (!this._failed) conn.send(MsgEnum.Tick, req);
     lf2.cmds.length = 0;

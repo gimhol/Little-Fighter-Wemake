@@ -985,10 +985,6 @@ export class Entity {
     this.prev_velocity.x = this.velocity.x = round_float(vx);
     this.prev_velocity.y = this.velocity.y = round_float(vy);
     this.prev_velocity.z = this.velocity.z = round_float(vz);
-    if (sus_cases.debugging) {
-      sus_cases.push("on_spawn::pos", pos_x, pos_y, pos_z);
-      sus_cases.push("on_spawn::vec1", vx, vy, vz);
-    }
     switch (opoint.kind) {
       case OpointKind.Pick:
         emitter.drop_holding();
