@@ -207,6 +207,8 @@ class Lf2NetworkDriver {
       cmds: lf2.cmds,
       events: req_events
     }
+
+    if (this._a.debugging) req._a = `lifetime=${lf2.world.lifetime}`
     if (this._r.debugging) req._r = mt_cases.submit()
     if (this._p.debugging) req._p = Array.from(lf2.world.entities).map((e, i) => {
       const { x, y, z } = e.position;
@@ -227,7 +229,7 @@ class Lf2NetworkDriver {
     for (const req of reqs) {
       const { cmds, events, _r, _p, _a, _s } = req;
       if (!this._a.test(_a)) {
-        console.error(`bot acations not equal!`, reqs.map(v => v._a))
+        console.error(`times not equal!`, reqs.map(v => v._a))
         console.error(this._a.result)
         this._f = true
       }

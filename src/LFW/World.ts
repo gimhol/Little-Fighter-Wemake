@@ -275,26 +275,25 @@ export class World {
   sleep(): void { this._sleeping = true }
   awake(): void { this._sleeping = false }
   start_update() {
-    let { playrate, UPS, atom_time, sync_render } = this.dataset;
-    if (!between(playrate, 0.01, 1000)) {
-      Ditto.warn(`[${World.TAG}::start_update] playrate must be between 0.01 and 1000, but got ${playrate}, now reset to 1.0`);
-      playrate = this.dataset.playrate = 1
-    }
-    if (!between(UPS, 1, 120)) {
-      Ditto.warn(`[${World.TAG}::start_update] UPS must be between 1 and 120, but got ${UPS}, now reset to 60`);
-      UPS = this.dataset.UPS = 60
-    }
-    if (!(atom_time > 0)) {
-      Ditto.warn(`[${World.TAG}::start_update] atom_time must be > 0, but got ${atom_time}, now reset to 1`);
-      atom_time = this.dataset.atom_time = 1;
-    }
-
     if (this._update_worker_id) Ditto.Interval.del(this._update_worker_id);
     let prev_time = Date.now();
-    let fix_radio = 1;
-    this.TU = 1000 / UPS;
-    const ideally_dt = round(this.TU / playrate)
     const on_update = () => {
+      let { playrate, UPS, atom_time, sync_render } = this.dataset;
+      if (!between(playrate, 0.01, 1000)) {
+        Ditto.warn(`[${World.TAG}::start_update] playrate must be between 0.01 and 1000, but got ${playrate}, now reset to 1.0`);
+        playrate = this.dataset.playrate = 1
+      }
+      if (!between(UPS, 1, 120)) {
+        Ditto.warn(`[${World.TAG}::start_update] UPS must be between 1 and 120, but got ${UPS}, now reset to 60`);
+        UPS = this.dataset.UPS = 60
+      }
+      if (!(atom_time > 0)) {
+        Ditto.warn(`[${World.TAG}::start_update] atom_time must be > 0, but got ${atom_time}, now reset to 1`);
+        atom_time = this.dataset.atom_time = 1;
+      }
+      let fix_radio = 1;
+      this.TU = 1000 / UPS;
+      const ideally_dt = round(this.TU / playrate)
       try {
         const time = Date.now();
         const real_dt = time - prev_time;
@@ -323,15 +322,8 @@ export class World {
         fix_radio = 1 - clamp(6 * (UPS - this._UPS.value) / UPS, 0, 1);
         prev_time = time;
 
-        if (
-          this.dataset.playrate !== playrate ||
-          this.dataset.UPS !== UPS ||
-          this.dataset.atom_time !== atom_time ||
-          this.dataset.sync_render !== sync_render
-        ) {
-          this.start_update();
+        if (this.dataset.sync_render !== sync_render)
           this.start_render();
-        }
       } catch (e: any) {
         Ditto.warn(e)
         if (e.errors) Ditto.warn(e.errors)
