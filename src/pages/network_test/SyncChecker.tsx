@@ -2,11 +2,11 @@
 type Value = string | null | undefined;
 
 interface SyncCheckResult {
-  baseline: Value;
-  current: Value;
+  value1: Value;
+  value2: Value;
   pos?: number;
-  frag_baseline?: string;
-  frag_current?: string;
+  frag_value1?: string;
+  frag_value2?: string;
 }
 
 export class SyncChecker {
@@ -20,30 +20,30 @@ export class SyncChecker {
   reset() {
     this.started = false;
   }
-  test(current: Value): SyncCheckResult | undefined {
+  test(value2: Value): SyncCheckResult | undefined {
     if (!this.started) {
       this.started = true;
-      this.baseline = current;
+      this.baseline = value2;
       return this.result = void 0;
     }
-    const { baseline } = this;
-    if (baseline === current)
+    const { baseline: value1 } = this;
+    if (value1 === value2)
       return this.result = void 0;
 
-    if (typeof baseline !== 'string' || typeof current !== 'string') {
-      this.result = { baseline, current };
+    if (typeof value1 !== 'string' || typeof value2 !== 'string') {
+      this.result = { value1: value1, value2: value2 };
       return;
     }
     let pos = 0;
-    const max = Math.min(baseline.length, current.length);
-    while (pos < max && baseline[pos] === current[pos]) pos++;
-    const from = Math.max(0, pos - 100);
+    const max = Math.min(value1.length, value2.length);
+    while (pos < max && value1[pos] === value2[pos]) pos++;
+    const from = Math.max(0, pos - 50);
     return this.result = {
-      baseline,
-      current,
+      value1,
+      value2,
       pos,
-      frag_baseline: baseline.slice(from, pos + 100),
-      frag_current: current.slice(from, pos + 100),
+      frag_value1: value1.slice(from, pos + 50),
+      frag_value2: value2.slice(from, pos + 50),
     };
   }
   print_error(): void {

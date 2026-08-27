@@ -20,6 +20,7 @@ export class LFWNetworkDriver {
   _objects?: SyncChecker;
   _events?: SyncChecker;
   _suspicious?: SyncChecker;
+  _failed_checker?: string;
   protected _applying_dataset = false;
   protected _reverting = false;
   is_owner() {
@@ -232,6 +233,22 @@ export class LFWNetworkDriver {
       game_time: this.lf2?.world.game_time,
       snapshot1: this._snapshot1?.to_readable(),
       snapshot2: this._snapshot2?.to_readable(),
+      events: [
+        this._events?.result?.value1?.split('￥'),
+        this._events?.result?.value2?.split('￥')
+      ],
+      randoms: [
+        this._randoms?.result?.value1?.split('￥'),
+        this._randoms?.result?.value2?.split('￥')
+      ],
+      objects: [
+        this._objects?.result?.value1?.split('￥'),
+        this._objects?.result?.value2?.split('￥')
+      ],
+      suspicious: [
+        this._suspicious?.result?.value1?.split('￥'),
+        this._suspicious?.result?.value2?.split('￥')
+      ]
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
