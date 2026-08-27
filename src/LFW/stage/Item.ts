@@ -117,17 +117,15 @@ export class Item {
       e.stat_bar_type = StatBarType.None;
       e.wakeup_invuln = false;
     }
-
     e.ctrl = this.lfw.factory.create_ctrl(e.data.id, "", e);
     e.dead_gone = true;
     e.reserve = reserve ?? 0;
-    e.set_position(
-      this.lfw.mt.range(x, x + range_x),
-      null,
-      is_num(z)
-        ? this.lfw.mt.range(z - range_z, z + range_z)
-        : this.lfw.mt.range(this.stage.near, this.stage.far)
-    )
+    this.lfw.mt.mark = `stage_item_spawn`
+    const px = this.lfw.mt.range(x, x + range_x)
+    const pz = is_num(z)
+      ? this.lfw.mt.range(z - range_z, z + range_z)
+      : this.lfw.mt.range(this.stage.near, this.stage.far)
+    e.set_position(px, null, pz)
     if (this.info.join)
       e.dead_join = {
         hp: this.info.join,

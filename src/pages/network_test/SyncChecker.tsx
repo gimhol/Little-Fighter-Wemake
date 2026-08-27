@@ -13,7 +13,7 @@ export class SyncChecker {
   public readonly name: string;
   public result?: SyncCheckResult;
   private started = false;
-  private baseline: Value;
+  private value1: Value;
   constructor(name: string) {
     this.name = name;
   }
@@ -23,10 +23,10 @@ export class SyncChecker {
   test(value2: Value): SyncCheckResult | undefined {
     if (!this.started) {
       this.started = true;
-      this.baseline = value2;
+      this.value1 = value2;
       return this.result = void 0;
     }
-    const { baseline: value1 } = this;
+    const { value1 } = this;
     if (value1 === value2)
       return this.result = void 0;
 

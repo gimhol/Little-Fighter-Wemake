@@ -66,8 +66,9 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
     const { far, near, left, right } = this.lfw.world.bg;
     const is_stage_mode = this.props.game_mode === GAME_MODE_STAGE
     const is_vs_mode = this.props.game_mode === GAME_MODE_VS
-    let cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - Defines.MODERN_SCREEN_WIDTH)
 
+    this.lfw.mt.mark = 'gpl_start_game_cam_x';
+    let cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - Defines.MODERN_SCREEN_WIDTH)
 
     for (const [player, slot_info] of char_menu_logic.players) {
       const { fighter: fighter_data } = slot_info;
@@ -95,7 +96,10 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       }
       const xx1 = is_stage_mode ? 40 : 1 * Defines.MODERN_SCREEN_WIDTH / 3;
       const xx2 = is_stage_mode ? 80 : 2 * Defines.MODERN_SCREEN_WIDTH / 3;
+
+      this.lfw.mt.mark = 'gpl_fighter_x';
       const x = this.lfw.mt.range(xx1, xx2) + cam_x;
+      this.lfw.mt.mark = 'gpl_fighter_z';
       const z = this.lfw.mt.range(far, near)
       const seg = this.world.ground.segment(x, z)
       const y = this.world.ground.y(seg, x, z);

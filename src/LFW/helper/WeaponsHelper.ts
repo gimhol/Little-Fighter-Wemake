@@ -26,6 +26,8 @@ export class WeaponsHelper extends ObjectsHelper {
     const map = duplicate ? this.random_d_map : this.random_map
     let ret = map.get(group);
     if (!ret) {
+
+      this.lfw.mt.mark = 'weapons';
       let list = this.lfw.datas.weapons;
       if (group) list = list.filter(v => v.base.group?.some(g => g === group))
       if (!list.length) return void 0;

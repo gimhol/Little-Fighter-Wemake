@@ -17,10 +17,12 @@ export function spawn_buring_smoke(entity: Entity, foo: 1 | 2): IOpointInfo {
   };
   switch (foo) {
     case 1:
+      mt.mark = `buring_smoke_1`
       ret.x = round(mt.range(round(w / 4), round(3 * w / 4)));
       ret.y = round(frame.centery + mt.range(-round(h / 2), 0));
       break;
     case 2:
+      mt.mark = `buring_smoke_2`
       const ww = round(w / 6)
       ret.x = round(frame.centerx + mt.range(-ww, ww));
       ret.y = round(frame.centery + mt.range(-round(3 * h / 4), 0));

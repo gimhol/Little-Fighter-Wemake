@@ -34,6 +34,7 @@ export class DanmuGameLogic extends SummaryLogic {
     if (!this._cam_ctrl || this._cam_ctrl?.staring !== e) return
     // 聚焦角色被移除后，聚焦下一个角色
     this._staring_countdown.reset();
+    this.lfw.mt.mark = 'dmg_staring';
     this._cam_ctrl.staring = this.lfw.mt.pick(this.lfw.fighters.all)
   }
   override on_start(): void {
@@ -59,6 +60,7 @@ export class DanmuGameLogic extends SummaryLogic {
       v.name_visible = true;
       v.blinking = 120;
     }
+    this.lfw.mt.mark = 'dmglogic'
     const way: number = this.lfw.mt.range(0, 6);
     switch (way) {
       case 0: {
@@ -149,6 +151,7 @@ export class DanmuGameLogic extends SummaryLogic {
   update_staring() {
     if (!this._cam_ctrl) return;
     const fighters = this.lfw.fighters.all;
+    this.lfw.mt.mark = 'dmg_staring_2';
     this._cam_ctrl.staring = this.lfw.mt.pick(fighters)
   }
   override update(dt: number): void {

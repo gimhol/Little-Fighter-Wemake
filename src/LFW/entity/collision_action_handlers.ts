@@ -56,6 +56,7 @@ export const collision_action_handlers: IActionHandler = {
     const { data: { oid, act, time } } = a;
     const { attacker, victim } = c;
     const { lfw } = c.attacker;
+    lfw.mt.mark = `cact_${AT.FUSION}`
     const data = lfw.datas.find(oid);
     if (!data) return;
 

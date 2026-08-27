@@ -254,7 +254,14 @@ export class LFWNetworkDriver {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `lf2-snapshot-${data.game_time ?? Date.now()}.json`;
+    const ua = navigator.userAgent;
+    const browser = /Edg\//.test(ua) ? 'edge'
+      : /OPR\/|Opera/.test(ua) ? 'opera'
+      : /Firefox\//.test(ua) ? 'firefox'
+      : /Chrome\//.test(ua) ? 'chrome'
+      : /Safari\//.test(ua) ? 'safari'
+      : 'unknown';
+    a.download = `lf2-snapshot-${data.game_time ?? Date.now()}_${browser}_${md5(ua)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

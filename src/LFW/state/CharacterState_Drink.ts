@@ -31,6 +31,7 @@ export class CharacterState_Drink extends CharacterState_Base {
       e.enter_frame(Defines.NEXT_FRAME_AUTO);
       
       holding.hp = holding.hp_r = 1;
+      holding.lfw.mt.mark = `drink_drop`
       const vx = holding.lfw.mt.range(-6, 6) / 2;
       const vy = 6;
       holding.set_velocity(vx, vy, 0);

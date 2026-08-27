@@ -13,6 +13,7 @@ export class Randoming<T> {
   protected cur: T[]
   protected taken: T | null = null;
   protected duplicate: boolean;
+  mark = `randoming`
   get src() { return this._src }
 
 
@@ -42,10 +43,12 @@ export class Randoming<T> {
     if (!this.cur.length) {
       this.cur = this._src.length > 1 ? this._src.filter(v => v != this.taken) : [...this._src];
     }
+
     const idx = this.random_in(0, this.cur.length);
     return this.cur.splice(idx, 1)[0];
   }
   protected random_in(l: number, r: number) {
+    this.mt.mark = this.mark;
     return this.mt.range(l, r);
   }
 }

@@ -245,6 +245,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       stage = DemoModeLogic.get_stages(this.lfw).get()
       this.lfw.change_bg(stage?.bg ?? '?');
     } else {
+      this.lfw.mt.mark = 'dmg_startup_bg';
       const bg = this.lfw.mt.pick(this.lfw.datas.backgrounds)
       this.lfw.change_bg(bg?.id || '?')
     }
@@ -261,6 +262,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     if (is_vs_mode) this.lfw.sounds.play_bgm('?');
     else fighters_datas.push(...boss_datas)
 
+    this.lfw.mt.mark = 'demo_startup_cam_x'
     let cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - Defines.MODERN_SCREEN_WIDTH)
     const min_x = is_stage_mode ? (cam_x + 40) : (cam_x + 1 * Defines.MODERN_SCREEN_WIDTH / 3)
     const max_x = is_stage_mode ? (80) : (cam_x + 2 * Defines.MODERN_SCREEN_WIDTH / 3)
@@ -274,12 +276,14 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       const team = teams[i]!;
       if (!player) continue;
 
+      this.lfw.mt.mark = `demo_startup_fighter_${i}`
       const fighter_data = this.lfw.mt.take(fighters_datas);
       if (!fighter_data) continue;
 
       const fighter = this.lfw.factory.create_entity(this.world, fighter_data);
       if (!fighter) return;
       fighter.team = team ?? this.lfw.new_team;
+      this.lfw.mt.mark = 'demo_startup_fighter_facing'
       fighter.facing = is_stage_mode ?
         FacingFlag.Right :
         this.lfw.mt.pick([FacingFlag.Left, FacingFlag.Right])!;
@@ -294,8 +298,11 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
         fighter,
       );
 
+      this.lfw.mt.mark = 'demo_startup_fighter_x'
       const x = this.lfw.mt.range(min_x, max_x)
-      fighter.set_position(x, void 0, this.lfw.mt.range(far, near))
+      this.lfw.mt.mark = 'demo_startup_fighter_z'
+      const z = this.lfw.mt.range(far, near);
+      fighter.set_position(x, void 0, z)
       fighter.blinking = this.world.dataset.begin_blink_time;
       if (is_vs_mode) fighter.mp = (fighter.mp_max * 2 / 5)
       fighter.attach();
@@ -399,6 +406,8 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     }
   }
   override update(dt: number): void {
+
+    this.lfw.mt.mark = 'demo_update_weapon_rain';
     if (
       !this.world.paused &&
       !this.lfw.world.stage.weapon_rain_disabled &&

@@ -207,6 +207,7 @@ export class StageModeLogic extends UIComponent {
   }
 
   override update(dt: number): void {
+    this.lfw.mt.mark = 'stage_mode_weapn_rain';
     if (
       !this.world.paused &&
       !this.lfw.world.stage.weapon_rain_disabled &&

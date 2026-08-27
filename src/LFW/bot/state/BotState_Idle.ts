@@ -15,6 +15,7 @@ export class BotState_Idle extends BotState_Base {
     const { player_l, player_r, near, far } = this.stage;
     const midx = (player_l + player_r) * 0.5
     const midz = (near + far) * 0.5
+    this.me.lfw.mt.mark = `bot_idle`
     this.min_x = round(this.me.lfw.mt.range(player_l, midx))
     this.max_x = round(this.me.lfw.mt.range(midx, player_r))
     this.min_z = round(this.me.lfw.mt.range(far, midz))

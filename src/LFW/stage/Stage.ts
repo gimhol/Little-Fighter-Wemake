@@ -262,6 +262,8 @@ export class Stage {
       if (!is_fighter(entity) || !teams.has(entity.team)) continue;
       if (player_f === 1 || player_f === -1)
         entity.facing = player_f
+
+      this.lfw.mt.mark = `criminal_respawn`
       if (typeof player_x === 'number') {
         const l = max(this.player_l, player_x - 50)
         const r = min(this.player_r, player_x + 50)

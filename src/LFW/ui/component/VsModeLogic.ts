@@ -110,6 +110,7 @@ export class VsModeLogic extends UIComponent {
   }
   override update(dt: number): void {
     this.fsm.update(dt);
+    this.lfw.mt.mark = 'vs_mode_weapn_rain';
     if (!this.world.paused && this.weapon_drop_timer.add() && this.lfw.mt.range(0, 10) <= 2) {
       this.lfw.weapons.add_random(1, true, EntityGroup.VsWeapon)
     }

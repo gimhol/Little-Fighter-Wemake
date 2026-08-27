@@ -1571,6 +1571,8 @@ export class Entity {
   //     debugger;
   // }
   update(): void {
+    if (this.lfw.mt.debugging)
+      this.lfw.mt.case(`e_${this.id}_${this.name}_start`)
     this._atom_time = this.world.dataset.atom_time;
     const rf = round_float;
     this._lifetime += 1;
@@ -1715,6 +1717,9 @@ export class Entity {
     this.collision_list.length = 0;
     this.collided_list.length = 0;
     this.prev_position.copy(this.position);
+
+    if (this.lfw.mt.debugging)
+      this.lfw.mt.case(`e_${this.id}_${this.name}_end`)
   }
 
   /**
@@ -2328,6 +2333,7 @@ export class Entity {
         const f = this.get_next_frame(nf);
         if (f) return f;
       }
+      this.lfw.mt.mark = 'gnf_0';
       const next = this.lfw.mt.pick(remains)
       if (!next) return;
       return this.get_next_frame(next);
@@ -2545,7 +2551,7 @@ export class Entity {
     nums[NSlot.DEFEND_R_VALUE] = this._defend_r_value;
     nums[NSlot.HEALING] = this._healing;
     nums[NSlot.DEFEND_RATIO] = this._defend_ratio ?? NaN;
-    
+
     nums[NSlot.FALLINJURY] = this.fallinjury;
     nums[NSlot.THROWINJURY] = this.throwinjury;
     nums[NSlot.FACING] = this.facing;
