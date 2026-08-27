@@ -24,8 +24,7 @@ export function spawn_ice_piece(id: string): IOpointInfo {
       get: (e: unknown) => {
         if (!is_object(e)) return 0;
         if (!randoming_dvx || randoming_dvx.mt !== e.lfw.mt) {
-          randoming_dvx = new Randoming(dvx_arr, e.lfw.mt)
-          randoming_dvx.mark = 'ice_piece_vx'
+          randoming_dvx = new Randoming('ice_piece_vx', dvx_arr, e.lfw.mt)
         }
         return randoming_dvx.get();
       }
@@ -34,8 +33,7 @@ export function spawn_ice_piece(id: string): IOpointInfo {
       get: (e: unknown) => {
         if (!is_object(e)) return 0;
         if (!randoming_dvy || randoming_dvy.mt !== e.lfw.mt) {
-          randoming_dvy = new Randoming(dvy_arr, e.lfw.mt)
-          randoming_dvy.mark = 'ice_piece_vy'
+          randoming_dvy = new Randoming('ice_piece_vy', dvy_arr, e.lfw.mt)
         }
         return randoming_dvy.get();
       }

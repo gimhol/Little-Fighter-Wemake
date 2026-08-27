@@ -2,22 +2,23 @@ import { MersenneTwister } from "../utils/math/MersenneTwister";
 type NotEmptyArray<T> = [T, ...T[]]
 export class Randoming<T> {
   static mt = new MersenneTwister(Date.now())
-  static create<T>(src: NotEmptyArray<T>, mt?: MersenneTwister, duplicate?: boolean): Randoming<T>;
-  static create<T>(src: T[], mt?: MersenneTwister, duplicate?: boolean): Randoming<T | undefined>;
-  static create<T>(src: T[], mt: MersenneTwister = Randoming.mt, duplicate: boolean = false): Randoming<T | undefined> {
-    return new Randoming<T | undefined>(src, mt, duplicate)
+  static create<T>(name: string, src: NotEmptyArray<T>, mt?: MersenneTwister, duplicate?: boolean): Randoming<T>;
+  static create<T>(name: string, src: T[], mt?: MersenneTwister, duplicate?: boolean): Randoming<T | undefined>;
+  static create<T>(name: string, src: T[], mt: MersenneTwister = Randoming.mt, duplicate: boolean = false): Randoming<T | undefined> {
+    return new Randoming<T | undefined>(name, src, mt, duplicate)
   }
 
+  readonly name: string;
   readonly mt: MersenneTwister;
   protected _src: Readonly<T[]>;
   protected cur: T[]
   protected taken: T | null = null;
   protected duplicate: boolean;
-  mark = `randoming`
   get src() { return this._src }
 
 
-  constructor(src: T[], mt: MersenneTwister = Randoming.mt, duplicate: boolean = false) {
+  constructor(name: string, src: T[], mt: MersenneTwister = Randoming.mt, duplicate: boolean = false) {
+    this.name = name;
     this.mt = mt
     this._src = src;
     this.cur = [...src];
@@ -43,12 +44,11 @@ export class Randoming<T> {
     if (!this.cur.length) {
       this.cur = this._src.length > 1 ? this._src.filter(v => v != this.taken) : [...this._src];
     }
-
     const idx = this.random_in(0, this.cur.length);
     return this.cur.splice(idx, 1)[0];
   }
   protected random_in(l: number, r: number) {
-    this.mt.mark = this.mark;
+    this.mt.mark = this.name;
     return this.mt.range(l, r);
   }
 }

@@ -31,7 +31,7 @@ export class WeaponsHelper extends ObjectsHelper {
       let list = this.lfw.datas.weapons;
       if (group) list = list.filter(v => v.base.group?.some(g => g === group))
       if (!list.length) return void 0;
-      ret = new Randoming(list, this.lfw.mt, duplicate)
+      ret = new Randoming('weapons_randoms', list, this.lfw.mt, duplicate)
       map.set(group, ret)
     }
     return ret;

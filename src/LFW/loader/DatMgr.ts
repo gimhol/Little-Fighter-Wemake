@@ -328,7 +328,7 @@ export class DatMgr {
     const objects = this.get_objects_of_group(group);
     this._inner.randomings.set(
       group,
-      ret = new Randoming(objects, this.lfw.mt)
+      ret = new Randoming('dat_${group}_randoming', objects, this.lfw.mt)
     );
     return ret
   }
@@ -409,7 +409,9 @@ export class DatMgr {
         bg_set.add(bg)
       }
     }
-    this._inner.bg_randomings.set(key, ret = new Randoming(Array.from(bg_set), this.lfw.mt));
+    const pool = Array.from(bg_set)
+    ret = new Randoming(`bg_${groups.join('_')}_randoming`, pool, this.lfw.mt)
+    this._inner.bg_randomings.set(key, ret);
     return ret
   }
   /** @deprecated 我突然觉得这玩意不该由DatMgr负责... */

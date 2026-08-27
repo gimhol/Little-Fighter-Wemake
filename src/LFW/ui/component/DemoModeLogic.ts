@@ -139,7 +139,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
   protected static _stages: Randoming<IStageInfo> | null = null
   protected static get_situations(lfw: LFW) {
     if (this._situations) return this._situations;
-    return this._situations = new Randoming<DemoSituation>([
+    return this._situations = new Randoming<DemoSituation>('demo_situation_randoming', [
       /* 闯关 */
       { title: '1 Players Stage Mode', stage_mode: true, teams: new Array(1).fill('1') },
       { title: '2 Players Stage Mode', stage_mode: true, teams: new Array(2).fill('1') },
@@ -181,6 +181,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
   protected static get_stages(lfw: LFW): Randoming<IStageInfo> {
     if (this._stages) return this._stages
     return this._stages = new Randoming(
+      'stage_randoming',
       lfw.datas.stages.filter(v => {
         return (
           false != v.group?.some(v => v != StageGroup.Hidden) &&

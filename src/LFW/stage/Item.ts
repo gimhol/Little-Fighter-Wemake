@@ -44,35 +44,41 @@ export class Item {
     this.world = stage.world;
 
     this.times = info.times ? round(info.times) : void 0;
+
     const data_list: IEntityData[] = [];
-    const randoming_list: Randoming<IEntityData>[] = []
-    if (this.info.id?.length) {
-      for (const oid of this.info.id) {
+    const randoming_list: Randoming<IEntityData>[] = [];
+    let ids: string[] = []
+    const id = this.info.id;
+    if (typeof id === 'string') ids = [id];
+    else if (Array.isArray(id)) ids = id;
+
+    do {
+      if (!ids.length) break;
+      for (const oid of ids) {
         const data = this.lfw.datas.find(oid);
-        if (data) {
-          if (is_fighter_data(data))
-            this._is_fighter = true;
-          data_list.push(data);
-          continue;
-        }
-        const randoming = this.lfw.datas.get_randoming_by_group(oid)
-        if (randoming.src.some(data => is_fighter_data(data)))
-          this._is_fighter = true;
-        if (randoming.src.length) randoming_list.push(randoming);
+        this._is_fighter ||= is_fighter_data(data);
+        if (data) data_list.push(data);
+        if (data) continue;
+        const rd  = this.lfw.datas.get_randoming_by_group(oid);
+        if (!rd.src.length) continue;
+        this._is_fighter ||= rd.src.some(is_fighter_data);
+        randoming_list.push(rd);
       }
-    }
-    if (data_list.length === 1 && !randoming_list.length) {
-      this.data = data_list[0]
-    } else if (data_list.length && !randoming_list.length) {
-      randoming_list.push(new Randoming(data_list, this.lfw.mt))
-    } else if (!data_list.length && randoming_list.length) {
-      this.randoming = new Randoming(randoming_list, this.lfw.mt)
-    } else if (data_list.length && randoming_list.length) {
-      randoming_list.push(new Randoming(data_list, this.lfw.mt))
-      this.randoming = new Randoming(randoming_list, this.lfw.mt)
-    } else {
-      debugger;
-    }
+      if (data_list.length === 1 && !randoming_list.length) {
+        this.data = data_list[0];
+        break;
+      }
+      if (!data_list.length) break;
+      const randoming = new Randoming(`stage_item_oid_randoming`, data_list, this.lfw.mt)
+      randoming_list.push(randoming);
+    } while (0)
+
+    if (randoming_list.length)
+      this.randoming = new Randoming(`stage_item_oids_randoming`, randoming_list, this.lfw.mt);
+
+
+
+
   }
   update() {
     if (this._released) return;

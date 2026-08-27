@@ -10,7 +10,7 @@ export class ObjectsHelper {
 
   constructor(lfw: LFW) {
     this.lfw = lfw;
-    this.team_randoming = new Randoming([
+    this.team_randoming = new Randoming('team_randoming', [
       TeamEnum.Team_1,
       TeamEnum.Team_2,
       TeamEnum.Team_3,

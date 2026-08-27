@@ -87,7 +87,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
   override on_start(): void {
     super.on_start?.();
     const fighters = this.lfw.datas.get_fighters_of_group(EG.Regular)
-    this._randoming = new Randoming(fighters, this.lfw.mt)
+    this._randoming = new Randoming(`charmenu_fighter_randoming`, fighters, this.lfw.mt)
     this.lfw.callbacks.add(this._lf2_callbacks)
     const heads = this.node.search_components(CharMenuHead)
     const p_nam = this.node.search_components(CharMenuPlayerName)

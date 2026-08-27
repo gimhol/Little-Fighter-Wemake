@@ -164,7 +164,7 @@ export class __Modern extends BaseSounds {
   }
   constructor(lfw: LFW) {
     super(lfw);
-    this._bgms = new Randoming(this.lfw.bgms, this.lfw.mt)
+    this._bgms = new Randoming('bgm_randoming', this.lfw.bgms, this.lfw.mt)
   }
   private _stop_bgm(): void {
     if (!this._bgm_node) return;
