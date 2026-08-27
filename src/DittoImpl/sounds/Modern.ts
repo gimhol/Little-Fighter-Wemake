@@ -1,5 +1,6 @@
 import { AsyncValuesKeeper } from "@/DittoImpl/AsyncValuesKeeper";
 import { Graves } from "@/LFW/base/Graves";
+import { CMD } from "@/LFW/defines/CMD";
 import { Defines } from "@/LFW/defines/defines";
 import { BaseSounds } from "@/LFW/ditto/sounds/BaseSounds";
 import { Randoming } from "@/LFW/helper/Randoming";
@@ -180,7 +181,7 @@ export class __Modern extends BaseSounds {
     this._stop_bgm();
     this._callbacks.call("on_bgm_changed", null, prev, this);
   }
-  _random_next = () => this.play_bgm('?')
+  _random_next = () => this.lfw.push_cmd(CMD.BGM, '?')
   override play_bgm(name: string, restart?: boolean | undefined): () => void {
     if (!restart && this._prev_bgm_url === name) return () => { };
     const prev = this.bgm();

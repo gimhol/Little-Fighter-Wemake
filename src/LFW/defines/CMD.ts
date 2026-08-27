@@ -47,6 +47,8 @@ export const enum CMD {
   CHANGE_BG = "CHANGE_BG",
   /** 切换关卡 */
   CHANGE_STAGE = "CHANGE_STAGE",
+  /** 播放 BGM（? 为随机下一首） */
+  BGM = "bgm",
   /** 暂停 */
   PAUSE = "PAUSE",
 }
@@ -74,5 +76,6 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.LOCK_CAM]: "LOCK_CAM",
   [CMD.CHANGE_BG]: "CHANGE_BG",
   [CMD.CHANGE_STAGE]: "CHANGE_STAGE",
+  [CMD.BGM]: "BGM",
   [CMD.PAUSE]: "PAUSE"
 }

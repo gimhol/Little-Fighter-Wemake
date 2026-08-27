@@ -84,6 +84,9 @@ CMDS.register(CMD.F2, (c) => { c.world.set_paused(2); })
 CMDS.register(CMD.F3, (c) => { c.world.set_fn_locked(1); })
 CMDS.register(CMD.F4, (c) => { c.world.lfw.pop_ui_safe(); })
 CMDS.register(CMD.F5, (c) => { c.world.dataset.playrate = c.world.dataset.playrate === 1 ? 1000 : 1; })
+CMDS.register(CMD.BGM, (ctx) => {
+  ctx.world.lfw.sounds.play_bgm(ctx.str(1) ?? '?');
+})
 CMDS.register(CMD.F6, (c) => {
   if (c.world.fn_locked) return Ditto.debug(`F6 failed, Fn Locked.`)
   if (c.world.stage_limit) return Ditto.debug(`F6 failed, Stage Limited.`)
