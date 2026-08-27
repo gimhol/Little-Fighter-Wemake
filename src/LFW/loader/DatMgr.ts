@@ -353,6 +353,16 @@ export class DatMgr {
       : this.entities.find(arg_0);
   }
 
+  find_object(id: string): IEntityData | undefined;
+  find_object(predicate: IFindPredicate<IEntityData>): IEntityData | undefined;
+  find_object(
+    arg_0: string | IFindPredicate<IEntityData>,
+  ): IEntityData | undefined {
+    return is_str(arg_0)
+      ? this.objects.find((v) => v.id === arg_0)
+      : this.objects.find(arg_0);
+  }
+
   find_fighter(id: string): IEntityData | undefined;
   find_fighter(
     predicate: IFindPredicate<IEntityData>,

@@ -49,7 +49,7 @@ export class TestCase implements IState<number> {
     this.owner.lfw.change_bg('bg_4');
   }
   spawn(oid: string) {
-    const data = this.lfw.datas.find_entity(oid);
+    const data = this.lfw.datas.find_object(oid);
     if (!data) return null;
     return this.lfw.factory.create_entity(this.world, data)!;
   }

@@ -240,9 +240,9 @@ export function collision_from_snapshot(lfw: LFW, snapshot: ICollisionSnapshot):
   const victim = lfw.world.find_entity(snapshot.vid)
   if (!victim) return null;
 
-  const adata = lfw.datas.find_entity(snapshot.adata_id)
+  const adata = lfw.datas.find_object(snapshot.adata_id)
   if (!adata) return null;
-  const vdata = lfw.datas.find_entity(snapshot.vdata_id)
+  const vdata = lfw.datas.find_object(snapshot.vdata_id)
   if (!vdata) return null;
 
   const aframe = adata.frames[snapshot.aframe_id]
