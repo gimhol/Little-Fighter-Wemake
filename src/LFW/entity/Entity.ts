@@ -4,7 +4,6 @@ import type { LFW } from "../LFW";
 import { World } from "../World";
 import { Callbacks } from "../base";
 import { Buff } from "../buff/Buff";
-import { sus_cases } from "../cases_instances";
 import type { Collision } from "../collision/Collision";
 import { collision_clone } from "../collision/Collision";
 import { BaseController } from "../controller/BaseController";
@@ -13,7 +12,6 @@ import {
   Defines,
   EMPTY_FRAME_INFO,
   EntityEnum, EntityGroup, FacingFlag,
-  FrameBehavior,
   FrameId,
   GK,
   GONE_FRAME_INFO,
@@ -41,7 +39,7 @@ import { cross_bounding } from "../utils/cross_bounding";
 import { is_f_num, is_positive, is_str } from "../utils/type_check";
 import { DrinkInfo } from "./DrinkInfo";
 import { EnterFrameResult } from "./EnterFrameResult";
-import { NSlot, SSlot, from_tri, num_or_null, to_tri } from "./EntitySnapshot";
+import { from_tri, NSlot, num_or_null, SSlot, to_tri } from "./EntitySnapshot";
 import type { IEntityCallbacks } from "./IEntityCallbacks";
 import { StatBarType } from "./StatBarType";
 import { summary_mgr } from "./SummaryMgr";
@@ -2634,6 +2632,14 @@ export class Entity {
     strs[SSlot.DISMISS_DATA_ID] = this.dismiss_data?.id ?? '';
     strs[SSlot.TRANSFORM_0_ID] = this.transforms?.[0]?.id ?? '';
     strs[SSlot.TRANSFORM_1_ID] = this.transforms?.[1]?.id ?? '';
+    if (this.copies.size) {
+      let s = '';
+      for (const id of this.copies) s += id + ',';
+      strs[SSlot.COPIES] = s.slice(0, -1);
+    } else {
+      strs[SSlot.COPIES] = '';
+    }
+    strs[SSlot.DEAD_JOIN] = this._dead_join ? JSON.stringify(this._dead_join) : '';
   }
 
   read_snapshot(nums: number[], strs: string[]): void {
@@ -2756,6 +2762,14 @@ export class Entity {
     } else {
       this.transforms = null;
     }
+
+    this.copies.clear();
+    if (strs[SSlot.COPIES])
+      for (const id of strs[SSlot.COPIES].split(','))
+        this.copies.add(id);
+    this._dead_join = strs[SSlot.DEAD_JOIN]
+      ? JSON.parse(strs[SSlot.DEAD_JOIN]) as IDeadJoin
+      : null;
   }
 
 }

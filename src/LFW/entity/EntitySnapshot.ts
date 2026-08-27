@@ -111,6 +111,8 @@ export enum SSlot {
   DISMISS_DATA_ID,
   TRANSFORM_0_ID,
   TRANSFORM_1_ID,
+  COPIES,
+  DEAD_JOIN,
   COUNT,
 }
 
