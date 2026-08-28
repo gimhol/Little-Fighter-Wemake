@@ -157,16 +157,14 @@ function apply_buff(
     !(hitflag & ally_flag)
   ) return;
   const id = data.buff + '_' + victim.id;
-  let buf = world.buffs.get(id);
-  if (!buf) {
-    buf = lfw.factory.create_buff(buff, lfw, id);
-    if (!buf) return;
-    world.buffs.set(id, buf);
-    buf.set_attacker(attacker);
-    buf.set_victims(victim);
-    victim.buffs.set(buf.id, buf);
-  }
+  const buf = world.buffs.get(id) ?? lfw.factory.create_buff(buff, lfw, id);
+  if (!buf) return;
   buf.lifetime = 0;
   buf.duration = duration;
   buf.level += 1;
+  buf.set_attacker(attacker);
+  buf.set_victims(victim);
+  victim.buffs.set(buf.id, buf);
+  world.buffs.set(id, buf);
+  buf.apply?.();
 }

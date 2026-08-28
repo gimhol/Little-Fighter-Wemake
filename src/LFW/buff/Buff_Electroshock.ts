@@ -1,6 +1,7 @@
 import { SE } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { is_fighter } from "../entity/type_check";
+import { round_float } from "../utils";
 import { Buff } from "./Buff";
 
 export class Buff_Electroshock extends Buff {
@@ -17,5 +18,14 @@ export class Buff_Electroshock extends Buff {
     ) return 'keep'
     victim.wait += 1;
     return 'keep'
+  }
+  override apply(): void {
+    for (const vid of this.victims) {
+      const victim = this.world.find_entity(vid)
+      if (!victim) continue;
+      if (victim.state == SE.Injured) continue;
+      if (victim.state == SE.Falling) continue;
+      this.duration = round_float(this.duration / 2);
+    }
   }
 }

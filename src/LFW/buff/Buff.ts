@@ -57,7 +57,6 @@ export abstract class Buff {
     this._victims.length = 0;
     return this.add_victims(...victims);
   }
-
   add_victims(...victims: (string | Entity)[]): this {
     for (const victim of victims) {
       let entity: Entity | undefined = void 0;
@@ -89,7 +88,7 @@ export abstract class Buff {
     }
     return this;
   }
-
+  apply?(): void
   private _del(id: string): boolean {
     let fast = 0, slow = 0
     let len = this._victims.length
