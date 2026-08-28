@@ -1,5 +1,35 @@
 # Changelog
 
+## [v0.1.46](https://lf.gim.ink/0.1.46)
+
+by [**Gim**](https://gim.ink)
+
+### News
+
+- New weapon: Basketball (an experiment in "multi-sprite overlay" & "sprite rotation")
+![davis & basketball 'playing'](../../image/bskb_davis.gif)
+
+- New map: Pixel Ruler ("for testing some things")
+![test case in the Pixel Ruler](../../image/px_rl.gif)
+
+### Misc
+
+- Adjusted Rudolf's back-and-forth transform logic to roughly match LF2
+- Adjusted Louis D^J+J..J logic to roughly match LF2
+- Adjusted Freeze D>J so it can be broken correctly now
+- Adjusted boomerang behavior to be closer to LF2
+- Adjusted armor logic; Julian/Knight are now closer to the original (and weaker)
+- Adjusted version name generation; you can now see the git commit ID for the version
+- Adjusted UI text rendering
+- Adjusted camera behavior when switching to shorter maps
+- Adjusted Bot return-to-center position (randomized)
+- Adjusted weapon bounce-on-landing behavior
+- Various other adjustments; unknown if there are more issues
+- Fixed a multiplayer failure caused by playing a random next BGM track when the current one ends
+- Fixed an issue where the shadow blocks entities when they hug the top edge of the map
+- Fixed an issue where a held weapon couldn't rescue hostages
+- Fixed an issue where a held weapon couldn't bounce balls
+
 ## [v0.1.45](https://lf.gim.ink/0.1.45)
 
 by [**Gim**](https://gim.ink)  2026-07-18 08:11:51
@@ -420,21 +450,15 @@ by [**Gim**](https://gim.ink)  2026-04-01 02:12:52
 
 ## v0.1.9
 
-by [**Gim**](https://gim.ink)  2026-04-01 02:13:01
+by [**Gim**](https://gim.ink)  2026-04-01 02:12:57
 
-- feat: add “team outline” effect
-- fix: fix the problem that the background and level buttons do not respond
-- fix: fix the problem of incorrect display on the scoreboard
-- fix: weapon will have a more reasonable effect
-- fix: Improved the performance of the weapon's bounce when it hits the ground.
-- fix: Fixed the problem of incorrect starting point for weapon throwing.
-- fix: Fixed the issue that airborne weapons can't be hit again.
-- feat: Rooms can now be password - protected.
-- fix: It's no longer possible to join a room that has already started or where all players are ready.
-- fix: The survival mode will correctly display the current stage number.
-- fix: The "GO->" will no longer be displayed in the survival mode.
-- fix: The "GO->" will no longer be displayed in the last sub-level of the mission - passing mode.
-- fix: Fixed the problem of incorrect relationship between difficulty and the number of enemies in the mission-passing/survival mode (the problem was that there were too many enemies).
+- fix: The attacked will drop the heavy weapons they are holding correctly
+- fix: Adjusted the performance of hitting and being hit by baseball-like weapons
+- fix: The boomerang can track enemies now
+- feat: You can see your own latency in the room list
+- feat: In the room, you can see the latency of all room members
+- fix: Fix the issues of bots not using moves and being overly defensive
+- feat: Custom game supported
 
 ## v0.1.5
 
