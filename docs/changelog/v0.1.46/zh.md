@@ -5,7 +5,10 @@ by [**Gim**](https://gim.ink)
 ### 新特性
 
 - 新武器：篮球 (“多精灵图叠加”、“精灵图旋转”的实验品)
+![davis & basketball 'playing'](../../image/bskb_davis.gif)
+
 - 新地图：像素尺（“用于测试一些东西”）
+![test case in the Pixel Ruler](../../image/px_rl.gif)
 
 ### 杂项
 
