@@ -7,6 +7,7 @@ export * from "./_Base";
 export * from "./ErrCode";
 export * from "./IClientInfo";
 export * from "./IConnError";
+export * from "./IDataInfo";
 export * from "./IJob";
 export * from "./IMsg_Chat";
 export * from "./IMsg_ClientInfo";

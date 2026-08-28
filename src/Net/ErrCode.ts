@@ -24,4 +24,5 @@ export const enum ErrCode {
   NotAdmin = 1014,
   RoomPwdWrong = 1015,
   RoomAlreadyStart = 1016,
+  RoomVersionMismatch = 1017,
 }

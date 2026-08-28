@@ -64,6 +64,23 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
           <Strong>{`${room?.title} (${players?.length}/${room?.max_players})`}</Strong>
         </Flex>
         <Divider />
+        <Show show={!!room?.lfw_version || !!room?.data_infos?.length}>
+          <Flex direction='column' align='stretch' gap={2} style={{ margin: '0 5px 5px' }}>
+            {
+              room?.lfw_version ?
+                <Text size='s' style={{ opacity: 0.8 }}>{t('lfw_version')}: {room.lfw_version}</Text> :
+                null
+            }
+            {
+              room?.data_infos?.map((info, i) =>
+                <Text key={i} size='ss' style={{ opacity: 0.8, wordBreak: 'break-all' }}>
+                  {t('data_package')}[{i + 1}] {info.type ? `[${info.type}]` : ''} {info.title ?? ''}{typeof info.version === 'number' ? ` v${info.version}` : ''}{info.md5 ? ` · ${info.md5}` : ''}
+                </Text>
+              )
+            }
+          </Flex>
+          <Divider />
+        </Show>
         {
           room?.owner?.id === conn?.client?.id ?
             <>

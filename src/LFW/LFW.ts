@@ -77,6 +77,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   static get ui() { return this.instance.ui }
   static get ditto() { return I.Ditto }
   static get uis() { return this.instance.uis }
+  static get DATA_INFOS() { return this.instance.data_infos; }
+
 
   get lang(): string { return this._i18n.lang }
   set lang(v: string) { this._i18n.lang = v }
@@ -156,6 +158,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
    */
   readonly zips: I.IZip[] = [];
   readonly md5s: string[] = [];
+  readonly data_infos: D.IDataInfo[] = [];
   readonly players: Map<string, PlayerInfo> = new Map([
     ["1", new PlayerInfo("1")],
     ["2", new PlayerInfo("2")],
@@ -422,10 +425,12 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.emit_progress(txt, progress);
   }
 
-  protected async load_zip_from_info_url(info_url: string): Promise<[I.IZip, string]> {
+  protected async load_zip_from_info_url(info_url: string): Promise<[I.IZip, string, D.IDataInfo]> {
     this._dispose_check('load_zip_from_info_url')
     this.emit_progress(`${info_url}`, 0);
-    const [{ url, md5 }] = await I.Ditto.Importer.import_as_json([info_url]);
+    const [raw] = await I.Ditto.Importer.import_as_json<Record<string, unknown>>([info_url]);
+    const info = pick_data_info(raw);
+    const { url = '', md5 = '' } = info;
     const zip_url = full_zip_url(info_url, url)
     this._dispose_check('load_zip_from_info_url')
     const exists = await I.Ditto.Cache.get(md5);
@@ -457,7 +462,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       });
     }
     this.emit_progress(`${url}`, 100);
-    return [ret, md5];
+    return [ret, md5, info];
   }
 
   /**
@@ -502,9 +507,24 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
     try {
       for (const a of arg1) {
-        const [zip, md5] = is_str(a) ? await this.load_zip_from_info_url(a) : [a, 'unknown'];
-        await this.load_data(zip, md5);
-        await this.load_ui(zip);
+        let zip: I.IZip;
+        let md5: string;
+        let info: D.IDataInfo;
+        if (is_str(a)) {
+          [zip, md5, info] = await this.load_zip_from_info_url(a);
+        } else {
+          zip = a;
+          md5 = 'unknown';
+          info = {
+            type: LFW.INFO?.type,
+            title: LFW.INFO?.title || zip.name,
+            description: LFW.INFO?.description,
+            author: LFW.INFO?.author,
+            version: LFW.INFO?.version,
+            md5,
+          };
+        }
+        await this.load_data(zip, md5, info);
       }
       if (is_first) this.callbacks.call("on_prel_loaded", this);
       this._playable = true;
@@ -530,7 +550,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     throw error;
   }
 
-  private async load_data(zip: I.IZip, md5: string) {
+  private async load_data(zip: I.IZip, md5: string, info: D.IDataInfo) {
     this._dispose_check('load_data')
 
     let r = await zip.file("strings.json")?.json();
@@ -544,6 +564,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this._dispose_check('load_data')
     this.zips.unshift(zip);
     this.md5s.unshift(md5);
+    this.data_infos.unshift(info);
     this.callbacks.call("on_zips_changed", this.zips);
 
     const index_files = zip.file(/\.index\.(json5|xml)$/g).map(v => v.name)
@@ -566,14 +587,14 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       regist(this.objects, d);
     }
 
-    if (zip) {
-      const bgms = zip.file(/bgm\/.*?\.mp3$/)
-      for (const bgm of bgms) {
-        this.bgms.some(v => v === bgm.name) ||
-          this.bgms.push(bgm.name)
-      }
+    const bgms = zip.file(/bgm\/.*?\.mp3$/)
+    for (const bgm of bgms) {
+      this.bgms.some(v => v === bgm.name) ||
+        this.bgms.push(bgm.name)
     }
+    await this.load_ui(zip);
   }
+
   dispose() {
     this.debug('dispose')
     this._disposed = true;
@@ -800,6 +821,28 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   recycle_collision(c: Collision) {
     return this._collision_graves.add(c);
+  }
+}
+
+/**
+ * 从数据包 info json 中提取用于联机校验的元数据（过滤掉庞大的文件树等无用字段）
+ *
+ * @param {unknown} raw 数据包 info json 内容
+ * @returns {D.IDataInfo}
+ */
+function pick_data_info(raw: unknown): D.IDataInfo {
+  const v = (raw ?? {}) as Record<string, unknown>
+  const str = (x: unknown): string | undefined => typeof x === 'string' ? x : void 0
+  const num = (x: unknown): number | undefined => typeof x === 'number' ? x : void 0
+  return {
+    type: str(v.type),
+    url: str(v.url),
+    title: str(v.title),
+    description: str(v.description),
+    author: str(v.author),
+    version: num(v.version),
+    time: str(v.time),
+    md5: str(v.md5),
   }
 }
 

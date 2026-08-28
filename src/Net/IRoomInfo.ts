@@ -1,4 +1,5 @@
 import type { IClientInfo } from "./IClientInfo";
+import type { IDataInfo } from "./IDataInfo";
 import type { IRoomClientInfo } from "./IRoomClientInfo";
 
 /**
@@ -79,4 +80,20 @@ export interface IRoomInfo {
    * @memberof IRoomInfo
    */
   need_pwd?: boolean;
+
+  /**
+   * 房主创建房间时的 LFW 版本号
+   *
+   * @type {string}
+   * @memberof IRoomInfo
+   */
+  lfw_version?: string;
+
+  /**
+   * 房主创建房间时的数据包信息列表（每个数据包含 MD5 等元数据）
+   *
+   * @type {IDataInfo[]}
+   * @memberof IRoomInfo
+   */
+  data_infos?: IDataInfo[];
 }

@@ -38,6 +38,7 @@ export * from "./IChaseInfo";
 export * from "./ICpointInfo";
 export * from "./IDatContext";
 export * from "./IDatIndex";
+export * from "./IDataInfo";
 export * from "./IDataLists";
 export * from "./IDataMap";
 export * from "./IDeadJoin";

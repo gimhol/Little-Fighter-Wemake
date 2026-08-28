@@ -73,6 +73,13 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
     return () => c()
   }, [conn, conn_state === TriState.True, room])
 
+  function get_version_info() {
+    return {
+      lfw_version: LFW.VERSION_NAME,
+      data_infos: LFW.DATA_INFOS,
+    }
+  }
+
   function create_room() {
     if (
       ref_room_joining.current ||
@@ -83,6 +90,7 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
     conn.send(MsgEnum.CreateRoom, {
       min_players: 1,
       max_players: 4,
+      ...get_version_info(),
     }).then((resp) => {
       update_rooms()
     }).catch(e => {
@@ -99,7 +107,7 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
       ref_room_creating.current
     ) return;
     set_room_joining(true)
-    conn.send(MsgEnum.JoinRoom, { roomid, pwd }).catch(e => {
+    conn.send(MsgEnum.JoinRoom, { roomid, pwd, ...get_version_info() }).catch(e => {
       alert('' + e)
     }).finally(() => {
       set_room_joining(false)
@@ -184,9 +192,19 @@ function RoomItem(props: IRoomItemProps) {
     <Flex direction='column' align='stretch' gap={5}>
       <Flex gap={10} direction='column' align='stretch' justify='space-between'
         style={{ padding: 5, boxSizing: 'border-box', height: 64 }}>
-        <Flex gap={10}>
+        <Flex gap={10} align='center'>
           <Strong> {t('room_name')}: {r.title} </Strong>
           <Text> {t('player_count')}: {r.clients?.length}/{r.max_players} </Text>
+          {
+            r.lfw_version || r.data_infos?.length ?
+              <Text
+                size='ss'
+                title={`${r.lfw_version ?? ''}${r.data_infos?.length ? '\n' + r.data_infos.map(v => `${v.type ?? ''} ${v.title ?? ''}${typeof v.version === 'number' ? ' v' + v.version : ''} ${v.md5 ?? ''}`).join('\n') : ''}`}
+                style={{ opacity: 0.6, textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: 130 }}>
+                {r.lfw_version}{r.data_infos?.length ? ` · ${t('data_package')}×${r.data_infos.length}` : ''}
+              </Text> :
+              null
+          }
         </Flex>
         <Flex gap={10}>
           <Text style={{ flex: 1, display: 'flex' }} >

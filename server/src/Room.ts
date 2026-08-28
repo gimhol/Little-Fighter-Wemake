@@ -16,7 +16,7 @@ import {
   IRespExitRoom,
   IRespJoinRoom, IRespKick,
   IRespTick,
-  IRoomInfo, MsgEnum, SystemPlayerInfo, TInfo
+  IDataInfo, IRoomInfo, MsgEnum, SystemPlayerInfo, TInfo
 } from "./Net";
 import { random_str } from './random_str';
 
@@ -35,6 +35,8 @@ export class Room {
   private _tick_seq = -1;
   seed: number;
   pwd: string = '';
+  lfw_version: string = '';
+  data_infos: IDataInfo[] = [];
   get code() { return this._code; }
   get room_info(): Required<IRoomInfo> {
     return {
@@ -50,6 +52,8 @@ export class Room {
       max_players: this.max_players,
       started: this._tick_seq >= 0,
       need_pwd: !!this.pwd,
+      lfw_version: this.lfw_version,
+      data_infos: this.data_infos,
     }
   }
   constructor(owner: Client, req: IReqCreateRoom) {
@@ -71,6 +75,8 @@ export class Room {
     const max = Math.max(this.max_players, this.min_players);
     this.min_players = min;
     this.max_players = max
+    this.lfw_version = req.lfw_version?.trim() ?? ''
+    this.data_infos = (req.data_infos ?? []).map(v => ({ ...v }))
     this.clients.add(owner);
     owner.room = this;
     owner.resp(req.type, req.pid, { room: this.room_info })
@@ -163,6 +169,25 @@ export class Room {
     if (a_pwd != b_pwd) {
       client.resp(req.type, req.pid, { code: ErrCode.RoomPwdWrong, error: 'Wrong password!' })
       return false
+    }
+    const { lfw_version = '', data_infos = [] } = req
+    if (this.lfw_version && this.lfw_version !== (lfw_version?.trim() ?? '')) {
+      client.resp(req.type, req.pid, { code: ErrCode.RoomVersionMismatch, error: `LFW 版本不匹配! (房间: ${this.lfw_version}, 你: ${lfw_version})` })
+      return false
+    }
+    const room_md5s = this.data_infos.map(v => v.md5?.trim() ?? '').filter(Boolean)
+    if (room_md5s.length) {
+      const join_md5s = (data_infos ?? []).map(v => v.md5?.trim() ?? '').filter(Boolean)
+      const matched =
+        room_md5s.length === join_md5s.length &&
+        room_md5s.every(m => join_md5s.includes(m))
+      if (!matched) {
+        client.resp(req.type, req.pid, {
+          code: ErrCode.RoomVersionMismatch,
+          error: `数据包 MD5 不匹配! (房间: ${room_md5s.join(', ')}, 你: ${join_md5s.join(', ')})`
+        })
+        return false
+      }
     }
     const all_client_ready = Array.from(this.clients).every(v => v.ready)
     if (this._tick_seq >= 0 || all_client_ready) {
