@@ -1,5 +1,6 @@
 
-import { useFloating, useForwardedRef, useShortcut, useStateRef } from "@fimagine/dom-hooks";
+import { useFloating } from "@/hooks/useFloating";
+import { useForwardedRef, useShortcut, useStateRef } from "@fimagine/dom-hooks";
 import List, { type ListRef } from "rc-virtual-list";
 import {
   type CSSProperties, type ForwardedRef, type ReactNode,

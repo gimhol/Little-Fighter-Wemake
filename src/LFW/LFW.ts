@@ -79,6 +79,35 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   static get uis() { return this.instance.uis }
   static get DATA_INFOS() { return this.instance.data_infos; }
 
+  /**
+   * 收集本客户端完整的数据包信息（已加载 + 即将加载）
+   *
+   * 已加载的取自 `data_infos`；尚未加载但声明在 `LFW.ZIPS` 中的数据包，
+   * 读取其 info json 以获取 MD5 等元数据。
+   * 用于联机时校验双方将要使用的完整数据集合是否一致。
+   *
+   * @returns {Promise<D.IDataInfo[]>}
+   */
+  static async collect_data_infos(): Promise<D.IDataInfo[]> {
+    const inst = LFW.instance;
+    if (!inst) return [];
+    const loaded = inst.data_infos;
+    const loaded_md5s = new Set(loaded.map(v => v?.md5));
+    const ret: D.IDataInfo[] = [...loaded];
+    for (const a of LFW.ZIPS) {
+      if (!is_str(a)) continue; // IZip 对象已包含在 loaded 中
+      let info: D.IDataInfo;
+      try {
+        const [raw] = await I.Ditto.Importer.import_as_json<Record<string, unknown>>([a]);
+        info = pick_data_info(raw);
+      } catch (e) {
+        I.Ditto.warn(`[LFW::collect_data_infos] 读取数据包信息失败: ${a}`, e)
+        continue;
+      }
+      if (info.md5 && !loaded_md5s.has(info.md5)) ret.push(info);
+    }
+    return ret;
+  }
 
   get lang(): string { return this._i18n.lang }
   set lang(v: string) { this._i18n.lang = v }

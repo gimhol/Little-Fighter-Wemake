@@ -1,6 +1,7 @@
 import { Input, type InputRef } from "@/Component/Input";
+import { useFloating } from "@/hooks/useFloating";
 import { LFW } from "@/LFW";
-import { useFloating, useForwardedRef, useStateRef } from "@fimagine/dom-hooks";
+import { useForwardedRef, useStateRef } from "@fimagine/dom-hooks";
 import classNames from "classnames";
 import List from "rc-virtual-list";
 import { type ForwardedRef, forwardRef, useCallback, useEffect, useRef } from "react";
@@ -73,10 +74,10 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
     return () => c()
   }, [conn, conn_state === TriState.True, room])
 
-  function get_version_info() {
+  async function get_version_info() {
     return {
       lfw_version: LFW.VERSION_NAME,
-      data_infos: LFW.DATA_INFOS,
+      data_infos: await LFW.collect_data_infos(),
     }
   }
 
@@ -87,11 +88,13 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
     ) return;
     if (!conn) return;
     set_room_creating(true)
-    conn.send(MsgEnum.CreateRoom, {
-      min_players: 1,
-      max_players: 4,
-      ...get_version_info(),
-    }).then((resp) => {
+    get_version_info().then((version_info) =>
+      conn.send(MsgEnum.CreateRoom, {
+        min_players: 1,
+        max_players: 4,
+        ...version_info,
+      })
+    ).then(() => {
       update_rooms()
     }).catch(e => {
       console.log(e)
@@ -107,7 +110,9 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
       ref_room_creating.current
     ) return;
     set_room_joining(true)
-    conn.send(MsgEnum.JoinRoom, { roomid, pwd, ...get_version_info() }).catch(e => {
+    get_version_info().then((version_info) =>
+      conn.send(MsgEnum.JoinRoom, { roomid, pwd, ...version_info })
+    ).catch(e => {
       alert('' + e)
     }).finally(() => {
       set_room_joining(false)

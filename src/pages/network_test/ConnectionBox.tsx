@@ -6,7 +6,7 @@ import { Input } from "@/Component/Input";
 import { Text } from "@/Component/Text";
 import { useForage } from "@/hooks/useForage";
 import { LFW } from "@/LFW";
-import { useFloating } from "@fimagine/dom-hooks/dist/useFloating";
+import { useFloating } from "@/hooks/useFloating";
 import { useForwardedRef } from "@fimagine/dom-hooks/dist/useForwardedRef";
 import { useStateRef } from "@fimagine/dom-hooks/dist/useStateRef";
 import { type ForwardedRef, forwardRef, useEffect, useMemo, useRef, useState } from "react";
