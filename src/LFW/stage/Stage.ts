@@ -236,7 +236,7 @@ export class Stage {
     this.play_phase_sounds();
     const { ce } = this;
     if (objects?.length) for (const object of objects) {
-      this.spawn_object(object, ce);
+      this.spawn(phase, object, ce);
     }
     if (is_num(phase.cam_jump_to_x)) {
       this.world.camera.jump_x(phase.cam_jump_to_x);
@@ -329,14 +329,14 @@ export class Stage {
     }
     return count;
   }
-  async spawn_object(obj_info: IStageObjectInfo, count: number) {
+  spawn(phase: IStagePhaseInfo, obj: IStageObjectInfo, count: number) {
     if (this.world.stage !== this) return;
-    const { ratio, times = 1 } = obj_info;
+    const { ratio, times = 1 } = obj;
     let spawn_count = ratio === void 0 ? 1 : floor(round_float(count * ratio, 10));
     if (spawn_count <= 0 || !times) return;
 
     while (spawn_count > 0) {
-      const item = new Item(this, obj_info);
+      const item = new Item(this, phase, obj);
       item.spawn();
       this.items.add(item);
       --spawn_count;

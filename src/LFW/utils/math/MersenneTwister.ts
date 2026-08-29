@@ -121,6 +121,7 @@ export class MersenneTwister {
 
   /** 生成[min, max)范围内的整数 */
   public range(min: number, max: number, debugging = this.debugging): number {
+    if (min == max) return min;
     const ret = floor(this.float() * (max - min)) + min
     if (this.debugging) mt_cases.push(this.mark, 'range', min, max, ret)
     return ret;

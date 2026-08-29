@@ -48,10 +48,11 @@ export class CharacterState_Lying extends CharacterState_Base {
     if (e.dead_join && e.hp <= 0) {
       e.motionless = 30
       e.invulnerable = 30
-      e.hp = e.hp_r = e.hp_max = (e.dead_join.hp ?? e.hp_max);
-      e.team = (e.dead_join.team ?? TeamEnum.Team_1);
+      e.hp = e.hp_r = e.hp_max = e.dead_join.hp ?? e.hp_max;
+      e.team = e.dead_join.team ?? TeamEnum.Team_1;
+      e.reserve = e.dead_join.reserve ?? 0;
       e.lfw.world.etc(e.position.x, e.position.y, e.position.z, '6')
-      e.outline_color = ''
+      e.outline_color = '';
       e.dead_join = null;
       e.wakeup_invuln = true;// 是否全部加入的都要这个？
     }

@@ -1,4 +1,4 @@
-import { Defines, Difficulty, type IEntityData, type IStageObjectInfo } from "../defines";
+import { Defines, Difficulty, type IEntityData, type IStageObjectInfo, type IStagePhaseInfo } from "../defines";
 import { TeamEnum } from "../defines/TeamEnum";
 import type { Entity } from "../entity/Entity";
 import type { IEntityCallbacks } from "../entity/IEntityCallbacks";
@@ -25,6 +25,7 @@ export class Item {
   readonly info: Readonly<IStageObjectInfo>;
   readonly objects = new Set<Entity>();
   readonly stage: Stage;
+  readonly phase: IStagePhaseInfo;
   readonly end_delay = new Times(0, 120)
   readonly entity_callback: IEntityCallbacks = {
     on_team_changed: (e) => {
@@ -37,8 +38,9 @@ export class Item {
     }
   };
 
-  constructor(stage: Stage, info: IStageObjectInfo) {
+  constructor(stage: Stage, phase: IStagePhaseInfo, info: IStageObjectInfo) {
     this.stage = stage;
+    this.phase = phase;
     this.info = info;
     this.lfw = stage.lfw;
     this.world = stage.world;
@@ -59,7 +61,7 @@ export class Item {
         this._is_fighter ||= is_fighter_data(data);
         if (data) data_list.push(data);
         if (data) continue;
-        const rd  = this.lfw.datas.get_randoming_by_group(oid);
+        const rd = this.lfw.datas.get_randoming_by_group(oid);
         if (!rd.src.length) continue;
         this._is_fighter ||= rd.src.some(is_fighter_data);
         randoming_list.push(rd);
@@ -103,18 +105,14 @@ export class Item {
     }
   }
 
-  spawn(
-    range_x: number = 100,
-    range_y: number = 0,
-    range_z: number = 0,
-  ): boolean {
+  spawn(): boolean {
     const data = this.data || this.randoming?.get().get();
     if (!data) { debugger; return false; }
     const e = this.lfw.factory.create_entity(this.world, data);
     if (!e) { debugger; return false; }
     let {
-      hp, act, facing, x = 0, y, z, reserve, hp_map, mp, mp_map,
-      outline_color
+      hp, act, facing, x, y, z, reserve, hp_map, mp, mp_map,
+      outline_color,
     } = this.info;
     if (this.times) this.times--;
     e.outline_color = outline_color ?? ''
@@ -127,18 +125,32 @@ export class Item {
     e.dead_gone = true;
     e.reserve = reserve ?? 0;
     this.lfw.mt.mark = `stage_item_spawn`
-    const px = this.lfw.mt.range(x, x + range_x)
-    const pz = is_num(z)
-      ? this.lfw.mt.range(z - range_z, z + range_z)
-      : this.lfw.mt.range(this.stage.near, this.stage.far)
-    e.set_position(px, null, pz)
+
+    const { enemy_l = 0, enemy_r = 0 } = this.phase;
+    const { range_x = 200, range_y = 0, range_z = 0 } = this.info;
+    if (x == void 0) x = this.lfw.mt.float() < 0.5 ? enemy_l : enemy_r;
+
+
+    const min_x = x
+    const max_x = x + range_x
+    const min_z = is_num(z) ? z : this.stage.far;
+    const max_z = is_num(z) ? z + range_z : this.stage.near;
+    const min_y = is_num(y) ? y : is_weapon(e) ? 300 : 0;
+    const max_y = is_num(y) ? (y + range_y) : is_weapon(e) ? 300 : 0;
+    const px = this.lfw.mt.range(min_x, max_x)
+    const py = this.lfw.mt.range(min_y, max_y)
+    const pz = this.lfw.mt.range(min_z, max_z)
+
+    e.set_position(px, py, pz)
     if (this.info.join)
       e.dead_join = {
         hp: this.info.join,
-        team: this.info.join_team ?? TeamEnum.Team_1
+        team: this.info.join_team ?? TeamEnum.Team_1,
+        reserve: this.info.join_reserve
       }
 
-    let _hp = hp_map?.[this.world.dataset.difficulty]
+    let _hp = hp_map?.[this.world.dataset.difficulty];
+
     if (!is_num(_hp) && is_num(hp)) {
       switch (this.world.dataset.difficulty) {
         case Difficulty.Easy: _hp = round(hp * 3 / 4); break;
@@ -148,19 +160,16 @@ export class Item {
     }
     if (is_num(_hp)) e.hp = e.hp_r = e.hp_max = _hp;
 
-    let _mp = mp_map?.[this.world.dataset.difficulty]
-    if (is_num(mp) && !is_num(_mp)) _mp = mp;
-    if (is_num(_mp)) e.mp = e.mp_max = _mp;
 
-    if (is_num(y)) e.set_position_y(y);
+    mp ??= mp_map?.[this.world.dataset.difficulty]
+    if (is_num(mp)) e.mp = e.mp_max = mp;
 
-    if (is_fighter(e)) {
+    if (is_fighter(e))
       e.name = e.data.base.name;
-    } else if (is_weapon(e) && !is_num(y)) {
-      e.set_position_y(450);
-    }
+
     e.team = this.stage.team;
     e.attach();
+
     if (facing == 1 || facing == -1) e.facing = facing;
     if (is_str(act)) e.enter_frame_by_id(act);
     else if (is_fighter(e)) e.enter_frame_by_id("running_0")

@@ -11,6 +11,9 @@ export function xml_x_stage_object_info(xml: IXML, o: IStageObjectInfo, tag: str
   el.set_attr("x", o.x);
   el.set_attr("y", o.y);
   el.set_attr("z", o.z);
+  el.set_attr("range_x", o.range_x);
+  el.set_attr("range_y", o.range_y);
+  el.set_attr("range_z", o.range_z);
   el.set_attr("act", o.act);
   el.set_attr("facing", o.facing as number);
   el.set_attr("hp", o.hp);
@@ -24,6 +27,7 @@ export function xml_x_stage_object_info(xml: IXML, o: IStageObjectInfo, tag: str
   el.set_attr("reserve", o.reserve);
   el.set_attr("join", o.join);
   el.set_attr("join_team", o.join_team);
+  el.set_attr("join_reserve", o.join_reserve);
   el.set_attr("outline_color", o.outline_color);
   return el;
 }
@@ -35,6 +39,9 @@ export function xml_2_stage_object_info(el: IXMLElement): IStageObjectInfo {
   ret.x             /**/ = el.get_num("x", ret.x);
   ret.y             /**/ = el.get_num("y", ret.y);
   ret.z             /**/ = el.get_num("z", ret.z);
+  ret.range_x       /**/ = el.get_num("range_x", ret.range_x);
+  ret.range_y       /**/ = el.get_num("range_y", ret.range_y);
+  ret.range_z       /**/ = el.get_num("range_z", ret.range_z);
   ret.act           /**/ = el.get_str("act", ret.act);
   ret.facing        /**/ = el.get_num("facing", ret.facing);
   ret.hp            /**/ = el.get_num("hp", ret.hp);
@@ -48,6 +55,7 @@ export function xml_2_stage_object_info(el: IXMLElement): IStageObjectInfo {
   ret.reserve       /**/ = el.get_num("reserve", ret.reserve);
   ret.join          /**/ = el.get_num("join", ret.join);
   ret.join_team     /**/ = el.get_str("join_team", ret.join_team);
+  ret.join_reserve  /**/ = el.get_num("join_reserve", ret.join_reserve);
   ret.outline_color /**/ = el.get_str("outline_color", ret.outline_color);
   delete_undefined(ret);
   reorder_keys(ret, stage_object_info_fields);

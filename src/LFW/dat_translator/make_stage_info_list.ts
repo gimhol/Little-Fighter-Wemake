@@ -54,6 +54,8 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
             else (object as any)[key] = to_num(value) ?? (object as any)[key];
             object.facing = (object.x && object.x < 0) ? 1 : -1;
           }
+          if (object.is_soldier && !object.times)
+            object.times = 50;
           phase_info.objects ??= []
           phase_info.objects?.push(object);
         }
@@ -75,9 +77,8 @@ export function make_stage_info_list(full_str: string): IStageInfo[] {
     }
     for (let i = 0; i < stage_info.phases.length; i++) {
       const p = stage_info.phases[i];
-      // bound 应该是原版必有的，此处'!' -Gim
-      p.enemy_r = p.bound! + 200;
-      p.enemy_l = -200;
+      p.enemy_r = (p.bound ?? 0) + 300;
+      p.enemy_l = -300;
       p.on_end = [StageActions.EnterNextPhase]
       if (i == stage_info.phases.length - 1)
         p.on_end = [StageActions.LoopGoGoGoRight]

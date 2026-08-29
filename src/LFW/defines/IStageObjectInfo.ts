@@ -25,6 +25,9 @@ export interface IStageObjectInfo {
   /** 不同难度下的蓝量 */
   mp_map?: { [x in Difficulty]?: number }
 
+  range_x?: number;
+  range_y?: number;
+  range_z?: number;
 
   /**
    * 出现次数
@@ -72,6 +75,7 @@ export interface IStageObjectInfo {
   join?: number;
   /** 归降后加入的队伍，默认为Team_1 */
   join_team?: string;
+  join_reserve?: number;
   /** 自定义描边颜色，如 '#FF0000'。未设置时使用队伍默认颜色 */
   outline_color?: string;
 }
@@ -84,6 +88,9 @@ export const stage_object_info_fields = fields<IStageObjectInfo>({
   x: int('X坐标'),
   y: int('Y坐标'),
   z: int('Z坐标'),
+  range_x: int('随机范围X'),
+  range_y: int('随机范围Y'),
+  range_z: int('随机范围Z'),
   act: str('初始动作'),
   facing: int('朝向', { options: [{ value: -1, label: '左' }, { value: 1, label: '右' }] }),
   hp: int('血量'),
@@ -97,5 +104,6 @@ export const stage_object_info_fields = fields<IStageObjectInfo>({
   reserve: int('备用数量'),
   join: int('归降血量'),
   join_team: str('归降队伍'),
+  join_reserve: int('归降后复活次数'),
   outline_color: str('描边颜色'),
 });
