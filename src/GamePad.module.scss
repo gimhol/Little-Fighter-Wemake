@@ -5,13 +5,13 @@
   pointer-events: none;
 
   --btn_size    : 60px;
-  --l_pad_size  : calc(var(--btn_size) * 3.5);
+  --l_pad_size  : calc(var(--btn_size) * 4);
   --l_pad_left  : calc(0.5 * var(--l_pad_size) + 10px);
   --l_pad_bottom: calc(0.5 * var(--l_pad_size) + 10px);
 
-  --r_pad_right : 100px;
-  --r_pad_bottom: 80px;
-  --r_pad_size  : calc(var(--btn_size) * 3);
+  --r_pad_right : 110px;
+  --r_pad_bottom: 110px;
+  --r_pad_size  : calc(var(--btn_size) * 3.5);
 
   --l_btn_base_left  : calc(var(--l_pad_left) - var(--btn_size) / 2);
   --l_btn_base_bottom: calc(var(--l_pad_bottom) - var(--btn_size) / 2);
@@ -54,6 +54,7 @@
   pointer-events: all;
   position      : absolute;
   border-radius : 50%;
+  // background-color: red;
 }
 
 .left_pad {
@@ -137,7 +138,7 @@
 .btn_a {
   @extend ._btn;
   right : calc(var(--r_btn_base_right) + 0.27 * var(--r_pad_size));
-  bottom: calc(var(--r_btn_base_bottom) - 0.09 * var(--r_pad_size));
+  bottom: calc(var(--r_btn_base_bottom) - 0.1 * var(--r_pad_size));
 
   &::after {
     content: "A";
@@ -156,7 +157,7 @@
 
 .btn_d {
   @extend ._btn;
-  right : calc(var(--r_btn_base_right) - 0.21 * var(--r_pad_size));
+  right : calc(var(--r_btn_base_right) - 0.25 * var(--r_pad_size));
   bottom: calc(var(--r_btn_base_bottom) - 0.13 * var(--r_pad_size));
 
   &::after {
