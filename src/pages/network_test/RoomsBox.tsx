@@ -123,6 +123,9 @@ function _RoomsBox(props: IRoomsBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
     responser: ref_floating_view.current?.firstElementChild as HTMLElement,
     target: ref_floating_view.current,
     followPercent: true,
+    resizable: true,
+    min_width: 260,
+    min_height: 29,
   })
   return (
     <Frame {..._p} className={cls_name} ref={on_ref}>

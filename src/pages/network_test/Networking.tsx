@@ -15,10 +15,11 @@ import { useCallbacks } from "./useCallbacks";
 import { useRoom } from "./useRoom";
 export interface INetworkingProps {
   lf2?: LFW | undefined | null;
+  on_close?(): void;
 }
 
 export function Networking(props: INetworkingProps) {
-  const { lf2 } = props;
+  const { lf2, on_close } = props;
   const ref_lf2 = useRef(lf2);
   ref_lf2.current = lf2;
   const [conn_state, set_conn_state] = useState<TriState>(TriState.False);
@@ -80,6 +81,7 @@ export function Networking(props: INetworkingProps) {
       lf2={lf2}
       on_conn_change={set_conn}
       on_state_change={set_conn_state}
+      on_close={on_close}
       className={styles.rooms_box}
       style={display_or_not(!conn_state)} />
     <RoomsBox
@@ -93,7 +95,7 @@ export function Networking(props: INetworkingProps) {
     <ChatBox
       conn={conn}
       className={styles.chat_box}
-      style={display_or_not(false && conn_state)} />
+      style={display_or_not(conn_state)} />
   </>
 }
 

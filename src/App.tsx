@@ -126,7 +126,7 @@ const init_world_dataset = (): IWorldDataset => {
   const ret = new WorldDataset(true).dump_dataset();
   ret.sync_render = SyncRenderEnum.FPS_60;
   ret.UPS = low_device ? 30 : 60;
-  ret.atom_time = low_device ? 3 : 1;
+  ret.atom_time = low_device ? 2 : 1;
   ret.bg_flags = 0;
   ret.entity_flags = 0;
   return ret;
@@ -226,20 +226,7 @@ function App() {
     on_broadcast: (message, lfw) => {
       switch (message) {
         case 'network_game':
-          set_networking(prev => {
-            const networking = !prev
-            // FIXME: ...
-            const btns = [
-              lfw.ui?.search_node("btn_game_start"),
-              lfw.ui?.search_node("btn_custom_game")
-            ]
-            for (const btn of btns) {
-              btn?.blur()
-              btn?.set_opacity(networking ? 0.3 : 1)
-              btn?.set_disabled(networking)
-            }
-            return networking
-          });
+          set_networking(prev => !prev)
           break;
         case 'select_extra_data':
         case 'select_mods':
@@ -289,6 +276,20 @@ function App() {
       if (typeof page === 'string') lf2.set_ui({ id: page })
     },
   })
+
+  useEffect(() => {
+    if (!lfw) return;
+    const btns = [
+      lfw.ui?.search_node("btn_game_start"),
+      lfw.ui?.search_node("btn_extra_data"),
+      lfw.ui?.search_node("btn_custom_game")
+    ]
+    for (const btn of btns) {
+      btn?.blur()
+      btn?.set_opacity(networking ? 0.3 : 1)
+      btn?.set_disabled(networking)
+    }
+  }, [networking, lfw])
 
   useCallbacks(lfw?.world.callbacks, {
     on_stage_change: (s) => _set_bg_id(s.bg.id),
@@ -1064,7 +1065,7 @@ function App() {
         onClose={() => set_editor_open(false)}
         style={{ background: 'black', position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, zIndex: 1 }}
         lf2={lfw} />
-      {networking && <Networking lf2={lfw} />}
+      {networking && <Networking lf2={lfw} on_close={() => set_networking(false)} />}
     </>
   );
 }

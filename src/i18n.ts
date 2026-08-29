@@ -3,6 +3,8 @@ import qs from "qs";
 import { initReactI18next } from "react-i18next";
 const zh_hans = {
   "game_running": "已开始",
+  "connect_box": "联机面板",
+  "close": "关闭",
   "nickname": "昵称",
   "connect": "连接",
   "connecting": "连接中",
@@ -46,6 +48,8 @@ const zh_hans = {
 }
 const zh_hant = {
   "game_running": "已開始",
+  "connect_box": "聯機面板",
+  "close": "關閉",
   "nickname": "暱稱",
   "connect": "連接",
   "connecting": "連接中",
@@ -85,6 +89,8 @@ const zh_hant = {
 }
 const en = {
   "game_running": "Started",
+  "connect_box": "Connect Panel",
+  "close": "Close",
   "nickname": 'Nick Name',
   "connect": "Connect",
   "connecting": "Connecting",

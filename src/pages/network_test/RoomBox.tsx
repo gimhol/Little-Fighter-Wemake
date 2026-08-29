@@ -39,6 +39,7 @@ export function _RoomBox(props: IRoomBoxProps, f_ref: ForwardedRef<HTMLDivElemen
     responser: ref_floating_view.current?.firstElementChild as HTMLElement,
     target: ref_floating_view.current,
     followPercent: true,
+    resizable: true,
   })
 
   useEffect(() => {

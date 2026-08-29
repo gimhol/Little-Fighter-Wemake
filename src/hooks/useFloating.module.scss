@@ -1,0 +1,46 @@
+// useFloating 拉伸手柄（四边 + 四角）固定样式
+
+.handle {
+  position      : fixed;
+  z-index       : 2147483647;
+  box-sizing    : border-box;
+  display       : none;
+  pointer-events: all;
+  touch-action  : none;
+  transition    : background 255ms;
+}
+
+.handle:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.edge {
+  border      : none;
+  touch-action: none;
+  transition  : background 255ms;
+}
+
+.edge:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+
+.n,
+.s {
+  cursor: ns-resize;
+}
+
+.e,
+.w {
+  cursor: ew-resize;
+}
+
+.ne,
+.sw {
+  cursor: nesw-resize;
+}
+
+.nw,
+.se {
+  cursor: nwse-resize;
+}

@@ -18,11 +18,12 @@ import { useCallbacks } from "./useCallbacks";
 export interface IConnectionBoxProps extends ICombineProps {
   on_conn_change?(conn: Connection | null): void;
   on_state_change?(conn_state: TriState): void;
+  on_close?(): void;
   lf2?: LFW | null;
 }
 function _ConnectionBox(props: IConnectionBoxProps, f_ref: ForwardedRef<HTMLDivElement>) {
   const { t } = useTranslation();
-  const { on_state_change, on_conn_change, lf2, ..._p } = props;
+  const { on_state_change, on_conn_change, on_close, lf2, ..._p } = props;
   const [ref, on_ref] = useForwardedRef(f_ref)
   const ref_responser = useRef<HTMLSpanElement>(null)
   useFloating({
@@ -31,6 +32,7 @@ function _ConnectionBox(props: IConnectionBoxProps, f_ref: ForwardedRef<HTMLDivE
     pivot_x: 0,
     pivot_y: 1,
     followPercent: true,
+    resizable: true,
     is_excluded: e => {
       return e.tagName === 'INPUT' || e.classList.contains(`rc-virtual-list-scrollbar-thumb`)
     }
@@ -85,10 +87,18 @@ function _ConnectionBox(props: IConnectionBoxProps, f_ref: ForwardedRef<HTMLDivE
 
   return (
     <Frame  {..._p} ref={on_ref}>
-
-      <Text size='s' style={{ padding: '2px 5px' }} ref={ref_responser}>
-        {t('connect_box')}
-      </Text>
+      <Flex align='center' justify='space-between'>
+        <Text size='s' style={{ padding: '2px 5px' }} ref={ref_responser}>
+          {t('connect_box')}
+        </Text>
+        <Button
+          variants={['no_border']}
+          size='s'
+          onClick={() => on_close?.()}
+          title={t('close')}>
+          ✕
+        </Button>
+      </Flex>
       <Input
         style={{ width: '100%' }}
         value={address}

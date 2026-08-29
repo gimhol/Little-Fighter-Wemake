@@ -36,6 +36,16 @@
         {
           items: [
             {
+              id: "btn_exit_settings",
+              template: "builtin_data/launch/main_text_button.ui.json5",
+              values: {
+                text: "exit_settings",
+              },
+              actions: {
+                click: ["pop_ui()", "sound(cancel)"],
+              },
+            },
+            {
               id: "btn_misc_settings",
               template: "builtin_data/launch/main_text_button.ui.json5",
               values: {

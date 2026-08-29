@@ -131,6 +131,7 @@ function _ChatBox(props: IChatBoxProps, fref: ForwardedRef<HTMLDivElement>) {
     pivot_x: 0,
     pivot_y: 1,
     followPercent: true,
+    resizable: false,
     is_excluded: e => {
       return e.tagName === 'INPUT' || e.classList.contains(`rc-virtual-list-scrollbar-thumb`)
     }

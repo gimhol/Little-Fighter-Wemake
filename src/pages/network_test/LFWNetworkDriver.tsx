@@ -1,5 +1,5 @@
 import { md5 } from "@/DittoImpl";
-import { EntityEnum, GK, LFW, LFWKeyEvent, PlayerInfo, is_bot_ctrl, mt_cases, sus_cases, world_dataset_fields, type IWorldDataset } from "@/LFW";
+import { EntityEnum, GK, LFW, LFWKeyEvent, PlayerInfo, is_bot_ctrl, mt_cases, round_float, sus_cases, world_dataset_fields, type IWorldDataset } from "@/LFW";
 import { MsgEnum, type IKeyEvent, type IReqTick, type IRespClientInfo, type IRespDataset, type IRespRoomStart, type IRespTick, type TInfo } from "@/Net";
 import type { IRespKeyTick } from "@/Net/IMsg_KeyTick";
 import type { Connection } from "./Connection";
@@ -67,8 +67,21 @@ export class LFWNetworkDriver {
       this._randoms = new SyncChecker('randoms');
       this._suspicious = new SyncChecker('suspicious');
     }
-    lf2.world.dataset.UPS = 30;
-    lf2.world.dataset.atom_time = 2;
+
+    const ups_arr = [30, 60, 90, 120]
+    const atom_time_arr = ups_arr.map(v => round_float(60 / v))
+    const double_click_interval_arr = ups_arr.map(v => 30 * v / 60)
+    const key_hit_duration_arr = ups_arr.map(v => 10 * v / 60)
+    const fvy_f_arr = [-0.5, -0.5, -0.5324, -0.678];
+    const wait_offset_arr = [-1, 0, 0, 0.5]
+    const v = 1;
+    lf2.world.dataset.UPS = ups_arr[v];
+    lf2.world.dataset.atom_time = atom_time_arr[v];
+    lf2.world.dataset.wait_offset = wait_offset_arr[v];
+    lf2.world.dataset.fvy_f = fvy_f_arr[v];
+    lf2.world.dataset.double_click_interval = double_click_interval_arr[v];
+    lf2.world.dataset.key_hit_duration = key_hit_duration_arr[v];
+
     lf2.load(...LFW.ZIPS);
     lf2.set_ui({ id: "network_loading" });
     lf2.pointings.enabled = false;
@@ -257,10 +270,10 @@ export class LFWNetworkDriver {
     const ua = navigator.userAgent;
     const browser = /Edg\//.test(ua) ? 'edge'
       : /OPR\/|Opera/.test(ua) ? 'opera'
-      : /Firefox\//.test(ua) ? 'firefox'
-      : /Chrome\//.test(ua) ? 'chrome'
-      : /Safari\//.test(ua) ? 'safari'
-      : 'unknown';
+        : /Firefox\//.test(ua) ? 'firefox'
+          : /Chrome\//.test(ua) ? 'chrome'
+            : /Safari\//.test(ua) ? 'safari'
+              : 'unknown';
     a.download = `lf2-snapshot-${data.game_time ?? Date.now()}_${browser}_${md5(ua)}.json`;
     document.body.appendChild(a);
     a.click();
