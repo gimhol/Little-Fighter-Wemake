@@ -43,19 +43,14 @@ jobs:
           fi
           echo "BUILD_TAG=$TAG" >> "$GITHUB_ENV"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 10
-
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: pnpm
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       # GitHub runner 默认没有 ffmpeg（音频转 MP3 需要），一并装 imagemagick（BMP 转 PNG）
       - name: Install ffmpeg & imagemagick
