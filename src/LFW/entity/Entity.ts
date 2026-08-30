@@ -1885,11 +1885,9 @@ export class Entity {
         this.hp_r -= injury * (1 - this.dataset('hp_recoverability'))
         summary_mgr.apply_damage(cer, injury, this, prev_hp);
       }
-      const shaking = cp_a.shaking
-      if (typeof shaking === 'number')
-        this.shaking = shaking;
-      else if (injury)
-        this.shaking = this.dataset('itr_shaking')
+      const { shaking, motionless } = cp_a
+      if (shaking) this.shaking = max(shaking, this.shaking);
+      if (motionless) cer.motionless = max(motionless, cer.motionless);
     }
     this.prev_cpoint_a = cp_a;
 

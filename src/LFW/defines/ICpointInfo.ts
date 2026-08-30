@@ -25,7 +25,8 @@ export interface ICpointInfo {
   backhurtact?: string;
   /**  */
   shaking?: number;
-  
+  motionless?: number;
+
   /*dircontrol*/
   __indicator_info?: IQubePair;
 }
@@ -62,5 +63,6 @@ export const cpoint_info_fields = fields<ICpointInfo>({
   fronthurtact: str("正面受伤动作"),
   backhurtact: str("背面受伤动作"),
   shaking: int("目标停顿值"),
+  motionless: int(),
   __indicator_info: any,
 })

@@ -6,8 +6,12 @@ import { type IWorldDataset, world_dataset_fields } from "./defines/IWorldDatase
 import { make_private_properties } from "./utils/make_private_properties";
 import wdataset from './world.wdataset.json';
 
+let _DEFAULT: WorldDataset | null = null;
 export class WorldDataset implements IWorldDataset {
   static readonly TAG: string = 'WorldDataset';
+  static get DEFAULT(): WorldDataset {
+    return _DEFAULT ??= new WorldDataset();
+  }
   itr_fall: number = 40
   itr_shaking: number = 6;
   itr_motionless: number = 6;
