@@ -2,10 +2,9 @@ import { Ditto } from "../ditto/Instance";
 import type { Collision } from "./Collision";
 
 export function handle_itr_catch(c: Collision) {
-  if (c.attacker.catching) return;
-  if (c.victim.catcher) return;
-
   const { itr, attacker, victim } = c;
+  if (attacker.catching) return;
+  if (victim.catcher) return;
 
   attacker.set_catch_time(attacker.catch_time_max);
   attacker.catching = victim;
