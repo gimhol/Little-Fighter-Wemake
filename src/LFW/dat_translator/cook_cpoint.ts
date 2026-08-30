@@ -1,8 +1,6 @@
-import { WorldDataset } from "../WorldDataset";
-import type { IFrameInfo } from "../defines";
+import { CPointKind, type IFrameInfo } from "../defines";
 import { FacingFlag } from "../defines/FacingFlag";
 import type { ICpoint } from "../defines/ICpoint";
-import { Defines } from "../defines/defines";
 import { abs } from "../utils";
 import { is_num, is_str } from "../utils/type_check";
 import { get_next_frame_by_raw_id } from "./get_the_next";
@@ -21,8 +19,9 @@ export function cook_cpoint(unsure_cpoint: ICpoint, frame: IFrameInfo): void {
   unsure_cpoint.decrease = take_num(unsure_cpoint, 'decrease', n => -abs(n));
 
   const cover = take_not_zero_num(unsure_cpoint, "cover", n => n);
-  if (cover == 1 || cover == 11) unsure_cpoint.z = 2;
-  if (cover == 0 || cover == 10) unsure_cpoint.z = -2;
+  if (cover == 1 || cover == 11) unsure_cpoint.z = 1;
+  if (cover == 0 || cover == 10) unsure_cpoint.z = -1;
+  if (!cover && CPointKind.Attacker == unsure_cpoint.kind) unsure_cpoint.z = -1;
 
   const vaction = take(unsure_cpoint, "vaction");
   const raw_injury = take(unsure_cpoint, "injury");
