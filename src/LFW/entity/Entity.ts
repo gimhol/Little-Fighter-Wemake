@@ -17,7 +17,7 @@ import {
   GONE_FRAME_INFO,
   HitFlag,
   type IArmorInfo,
-  type IBdyInfo, type IBounding, type ICpointInfo, type IDeadJoin, type IEntityData,
+  type IBdyInfo, type IBounding, type ICpoint, type IDeadJoin, type IEntityData,
   type IFrameInfo, type IItrInfo, type INextFrame, type INextFrameResult, type IOpointInfo,
   is_independent, ItrKind, type IVector3,
   type IVector3Like,
@@ -218,7 +218,7 @@ export class Entity {
   protected _ctrl!: BaseController;
   armor!: Readonly<IArmorInfo> | null;
   protected _opoints!: [IOpointInfo, number][];
-  private prev_cpoint_a!: ICpointInfo | null;
+  private prev_cpoint_a!: ICpoint | null;
 
 
   /**

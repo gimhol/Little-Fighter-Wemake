@@ -1,12 +1,12 @@
-import { cpoint_info_fields, cpoint_info_new, type ICpointInfo } from "../../defines";
+import { cpoint_info_fields, cpoint_new, type ICpoint } from "../../defines";
 import type { IXML, IXMLElement } from "../../ditto";
 import { reorder_keys } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { xml_2_t_next_frame, xml_x_t_next_frame } from "./xml_x_next_frame";
 
-export function xml_x_cpoint(xml: IXML, i: ICpointInfo, tag: string): IXMLElement
-export function xml_x_cpoint(xml: IXML, i: ICpointInfo | undefined, tag: string): IXMLElement | undefined
-export function xml_x_cpoint(xml: IXML, i: ICpointInfo | undefined, tag: string): IXMLElement | undefined {
+export function xml_x_cpoint(xml: IXML, i: ICpoint, tag: string): IXMLElement
+export function xml_x_cpoint(xml: IXML, i: ICpoint | undefined, tag: string): IXMLElement | undefined
+export function xml_x_cpoint(xml: IXML, i: ICpoint | undefined, tag: string): IXMLElement | undefined {
   if (!i) return void 0;
   const ret = xml.create(tag);
   ret.set_attr("kind", i.kind);
@@ -23,8 +23,8 @@ export function xml_x_cpoint(xml: IXML, i: ICpointInfo | undefined, tag: string)
   ret.set_attr("motionless", i.motionless);
   return ret
 }
-export function xml_2_cpoint(el: IXMLElement): ICpointInfo {
-  const ret = cpoint_info_new();
+export function xml_2_cpoint(el: IXMLElement): ICpoint {
+  const ret = cpoint_new();
   const pos        /**/ = el.nums_attr_soft("pos");
   const throwv     /**/ = el.nums_attr_soft("throwv");
   ret.kind         /**/ = el.get_num("kind", ret.kind)

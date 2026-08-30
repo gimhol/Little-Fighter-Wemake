@@ -1,7 +1,7 @@
 import { WorldDataset } from "../WorldDataset";
 import type { IFrameInfo } from "../defines";
 import { FacingFlag } from "../defines/FacingFlag";
-import type { ICpointInfo } from "../defines/ICpointInfo";
+import type { ICpoint } from "../defines/ICpoint";
 import { Defines } from "../defines/defines";
 import { abs } from "../utils";
 import { is_num, is_str } from "../utils/type_check";
@@ -10,7 +10,7 @@ import { take } from "./take";
 import { take_not_zero_num } from "./take_not_zero_num";
 import { take_num } from "./take_num";
 
-export function cook_cpoint(unsure_cpoint: ICpointInfo, frame: IFrameInfo): void {
+export function cook_cpoint(unsure_cpoint: ICpoint, frame: IFrameInfo): void {
   unsure_cpoint.x = take_not_zero_num(unsure_cpoint, "x") || 0;
   unsure_cpoint.y = take_not_zero_num(unsure_cpoint, "y") || 0;
   unsure_cpoint.z = take_not_zero_num(unsure_cpoint, "z") || 0;

@@ -1,10 +1,10 @@
 import { WorkspaceColumnView } from "@/EditorView/WorkspaceColumnView";
-import { cpoint_info_new, type ICpointInfo } from "@/LFW";
+import { cpoint_new, type ICpoint } from "@/LFW";
 import { useState } from "react";
 import { CpointInfoForm } from "./index";
 
-type Data = ICpointInfo;
-const data_new = cpoint_info_new;
+type Data = ICpoint;
+const data_new = cpoint_new;
 const TITLE = `CpointInfoForm`;
 const Form = CpointInfoForm;
 

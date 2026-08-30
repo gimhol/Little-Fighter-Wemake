@@ -35,7 +35,7 @@ export * from "./IBotRay";
 export * from "./IBounding";
 export * from "./IBpointInfo";
 export * from "./IChaseInfo";
-export * from "./ICpointInfo";
+export * from "./ICpoint";
 export * from "./IDatContext";
 export * from "./IDatIndex";
 export * from "./IDataInfo";

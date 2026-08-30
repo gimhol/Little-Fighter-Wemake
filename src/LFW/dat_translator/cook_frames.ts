@@ -2,7 +2,7 @@ import {
   FacingFlag,
   type IBdyInfo,
   type IBpointInfo,
-  type ICpointInfo,
+  type ICpoint,
   type IFramePic,
   type IItrInfo,
   type IOpointInfo,
@@ -62,7 +62,7 @@ export function cook_frames(ctx: IDatContext): Record<string, IFrameInfo> {
     const bpoint_list = r5.sections;
     _content = r5.remains;
 
-    const r6 = take_sections<ICpointInfo>(_content, "cpoint:", "cpoint_end:");
+    const r6 = take_sections<ICpoint>(_content, "cpoint:", "cpoint_end:");
     const cpoint_list = r6.sections;
     _content = r6.remains;
 

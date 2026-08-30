@@ -1,5 +1,5 @@
 import { type IRect, Resizable, Shape, ShapeData } from "@fimagine/writeboard";
-import { type IBdyInfo, type ICpointInfo, type IFrameInfo, type IFramePic, type IItrInfo, type IOpointInfo, type IWpointInfo } from "../LFW/defines";
+import { type IBdyInfo, type ICpoint, type IFrameInfo, type IFramePic, type IItrInfo, type IOpointInfo, type IWpointInfo } from "../LFW/defines";
 import type { IEntityData } from "../LFW/defines/IEntityData";
 import type { IZip } from "../LFW/ditto";
 import { loop_arr } from "../LFW/utils/array/loop_arr";
@@ -108,7 +108,7 @@ export class FrameDrawer extends Shape<FrameDrawerData> {
     ctx.closePath();
     ctx.stroke();
   }
-  draw_cpoint(ctx: CanvasRenderingContext2D, cpoint: ICpointInfo) {
+  draw_cpoint(ctx: CanvasRenderingContext2D, cpoint: ICpoint) {
     ctx.beginPath();
     const { x = 0, y = 0 } = cpoint;
     ctx.moveTo(x, y + 2);

@@ -1,11 +1,11 @@
 import { Form } from "@/Component/Form";
 import { type ISpaceProps, Space } from "@/Component/Space";
-import { cpoint_info_fields, cpoint_info_new, type ICpointInfo } from "@/LFW";
+import { cpoint_info_fields, cpoint_new, type ICpoint } from "@/LFW";
 import { useEffect, useMemo, useRef } from "react";
 import { FieldsRow } from "../../FieldsRow";
 
-type Data = ICpointInfo;
-const data_new = cpoint_info_new;
+type Data = ICpoint;
+const data_new = cpoint_new;
 const ALL_FIELDS = cpoint_info_fields;
 const BASE_FIELD_KEYS: FieldKeysRow<Data>[] = [
   ['kind', 'x', 'y', 'z'],
@@ -15,12 +15,12 @@ const BASE_FIELD_KEYS: FieldKeysRow<Data>[] = [
   ['hurtable'],
 ];
 
-export interface ICpointInfoFormProps extends ISpaceProps {
+export interface ICpointFormProps extends ISpaceProps {
   value?: Data;
   onChange?(value: Data): void;
 }
 
-export function CpointInfoForm(props: ICpointInfoFormProps) {
+export function CpointInfoForm(props: ICpointFormProps) {
   const { value: o_value, onChange, stretchs = true, direction = 'column', ..._p } = props;
   const i_value = useMemo<Data>(() => o_value ?? data_new(), [o_value]);
   const ref_o_value = useRef(o_value);

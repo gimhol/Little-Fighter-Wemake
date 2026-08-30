@@ -2,7 +2,7 @@ import type { TNextFrame } from "./INextFrame";
 import type { IQubePair } from "./IQubePair";
 import { any, fields, int, str } from "../fields";
 
-export interface ICpointInfo {
+export interface ICpoint {
   kind?: number;
   x?: number;
   y?: number;
@@ -18,7 +18,7 @@ export interface ICpointInfo {
    * 被丢者的落地受伤量
    * -1: 抓人者变成被抓者
    * @type {number}
-   * @memberof ICpointInfo
+   * @memberof ICpoint
    */
   throwinjury?: number;
   fronthurtact?: string;
@@ -31,13 +31,13 @@ export interface ICpointInfo {
   __indicator_info?: IQubePair;
 }
 
-export function cpoint_info_new(): ICpointInfo {
+export function cpoint_new(): ICpoint {
   return {
     kind: 1,
   };
 }
 
-export const cpoint_info_fields = fields<ICpointInfo>({
+export const cpoint_info_fields = fields<ICpoint>({
   kind: int("类型", {
     options: [
       { value: 1, label: "Kind 1" },

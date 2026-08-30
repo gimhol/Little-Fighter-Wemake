@@ -5,7 +5,7 @@ import { ALL_FRAME_BEHAVIOR, FRAME_BEHAVIOR_DESC_MAP, FRAME_BEHAVIOR_LABEL_MAP, 
 import type { IBdyInfo } from "./IBdyInfo";
 import type { IBpointInfo } from "./IBpointInfo";
 import type { IChaseInfo } from "./IChaseInfo";
-import type { ICpointInfo } from "./ICpointInfo";
+import type { ICpoint } from "./ICpoint";
 import { Schema_IFramePic, type IFramePic } from "./IFramePic";
 import type { IHitKeyMap } from "./IHitKeyMap";
 import type { IItrInfo } from "./IItrInfo";
@@ -155,7 +155,7 @@ export interface IFrameInfo extends IVelocityInfo {
   wpoint?: IWpointInfo;
   bpoint?: IBpointInfo;
   opoint?: IOpointInfo[];
-  cpoint?: ICpointInfo;
+  cpoint?: ICpoint;
   /**
    * 隐身多少帧
    * 
