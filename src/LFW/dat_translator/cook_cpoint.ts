@@ -27,8 +27,8 @@ export function cook_cpoint(unsure_cpoint: ICpoint, frame: IFrameInfo): void {
   const vaction = take(unsure_cpoint, "vaction");
   const raw_injury = take(unsure_cpoint, "injury");
   if (is_num(raw_injury)) unsure_cpoint.injury = abs(raw_injury);
-  if (is_num(raw_injury) && raw_injury > 0) unsure_cpoint.shaking = 4
-  if (is_num(raw_injury) && raw_injury > 0) unsure_cpoint.motionless = 4
+  if (is_num(raw_injury) && raw_injury > 0) unsure_cpoint.shaking = 2
+  if (is_num(raw_injury) && raw_injury > 0) unsure_cpoint.motionless = 2
 
 
   if (is_str(vaction) || is_num(vaction)) {
