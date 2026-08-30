@@ -21,7 +21,7 @@ export function cook_cpoint(unsure_cpoint: ICpoint, frame: IFrameInfo): void {
   const cover = take_not_zero_num(unsure_cpoint, "cover", n => n);
   if (cover == 1 || cover == 11) unsure_cpoint.z = 1;
   if (cover == 0 || cover == 10) unsure_cpoint.z = -1;
-  if (!cover && CPointKind.Attacker == unsure_cpoint.kind) unsure_cpoint.z = -1;
+  if (cover == void 0 && CPointKind.Attacker == unsure_cpoint.kind) unsure_cpoint.z = -1;
 
   const vaction = take(unsure_cpoint, "vaction");
   const raw_injury = take(unsure_cpoint, "injury");
