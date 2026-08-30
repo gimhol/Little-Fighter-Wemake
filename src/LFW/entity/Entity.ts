@@ -153,8 +153,8 @@ export class Entity {
   protected _hp: number = 0;
   protected _hp_r: number = 0;
   protected _hp_max: number = 0;
-  protected _bearer: Entity | null = null;
-  protected _holding: Entity | null = null;
+  public bearer: Entity | null = null;
+  public holding: Entity | null = null;
   protected _arest: number = 0;
   public motionless: number = 0;
   public shaking: number = 0;
@@ -430,22 +430,6 @@ export class Entity {
 
   set stat_bar_type(v: number) {
     this._stat_bar_type = v;
-  }
-
-  get bearer(): Entity | null {
-    return this._bearer;
-  }
-
-  set bearer(v: Entity | null) {
-    this.set_bearer(v);
-  }
-
-  get holding(): Entity | null {
-    return this._holding;
-  }
-
-  set holding(v: Entity | null) {
-    this.set_holding(v);
   }
 
   get name(): string {
@@ -772,8 +756,8 @@ export class Entity {
     this._name = null
     this._team = world.lfw.new_team;
     this._landing_frame = null;
-    this._bearer = null;
-    this._holding = null;
+    this.bearer = null;
+    this.holding = null;
     this._emitters.length = 0;
     this._arest = 0;
     this.vrests.clear()
@@ -868,22 +852,6 @@ export class Entity {
     this._catch_time = clamp(v, 0, this.catch_time_max);
     return this;
   }
-  set_bearer(v: Entity | null): this {
-    if (this._bearer === v) return this;
-    const old = this._bearer;
-    this._bearer = v;
-    this.callbacks.call("on_holder_changed", this, v, old);
-    return this;
-  }
-
-  set_holding(v: Entity | null): this {
-    if (this._holding === v) return this;
-    const old = this._holding;
-    this._holding = v;
-    this.callbacks.call("on_holding_changed", this, v, old);
-    return this;
-  }
-
   find_auto_frame(): IFrameInfo {
     return (
       this._state?.get_auto_frame?.(this) ?? this._data.frames["0"] ?? this.frame
@@ -1667,7 +1635,7 @@ export class Entity {
         this.motionless <= 0 &&
         this.shaking <= 0 &&
         !this.catcher &&
-        !this._bearer
+        !this.bearer
       ) {
         this.wait = rf(this.wait - this._atom_time)
         if (this.wait < 0) this.wait = 0;
@@ -1705,9 +1673,9 @@ export class Entity {
       }
     }
 
-    if (!this.shaking && !this.motionless && !this._bearer && !this.catcher)
+    if (!this.shaking && !this.motionless && !this.bearer && !this.catcher)
       this.update_landable();
-    this._holding?.follow_bearer();
+    this.holding?.follow_bearer();
     this.collision_list.length = 0;
     this.collided_list.length = 0;
     this.prev_position.copy(this.position);
@@ -2278,9 +2246,9 @@ export class Entity {
         return vx > 0 ? 1 : vx < 0 ? -1 : this.facing;
       }
       case FacingFlag.SameAsBearer:
-        return this._bearer?.facing || this.facing;
+        return this.bearer?.facing || this.facing;
       case FacingFlag.OpposingBearer:
-        return turn_face(this._bearer?.facing) || this.facing;
+        return turn_face(this.bearer?.facing) || this.facing;
     }
     return this.facing;
   }
@@ -2596,8 +2564,8 @@ export class Entity {
     strs[SSlot.LANDING_FRAME_ID] = this._landing_frame?.id ?? '';
     strs[SSlot.CATCHING_ID] = this.catching?.id ?? '';
     strs[SSlot.CATCHER_ID] = this.catcher?.id ?? '';
-    strs[SSlot.BEARER_ID] = this._bearer?.id ?? '';
-    strs[SSlot.HOLDING_ID] = this._holding?.id ?? '';
+    strs[SSlot.BEARER_ID] = this.bearer?.id ?? '';
+    strs[SSlot.HOLDING_ID] = this.holding?.id ?? '';
     strs[SSlot.TEAM] = this._team;
     strs[SSlot.NAME] = this._name ?? '';
     strs[SSlot.AFTER_BLINK] = this._after_blink ?? '';
@@ -2716,8 +2684,8 @@ export class Entity {
       : null;
     this.catching = this.world.entity_map.get(strs[SSlot.CATCHING_ID]) ?? null;
     this.catcher = this.world.entity_map.get(strs[SSlot.CATCHER_ID]) ?? null;
-    this._bearer = this.world.entity_map.get(strs[SSlot.BEARER_ID]) ?? null;
-    this._holding = this.world.entity_map.get(strs[SSlot.HOLDING_ID]) ?? null;
+    this.bearer = this.world.entity_map.get(strs[SSlot.BEARER_ID]) ?? null;
+    this.holding = this.world.entity_map.get(strs[SSlot.HOLDING_ID]) ?? null;
     this._team = strs[SSlot.TEAM];
     this._name = strs[SSlot.NAME] || null;
     this._after_blink = strs[SSlot.AFTER_BLINK] || null;
