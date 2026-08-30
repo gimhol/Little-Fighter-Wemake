@@ -121,8 +121,8 @@ export class Entity {
   public facing: TFace = 1;
   public frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
   protected _prev_frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
-  protected _catching: Entity | null = null;
-  protected _catcher: Entity | null = null;
+  public catching: Entity | null = null;
+  public catcher: Entity | null = null;
   protected _states: States;
   protected readonly _next_frame_by_id: INextFrame = { id: '' };
   aabb_min_x: number = 0;
@@ -432,12 +432,6 @@ export class Entity {
     this._stat_bar_type = v;
   }
 
-  get catching() {
-    return this._catching;
-  }
-  get catcher() {
-    return this._catcher;
-  }
   get bearer(): Entity | null {
     return this._bearer;
   }
@@ -768,7 +762,7 @@ export class Entity {
     this.frame = EMPTY_FRAME_INFO;
     this._prev_frame = EMPTY_FRAME_INFO;
     this.set_catching(null)
-    this._catcher = null
+    this.catcher = null
     this._wakeup_invuln = null;
     this._name_visible = null;
     this._outline_alpha = 0.8;
@@ -860,8 +854,8 @@ export class Entity {
   }
 
   set_catching(v: Entity | null): this {
-    if (this._catching === v) return this;
-    this._catching = v;
+    if (this.catching === v) return this;
+    this.catching = v;
     return this;
   }
   add_catch_time(value: number): this {
@@ -1045,7 +1039,7 @@ export class Entity {
     if (v.opoint) this.apply_opoints(v.opoint);
     if (!v.cpoint) {
       this.set_catching(null);
-      this._catcher = null;
+      this.catcher = null;
     }
     if (v.broadcasts?.length)
       for (const m of v.broadcasts)
@@ -1672,7 +1666,7 @@ export class Entity {
       if (
         this.motionless <= 0 &&
         this.shaking <= 0 &&
-        !this._catcher &&
+        !this.catcher &&
         !this._bearer
       ) {
         this.wait = rf(this.wait - this._atom_time)
@@ -1711,7 +1705,7 @@ export class Entity {
       }
     }
 
-    if (!this.shaking && !this.motionless && !this._bearer && !this._catcher)
+    if (!this.shaking && !this.motionless && !this._bearer && !this.catcher)
       this.update_landable();
     this._holding?.follow_bearer();
     this.collision_list.length = 0;
@@ -1856,12 +1850,12 @@ export class Entity {
   }
 
   update_caught(): boolean {
-    const cer = this._catcher;
+    const cer = this.catcher;
     if (!cer) return false;
     /** "对齐颗粒度" */
     this.follow_catcher();
     if (!cer._catch_time) {
-      this._catcher = null;
+      this.catcher = null;
       this.prev_cpoint_a = null;
       this.enter_frame(this.get_caught_end_frame());
       return true;
@@ -1870,7 +1864,7 @@ export class Entity {
     const frame_a = cer.frame;
     const { cpoint: cp_a } = frame_a;
     if (!cp_a) {
-      this._catcher = null;
+      this.catcher = null;
       this.prev_cpoint_a = null;
       this.set_velocity_y(3);
       this.enter_frame(this.get_caught_cancel_frame());
@@ -1895,7 +1889,7 @@ export class Entity {
     if (ti > 0) this.throwinjury = ti;
     if (tx || ty || tz) {
       this.follow_catcher();
-      this._catcher = null;
+      this.catcher = null;
       this.prev_cpoint_a = null;
     }
     if (cp_a.vaction) {
@@ -1904,46 +1898,41 @@ export class Entity {
     return false
   }
   drop_catching(): boolean {
-    if (!this._catching) return false;
-    if (this._catching._catcher === this)
-      this._catching._catcher = null;
+    if (!this.catching) return false;
+    if (this.catching.catcher === this)
+      this.catching.catcher = null;
     this.set_catching(null);
     this.enter_frame(Defines.NEXT_FRAME_AUTO);
     return true;
   }
   update_catching(): boolean {
-    if (!this._catching) return false;
+    if (!this.catching) return false;
     if (!this._catch_time) {
       this.set_catching(null);
       this.enter_frame(Defines.NEXT_FRAME_AUTO);
       return true;
     }
     const { cpoint: cpoint_a } = this.frame;
-    if (cpoint_a?.decrease)
-      this.add_catch_time(cpoint_a.decrease * this._atom_time)
 
     if (!cpoint_a) {
       this.set_catching(null);
-      this.set_catch_time(this.catch_time_max);
       this.enter_frame(Defines.NEXT_FRAME_AUTO);
       return true;
     }
 
-    const { throwvx, throwvy, throwvz, throwinjury } = cpoint_a;
-    if (throwinjury !== void 0) {
-      if (throwinjury > 0) {
-        // TODO：丢出后，被丢的人落地后的受到的伤害
-        // return;
-      } else if (throwinjury === -1) {
-        if (is_fighter(this) && is_fighter(this._catching)) {
-          this.transfrom_to_another(this._catching._data);
-          this.enter_frame(this.find_auto_frame())
-          return true;
-        }
-      } else {
-        this.enter_frame(GONE_FRAME_INFO);
-        return true;
-      }
+    const { throwvx, throwvy, throwvz, throwinjury = 0, decrease = 0 } = cpoint_a;
+
+    if (decrease)
+      this.add_catch_time(decrease * this._atom_time)
+
+    if (throwinjury < -1) {
+      this.enter_frame(Defines.NEXT_FRAME_GONE);
+      return true;
+    }
+    if (throwinjury === -1) {
+      this.transfrom_to_another(this.catching._data);
+      this.enter_frame(Defines.NEXT_FRAME_AUTO)
+      return true;
     }
     if (throwvx || throwvy || throwvz) {
       this.set_catching(null);
@@ -1956,7 +1945,7 @@ export class Entity {
   }
 
   follow_catcher() {
-    const a = this._catcher;
+    const a = this.catcher;
     const b = this;
     if (!a) return;
     const { centerx: afx, centery: afy, cpoint: ac, } = a.frame;
@@ -2042,27 +2031,6 @@ export class Entity {
     return true;
   }
 
-  start_catch(target: Entity, itr: IItrInfo) {
-    if (itr.catchingact === void 0) {
-      Ditto.warn(`[Entity::start_caught] cannot catch, catchingact got ${itr.catchingact}`);
-      return;
-    }
-    this.set_catch_time(this.catch_time_max);
-    this.set_catching(target)
-    this.enter_frame(itr.catchingact);
-  }
-
-  start_caught(attacker: Entity, itr: IItrInfo) {
-    if (itr.caughtact === void 0) {
-      Ditto.warn(`[Entity::start_caught] cannot be caught, caughtact got ${itr.caughtact}`)
-      return;
-    }
-    this._catcher = attacker;
-    this.resting = 0;
-    this.fall_value = this.fall_value_max;
-    this.defend_value = this.defend_value_max;
-    this.enter_frame(itr.caughtact);
-  }
 
   spark_point(r0: IBounding, r1: IBounding) {
     const cross: IBounding = cross_bounding(r0, r1);
@@ -2287,9 +2255,9 @@ export class Entity {
           ? turn_face(this.ctrl.LR)
           : this.facing;
       case FacingFlag.SameAsCatcher:
-        return this._catcher?.facing || this.facing;
+        return this.catcher?.facing || this.facing;
       case FacingFlag.OpposingCatcher:
-        return turn_face(this._catcher?.facing) || this.facing;
+        return turn_face(this.catcher?.facing) || this.facing;
       case FacingFlag.Backward:
         return turn_face(this.facing);
       case FacingFlag.Left:
@@ -2626,8 +2594,8 @@ export class Entity {
     strs[SSlot.FRAME_ID] = this.frame.id;
     strs[SSlot.PREV_FRAME_ID] = this._prev_frame.id;
     strs[SSlot.LANDING_FRAME_ID] = this._landing_frame?.id ?? '';
-    strs[SSlot.CATCHING_ID] = this._catching?.id ?? '';
-    strs[SSlot.CATCHER_ID] = this._catcher?.id ?? '';
+    strs[SSlot.CATCHING_ID] = this.catching?.id ?? '';
+    strs[SSlot.CATCHER_ID] = this.catcher?.id ?? '';
     strs[SSlot.BEARER_ID] = this._bearer?.id ?? '';
     strs[SSlot.HOLDING_ID] = this._holding?.id ?? '';
     strs[SSlot.TEAM] = this._team;
@@ -2746,8 +2714,8 @@ export class Entity {
     this._landing_frame = strs[SSlot.LANDING_FRAME_ID]
       ? (this.find_frame_by_id(strs[SSlot.LANDING_FRAME_ID]) ?? null)
       : null;
-    this._catching = this.world.entity_map.get(strs[SSlot.CATCHING_ID]) ?? null;
-    this._catcher = this.world.entity_map.get(strs[SSlot.CATCHER_ID]) ?? null;
+    this.catching = this.world.entity_map.get(strs[SSlot.CATCHING_ID]) ?? null;
+    this.catcher = this.world.entity_map.get(strs[SSlot.CATCHER_ID]) ?? null;
     this._bearer = this.world.entity_map.get(strs[SSlot.BEARER_ID]) ?? null;
     this._holding = this.world.entity_map.get(strs[SSlot.HOLDING_ID]) ?? null;
     this._team = strs[SSlot.TEAM];

@@ -32,9 +32,7 @@ export interface ICpoint {
 }
 
 export function cpoint_new(): ICpoint {
-  return {
-    kind: 1,
-  };
+  return {};
 }
 
 export const cpoint_info_fields = fields<ICpoint>({
