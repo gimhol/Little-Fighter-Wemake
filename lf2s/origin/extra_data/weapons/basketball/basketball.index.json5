@@ -3,7 +3,7 @@
     {
       id: "basketball",
       type: "4",
-      file: "weapons/basketball/basketball.obj.json5",
+      file: "weapons/basketball/basketball.obj.xml",
     },
   ]
 }
