@@ -29,7 +29,7 @@ export function chase_info_new(): IChaseInfo {
   };
 }
 
-export const chase_Info_fields = fields<IChaseInfo>({
+export const chase_info_fields = fields<IChaseInfo>({
   stratedy: int("切换跟踪对象的策略", {
     options: ALL_CHASE_STRATEDY.map(v => ({
       value: v,

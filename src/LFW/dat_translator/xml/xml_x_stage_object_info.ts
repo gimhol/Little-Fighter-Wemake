@@ -1,6 +1,6 @@
 import { stage_object_info_fields, stage_object_info_new, type IStageObjectInfo } from "../../defines/IStageObjectInfo";
 import type { IXML, IXMLElement } from "../../ditto/xml";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { xml_2_difficulty_map, xml_x_difficulty_map } from "./xml_x_difficulty_map";
 
@@ -58,7 +58,7 @@ export function xml_2_stage_object_info(el: IXMLElement): IStageObjectInfo {
   ret.join_reserve  /**/ = el.get_num("join_reserve", ret.join_reserve);
   ret.outline_color /**/ = el.get_str("outline_color", ret.outline_color);
   delete_undefined(ret);
-  reorder_keys(ret, stage_object_info_fields);
+  reorder_fields(ret, stage_object_info_fields);
   return ret;
 }
 

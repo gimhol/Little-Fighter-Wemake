@@ -1,7 +1,7 @@
 import { dialog_info_fields, dialog_info_new, type IDialogInfo } from "../../defines/IDialogInfo";
 import type { IXML } from "../../ditto";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 
 export function xml_2_dialog_info(el: IXMLElement): IDialogInfo {
@@ -14,7 +14,7 @@ export function xml_2_dialog_info(el: IXMLElement): IDialogInfo {
   ret.hide_stats /**/ = el.get_num("hide_stats", ret.hide_stats);
   ret.end_test   /**/ = el.get_str_arr("end_test", ret.end_test);
   delete_undefined(ret);
-  reorder_keys(ret, dialog_info_fields);
+  reorder_fields(ret, dialog_info_fields);
   return ret;
 }
 export function xml_x_dialog_info(xml: IXML, d: IDialogInfo, tag: string): IXMLElement

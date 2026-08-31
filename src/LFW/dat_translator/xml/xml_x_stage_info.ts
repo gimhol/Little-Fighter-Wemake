@@ -1,7 +1,7 @@
 import { stage_info_fields, stage_info_new, type IStageInfo } from "../../defines/IStageInfo";
 import type { IXML } from "../../ditto";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { xml_2_non_empty, xml_x_non_empty } from "./xml_x_non_empty";
 import { xml_2_stage_phase_info, xml_x_stage_phase_info } from "./xml_x_stage_phase_info";
@@ -22,7 +22,7 @@ export function xml_2_stage_info(el: IXMLElement): IStageInfo {
   ret.title            /**/ = el.get_str("title", ret.title)
   ret.group            /**/ = el.get_str_arr("group", ret.group)
   delete_undefined(ret);
-  reorder_keys(ret, stage_info_fields);
+  reorder_fields(ret, stage_info_fields);
   return ret;
 }
 

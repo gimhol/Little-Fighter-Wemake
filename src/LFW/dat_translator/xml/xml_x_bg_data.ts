@@ -1,7 +1,7 @@
 import { bg_data_fields, bg_data_new, type IBgData } from "../../defines/IBgData";
 import type { IXML } from "../../ditto";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { merge_by_tag } from "./merge_by_tag";
 import { xml_to_bg_terrain } from "./xml_to_bg_terrain";
@@ -21,7 +21,7 @@ export function xml_2_bg_data(el: IXMLElement): IBgData {
   ret.terrain  /**/ = xml_2_non_empty(el, "terrain", xml_to_bg_terrain);
 
   delete_undefined(ret);
-  reorder_keys(ret, bg_data_fields);
+  reorder_fields(ret, bg_data_fields);
   return ret;
 }
 

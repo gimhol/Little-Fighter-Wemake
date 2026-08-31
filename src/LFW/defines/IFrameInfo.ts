@@ -1,20 +1,22 @@
-import { any, fields, flt, int, str } from "../fields";
+import { any, bool, fields, flt, int, obj, str } from "../fields";
 import { make_schema } from "../utils/schema";
 import { ALL_FACING_FLAG, FACING_FLAG_DESC_MAP, FACING_FLAG_LABEL_MAP, FacingFlag } from "./FacingFlag";
 import { ALL_FRAME_BEHAVIOR, FRAME_BEHAVIOR_DESC_MAP, FRAME_BEHAVIOR_LABEL_MAP, FrameBehavior } from "./FrameBehavior";
-import type { IBdyInfo } from "./IBdyInfo";
-import type { IBpointInfo } from "./IBpointInfo";
-import type { IChaseInfo } from "./IChaseInfo";
-import type { ICpoint } from "./ICpoint";
-import { Schema_IFramePic, type IFramePic } from "./IFramePic";
+import { bdy_info_fields, type IBdyInfo } from "./IBdyInfo";
+import { bpoint_info_fields, type IBpointInfo } from "./IBpointInfo";
+import { chase_info_fields as chase_info_fields, type IChaseInfo } from "./IChaseInfo";
+import { cpoint_info_fields, type ICpoint } from "./ICpoint";
+import { frame_pic_fields, Schema_IFramePic, type IFramePic } from "./IFramePic";
+import { hit_key_map_fields } from "./IHitKeyMap";
 import type { IHitKeyMap } from "./IHitKeyMap";
 import type { IItrInfo } from "./IItrInfo";
+import { next_frame_fields } from "./INextFrame";
 import type { TNextFrame } from "./INextFrame";
-import type { IOpointInfo } from "./IOpointInfo";
+import { opoint_info_fields, type IOpointInfo } from "./IOpointInfo";
 import type { IQubePair } from "./IQubePair";
 import type { IVelocityInfo } from "./IVelocityInfo";
-import { type IWorldDataset, Schema_IWorldDataset_Partial } from "./IWorldDataset";
-import type { IWpointInfo } from "./IWpointInfo";
+import { Schema_IWorldDataset_Partial, world_dataset_fields, type IWorldDataset } from "./IWorldDataset";
+import { wpoint_info_fields, type IWpointInfo } from "./IWpointInfo";
 import type { StateEnum } from "./StateEnum";
 
 /**
@@ -142,8 +144,6 @@ export interface IFrameInfo extends IVelocityInfo {
    */
   hp?: number;
   mp?: number;
-
-
 
   hold?: IHitKeyMap;
   hit?: IHitKeyMap;
@@ -287,29 +287,29 @@ export function frame_info_new(): IFrameInfo {
 export const frame_info_fields = fields<IFrameInfo>({
   id: str("帧ID", { nullable: false, maxLength: 32 }),
   name: str("帧名", { nullable: false, maxLength: 32 }),
-  pic: any,
-  pics: any({ nullable: true }),
-  hp: any,
-  mp: any,
+  pic: obj('pic', { nullable: true, fields: frame_pic_fields }),
+  pics: obj('pics', { nullable: true, array: true, fields: frame_pic_fields }),
+  hp: int('hp', { nullable: true }),
+  mp: int('mp', { nullable: true }),
   state: int("状态", { nullable: false }),
   wait: int("等待帧数", { nullable: false, min: 0 }),
-  next: any,
+  next: obj('next', { nullable: true, array: 'auto', fields: next_frame_fields }),
   centerx: int("中心X", { nullable: false }),
   centery: int("中心Y", { nullable: false }),
   width: int("宽度", { nullable: false, min: 1 }),
   height: int("高度", { nullable: false, min: 1 }),
-  sound: str("进入音效", { nullable: true }),
-  hold: any,
-  hit: any,
-  key_down: any,
-  key_up: any,
-  seqs: any,
-  bdy: any,
-  itr: any,
-  wpoint: any,
-  bpoint: any,
-  opoint: any,
-  cpoint: any,
+  sound: str("进入音效", { nullable: true, array: 'auto' }),
+  hold: obj('hold', { nullable: true, fields: hit_key_map_fields }),
+  hit: obj('hit', { nullable: true, fields: hit_key_map_fields }),
+  key_down: obj('key_down', { nullable: true, fields: hit_key_map_fields }),
+  key_up: obj('key_up', { nullable: true, fields: hit_key_map_fields }),
+  seqs: any('seqs', '按键序列 → 下一帧', { nullable: true }),
+  bdy: obj("bdy", { nullable: true, array: true, fields: bdy_info_fields }),
+  itr: obj("bdy", { nullable: true, array: true, fields: bdy_info_fields }),
+  wpoint: obj("wpoint", { nullable: true, fields: wpoint_info_fields }),
+  bpoint: obj("bpoint", { nullable: true, fields: bpoint_info_fields }),
+  opoint: obj("opoint", { nullable: true, array: true, fields: opoint_info_fields }),
+  cpoint: obj("cpoint", { nullable: true, fields: cpoint_info_fields }),
   invisible: int("隐身帧数", { nullable: true }),
   no_shadow: int("有否影子", "1=有影子 0=没影子", {
     nullable: true,
@@ -319,9 +319,9 @@ export const frame_info_fields = fields<IFrameInfo>({
     ],
   }),
   jump_flag: int("起跳标志", "下一帧将拥有向上的跳越速度，仅用于跳越", { nullable: true }),
-  on_dead: any,
-  on_exhaustion: any,
-  on_landing: any,
+  on_dead: obj('死亡跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_exhaustion: obj('体力耗尽跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_landing: obj('落地跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   behavior: int("行为标志", {
     nullable: true,
     options: ALL_FRAME_BEHAVIOR.map(v => ({
@@ -330,9 +330,9 @@ export const frame_info_fields = fields<IFrameInfo>({
       desc: FRAME_BEHAVIOR_DESC_MAP[v],
     })),
   }),
-  chase: any,
-  gravity_enabled: any,
-  broadcasts: any,
+  chase: obj("chase", { nullable: true, fields: chase_info_fields }),
+  gravity_enabled: bool('gravity_enabled', { nullable: true }),
+  broadcasts: str('broadcasts', { nullable: true, array: true }),
   facing: int("朝向标志", {
     nullable: true,
     options: ALL_FACING_FLAG.map(v => ({
@@ -343,14 +343,13 @@ export const frame_info_fields = fields<IFrameInfo>({
   }),
   landable: int("落地行为", "0=穿透地面, 1=落地触发", {
     nullable: true,
-    min: 0, max: 1,
     options: [
       { value: 0, label: "穿透地面" },
       { value: 1, label: "落地触发" },
     ],
   }),
-  stat_recover: int({ nullable: true }),
-  toughness_recover: int({ nullable: true }),
+  stat_recover: int('stat_recover', { nullable: true }),
+  toughness_recover: int('toughness_recover', { nullable: true }),
   // IVelocityInfo 字段
   dvx: flt("默认速度X", { nullable: true }),
   dvy: flt("默认速度Y", { nullable: true }),
@@ -364,11 +363,11 @@ export const frame_info_fields = fields<IFrameInfo>({
   ctrl_x: int("控制模式X", { nullable: true }),
   ctrl_y: int("控制模式Y", { nullable: true }),
   ctrl_z: int("控制模式Z", { nullable: true }),
-  on_restrict: any,
-  on_x_restrict: any,
-  on_y_restrict: any,
-  on_z_restrict: any,
-  dataset: any,
+  on_restrict: obj('受限跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_x_restrict: obj('X受限跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_y_restrict: obj('Y受限跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_z_restrict: obj('Z受限跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  dataset: obj('dataset', { nullable: true, fields: world_dataset_fields }),
 
   // 内部/渲染用字段
   __seq_map: any,

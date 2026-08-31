@@ -1,7 +1,7 @@
 import type { EntityEnum } from "../../defines";
 import { entity_data_fields, entity_data_new, type IEntityData } from "../../defines/IEntityData";
 import type { IXML, IXMLElement } from "../../ditto/xml";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { xml_2_bdy, xml_x_bdy } from "./xml_x_bdy";
 import { xml_2_entity_info, xml_x_entity_info } from "./xml_x_entity_info";
@@ -49,7 +49,7 @@ export function xml_2_entity_data(el: IXMLElement | undefined): IEntityData | un
   ret.post_hitkeys  /**/ = xml_2_hit_key_map(el, 'post_hitkey')
   ret.frames        /**/ = xml_2_map(el, "frame", xml_2_frame) ?? {};
   delete_undefined(ret);
-  reorder_keys(ret, entity_data_fields);
+  reorder_fields(ret, entity_data_fields);
   return ret;
 }
 

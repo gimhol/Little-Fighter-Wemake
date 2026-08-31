@@ -1,3 +1,5 @@
+import { fields, obj } from "../fields";
+import { next_frame_fields } from "./INextFrame";
 import type { TNextFrame } from "./INextFrame";
 
 export interface IHitKeyMap {
@@ -49,3 +51,22 @@ export interface IHitKeyMap {
   /** 双击下方向键 */
   DD?: TNextFrame;
 }
+
+export const hit_key_map_fields = fields<IHitKeyMap>({
+  a: obj('攻击键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  j: obj('跳跃键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  d: obj('防御键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  U: obj('上方向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  D: obj('下方向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  L: obj('左方向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  R: obj('右方向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  F: obj('正向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  B: obj('反向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  aa: obj('双击攻击键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  jj: obj('双击跳跃键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  dd: obj('双击防御键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  FF: obj('双击正向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  BB: obj('双击反向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  UU: obj('双击上方向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  DD: obj('双击下方向键', { nullable: true, array: 'auto', fields: next_frame_fields }),
+})

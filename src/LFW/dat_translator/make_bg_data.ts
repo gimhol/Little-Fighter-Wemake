@@ -3,7 +3,7 @@ import { bg_data_fields, bg_data_new, type IBgData } from "../defines/IBgData";
 import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../defines/IBgLayerInfo";
 import type { IDatIndex } from "../defines/IDatIndex";
 import { Defines } from "../defines/defines";
-import { reorder_keys } from "../fields";
+import { reorder_fields } from "../fields";
 import { match_colon_value } from "../utils/string_parser/match_colon_value";
 import { take_blocks } from "../utils/string_parser/take_blocks";
 import { to_num } from "../utils/type_cast/to_num";
@@ -90,7 +90,7 @@ export function make_bg_data(
   } else {
     ret.base.group = [BackgroundGroup.Regular]
   }
-  reorder_keys(ret, bg_data_fields);
+  reorder_fields(ret, bg_data_fields);
   return ret;
 }
 
@@ -132,7 +132,7 @@ function make_bg_layer(block_str: string) {
   layer.c1 = typeof fields.c1 === "number" ? fields.c1 * 2 : void 0;
   layer.c2 = typeof fields.c2 === "number" ? fields.c2 * 2 + 1 : void 0;
 
-  reorder_keys(layer, bg_layer_info_fields);
+  reorder_fields(layer, bg_layer_info_fields);
   delete_undefined(layer)
   return layer;
 }

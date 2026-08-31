@@ -1,12 +1,12 @@
 import { Form } from "@/Component/Form";
 import { type ISpaceProps, Space } from "@/Component/Space";
-import { chase_Info_fields, chase_info_new, type IChaseInfo } from "@/LFW";
+import { chase_info_fields, chase_info_new, type IChaseInfo } from "@/LFW";
 import { useEffect, useMemo, useRef } from "react";
 import { FieldsRow } from "../../FieldsRow";
 
 type Data = IChaseInfo;
 const data_new = chase_info_new;
-const ALL_FIELDS = chase_Info_fields;
+const ALL_FIELDS = chase_info_fields;
 const BASE_FIELD_KEYS: FieldKeysRow<Data>[] = [
   ['stratedy', 'flag', 'lost'],
   ['oy'],

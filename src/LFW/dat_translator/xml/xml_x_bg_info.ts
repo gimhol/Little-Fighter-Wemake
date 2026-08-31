@@ -1,4 +1,4 @@
-import { bg_info_fields, bg_info_new, Defines, delete_undefined, reorder_keys } from "../..";
+import { bg_info_fields, bg_info_new, Defines, delete_undefined, reorder_fields } from "../..";
 import type { IBgInfo } from "../../defines";
 import type { IXML, IXMLElement } from "../../ditto";
 
@@ -22,7 +22,7 @@ export function xml_2_bg_info(el: IXMLElement): IBgInfo {
   ret.zoom_y   /**/ = el.get_num('zoom_y') ?? zoom?.[1] ?? ret.zoom_y
   ret.zoom_z   /**/ = el.get_num('zoom_z') ?? zoom?.[2] ?? ret.zoom_z
   delete_undefined(ret);
-  reorder_keys(ret, bg_info_fields);
+  reorder_fields(ret, bg_info_fields);
   return ret;
 }
 

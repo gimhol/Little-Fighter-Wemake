@@ -1,6 +1,6 @@
 import { cpoint_info_fields, cpoint_new, type ICpoint } from "../../defines";
 import type { IXML, IXMLElement } from "../../ditto";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 import { xml_2_t_next_frame, xml_x_t_next_frame } from "./xml_x_next_frame";
 
@@ -44,7 +44,7 @@ export function xml_2_cpoint(el: IXMLElement): ICpoint {
   ret.motionless   /**/ = el.get_num("motionless", ret.motionless)
 
   delete_undefined(ret);
-  reorder_keys(ret, cpoint_info_fields);
+  reorder_fields(ret, cpoint_info_fields);
   return ret;
 }
 

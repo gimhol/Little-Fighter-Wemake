@@ -1,6 +1,6 @@
 import { type ITerrainInfo, terrain_info_new, terrain_info_fields } from "../../defines/ITerrainInfo";
 import type { IXMLElement } from "../../ditto";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 
 
 export function xml_to_bg_terrain(el: IXMLElement): ITerrainInfo {
@@ -13,6 +13,6 @@ export function xml_to_bg_terrain(el: IXMLElement): ITerrainInfo {
   ret.z2 = el.get_num('z2', ret.z2);
   ret.h1 = el.get_num('h1', ret.h1);
   ret.h2 = el.get_num('h2', ret.h2);
-  reorder_keys(ret, terrain_info_fields);
+  reorder_fields(ret, terrain_info_fields);
   return ret;
 }

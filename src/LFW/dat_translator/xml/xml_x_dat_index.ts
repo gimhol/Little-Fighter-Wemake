@@ -1,7 +1,7 @@
 import { dat_index_fields, dat_index_new, DatTypeEnum, type IDatIndex } from "../../defines/IDatIndex";
 import type { IXML } from "../../ditto/xml/IXML";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
-import { reorder_keys } from "../../fields";
+import { reorder_fields } from "../../fields";
 import { delete_undefined } from "./delete_undefined";
 
 export function xml_x_dat_index(xml: IXML, idx: IDatIndex, tag: string = "dat_index"): IXMLElement {
@@ -28,7 +28,7 @@ export function xml_2_dat_index(el: IXMLElement): IDatIndex {
   ret.skipped  /**/ = el.get_str("skipped")
   ret.bot      /**/ = el.get_str("bot")
   delete_undefined(ret);
-  reorder_keys(ret, dat_index_fields);
+  reorder_fields(ret, dat_index_fields);
   return ret;
 }
 

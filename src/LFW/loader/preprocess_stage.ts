@@ -1,6 +1,6 @@
 import { delete_undefined } from "../dat_translator";
 import { stage_info_fields, type IStageInfo } from "../defines";
-import { reorder_keys } from "../fields";
+import { reorder_fields } from "../fields";
 import { preprocess_stage_phase } from "./preprocess_stage_phase";
 
 export function preprocess_stage(v: IStageInfo): IStageInfo {
@@ -10,7 +10,7 @@ export function preprocess_stage(v: IStageInfo): IStageInfo {
     }
   }
   delete_undefined(v);
-  reorder_keys(v, stage_info_fields);
+  reorder_fields(v, stage_info_fields);
   return v;
 }
 preprocess_stage.TAG = "preprocess_stage"
