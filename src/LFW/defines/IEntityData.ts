@@ -13,6 +13,9 @@ export type TItrPrefabs = {
 export type TBdyPrefabs = {
   [x in string]?: IBdyInfo;
 }
+export type TFramePrefabs = {
+  [x in string]?: IFrameInfo;
+}
 export interface IEntityData {
   id: string;
   type: TEntityEnum;
@@ -24,6 +27,7 @@ export interface IEntityData {
   indexes?: IFrameIndexes;
   bdy_prefabs?: TBdyPrefabs;
   itr_prefabs?: TItrPrefabs;
+  frame_prefabs?: TFramePrefabs;
   pre_hitkeys?: { [x in string]?: TNextFrame; };
   post_hitkeys?: { [x in string]?: TNextFrame; };
   frames: Record<string, IFrameInfo>;
@@ -63,6 +67,7 @@ export const entity_data_fields = fields<IEntityData>({
   indexes: any({ nullable: true }),
   bdy_prefabs: any({ nullable: true }),
   itr_prefabs: any({ nullable: true }),
+  frame_prefabs: any({ nullable: true }),
   pre_hitkeys: any({ nullable: true }),
   post_hitkeys: any({ nullable: true }),
   frames: any({ nullable: true }),

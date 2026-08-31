@@ -22,6 +22,7 @@ export function xml_x_entity_data(xml: IXML, data: IEntityData, tag: string = 'e
   xml_x_t_next_frame(xml, data.on_exhaustion, 'on_exhaustion', ret)
   xml_x_map(xml, data.bdy_prefabs, "bdy", xml_x_bdy, ret)
   xml_x_map(xml, data.itr_prefabs, "itr", xml_x_itr, ret)
+  xml_x_map(xml, data.frame_prefabs, "frame_prefab", xml_x_frame, ret)
   ret.insert(xml_x_frame_indexes(xml, data.indexes, "indexes"));
   ret.set_attr("processed", data.processed);
   xml_x_hit_key_map(xml, data.pre_hitkeys, 'pre_hitkey')?.forEach(el => ret.insert(el));
@@ -42,11 +43,12 @@ export function xml_2_entity_data(el: IXMLElement | undefined): IEntityData | un
   ret.on_dead       /**/ = xml_2_t_next_frame(el.children_by_tag("on_dead"));
   ret.on_exhaustion /**/ = xml_2_t_next_frame(el.children_by_tag("on_exhaustion"));
   ret.indexes       /**/ = xml_2_frame_indexes(el.child_by_tag('indexes'));
-  ret.bdy_prefabs   /**/ = xml_2_map(el, ["bdy_prefab", "bdy"], xml_2_bdy)
-  ret.itr_prefabs   /**/ = xml_2_map(el, ["itr_prefab", "itr"], xml_2_itr)
+  ret.bdy_prefabs   /**/ = xml_2_map(el, ["bdy_prefab", "bdy"], xml_2_bdy);
+  ret.itr_prefabs   /**/ = xml_2_map(el, ["itr_prefab", "itr"], xml_2_itr);
+  ret.frame_prefabs /**/ = xml_2_map(el, ["frame_prefab"], xml_2_frame);
   ret.processed     /**/ = el.get_bool("processed", ret.processed) || void 0;
-  ret.pre_hitkeys   /**/ = xml_2_hit_key_map(el, 'pre_hitkey')
-  ret.post_hitkeys  /**/ = xml_2_hit_key_map(el, 'post_hitkey')
+  ret.pre_hitkeys   /**/ = xml_2_hit_key_map(el, 'pre_hitkey');
+  ret.post_hitkeys  /**/ = xml_2_hit_key_map(el, 'post_hitkey');
   ret.frames        /**/ = xml_2_map(el, "frame", xml_2_frame) ?? {};
   delete_undefined(ret);
   reorder_fields(ret, entity_data_fields);

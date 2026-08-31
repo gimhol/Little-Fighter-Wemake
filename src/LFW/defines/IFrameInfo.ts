@@ -53,6 +53,7 @@ export interface IFrameInfo extends IVelocityInfo {
    */
   name: string;
 
+  ref?: string,
 
   /**
    * 帧切图
@@ -287,6 +288,7 @@ export function frame_info_new(): IFrameInfo {
 export const frame_info_fields = fields<IFrameInfo>({
   id: str("帧ID", { nullable: false, maxLength: 32 }),
   name: str("帧名", { nullable: false, maxLength: 32 }),
+  ref: str("预制信息ID", { nullable: true }),
   pic: obj('pic', { nullable: true, fields: frame_pic_fields }),
   pics: obj('pics', { nullable: true, array: true, fields: frame_pic_fields }),
   hp: int('hp', { nullable: true }),
@@ -390,6 +392,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
   properties: {
     id: { type: 'string' },
     name: { type: 'string' },
+    ref: { type: 'string', nullable: true },
     state: { type: 'number' },
     wait: { type: 'number' },
     dvx: { type: 'number', nullable: true },

@@ -5,13 +5,12 @@ import { Ditto } from "../ditto";
 import { is_ball_data, is_fighter_data, is_weapon_data } from "../entity";
 import { is_non_blank_str, max } from "../utils";
 import { traversal } from "../utils/container_help/traversal";
-import { check_frame } from "./check_frame";
 import type { IEntityDataContext } from "./IEntityDataContext";
 import { preprocess_bot_data } from "./preprocess_bot_data";
 import { preprocess_frame } from "./preprocess_frame";
 import { preprocess_next_frame } from "./preprocess_next_frame";
 import { preprocess_pic } from "./preprocess_pic";
-501
+
 export async function preprocess_entity_data(ctx: IEntityDataContext): Promise<IEntityData> {
   const { lfw, data, jobs, errors } = ctx;
 
@@ -65,18 +64,29 @@ export async function preprocess_entity_data(ctx: IEntityDataContext): Promise<I
   }
   if (data.on_dead) data.on_dead = preprocess_next_frame(data.on_dead);
   if (data.on_exhaustion) data.on_exhaustion = preprocess_next_frame(data.on_exhaustion);
-  const { frames, base: { files, portraits } } = data;
+  const { frames, frame_prefabs, base: { files, portraits } } = data;
 
   traversal(files, (_, v) => jobs.push(images.load_by_pic_info(v)));
   if (jobs.length) await Promise.all(jobs);
 
   traversal(portraits, (k, v, o) => o[k] = preprocess_pic(lfw, data, v));
-  traversal(frames, (fid, frame, o) => {
+
+
+  traversal(frame_prefabs, (fid, frame, o) => {
+    if (!frame) return;
     o[fid] = preprocess_frame({ ...ctx, frame });
-    check_frame(data, frame, errors);
     const pics = frame.pics?.length;
     if (pics) data.__pics = max(pics, data.__pics || 0);
   });
+
+
+  traversal(frames, (fid, frame, o) => {
+    o[fid] = preprocess_frame({ ...ctx, frame });
+    const pics = frame.pics?.length;
+    if (pics) data.__pics = max(pics, data.__pics || 0);
+  });
+
+
   if (data.base.bot)
     data.base.bot = preprocess_bot_data(data.base.bot)
   else make_entity_special(data);
