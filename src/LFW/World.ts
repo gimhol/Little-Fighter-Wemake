@@ -36,6 +36,7 @@ import type { IWorldCallbacks } from "./IWorldCallbacks";
 import { LFW } from "./LFW";
 import { Stage } from "./stage/Stage";
 import { Transform } from "./Transform";
+import { round_float } from './utils';
 import { between, floor, round } from './utils/math/base';
 import { clamp } from './utils/math/clamp';
 import { Times } from './utils/Times';
@@ -465,7 +466,7 @@ export class World {
     const { ui_stacks } = this.lfw;
     const len = ui_stacks.length;
     let flag = true;
-
+    const uidt = round_float(16.66666 * this.dataset.atom_time);
     for (let i = len - 1; i >= 0; i--) {
       const ui_stack = ui_stacks[i];
       const { ui } = ui_stack
@@ -475,7 +476,7 @@ export class World {
         if (e.pressed) ui.on_key_down(e)
         else ui.on_key_up(e)
       }
-      ui.update(16.66666 * this.dataset.atom_time);
+      ui.update(uidt);
       flag = false
     }
   }
@@ -632,7 +633,7 @@ export class World {
       const { ctrl } = a
       if (update_chasing && is_ball_ctrl(ctrl))
         ctrl.update_lookup(i, this.entities)
-      
+
       if (update_chasing && is_bot_ctrl(ctrl))
         ctrl.update_lookup(i, this.entities)
 
