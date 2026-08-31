@@ -1,97 +1,18 @@
 import { Form } from "@/Component/Form";
 import { Input, InputNumber } from "@/Component/Input";
 import Select from "@/Component/Select";
-import { Space } from "@/Component/Space";
+import { Space, type ISpaceProps } from "@/Component/Space";
 import type { IField as IFieldInfo } from "@/LFW";
-import { useCallback, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { AutoArraySelect } from "./AutoArraySelect";
+import { BitFlagSelect } from "./BitFlagSelect";
+import { MapField } from "./MapField";
+import { ObjectField } from "./ObjectField";
 
 export interface IFieldsRowProps<T extends object> {
   row: FieldKeysRow<T>,
   fields: Map<keyof T, IFieldInfo<Partial<T>>>,
   Form: Form<T>
-}
-
-/** 将位标志数值与多选数组互转的适配器 */
-function BitFlagSelect(props: {
-  value?: number;
-  onChange?: (v: number) => void;
-  options?: { value: any; label?: string; desc?: string }[];
-  clearable?: boolean;
-  title?: string;
-}) {
-  const { value, onChange, options = [], clearable, title } = props;
-
-  /** 标记每个选项是否为原子值（不可由其他选项 OR 组合而成） */
-  const atomicMask = useMemo(() => {
-    const vals = options.map(o => Number(o.value));
-    return options.map((_, i) => {
-      const v = vals[i];
-      let covered = 0;
-      for (let j = 0; j < vals.length; j++) {
-        if (j === i) continue;
-        if ((vals[j] & ~v) === 0) covered |= vals[j];
-      }
-      return covered !== v;
-    });
-  }, [options]);
-
-  /** 仅勾选原子选项中对应位已置1的项，复合值不自动勾选 */
-  const arrayValue = useMemo(() => {
-    if (value == null) return [];
-    return options
-      .filter((o, i) => atomicMask[i] && (value & Number(o.value)) === Number(o.value))
-      .map(o => o.value);
-  }, [value, options, atomicMask]);
-
-  const onArrayChange = useCallback((v: number[] | undefined) => {
-    onChange?.(v ? v.reduce((a, b) => a | b, 0) : 0);
-  }, [onChange]);
-
-  return (
-    <Select
-      multi
-      clearable={clearable}
-      title={title}
-      options={options as any}
-      value={arrayValue}
-      onChange={onArrayChange}
-      parse={(i: any) => [i.value, i.label, { title: i.desc }]} />
-  );
-}
-
-/** 将 T | T[] 与多选数组互转的适配器（用于 array: 'auto' 字段） */
-function AutoArraySelect(props: {
-  value?: any;
-  onChange?: (v: any) => void;
-  options?: { value: any; label?: string; desc?: string }[];
-  clearable?: boolean;
-  title?: string;
-}) {
-  const { value, onChange, options = [], clearable, title } = props;
-
-  /** 展示值：单值包装为数组，供多选渲染 */
-  const arrayValue = useMemo(
-    () => (value == null ? [] : Array.isArray(value) ? value : [value]),
-    [value],
-  );
-
-  /** 变更值：空 → undefined；长度 1 归一化为单值；多值保留数组 */
-  const onArrayChange = useCallback((v: any[] | undefined) => {
-    if (!v || v.length === 0) onChange?.(undefined);
-    else if (v.length === 1) onChange?.(v[0]);
-    else onChange?.(v);
-  }, [onChange]);
-
-  return (
-    <Select
-      multi
-      clearable={clearable}
-      title={title}
-      options={options}
-      value={arrayValue}
-      onChange={onArrayChange}
-      parse={(i: any) => [i.value, i.label, { title: i.desc }]} />
-  );
 }
 
 export function FieldsRow<T extends object>(props: IFieldsRowProps<T>) {
@@ -138,19 +59,19 @@ export function FieldsRow<T extends object>(props: IFieldsRowProps<T>) {
             parse={i => [i.value, i.label, { title: i.desc }]} />}
       </Form.Item>
     );
-  } else if (type == 'int' || type == 'float') {
+  } else if (type == 'int' || type == 'float' || type == 'flt' || type == 'num') {
     return (
       <Form.Item name={key} label={label} >
         <InputNumber
           clearable={field.nullable == true}
           title={desc}
-          precision={type == 'float' ? void 0 : 0}
+          precision={type == 'float' || type == 'flt' || type == 'num' ? void 0 : 0}
           min={field.min}
           max={field.max}
           step={field.step} />
       </Form.Item>
     );
-  } else if (type == 'string') {
+  } else if (type == 'string' || type == 'str') {
     return (
       <Form.Item name={key} label={label}>
         <Input
@@ -159,6 +80,99 @@ export function FieldsRow<T extends object>(props: IFieldsRowProps<T>) {
           maxLength={field.maxLength} />
       </Form.Item>
     );
+  } else if (type == 'object' || type == 'obj') {
+    return (
+      <Form.Item name={key} label={label}>
+        <ObjectField fields={(field as any).fields} />
+      </Form.Item>
+    );
+  } else if (type == 'map') {
+    return (
+      <Form.Item name={key} label={label}>
+        <MapField valueField={(field as any).value} />
+      </Form.Item>
+    );
   }
   return <></>;
+}
+
+/** 计算未被 row 列表覆盖的字段 key（内部/运行时字段以 `__` 开头，不参与兜底） */
+export function fields_rest<T extends object>(
+  all: Map<keyof T, IFieldInfo<Partial<T>>>,
+  rows: FieldKeysRow<T>[],
+): (keyof T)[] {
+  const covered = new Set<keyof T>();
+  for (const r of rows) {
+    if (Array.isArray(r)) for (const k of r) covered.add(k);
+    else covered.add(r as keyof T);
+  }
+  return Array.from(all.keys()).filter(k => {
+    if (String(k).startsWith('__')) return false;
+    return !covered.has(k);
+  });
+}
+
+/** 渲染未被 row 列表覆盖的字段（兜底，保证 fields Map 里新增的字段不“消失”） */
+export function FieldsRest<T extends object>(props: {
+  title?: string;
+  rows: FieldKeysRow<T>[];
+  fields: Map<keyof T, IFieldInfo<Partial<T>>>;
+  Form: Form<T>;
+}) {
+  const { title, rows, fields, Form } = props;
+  const rest = useMemo(() => fields_rest(fields, rows), [fields, rows]);
+  if (!rest.length) return null;
+  return (
+    <Space direction="column" stretchs>
+      {title ? <div style={{ fontWeight: 'bold', opacity: 0.55 }}>{title}</div> : null}
+      {rest.map(k => <FieldsRow key={String(k)} row={k} fields={fields} Form={Form} />)}
+    </Space>
+  );
+}
+
+/** 通用字段表单外壳：统一 Form 样板，渲染 rows + 未覆盖字段兜底 */
+export interface IFieldsFormProps<T extends object> extends ISpaceProps {
+  value?: T;
+  onChange?(value: T): void;
+  /** 字段定义 Map */
+  fields: Map<keyof T, IFieldInfo<Partial<T>>>;
+  /** 自定义行分组 */
+  rows?: FieldKeysRow<T>[];
+  /** 数据工厂：value 为空时用于初始化 */
+  new_value?: () => T;
+  /** 未覆盖字段兜底区标题；不传则不渲染兜底区 */
+  rest_title?: string;
+}
+
+export function FieldsForm<T extends object>(props: IFieldsFormProps<T>) {
+  const {
+    value: o_value,
+    onChange,
+    fields,
+    rows = [],
+    new_value,
+    rest_title,
+    stretchs = true,
+    direction = 'column',
+    ..._p
+  } = props;
+  const i_value = useMemo<T>(() => o_value ?? new_value?.() ?? ({} as T), [o_value, new_value]);
+  const ref_o_value = useRef(o_value);
+  const [form, _Form] = Form.useForm<T>(i_value);
+
+  useEffect(() => {
+    if (o_value == ref_o_value.current) return;
+    form.resetFieldsValue(i_value);
+  }, [i_value, o_value, form]);
+
+  return (
+    <_Form form={form} onChange={(_, value) => onChange?.(value)}>
+      <Space direction={direction} stretchs={stretchs} {..._p}>
+        {rows.map(v => <FieldsRow key={v.toString()} row={v} fields={fields} Form={_Form} />)}
+        {rest_title != null ? (
+          <FieldsRest title={rest_title} rows={rows} fields={fields} Form={_Form} />
+        ) : null}
+      </Space>
+    </_Form>
+  );
 }

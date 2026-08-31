@@ -5,7 +5,7 @@ import { armor_Info_new, drink_info_new, entity_info_fields } from "@/LFW";
 import { entity_info_new, type IEntityInfo } from "@/LFW/defines";
 import { useEffect, useMemo, useRef } from "react";
 import { type ISpaceProps, Space } from "../../Component/Space";
-import { FieldsRow } from "../FieldsRow";
+import { FieldsRest, FieldsRow } from "../FieldsRow";
 import { ArmorInfoForm } from "./ArmorInfoForm";
 import { DrinkInfoForm } from "./DrinkInfoForm";
 
@@ -70,6 +70,7 @@ export function EntityInfoForm(props: IEntityInfoFormProps) {
               <DrinkInfoForm />
             </_Form.Item>
         }
+        <FieldsRest title="其他字段" rows={BASE_FIELD_KEYS} fields={ALL_FIELDS} Form={_Form} />
       </Space>
     </_Form>
   );
