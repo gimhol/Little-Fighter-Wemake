@@ -50,10 +50,15 @@ export interface IObjField<T extends object, D extends object = object> extends 
   type: 'object' | 'obj',
   fields: Map<keyof D, IField<D>>
 }
+export interface IMapField<T extends object, D extends object = object> extends IBaseField<T> {
+  type: 'map';
+  /** 每个值的字段定义（键为任意字符串，值按此定义校验/编辑） */
+  value: Omit<IField<D>, 'key'>;
+}
 export interface IAnyField<T extends object> extends IBaseField<T> {
   type: ''
 }
-export type IField<T extends object> = IAnyField<T> | IStrField<T> | IIntField<T> | IFltField<T> | IBoolField<T> | IObjField<T>
+export type IField<T extends object> = IAnyField<T> | IStrField<T> | IIntField<T> | IFltField<T> | IBoolField<T> | IObjField<T> | IMapField<T>
 export type FieldType = IField<object>['type'];
 
 type IRet<T extends object> = Omit<IField<T>, 'key' | 'order'>
@@ -80,6 +85,7 @@ export const flt = assign(<T extends object>(...p: (string | Omit<IFltField<T>, 
 export const int = assign(<T extends object>(...p: (string | Omit<IIntField<T>, 'key' | 'type'>)[]): IRet<T> => w('int', ...p), w('int'))
 export const bool = assign(<T extends object>(...p: (string | Omit<IBoolField<T>, 'key' | 'type'>)[]): IRet<T> => w('boolean', ...p), w('boolean'))
 export const obj = assign(<T extends object, D extends object>(...p: (string | Omit<IObjField<T, D>, 'key' | 'type'>)[]): IRet<T> => w('object', ...p), w('object'))
+export const map = assign(<T extends object, D extends object>(...p: (string | Omit<IMapField<T, D>, 'key' | 'type'>)[]): IRet<T> => w('map', ...p), w('map'))
 export const any = assign(<T extends object>(...p: (string | Omit<IField<T>, 'key' | 'type'>)[]): IRet<T> => w('', ...p), w(''))
 
 /**
@@ -235,6 +241,19 @@ function _validate_value<T extends object>(
         return false;
       }
       return _validate_obj(value as object, field.fields, path, errors, warnings);
+
+    case 'map': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        errors.push(`[validate_fields] ${path} 应为对象（键值映射），实际为 ${JSON.stringify(value)}`);
+        return false;
+      }
+      let ok = true;
+      for (const k of Object.keys(value)) {
+        if (!_validate_value((value as any)[k], field.value as IField<T>, `${path}.${k}`, errors, warnings))
+          ok = false;
+      }
+      return ok;
+    }
 
     case '':
     default:

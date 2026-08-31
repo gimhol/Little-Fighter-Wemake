@@ -1,4 +1,4 @@
-import { any, bool, fields, flt, int, obj, str } from "../fields";
+import { any, bool, fields, flt, int, map, obj, str } from "../fields";
 import { make_schema } from "../utils/schema";
 import { ALL_FACING_FLAG, FACING_FLAG_DESC_MAP, FACING_FLAG_LABEL_MAP, FacingFlag } from "./FacingFlag";
 import { ALL_FRAME_BEHAVIOR, FRAME_BEHAVIOR_DESC_MAP, FRAME_BEHAVIOR_LABEL_MAP, FrameBehavior } from "./FrameBehavior";
@@ -303,7 +303,10 @@ export const frame_info_fields = fields<IFrameInfo>({
   hit: obj('hit', { nullable: true, fields: hit_key_map_fields }),
   key_down: obj('key_down', { nullable: true, fields: hit_key_map_fields }),
   key_up: obj('key_up', { nullable: true, fields: hit_key_map_fields }),
-  seqs: any('seqs', '按键序列 → 下一帧', { nullable: true }),
+  seqs: map('seqs', '按键序列 → 下一帧', {
+    nullable: true,
+    value: obj('', { array: 'auto', fields: next_frame_fields }),
+  }),
   bdy: obj("bdy", { nullable: true, array: true, fields: bdy_info_fields }),
   itr: obj("bdy", { nullable: true, array: true, fields: bdy_info_fields }),
   wpoint: obj("wpoint", { nullable: true, fields: wpoint_info_fields }),
