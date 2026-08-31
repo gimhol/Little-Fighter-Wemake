@@ -6,7 +6,7 @@ export class ControllerResult {
   /** 下帧 */
   result?: INextFrameResult;
   /** 触发类型 */
-  kind: '' | 'dbl' | 'hld' | 'ku' | 'kd' | 'hit' | 'seq' = '';
+  kind: '' | 'dbl' | 'hld' | 'ku' | 'kd' | 'hit' | 'seq' | 'bot' = '';
   /** 触发按键 */
   keys: string = '';
   /** 触发时间 */
@@ -27,6 +27,13 @@ export class ControllerResult {
   fire(nf: TNextFrame, time: number, keys: string, kind: typeof this.kind): boolean {
     const result = this.owner.entity.get_next_frame(nf);
     if (!result) return false;
+    this.result = result;
+    this.time = time;
+    this.keys = keys;
+    this.kind = kind;
+    return true;
+  }
+  fire2(result: INextFrameResult, time: number, keys: string, kind: typeof this.kind): boolean {
     this.result = result;
     this.time = time;
     this.keys = keys;

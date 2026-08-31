@@ -59,5 +59,7 @@ export interface IBotAction {
    * @type {(('F' | 'B' | LGK)[])}
    * @memberof IBotAction
    */
-  keys: ('F' | 'B' | LGK)[];
+  keys?: ('F' | 'B' | LGK)[];
+
+  frame?: string;
 }

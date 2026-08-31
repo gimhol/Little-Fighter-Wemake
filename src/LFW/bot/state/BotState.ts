@@ -110,28 +110,33 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     const { bot } = me.data.base
 
     if (!bot) return false;
-    const keys_list: LGK[][] = []
+    const results: (LGK[] | string)[] = []
     let action_ids = bot.frames?.[me.frame.id]
     if (action_ids) for (const aid of action_ids) {
       const action = bot.actions[aid];
-      const keys = this.ctrl.handle_action(where + '1', action)
-      if (keys) keys_list.push(keys)
+      const result = this.ctrl.handle_action(where + '1', action)
+      if (result) results.push(result)
     }
 
     action_ids = bot.states?.[me.state]
     if (action_ids) for (const aid of action_ids) {
       const action = bot.actions[aid];
-      const keys = this.ctrl.handle_action(where + '2', action)
-      if (keys) keys_list.push(keys)
+      const result = this.ctrl.handle_action(where + '2', action)
+      if (result) results.push(result)
     }
 
-    if (!keys_list.length) return false
+    if (!results.length) return false
 
     me.lfw.mt.mark = where
-    const keys = me.lfw.mt.pick(keys_list)
-    if (keys?.length) {
-      this.ctrl.key_up(...keys).start(...keys).end(...keys)
-      me.lfw.mt.case('keys', keys.join())
+    const result = me.lfw.mt.pick(results)
+    if (!result) return false;
+
+    if (Array.isArray(result)) {
+      this.ctrl.key_up(...result).start(...result).end(...result)
+      me.lfw.mt.case('keys', result.join())
+    } else {
+      this.ctrl.bot_frame = result
+      me.lfw.mt.case('frame', result)
     }
     return true
   }

@@ -70,6 +70,7 @@ export class BotController extends BaseController {
   protected _bot_id: string | undefined;
   protected _bot: IBotData | undefined;
   protected _dataset = new BotDataSet();
+  bot_frame: string | undefined;
 
   get dummy(): DummyEnum {
     return this._dummy;
@@ -720,11 +721,11 @@ export class BotController extends BaseController {
         this.avoidings.clear()
         this.defends.clear()
       }
+      this.bot_frame = void 0;
       this.fsm.update(1)
     }
-    if (this.lfw.mt.debugging)
-      if (this.queue.length)
-        this._case(`bot_keys`, this.queue.join(';'))
+    if (this.lfw.mt.debugging && this.queue.length)
+      this._case(`bot_keys`, this.queue.join(';'))
     const ret = super.update();
     if (this.lfw.mt.debugging) {
       const a = this.avoidings.targets;
@@ -737,6 +738,10 @@ export class BotController extends BaseController {
       if (msg) this._case(`bot_target`, msg.trim())
       if (ret.result?.frame) this._case(`bot_nf`, ret.result?.frame.id)
       this._case(`bot_update_end_${this.me.id}_${this.me.name}`)
+    }
+    if (this.bot_frame) {
+      const nf = this.me.get_next_frame({ id: this.bot_frame });
+      if (nf) ret.fire2(nf, this.time, '', 'bot')
     }
     return ret;
   }
@@ -755,10 +760,11 @@ export class BotController extends BaseController {
     return false;
   }
 
-  handle_action(where: string, action: IBotAction | undefined): LGK[] | false {
+  handle_action(where: string, action: IBotAction | undefined): LGK[] | false | string {
     if (!action) return false
-    const { desire: _desire, desire_step = 0, desire_base = 0 } = action;
-    const action_desire = this.action_desire(`act#${where}#${action.keys.join()}`);
+    const { desire: _desire, desire_step = 0, desire_base = 0, keys, frame } = action;
+    if (!keys?.length && !frame) return false;
+    const action_desire = this.action_desire(`act#${where}#${keys?.join() ?? frame}`);
     const desire = _desire != void 0 ? _desire :
       (desire_base + desire_step * (this.difficulty - 1))
     if (!desire || action_desire > desire) return false;
@@ -785,12 +791,14 @@ export class BotController extends BaseController {
     if (judger && !judger.run(this))
       return false;
 
-    const ks = action.keys.map<LGK>(v => {
+    if (frame) return frame;
+
+    const ks = action.keys?.map<LGK>(v => {
       if (v === 'F') return facing > 0 ? GK.R : GK.L;
       if (v === 'B') return facing > 0 ? GK.R : GK.L;
       return v
     })
-    return ks;
+    return ks ?? false
   }
   /* “指令”系列感觉实现得不太对 -Gim */
   follow(e: Entity): void {
