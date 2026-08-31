@@ -1260,7 +1260,8 @@ export class Entity {
 
   handle_gravity(): void {
     if (this.bearer || this.catcher || this.shaking || this.motionless) return;
-    if (this.position.y <= this.ground_y) return;
+    const { gravity_enabled = true } = this.frame;
+    if (this.position.y <= this.ground_y || !gravity_enabled) return;
     this.velocity.y = round_float(
       this.velocity.y - this.gravity * this._atom_time,
     );
