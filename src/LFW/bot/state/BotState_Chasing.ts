@@ -17,7 +17,8 @@ export class BotState_Chasing extends BotState_Base {
       return BSE.StageEnd;
     const { ctrl: c } = this;
     const me = c.entity;
-    const en = c.chasings.get()?.entity
+    const en = c.chasings.get()?.entity;
+    const de = c.defends.get()?.entity;
 
     if (en && this.ctrl.is_leave_chase_range(en))
       return BSE.Following;
@@ -25,7 +26,7 @@ export class BotState_Chasing extends BotState_Base {
       return BSE.Following;
 
     if (this.handle_bot_actions('hba_c')) return;
-    if (this.handle_defends('hd_c')) return;
+    if (this.handle_defends('hd_c1')) return;
     this.handle_block()
 
     if (!en) return BSE.Idle;

@@ -1,8 +1,8 @@
 
-import { FID, ChaseStratedy, EMPTY_FRAME_INFO, FrameBehavior, GK, type IChaseInfo } from "../defines";
+import { ChaseStratedy, EMPTY_FRAME_INFO, FID, FrameBehavior, GK, type IChaseInfo } from "../defines";
 import { ChaseLost } from "../defines/ChaseLost";
 import type { Entity } from "../entity/Entity";
-import { closer_one } from "../helper";
+import { closer_one, manhattan_xz } from "../helper";
 import { round_float } from "../utils";
 import { BaseController } from "./BaseController";
 import type { ControllerResult } from "./ControllerResult";
@@ -15,30 +15,66 @@ export class BallController extends BaseController {
   set chasing(e: Entity | null) { this._chasing = e || null; }
 
   lookup(lookup: Entity) {
+    const { chase } = this.entity.frame;
+    if (!chase) return;
+
+    const { stratedy } = chase;
     const a = this.chasing;
     const b = this.should_chase(a) ? a : this.chasing = null;
-    if (a && this.entity.frame.chase?.stratedy === ChaseStratedy.TillLost) {
+    if (a && stratedy === ChaseStratedy.TillLost) {
       this.set_chase_pos(
         a.position.x,
         a.position.y,
         a.position.z
       )
-      return
+      return true
     }
     const c = this.should_chase(lookup) ? lookup : null;
     const d = this.chasing = closer_one(this.entity, b, c);
     // lost
-    if (!d && a) this.set_chase_pos(
-      this.entity.position.x,
-      this.entity.position.y,
-      this.entity.position.z
-    )
+    if (!d && a) {
+      this.set_chase_pos(
+        this.entity.position.x,
+        this.entity.position.y,
+        this.entity.position.z
+      )
+      return
+    }
+
     // follow
-    if (d) this.set_chase_pos(
-      d.position.x,
-      d.position.y,
-      d.position.z
-    )
+    if (d) {
+      this.set_chase_pos(
+        d.position.x,
+        d.position.y,
+        d.position.z
+      )
+    }
+  }
+
+  update_lookup(me: number, entities: Entity[]): void {
+    const { chase } = this.entity.frame;
+    if (!chase) return;
+    const { stratedy } = chase;
+    if (stratedy !== ChaseStratedy.TillLost)
+      this.chasing = null;
+    const self = this.entity;
+    const x0 = self.position.x;
+    let i1 = me - 1;
+    let i2 = me + 1;
+    while (1) {
+      let l: Entity | undefined = entities[i1];
+      let r: Entity | undefined = entities[i2];
+      if (this.chasing) {
+        const d = manhattan_xz(self, this.chasing);
+        if (l && x0 - l.position.x >= d) l = void 0;
+        if (r && r.position.x - x0 >= d) r = void 0;
+      }
+      const e = closer_one(self, l, r);
+      if (!e) break;
+      if (!e.ghosted) this.lookup(e);
+      if (l === e) --i1;
+      if (r === e) ++i2;
+    }
   }
 
   should_chase(other: Entity | null): boolean {

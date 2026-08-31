@@ -18,6 +18,7 @@ import {
 } from "../defines";
 import { Ditto } from "../ditto";
 import { Entity, is_ball, is_fighter, is_weapon } from "../entity";
+import { closer_one } from "../helper";
 import { abs, between, max, round } from '../utils/math/base';
 import { clamp } from '../utils/math/clamp';
 import { round_float } from '../utils/math/round_float';
@@ -521,11 +522,7 @@ export class BotController extends BaseController {
       }
 
       if (is_fighter(e)) {
-        if (!ATTCKING_STATES.some(v => v === state))
-          return 0
-        if (e.fall_value < e.fall_value_max)
-          break;
-        if (e.defend_value < e.defend_value_max)
+        if (ATTCKING_STATES.some(v => v === state))
           break;
       }
       return 0;
@@ -533,7 +530,7 @@ export class BotController extends BaseController {
 
 
     const hit = is_ray_hit(e, this.entity, {
-      x: max(e.velocity.x, 1),
+      x: max(abs(e.velocity.x), 1),
       z: e.velocity.z,
       min_x: -20,
       max_x: max(abs(10 * e.velocity.x), 60),
@@ -559,7 +556,7 @@ export class BotController extends BaseController {
     return 1;
   }
 
-  look_other(other: Entity) {
+  lookup(other: Entity) {
     const { entity: me } = this;
     if (!me.mounted || !other.mounted) {
       this.avoidings.clear();
@@ -613,7 +610,7 @@ export class BotController extends BaseController {
       me.team != this.stage.team &&
       !this.world.has_players_alive
     ) {
-      this.chasings.look(this.entity, other)//
+      this.chasings.look(this.entity, other);
     } else {
       this.avoidings.del(t => t.entity === other);
       this.chasings.del(t => t.entity === other);
@@ -828,5 +825,42 @@ export class BotController extends BaseController {
     this.lfw.mt.mark = mark
     this.lfw.mt.case(`ret=true`, ...args)
     return true;
+  }
+  update_lookup(me: number, entities: Entity[]): void {
+    const self = this.entity;
+    const x0 = self.position.x;
+    let i1 = me - 1;
+    let i2 = me + 1;
+    const len = entities.length;
+    const bound = this.target_dist_bound();
+    const prune = bound !== Infinity;
+
+    while (i1 >= 0 || i2 < len) {
+      let l: Entity | undefined = entities[i1];
+      let r: Entity | undefined = entities[i2];
+      if (prune) {
+        if (l && x0 - l.position.x > bound) l = void 0;
+        if (r && r.position.x - x0 > bound) r = void 0;
+      }
+      const e = closer_one(self, l, r);
+      if (!e) break;
+      if (!e.ghosted) this.lookup(e);
+      if (l === e) --i1;
+      if (r === e) ++i2;
+    }
+  }
+
+  private target_dist_bound(): number {
+    const { chasings, avoidings, defends } = this;
+    if (
+      chasings.targets.length < chasings.max ||
+      avoidings.targets.length < avoidings.max ||
+      defends.targets.length < defends.max
+    ) return Infinity;
+    let m = -1;
+    for (const t of chasings.targets) if (t.distance > m) m = t.distance;
+    for (const t of avoidings.targets) if (t.distance > m) m = t.distance;
+    for (const t of defends.targets) if (t.distance > m) m = t.distance;
+    return m;
   }
 }

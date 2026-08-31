@@ -1679,9 +1679,23 @@ export class Entity {
     this.collision_list.length = 0;
     this.collided_list.length = 0;
     this.prev_position.copy(this.position);
-
+    this.update_aabb();
     if (this.lfw.mt.debugging)
       this.lfw.mt.case(`e_${this.id}_${this.name}_end`)
+  }
+
+  protected update_aabb() {
+    const {
+      __aabb_x1: bx1 = 0, __aabb_x2: fx1 = 0,
+      __aabb_z1: bz1 = -12, __aabb_z2: bz2 = 12,
+      width, centerx
+    } = this.frame;
+    this.aabb_min_x = round(this.position.x + (this.facing > 0 ? bx1 : -fx1))
+    this.aabb_max_x = round(this.position.x + (this.facing > 0 ? fx1 : -bx1))
+    this.aabb_min_z = round(this.position.z + bz1)
+    this.aabb_max_z = round(this.position.z + bz2)
+    this.l_len = this.facing > 0 ? centerx : width - centerx;
+    this.r_len = this.facing > 0 ? width - centerx : centerx;
   }
 
   /**

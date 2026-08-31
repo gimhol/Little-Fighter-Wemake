@@ -67,7 +67,14 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
   handle_defends(mark: string): boolean {
     const { ctrl: c } = this;
     const me = c.entity;
-
+    if (
+      me.state !== StateEnum.Standing &&
+      me.state !== StateEnum.Walking &&
+      me.state !== StateEnum.Running &&
+      me.state !== StateEnum.Jump &&
+      me.state !== StateEnum.Dash &&
+      me.state !== StateEnum.Defend
+    ) return false;
     if (!me.frame.bdy?.length) return c._false(mark, 1);
     if (me.blinking) return c._false(mark, 2);
     if (me.invisible) return c._false(mark, 3);
@@ -76,17 +83,13 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     const target = c.defends.get();
     if (!target) return c._false(mark, 5);
 
-    const dx = target.x - me.position.x;
     const en_facing = target.facing;
-
-    if (c.desire(mark) >= c.defend_desire) {
-      // TODO: 是否会存在倒着飞的玩意?
-      if (dx > 0 && en_facing < 0 && me.facing < 0)
+    if (c.desire(mark) < c.defend_desire) {
+      if (en_facing < 0 && me.facing < 0)
         c.click(GK.R);
-      if (dx < 0 && en_facing > 0 && me.facing > 0)
-        c.click(GK.L)
-
-      c.click(GK.d)
+      if (en_facing > 0 && me.facing > 0)
+        c.click(GK.L);
+      c.click(GK.d);
       return c._true(mark, 8);
     }
     const ret = me.state == StateEnum.Defend

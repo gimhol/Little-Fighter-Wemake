@@ -25,6 +25,7 @@ import type { IWorldRenderer } from "./ditto/render/IWorldRenderer";
 import {
   Entity,
   is_ball,
+  is_ball_ctrl,
   is_bot_ctrl,
   is_fighter,
   is_human_ctrl,
@@ -557,7 +558,7 @@ export class World {
     if (Ditto.DEV && this.entities.length > MAX_DEBUG_ENTITIES)
       Ditto.debug(`[World::update_once]entities.size = ${this.entities.length}`)
     this.collisions.clear();
-    const temp_entities: Entity[] = [];
+    // const temp_entities: Entity[] = [];
     const update_chasing = this._game_time.value % CHASING_UPDATE_INTERVAL === 0;
     const dead_buffs: [string, Buff][] = []
     this.buffs.forEach((buff, key) => {
@@ -595,19 +596,7 @@ export class World {
         ++offset
         continue;
       }
-
       a.update();
-      const {
-        __aabb_x1: bx1 = 0, __aabb_x2: fx1 = 0,
-        __aabb_z1: bz1 = -12, __aabb_z2: bz2 = 12,
-        width, centerx
-      } = a.frame;
-      a.aabb_min_x = round(a.position.x + (a.facing > 0 ? bx1 : -fx1))
-      a.aabb_max_x = round(a.position.x + (a.facing > 0 ? fx1 : -bx1))
-      a.aabb_min_z = round(a.position.z + bz1)
-      a.aabb_max_z = round(a.position.z + bz2)
-      a.l_len = a.facing > 0 ? centerx : width - centerx;
-      a.r_len = a.facing > 0 ? width - centerx : centerx;
       if (a.ghosted) continue;
 
       if (is_fighter(a)) {
@@ -633,26 +622,20 @@ export class World {
           puppet_count++;
         }
       }
-
-      if (update_chasing) {
-        for (const c of this._chasers)
-          c.lookup(a)
-
-        const a_ctrl = a.ctrl
-        for (let j = 0; j < temp_entities.length; j++) {
-          const b = temp_entities[j];
-          const b_ctrl = b.ctrl;
-          if (is_bot_ctrl(b_ctrl)) b_ctrl.look_other(a)
-          if (is_bot_ctrl(a_ctrl)) a_ctrl.look_other(b)
-        }
-        temp_entities.push(a);
-      }
     }
     const len = this.entities.length = this.entities.length - offset
     this.entities.sort(x_sorter);
 
     for (let i = 0; i < len; i++) {
       const a = this.entities[i];
+
+      const { ctrl } = a
+      if (update_chasing && is_ball_ctrl(ctrl))
+        ctrl.update_lookup(i, this.entities)
+      
+      if (update_chasing && is_bot_ctrl(ctrl))
+        ctrl.update_lookup(i, this.entities)
+
       if (a.ghosted) continue;
       for (let j = i + 1; j < len; j++) {
         const b = this.entities[j];
