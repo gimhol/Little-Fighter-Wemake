@@ -5,8 +5,8 @@ import { Buff } from "./Buff";
 
 export class Buff_MagicFlute2 extends Buff {
   static override readonly KIND: string | number = ItrKind.MagicFlute2;
-  injury = 1;
-  injury_r = 0.5;
+  readonly injury = 1;
+  readonly injury_r = 0.5;
 
   override init(): void {
     this.ticks = 3;

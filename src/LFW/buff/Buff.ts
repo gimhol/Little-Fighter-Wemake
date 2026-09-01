@@ -2,6 +2,7 @@ import { Entity } from "../entity";
 import type { LFW } from "../LFW";
 import { Times } from "../utils/Times";
 import { World } from "../World";
+import type { IBuffSnapshot } from "./IBuffSnapshot";
 
 export abstract class Buff {
   static readonly KIND: string | number = '';
@@ -130,6 +131,28 @@ export abstract class Buff {
       ++slow;
     }
     this._victims.length = slow;
+  }
+
+  to_snapshot(): IBuffSnapshot {
+    return {
+      attacker_id: this._attacker_id,
+      level: this.level,
+      mounted: this._mounted,
+      victims: [...this._victims],
+      ticker: this._ticker.to_snapshot(),
+      lifetime: this._lifetime.to_snapshot(),
+    };
+  }
+  read_snapshot(s: IBuffSnapshot): this {
+    this._attacker_id = s.attacker_id;
+    this._attacker = s.attacker_id ? this.world.find_entity(s.attacker_id) : void 0;
+    this.level = s.level;
+    this._mounted = s.mounted;
+    this._victims.length = 0;
+    this._victims.push(...s.victims);
+    this._ticker.read_snapshot(s.ticker);
+    this._lifetime.read_snapshot(s.lifetime);
+    return this;
   }
 
   mount(): void {
