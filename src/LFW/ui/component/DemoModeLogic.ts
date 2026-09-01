@@ -1,5 +1,5 @@
 import { FSM } from "../../base/FSM";
-import { Defines, EntityGroup, GameKey } from "../../defines";
+import { Defines, EntityGroup, GameKey, OID, type IEntityData } from "../../defines";
 import { FacingFlag } from "../../defines/FacingFlag";
 import type { IPropsMeta } from "../../defines/ISchema";
 import type { IStageInfo } from "../../defines/IStageInfo";
@@ -15,6 +15,7 @@ import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import { LFW } from "../../LFW";
 import type { IStageCallbacks } from "../../stage/IStageCallbacks";
 import { Stage } from "../../stage/Stage";
+import { max } from "../../utils";
 import { traversal } from '../../utils/container_help/traversal';
 import { range } from "../../utils/math/range";
 import { Times } from "../../utils/Times";
@@ -107,7 +108,10 @@ export interface IDemoModeLogicProps {
 interface DemoSituation {
   title: string;
   stage_mode: boolean;
-  teams: ReadonlyArray<string>,
+  bg?: string;
+  stage?: string;
+  teams?: ReadonlyArray<string>,
+  oids?: ReadonlyArray<string>,
 }
 export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
   static override readonly TAGS: string[] = ["DemoModeLogic"];
@@ -161,14 +165,51 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
 
       /* 两队交战 */
       { title: "2 Teams, 4 Players, VS Mode", stage_mode: false, teams: ['1', '1', '2', '2'] },
-      { title: "3 Teams, 4 Players, VS Mode", stage_mode: false, teams: ['1', '1', '1', '2', '2', '2'] },
-      { title: "4 Teams, 4 Players, VS Mode", stage_mode: false, teams: ['1', '1', '1', '1', '2', '2', '2', '2'] },
+      { title: "3 Teams, 6 Players, VS Mode", stage_mode: false, teams: ['1', '1', '1', '2', '2', '2'] },
+      { title: "4 Teams, 8 Players, VS Mode", stage_mode: false, teams: ['1', '1', '1', '1', '2', '2', '2', '2'] },
 
       /* 三队交战 */
       { title: "3 Teams, 6 Players, VS Mode", stage_mode: false, teams: ['1', '1', '2', '2', '3', '3'] },
 
       /* 四队交战 */
-      { title: "4 Teams, 6 Players, VS Mode", stage_mode: false, teams: ['1', '1', '2', '2', '3', '3', '4', '4'] },
+      { title: "4 Teams, 8 Players, VS Mode", stage_mode: false, teams: ['1', '1', '2', '2', '3', '3', '4', '4'] },
+
+      /* Julian VS 10 Fighters */
+      {
+        title: "Julian VS 10 Fighters",
+        stage_mode: false,
+        teams: ['2', '2', '2', '2', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'],
+        oids: [
+          OID.Julian, OID.Justin, OID.Justin, OID.Justin,
+          OID.Deep, OID.John, OID.Henry, OID.Rudolf, OID.Louis,
+          OID.Firen, OID.Freeze, OID.Dennis, OID.Woody, OID.Davis,
+        ]
+      },
+
+      /* Firzen VS 8 Fighters */
+      {
+        title: " VS 10 Fighters",
+        stage_mode: false,
+        teams: ['2', '2', '2', '2', '1', '1', '1', '1', '1', '1', '1', '1'],
+        oids: [
+          OID.Firzen, OID.Jan, OID.Sorcerer, OID.Sorcerer,
+          OID.Deep, OID.John, OID.Henry, OID.Rudolf,
+          OID.Louis, OID.Dennis, OID.Woody, OID.Davis,
+        ]
+      },
+
+      /* LouisEX VS 9 Fighters */
+      {
+        title: "LouisEX VS 10 Fighters",
+        stage_mode: false,
+        teams: ['2', '2', '2', '2', '1', '1', '1', '1', '1', '1', '1'],
+        oids: [
+          OID.LouisEX, OID.Monk, OID.Monk, OID.Monk,
+          OID.Deep, OID.John, OID.Henry, OID.Rudolf, 
+          OID.Firen, OID.Freeze, OID.Dennis, OID.Woody, OID.Davis,
+        ]
+      },
+
     ], lfw.mt)
   }
   protected static get_situation(lfw: LFW) {
@@ -270,15 +311,20 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
 
     const situation = DemoModeLogic.get_situation(this.lfw);
     this.props.situation_name?.set_text(situation.title)
-    const { teams } = situation
-    const players = Array.from(this.lfw.players.values());
-    for (let i = 0; i < teams.length; i++) {
-      const player = players[i]!;
-      const team = teams[i]!;
-      if (!player) continue;
+    const { teams, oids } = situation
 
-      this.lfw.mt.mark = `demo_startup_fighter_${i}`
-      const fighter_data = this.lfw.mt.take(fighters_datas);
+    const len = max(teams?.length ?? 0, oids?.length ?? 0)
+    const fighters: Entity[] = []
+    for (let i = 0; i < len; i++) {
+      const team = teams?.[i];
+      const oid = oids?.[i]
+      let fighter_data: IEntityData | undefined
+      if (oid) {
+        fighter_data = this.lfw.datas.find(oid);
+      } else {
+        this.lfw.mt.mark = `demo_startup_fighter_${i}`
+        fighter_data = this.lfw.mt.take(fighters_datas);
+      }
       if (!fighter_data) continue;
 
       const fighter = this.lfw.factory.create_entity(this.world, fighter_data);
@@ -289,15 +335,10 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
         FacingFlag.Right :
         this.lfw.mt.pick([FacingFlag.Left, FacingFlag.Right])!;
 
-      fighter.ctrl = this.lfw.factory.create_ctrl(fighter_data.id, player.id, fighter);
       fighter.key_role = true;
       fighter.name_visible = true;
       fighter.stat_bar_type = StatBarType.UI;
-      fighter.ctrl = this.lfw.factory.create_ctrl(
-        fighter_data.id,
-        player.id,
-        fighter,
-      );
+      fighter.ctrl = this.lfw.factory.create_ctrl(fighter_data.id, '', fighter);
 
       this.lfw.mt.mark = 'demo_startup_fighter_x'
       const x = this.lfw.mt.range(min_x, max_x)
@@ -307,29 +348,22 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       fighter.blinking = this.world.dataset.begin_blink_time;
       if (is_vs_mode) fighter.mp = (fighter.mp_max * 2 / 5)
       fighter.attach();
+      fighters.push(fighter)
     }
 
     const stat_bars = this.node.search_components(FighterStatBar)
     for (let i = 0; i < stat_bars.length; i++) {
       const stat_bar = stat_bars[i];
-      const enabled = teams.length >= Number(stat_bar.node.id?.match(/p(\d)_stat/)?.[1]);
-      stat_bar.node.visible = enabled;
-      stat_bar.node.disabled = !enabled;
-      if (enabled) continue;
+      const fighter = fighters[i]
+      stat_bar.node.visible = !!fighter;
+      stat_bar.node.disabled = !fighter;
+      if (fighter) continue;
       stat_bars.splice(i, 1);
       --i;
     }
 
-    for (const [, fighter] of this.world.puppets) {
-      if (!fighter) continue;
-      const stat_bar = stat_bars.shift()
-      if (!stat_bar) break;
-      stat_bar.set_entity(fighter)
-    }
+    fighters.forEach(f => f.callbacks.add(this.entity_callbacks))
 
-    for (const [, f] of this.world.puppets) {
-      this.world_callbacks.on_fighter_add?.(f)
-    }
     if (is_stage_mode && stage) {
       this.lfw.change_stage(stage.id ?? "");
       this.lfw.world.stage.callbacks.add(this.stage_callbacks);
