@@ -1,18 +1,18 @@
-import { ActionDirector } from '../ActionDirector';
-import { AGK } from '../../../../defines/GameKey';
-import { TestCase } from '../TestCase';
 import { GK, O_ID } from "../../../../defines";
+import { AGK } from '../../../../defines/GameKey';
 import { Entity, StatBarType } from "../../../../entity";
+import { ActionDirector } from '../ActionDirector';
+import { TestCase } from '../TestCase';
 
 export class FasterSlowerStandUp extends TestCase {
   override name: string = 'Press A/D faster or slower to stand up';
   figters: Entity[] = [];
-override readonly director = new ActionDirector()
+  override readonly director = new ActionDirector()
     .offset(10, () => {
       this.figters.forEach(v => v.ctrl.key_up(...AGK))
     }).offset(500, () => {
       this.figters.forEach(v => {
-        v.set_velocity_y(5)
+        v.set_velocity(null, 5)
         v.enter_frame_by_id(v.data.indexes?.falling?.[1][0])
       })
     }).offset(10, () => {

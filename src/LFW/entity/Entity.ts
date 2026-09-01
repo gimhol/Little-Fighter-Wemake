@@ -1111,12 +1111,10 @@ export class Entity {
               e.ctrl.chasing = allies[0];
             break;
         }
-        if (opoint.inherit_speed_x)
-          e.set_velocity_x(e.velocity.x + this.velocity.x * opoint.inherit_speed_x);
-        if (opoint.inherit_speed_y)
-          e.set_velocity_y(e.velocity.y + this.velocity.y * opoint.inherit_speed_y);
-        if (opoint.inherit_speed_z)
-          e.set_velocity_z(e.velocity.z + this.velocity.z * opoint.inherit_speed_z);
+        const x = opoint.inherit_speed_x ? e.velocity.x + this.velocity.x * opoint.inherit_speed_x : null;
+        const y = opoint.inherit_speed_y ? e.velocity.y + this.velocity.y * opoint.inherit_speed_y : null;
+        const z = opoint.inherit_speed_z ? e.velocity.z + this.velocity.z * opoint.inherit_speed_z : null;
+        e.set_velocity(x, y, z);
       }
     }
   }
@@ -1254,8 +1252,7 @@ export class Entity {
       z += accz;
       if (z > -dvz) z = -dvz;
     }
-    this.set_velocity_x(x);
-    this.set_velocity_z(z);
+    this.set_velocity(x, null, z);
   }
 
   handle_gravity(): void {
@@ -1848,7 +1845,7 @@ export class Entity {
     if (!cp_a) {
       this.catcher = null;
       this.prev_cpoint_a = null;
-      this.set_velocity_y(3);
+      this.set_velocity(null, 3);
       this.enter_frame(this.get_caught_cancel_frame());
       return true;
     }
@@ -2348,25 +2345,12 @@ export class Entity {
   get_prev_frame() {
     return this._prev_frame;
   }
-  set_velocity(
-    _x?: number | null,
-    _y?: number | null,
-    _z?: number | null,
-  ) {
+  set_velocity(_x?: number | null, _y?: number | null, _z?: number | null) {
     if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
     if (_x !== null && _x !== void 0) this.prev_velocity.x = this.velocity.x = round_float(_x)
     if (_y !== null && _y !== void 0) this.prev_velocity.y = this.velocity.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.prev_velocity.z = this.velocity.z = round_float(_z)
     if (this.velocity.y > 0) this.leave_ground();
-  }
-  set_velocity_x(x: number) {
-    this.set_velocity(x)
-  }
-  set_velocity_y(y: number) {
-    this.set_velocity(null, y)
-  }
-  set_velocity_z(z: number) {
-    this.set_velocity(null, null, z)
   }
   set_position(_x?: number | null, _y?: number | null, _z?: number | null) {
     if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;

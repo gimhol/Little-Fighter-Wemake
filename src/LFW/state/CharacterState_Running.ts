@@ -14,7 +14,7 @@ export class CharacterState_Running extends CharacterState_Base {
       const dz = abs(vz / 4);
       if (vx > dz) vx -= dz;
       if (vx < -dz) vx += dz;
-      e.set_velocity_x(vx);
+      e.set_velocity(vx);
     }
 
     if (e.hp <= 0) {

@@ -41,10 +41,10 @@ export const collision_action_handlers: IActionHandler = {
   [AT.V_DEFEND]: () => 0, // 特殊对待，此处留空
 
   [AT.A_REBOUND_VX]: (a, { attacker }) => {
-    attacker.set_velocity_x(-attacker.velocity.x);
+    attacker.set_velocity(-attacker.velocity.x);
   },
   [AT.V_REBOUND_VX]: (a, { victim }) => {
-    victim.set_velocity_x(-victim.velocity.x);
+    victim.set_velocity(-victim.velocity.x);
   },
   [AT.V_TURN_FACE]: (a, { victim }) => {
     victim.facing = turn_face(victim.facing);

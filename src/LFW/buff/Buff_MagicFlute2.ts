@@ -26,7 +26,7 @@ export class Buff_MagicFlute2 extends Buff {
   override on_update(attacker?: Entity, victim?: Entity): "keep" | "del" {
     if (!victim) return 'del';
     const vy = calc_v(victim.velocity.y, 1.5, SpeedMode.AccTo, 1.5, 1);
-    victim.set_velocity_y(vy);
+    victim.set_velocity(null, vy);
     victim.handle_velocity_decay(0.25);
     switch (victim.data.type) {
       case EntityEnum.Fighter:

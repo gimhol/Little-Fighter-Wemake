@@ -39,7 +39,7 @@ export class CharacterState_Burning extends CharacterState_Base {
       )
     ) {
       e.enter_frame_by_id(indexes?.bouncing?.[-1][1]);
-      e.set_velocity_y(e.world.dataset.cha_bc_spd)
+      e.set_velocity(null, e.world.dataset.cha_bc_spd)
       e.bounced = true;
     } else {
       e.enter_frame_by_id(indexes?.lying?.[-1]);
