@@ -1,4 +1,4 @@
-import { FID, is_fighter, OID, SE, type Entity, type LFW, type World } from "@/LFW";
+import { clamp, FID, is_fighter, OID, SE, StateEnum, type Entity, type LFW, type World } from "@/LFW";
 import { Vector3 } from "../_t";
 import { EntityCtrlRender } from "./EntityCtrlRender";
 import { EntityMainRender } from "./EntityMainRender";
@@ -24,6 +24,12 @@ export class EntityRenderer {
   readonly p0 = new Vector3()
   readonly p1 = new Vector3()
   readonly position = new Vector3();
+
+  get holder(): EntityRenderer | undefined {
+    const { entity: { bearer, catcher } } = this;
+    return (bearer ?? catcher)?.renderer as EntityRenderer | undefined;
+  }
+
   /** 当前是否已挂载进场景 */
   mounted: boolean = false;
   get invisible() {
@@ -75,26 +81,55 @@ export class EntityRenderer {
       this.indi = null
     }
   }
+  update_position(immediate = false): void {
+    const { entity } = this;
+    const { facing, state, frame, world } = entity;
+    let { x, y, z } = entity.position;
+    if (state === StateEnum.Message) {
+      const { centerx, width } = frame;
+      const cameraX = this.owner.camera.position.x;
+      const screenW = world.dataset.screen_w / (world.bg.zoom_x ?? 1);
+      const offsetX = facing === 1 ? centerx : width - centerx;
+      const left = cameraX + offsetX;
+      const right = cameraX + screenW - (width - offsetX);
+      x = clamp(x, left, right);
+    }
+
+    this.p0.copy(this.p1);
+    this.p1.set(x, y - z / 2, z);
+
+    if (immediate) {
+      this.p0.copy(this.p1)
+      this.position.copy(this.p1)
+    }
+  }
   render(dt: number) {
     if (this._indicators !== this.owner.indicators) {
       this._indicators = this.owner.indicators
       this.ensure_indi()
       this.ensure_ctrl()
     }
-    if (this.owner.dirty) {
-      this.p0.copy(this.p1)
-      this.p1.copy(this.entity.position)
+    if (this.owner.dirty)
+      this.update_position()
+    const { entity, holder } = this
+    if (!holder) {
+      let { dfactor } = this.owner;
+      entity.lifetime === 0 && (dfactor = 1);
+      this.position.lerpVectors(this.p0, this.p1, this.owner.dfactor)
+    } else {
+      this.position.copy(this.p1);
+      this.position.x -= holder.p1.x - holder.position.x;
+      this.position.y -= holder.p1.y - holder.position.y;
+      this.position.z -= holder.p1.z - holder.position.z;
     }
-    this.position.lerpVectors(this.p0, this.p1, this.owner.dfactor)
-
     this.main.render();
     this.shad.render();
     this.name.render();
     this.stat?.render();
     this.indi?.render();
     this.ctrl?.render()
-    this.entity.holding?.renderer.render(dt)
-    this.entity.catching?.renderer.render(dt)
+    entity.holding?.renderer.render(dt)
+    entity.catching?.renderer.render(dt)
   }
   mount() {
     this.main.on_mount();
@@ -105,6 +140,7 @@ export class EntityRenderer {
     this.ensure_ctrl()
     this.p1.copy(this.entity.position)
     this.p0.copy(this.entity.position)
+    this.update_position(true)
   }
   unmount() {
     this.main.on_unmount();

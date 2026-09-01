@@ -1,7 +1,7 @@
 import type { Entity, IEntityData, IFrameInfo, IFramePic, IPictureInfo, TFace } from "@/LFW";
 import { Buff_Electroshock, clamp, cos, floor, LFW, max, sin, StateEnum, World } from "@/LFW";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
-import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "../_t";
+import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -39,8 +39,6 @@ export class EntityMainRender {
   protected data: IEntityData;
   protected frame: IFrameInfo;
   protected facing: TFace;
-  protected p0 = new Vector3();
-  protected p1 = new Vector3();
   protected centerx = 0;
   protected centery = 0;
   protected files: Record<string, IPictureInfo> = {};
@@ -67,8 +65,6 @@ export class EntityMainRender {
     const { entity } = this;
     this.frame = entity.frame;
     this.facing = entity.facing;
-    this.p0.set(0, 0, 0);
-    this.p1.set(0, 0, 0);
     this.shaking = 0;
     this.shaking_x = 0;
     this.render_effect_time = -1;
@@ -123,7 +119,6 @@ export class EntityMainRender {
     this.reset()
     this.update_texture();
     this.update_outline();
-    this.update_position(true);
     this.world_renderer.world_node.add(this.node);
   }
 
@@ -156,30 +151,16 @@ export class EntityMainRender {
         this.reset();
         this.update_texture();
         this.update_outline();
-        this.update_position(true);
       } else if (this.frame !== frame || this.facing !== facing || this.variant !== variant) {
         this.frame = frame;
         this.facing = facing;
         this.variant = variant;
         this.update_texture();
-        this.update_position();
-      } else {
-        this.update_position();
       }
     }
 
     this.update_shaking();
-    const holder = (entity.bearer?.renderer ?? entity.catcher?.renderer) as EntityRenderer;
-    if (!holder) {
-      let { dfactor } = this.world_renderer;
-      entity.lifetime === 0 && (dfactor = 1);
-      this.node.position.lerpVectors(this.p0, this.p1, dfactor);
-    } else {
-      this.node.position.copy(this.p1);
-      this.node.position.x -= holder.main.p1.x - holder.main.node.position.x;
-      this.node.position.y -= holder.main.p1.y - holder.main.node.position.y;
-      this.node.position.z -= holder.main.p1.z - holder.main.node.position.z;
-    }
+    this.node.position.copy(this.owner.position);
     const { invisible } = this.owner;
     const { blinking, facing } = entity;
     const { pic } = this.frame;
@@ -271,24 +252,6 @@ export class EntityMainRender {
     }
   }
 
-  update_position(immediate = false): void {
-    const { entity } = this;
-    const { facing, state, frame, world } = entity;
-    let { x, y, z } = entity.position;
-
-    if (state === StateEnum.Message) {
-      const { centerx, width } = frame;
-      const cameraX = this.world_renderer.camera.position.x;
-      const screenW = world.dataset.screen_w / (world.bg.zoom_x ?? 1);
-      const offsetX = facing === 1 ? centerx : width - centerx;
-      const left = cameraX + offsetX;
-      const right = cameraX + screenW - (width - offsetX);
-      x = clamp(x, left, right);
-    }
-    this.p0.copy(this.p1);
-    this.p1.set(x, y - z / 2, z);
-    immediate && (this.p0.copy(this.p1), this.node.position.copy(this.p1));
-  }
 
   private update_outline(): void {
     const { ghosted, render_effect_time } = this.entity;
@@ -339,3 +302,5 @@ export class EntityMainRender {
     this.blood_mesh.position.set(this.centerx + bx, this.centery - by, bz);
   }
 }
+
+

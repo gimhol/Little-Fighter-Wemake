@@ -1,6 +1,6 @@
 import { get_team_outline_color } from "@/LFW/base/get_team_shadow_color";
 import { get_team_text_color } from "@/LFW/base/get_team_text_color";
-import { is_fighter, type Entity, type IEntityCallbacks } from "@/LFW/entity";
+import { is_fighter, type Entity } from "@/LFW/entity";
 import { StatBarType } from "@/LFW/entity/StatBarType";
 import { floor, round } from "@/LFW/utils";
 import * as T from "../_t";
@@ -13,7 +13,7 @@ const BAR_W = 40;
 const BAR_H = 3;
 export const BAR_BG_W = BAR_W + 2;
 const BAR_BG_H = 1 + (BAR_H + 1) * 2 + 4;
-export class EntityStatRender implements IEntityCallbacks {
+export class EntityStatRender {
   readonly owner: EntityRenderer;
   protected _reserve_mesh: TextMesh | null = null;
   protected bars_node = new T.Object3D();
@@ -111,42 +111,32 @@ export class EntityStatRender implements IEntityCallbacks {
 
   on_mount() {
     const { entity: e } = this;
-    e.callbacks.add(this);
     this.world_renderer.world_node.add(
       this.bars_node
     );
     this.bars_node.visible = e.key_role
-    this.on_hp_max_changed(e)
-    this.on_hp_r_changed(e)
-    this.on_hp_changed(e)
-    this.on_mp_max_changed(e)
-    this.on_mp_changed(e)
-    this.on_fall_value_changed(e)
-    this.on_fall_value_max_changed(e)
-    this.on_defend_value_changed(e)
-    this.on_defend_value_max_changed(e)
-    this.on_toughness_changed(e)
-    this.on_toughness_max_changed(e)
   }
 
   on_unmount() {
-    const { entity: e } = this;
     this.bars_node.removeFromParent();
     this._reserve_mesh?.removeFromParent();
     this._reserve_mesh = null
-    e.callbacks.del(this);
   }
-  on_hp_changed(e: Entity): void { this.hp_bar.val = e.hp; }
-  on_hp_max_changed(e: Entity): void { this.self_healing_hp_bar.max = e.hp_max; this.hp_bar.max = e.hp_max; }
-  on_hp_r_changed(e: Entity): void { this.self_healing_hp_bar.val = e.hp_r; }
-  on_mp_changed(e: Entity): void { this.mp_bar.val = e.mp; }
-  on_mp_max_changed(e: Entity): void { this.self_healing_mp_bar.max = e.mp_max; }
-  on_fall_value_changed(e: Entity): void { this.fall_value_bar.val = e.fall_value; }
-  on_fall_value_max_changed(e: Entity): void { this.fall_value_bar.max = e.fall_value_max; }
-  on_defend_value_changed(e: Entity): void { this.defend_value_bar.val = e.defend_value; }
-  on_defend_value_max_changed(e: Entity): void { this.defend_value_bar.max = e.defend_value_max; }
-  on_toughness_changed(e: Entity): void { this.toughness_value_bar.val = e.toughness; }
-  on_toughness_max_changed(e: Entity): void { this.toughness_value_bar.max = e.toughness_max; }
+  private sync_bars(e: Entity) {
+    this.self_healing_hp_bar.max = e.hp_max;
+    this.hp_bar.max = e.hp_max;
+    this.self_healing_hp_bar.val = e.hp_r;
+    this.hp_bar.val = e.hp;
+    this.self_healing_mp_bar.max = e.mp_max;
+    this.mp_bar.max = e.mp_max;
+    this.mp_bar.val = e.mp;
+    this.fall_value_bar.val = e.fall_value;
+    this.fall_value_bar.max = e.fall_value_max;
+    this.defend_value_bar.val = e.defend_value;
+    this.defend_value_bar.max = e.defend_value_max;
+    this.toughness_value_bar.val = e.toughness;
+    this.toughness_value_bar.max = e.toughness_max;
+  }
 
   private update_reverse(e: Entity) {
     const { reserve } = e;
@@ -171,26 +161,22 @@ export class EntityStatRender implements IEntityCallbacks {
       mesh.fillStyle = get_team_text_color(team);
       mesh.strokeStyle = get_team_outline_color(team);
     }
-    const {
-      position: { x, y, z },
-      frame: { centery }
-    } = e
-    const _x = round(x)
-    const _y = round(y - z / 2 + centery + mesh.scale.y / 2)
-    const _z = round(z)
-    mesh.position.set(_x, _y, _z)
+    let { x, y, z } = this.owner.position;
+    const { frame: { centery } } = e
+    y = round(y + centery + mesh.scale.y / 2)
+    mesh.position.set(x, y, z)
   }
 
   render() {
-    const { x, z, y } = this.owner.position;
+    const { x, y, z } = this.owner.position;
     const {
       invisible, frame: { centery }, hp, key_role,
       stat_bar_type
     } = this.entity;
     const _is_fighter = is_fighter(this.entity)
     this.bars_node.visible = !!(stat_bar_type & StatBarType.Float) && _is_fighter && key_role && !invisible && hp > 0;
+    this.sync_bars(this.entity)
     this.update_reverse(this.entity)
-
     if (this.entity.healing) {
       const heading = (this.entity.lifetime % 8) < 4;
       if (this._heading != heading) {
@@ -201,10 +187,8 @@ export class EntityStatRender implements IEntityCallbacks {
       this.hp_bar.color = "rgb(255,0,0)";
       this._heading = false;
     }
-
-    const _x = floor(x);
-    const bar_y = floor(y - z / 2 + BAR_BG_H + 5 + centery);
-    const bar_x = floor(_x - BAR_BG_W / 2);
+    const bar_y = floor(y + BAR_BG_H + 5 + centery);
+    const bar_x = floor(x - BAR_BG_W / 2);
     const bar_z = floor(z);
     this.set_bars_position(bar_x, bar_y, bar_z);
   }
@@ -213,7 +197,6 @@ export class EntityStatRender implements IEntityCallbacks {
     const old_y = this.bars_node.position.y
     const _y = y ?? old_y
     let __y = old_y === 0 ? _y : old_y + (_y - old_y) * 0.2
-
     this.bars_node.position.set(x, __y, z);
     if (!this.bars_node.parent || !this.bars_node.visible)
       __y -= BAR_BG_H + 5

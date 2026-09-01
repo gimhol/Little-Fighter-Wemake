@@ -40,6 +40,7 @@ export class EntityNameRender {
     }
     const { lfw, team, ground_y, world } = e;
     const { position } = this.owner;
+
     const { mesh } = this;
     mesh.set_text(lfw, name)
     mesh.visible = true;
@@ -49,8 +50,6 @@ export class EntityNameRender {
       mesh.strokeStyle = get_team_outline_color(team);
     }
     const { x: cam_x, y: cam_y } = camera.position;
-
-
     const hw = (mesh.scale.x + 10) / 2;
     const min_x = cam_x + hw;
     const max_x = min_x + (world.dataset.screen_w / world.transform.scale_x) - 2 * hw;
@@ -63,5 +62,4 @@ export class EntityNameRender {
     );
     mesh.position.set(round(x), round(y), round(z));
   }
-
 }
