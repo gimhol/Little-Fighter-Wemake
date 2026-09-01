@@ -1,4 +1,4 @@
-import { clamp, FID, is_fighter, OID, SE, StateEnum, type Entity, type LFW, type World } from "@/LFW";
+import { clamp, FID, is_fighter, OID, SE, StateEnum, type Entity, type IEntityRenderer, type LFW, type World } from "@/LFW";
 import { Vector3 } from "../_t";
 import { EntityCtrlRender } from "./EntityCtrlRender";
 import { EntityMainRender } from "./EntityMainRender";
@@ -9,7 +9,7 @@ import { FrameIndicators } from "./FrameIndicators";
 import { ENTITY_INDICATINGS } from "./INDICATINGS";
 import type { WorldRenderer } from "./WorldRenderer";
 
-export class EntityRenderer {
+export class EntityRenderer implements IEntityRenderer {
   lfw: LFW;
   world: World;
   entity: Entity;
@@ -103,7 +103,7 @@ export class EntityRenderer {
       this.position.copy(this.p1)
     }
   }
-  render(dt: number) {
+  render(dt: number, df: number) {
     if (this._indicators !== this.owner.indicators) {
       this._indicators = this.owner.indicators
       this.ensure_indi()
@@ -113,9 +113,8 @@ export class EntityRenderer {
       this.update_position()
     const { entity, holder } = this
     if (!holder) {
-      let { dfactor } = this.owner;
-      entity.lifetime === 0 && (dfactor = 1);
-      this.position.lerpVectors(this.p0, this.p1, this.owner.dfactor)
+      entity.lifetime === 0 && (df = 1);
+      this.position.lerpVectors(this.p0, this.p1, df)
     } else {
       this.position.copy(this.p1);
       this.position.x -= holder.p1.x - holder.position.x;
@@ -128,8 +127,7 @@ export class EntityRenderer {
     this.stat?.render();
     this.indi?.render();
     this.ctrl?.render()
-    entity.holding?.renderer.render(dt)
-    entity.catching?.renderer.render(dt)
+    this.holder?.render(dt, df);
   }
   mount() {
     this.main.on_mount();

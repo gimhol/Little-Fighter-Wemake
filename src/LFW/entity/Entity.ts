@@ -46,7 +46,9 @@ import { summary_mgr } from "./SummaryMgr";
 import { calc_v } from "./calc_v";
 import { turn_face } from "./face_helper";
 import { is_ball_ctrl, is_fighter, is_human_ctrl } from "./type_check";
-
+export interface IEntityRenderer {
+  render(dt: number, dfactor: number): void;
+}
 export class Entity {
   static readonly TAG: string = 'Entity';
   lfw: LFW;
@@ -256,7 +258,7 @@ export class Entity {
 
   readonly buffs = new Map<string, Buff>()
 
-  renderer: any;
+  renderer: IEntityRenderer | undefined;
   puppet: boolean = false;
   jumping = { x: 0, y: 0, z: 0, t: 0 }
   terrain: ITerrainInfo;

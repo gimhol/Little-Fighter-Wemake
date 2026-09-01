@@ -6,9 +6,9 @@ import type { World } from "@/LFW/World";
 import { CSS2DRenderer, Camera, Object3D, OrthographicCamera, Scene, Vector3, WebGLRenderer } from "../_t";
 import { BgRender } from "./BgRender";
 import { EntityRenderer } from "./EntityRenderer";
-import { TerrainIndicator } from "./TerrainIndicator";
 import { BG_INDICATINGS } from "./INDICATINGS";
 import csses from "./styles.module.scss";
+import { TerrainIndicator } from "./TerrainIndicator";
 
 export class WorldRenderer implements IWorldRenderer {
   readonly lfw: LFW;
@@ -103,26 +103,26 @@ export class WorldRenderer implements IWorldRenderer {
   }
   /** 创建（如有）+ 挂载 + 登记渲染器 */
   protected mount_renderer(entity: Entity): void {
-    let renderer: EntityRenderer = entity.renderer;
+    let renderer: EntityRenderer = entity.renderer as EntityRenderer;
     if (!renderer) renderer = entity.renderer = new EntityRenderer(entity)
     if (!renderer || renderer.mounted) return;
     renderer.mount();
     renderer.mounted = true;
   }
   del_entity(e: Entity): void {
-    const renderer: EntityRenderer = e.renderer;
+    const renderer: EntityRenderer = e.renderer as EntityRenderer;
     if (!renderer || !renderer.mounted) return;
     renderer.unmount();
     renderer.mounted = false;
   }
   /** 单趟实体渲染（world.entities 为唯一来源） */
-  protected render_entities(dt: number): void {
+  protected render_entities(dt: number, df: number): void {
     const { entities } = this.world;
     for (let i = 0; i < entities.length; i++) {
       const e = entities[i];
       if (e.bearer || e.catcher) continue;
       this.mount_renderer(e);
-      e.renderer!.render(dt);
+      e.renderer!.render(dt, df);
     }
   }
   tu: number = 1;
@@ -176,7 +176,7 @@ export class WorldRenderer implements IWorldRenderer {
     this.bg_flags.set_visible(!!(bg_flags & BG_INDICATINGS.terrain));
     this.bg_flags.render();
     this.bg_render.set_indicator_visible(!!(bg_flags & BG_INDICATINGS.layer));
-    this.render_entities(dt);
+    this.render_entities(dt, this.dfactor);
     for (const ui_stack of this.lfw.ui_stacks)
       ui_stack.ui?.renderer.render(dt)
 
