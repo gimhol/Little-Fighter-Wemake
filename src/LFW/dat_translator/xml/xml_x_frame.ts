@@ -22,6 +22,7 @@ export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement 
   const ret = xml.create(tag);
   ret.set_attr("id", f.id);
   ret.set_attr("name", f.name)
+  ret.set_attr("ref", f.ref)
   if (f.pic) ret.insert(xml_x_frame_pic(xml, f.pic, 'pic'))
   if (f.pics) f.pics.forEach(pic => ret.insert(xml_x_frame_pic(xml, pic, 'pic')))
   ret.set_attr("state", f.state)
@@ -78,7 +79,8 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   const ret = frame_info_new();
   ret.id   /**/ = el.get_str("id", ret.id);
   ret.name /**/ = el.get_str("name", ret.name);
-
+  ret.ref  /**/ = el.get_str("ref", ret.ref);
+  
   const pics = el.children_by_tag('pic').map(v => xml_2_frame_pic(v));
   if (pics.length > 0) ret.pic = pics[0];
   if (pics.length > 1) ret.pics = pics.slice(1);
