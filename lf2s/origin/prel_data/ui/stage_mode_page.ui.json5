@@ -85,7 +85,7 @@
   ],
   templates: {
     shutter_item: {
-      color: "rgb(16, 32, 108)",
+      color: "rgb(0, 0, 0)",
       size: "20,20",
       pos: "0,0,2",
     },
