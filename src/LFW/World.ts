@@ -554,6 +554,7 @@ export class World {
     if (this._paused == 1) return;
     if (this._paused == 2) this._paused = 1
     this._game_time.add();
+    this.team_alive_counts.clear();
 
     if (this.stage.world_pause) return;
     if (Ditto.DEV && this.entities.length > MAX_DEBUG_ENTITIES)
@@ -601,6 +602,11 @@ export class World {
       if (a.ghosted) continue;
 
       if (is_fighter(a)) {
+        if (a.hp > 0) {
+          const { team } = a;
+          const count = this.team_alive_counts.get(team) ?? 0;
+          this.team_alive_counts.set(team, count + 1);
+        }
         const x = a.position.x - this.dataset.screen_w / 2 + (a.facing * this.dataset.screen_w) / 6;
         const z = a.position.z;
         fighter_x_sum += x;
@@ -833,5 +839,51 @@ export class World {
 
   find_entity(id: string) {
     return this.entity_map.get(id);
+  }
+
+  /** Map<队伍, 队伍存活人数> */
+  private team_alive_counts = new Map<string, number>();
+
+
+  private calc_alives() {
+    this.team_alive_counts.clear();
+    for (const e of this.entities) {
+      if (!is_fighter(e)) continue;
+      if (e.hp <= 0) continue;
+      const { team } = e;
+      const count = this.team_alive_counts.get(team) ?? 0;
+      this.team_alive_counts.set(team, count + 1);
+    }
+  }
+
+
+  game_result(refresh: boolean = false): '' | 'drawn' | 'over' | 'win' {
+    if (refresh) this.calc_alives();
+    const { team_alive_counts } = this;
+
+    /* 大于一队，游戏未结束 */
+    if (team_alive_counts.size > 1) return '';
+    if (team_alive_counts.size <= 0) return 'drawn';
+
+    /* 非闯关模式下，剩余队伍 <= 1, 游戏结束 */
+    if (this.stage.id === Defines.VOID_STAGE.id)
+      return 'over';
+
+    /* 玩家队伍是否存活 */
+    let puppet_team_alive = false;
+    for (const team of this.puppet_teams) {
+      if (this.team_alive_counts.has(team)) {
+        puppet_team_alive = true;
+        break;
+      }
+    }
+
+    if (!puppet_team_alive)
+      return 'over'
+
+    if (!this.stage.is_stage_finish || !this.stage.is_chapter_finish)
+      return '';
+
+    return 'win';
   }
 }

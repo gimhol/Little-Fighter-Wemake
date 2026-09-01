@@ -1,113 +1,29 @@
 import { FSM } from "../../base/FSM";
 import { EntityGroup, GameKey, StageActions, type IStagePhaseInfo } from "../../defines";
-import type { Entity } from "../../entity";
-import type { IEntityCallbacks } from "../../entity/IEntityCallbacks";
-import { is_fighter } from "../../entity/type_check";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import type { Stage } from "../../stage";
 import type { IStageCallbacks } from "../../stage/IStageCallbacks";
-import { traversal } from "../../utils/container_help/traversal";
 import { Times } from "../../utils/Times";
 import type { IUIKeyEvent } from "../IUIKeyEvent";
-import { ComponentFSMState } from "./ComponentFSMState";
 import { ComponentsPlayer } from "./ComponentsPlayer";
 import { FighterStatBar } from "./FighterStatBar";
+import { GameModeFSMState, GameModeFSMState_BeforeEnd, GameModeFSMState_End, GameModeFSMState_Running } from "./GameModeFSMState";
 import { Jalousie } from "./Jalousie";
+import { ModeState } from "./ModeState";
 import { UIComponent } from "./UIComponent";
 
-enum StateKey {
-  Base = 'Base',
-  BeforeEnd = 'BeforeEnd',
-  End = 'End',
-  BeforeWin = 'BeforeWin',
-  Win = 'Win',
-}
-class FSMState extends ComponentFSMState<StateKey, StageModeLogic> {
-  override readonly key: StateKey = StateKey.Base
-  get fsm() { return this.owner.fsm }
-}
-class FSMState_BeforeEnd extends FSMState {
-  override readonly key: StateKey = StateKey.BeforeEnd;
-  override update() {
-    if (this.fsm.state_time > 3000)
-      return StateKey.End;
-  }
-}
-class FSMState_End extends FSMState {
-  override readonly key: StateKey = StateKey.End;
-  override enter(): void {
-    this.lfw.sounds.play_preset("end");
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(true);
-  }
-  override leave(): void {
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(false);
-  }
-}
-class FSMState_BeforeWin extends FSMState {
-  override readonly key: StateKey = StateKey.BeforeWin;
-  override update() {
-    if (this.fsm.state_time > 3000)
-      return StateKey.Win;
-  }
-}
-class FSMState_Win extends FSMState {
-  override readonly key: StateKey = StateKey.Win;
-  override enter(): void {
-    this.lfw.sounds.play_preset("pass");
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(true);
-  }
-  override leave(): void {
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(false);
-  }
-}
 export class StageModeLogic extends UIComponent {
   static override readonly TAGS: string[] = ["StageModeLogic"];
-  readonly fsm = new FSM<StateKey, FSMState>().add(
-    new FSMState(this),
-    new FSMState_BeforeEnd(this),
-    new FSMState_End(this),
-    new FSMState_BeforeWin(this),
-    new FSMState_Win(this)
+  readonly fsm = new FSM<ModeState, GameModeFSMState>().add(
+    new GameModeFSMState_Running(this),
+    new GameModeFSMState_BeforeEnd(this),
+    new GameModeFSMState_End(this)
   )
   jalousie?: Jalousie;
   gogogo?: ComponentsPlayer;
   gogogo_loop?: ComponentsPlayer;
   protected weapon_drop_timer = new Times(0, 1200);
-  protected entity_callbacks: IEntityCallbacks = {
-    on_dead: () => {
-      // 队伍存活计数
-      const player_teams: { [x in string]?: number } = {};
-
-      for (const [, f] of this.world.puppets)
-        player_teams[f.team] = 0 // 玩家队伍
-
-      for (const e of this.world.entities) {
-        if (is_fighter(e) && e.hp > 0 && player_teams[e.team] !== void 0)
-          ++player_teams[e.team]!; // 存活计数++
-      }
-
-      // 剩余队伍数
-      let team_remains = 0;
-      traversal(player_teams, (_, v) => {
-        if (v) ++team_remains;
-      })
-
-      // 大于0队，继续打
-      if (team_remains > 0) {
-        this.fsm.use(StateKey.Base);
-      } else {
-        this.fsm.use(StateKey.BeforeEnd);
-      }
-    }
-  }
   protected world_callbacks: IWorldCallbacks = {
-    on_fighter_add: (entity: Entity): void => {
-      entity.callbacks.add(this.entity_callbacks)
-    },
     on_stage_change: (stage, prev) => {
       prev.callbacks.del(this.stage_callbacks)
       stage.callbacks.add(this.stage_callbacks);
@@ -141,10 +57,6 @@ export class StageModeLogic extends UIComponent {
       const { on_start } = curr || {};
       if (on_end?.length) this.handle_stage_actions(on_end)
       if (on_start?.length) this.handle_stage_actions(on_start)
-    },
-    on_chapter_finish: (stage: Stage) => {
-      this.debug('on_chapter_finish', stage)
-      this.fsm.use(StateKey.BeforeWin)
     },
     on_requrie_goto_next_stage: (stage: Stage) => {
       this.debug('on_requrie_goto_next_stage', stage)
@@ -201,7 +113,7 @@ export class StageModeLogic extends UIComponent {
       if (!stat_bar) break;
       stat_bar.set_entity(fighter)
     }
-    this.fsm.use(StateKey.Base);
+    this.fsm.use(ModeState.Running);
     this.world.paused = false;
     this.world.dataset.playrate = 1;
     this.world.dataset.infinity_mp = 0;
@@ -226,7 +138,7 @@ export class StageModeLogic extends UIComponent {
     }
     if (this.jalousie && !this.jalousie.open && this.jalousie.anim.done) {
       this.lfw.goto_next_stage()
-      this.fsm.use(StateKey.Base)
+      this.fsm.use(ModeState.Running)
       this.jalousie.open = true;
     }
     this.fsm.update(dt)
@@ -236,16 +148,15 @@ export class StageModeLogic extends UIComponent {
       case GameKey.a:
       case GameKey.j: {
         if (
-          this.fsm.state?.key === StateKey.Win &&
+          this.fsm.state?.key === ModeState.End &&
           this.fsm.state_time > 1000
         ) {
-          this.lfw.goto_next_stage();
-          this.fsm.use(StateKey.Base)
-        } else if (
-          this.fsm.state?.key === StateKey.End &&
-          this.fsm.state_time > 1000
-        ) {
-          this.lfw.pop_ui_safe()
+          if (this.world.stage.is_chapter_finish) {
+            this.lfw.goto_next_stage();
+            this.fsm.use(ModeState.Running)
+          } else {
+            this.lfw.pop_ui_safe()
+          }
         }
         break;
       }

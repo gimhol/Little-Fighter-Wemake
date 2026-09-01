@@ -1,79 +1,22 @@
 import { FSM } from "../../base/FSM";
 import { EntityGroup, GameKey } from "../../defines";
-import type { IEntityCallbacks } from "../../entity/IEntityCallbacks";
-import { is_fighter } from "../../entity/type_check";
-import { traversal } from "../../utils/container_help/traversal";
 import { Times } from "../../utils/Times";
 import type { IUIKeyEvent } from "../IUIKeyEvent";
-import { ComponentFSMState } from "./ComponentFSMState";
 import { FighterStatBar } from "./FighterStatBar";
+import { GameModeFSMState_BeforeEnd, GameModeFSMState_End, GameModeFSMState_Running, type GameModeFSMState } from "./GameModeFSMState";
+import { ModeState } from "./ModeState";
 import { UIComponent } from "./UIComponent";
-
-class FSMState extends ComponentFSMState<number, VsModeLogic> {
-  override readonly key: number = 0
-  get fsm() { return this.owner.fsm }
-}
-class FSMState_BeforeEnd extends FSMState {
-  override readonly key: number = 1;
-  override update() {
-    if (this.fsm.state_time > 3000)
-      return 2;
-  }
-}
-class FSMState_End extends FSMState {
-  override readonly key: number = 2;
-  override enter(): void {
-    this.lfw.sounds.play_preset("end");
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(true);
-  }
-  override leave(): void {
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(false);
-  }
-}
-
 export class VsModeLogic extends UIComponent {
   static override readonly TAGS: string[] = ["VsModeLogic"];
-  readonly fsm = new FSM<number, FSMState>().add(
-    new FSMState(this),
-    new FSMState_BeforeEnd(this),
-    new FSMState_End(this)
+  readonly fsm = new FSM<ModeState, GameModeFSMState>().add(
+    new GameModeFSMState_Running(this),
+    new GameModeFSMState_BeforeEnd(this),
+    new GameModeFSMState_End(this)
   )
-
   protected weapon_drop_timer = new Times(0, 1200);
-  protected fighter_callbacks: IEntityCallbacks = {
-    on_dead: () => {
-      // 各队伍存活计数
-      const player_teams: { [x in string]?: number } = {};
-
-      for (const [, { fighter }] of this.lfw.players)
-        if (fighter)
-          player_teams[fighter.team] = 0 // 玩家队伍
-
-      for (const e of this.world.entities) {
-        if (is_fighter(e) && e.hp > 0 && player_teams[e.team] !== void 0)
-          ++player_teams[e.team]!; // 存活计数++
-      }
-
-      // 剩余队伍数
-      let team_remains = 0;
-      traversal(player_teams, (_, v) => {
-        if (v) ++team_remains;
-      })
-
-      // 大于一队，继续打
-      if (team_remains > 1) return;
-      this.fsm.use(1)
-    }
-  }
-
   override on_start(): void {
     super.on_start?.();
-    this.fsm.use(0)
-
-    for (const [, { fighter: f }] of this.lfw.players)
-      if (f) f.callbacks.add(this.fighter_callbacks)
+    this.fsm.use(ModeState.Running)
     this.world.paused = false;
     this.world.dataset.playrate = 1;
     this.world.dataset.infinity_mp = 0;
@@ -120,7 +63,7 @@ export class VsModeLogic extends UIComponent {
       case GameKey.a:
       case GameKey.j: {
         if (
-          this.fsm.state?.key == 2 &&
+          this.fsm.state?.key == ModeState.End &&
           this.fsm.state_time > 1000
         ) {
           e.stop_immediate_propagation();

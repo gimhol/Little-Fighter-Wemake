@@ -7,93 +7,26 @@ import type { IStagePhaseInfo } from "../../defines/IStagePhaseInfo";
 import { StageActions } from "../../defines/StageActions";
 import { StageGroup } from "../../defines/StageGroup";
 import { Entity } from "../../entity";
-import type { IEntityCallbacks } from "../../entity/IEntityCallbacks";
 import { StatBarType } from "../../entity/StatBarType";
-import { is_fighter } from "../../entity/type_check";
 import { Randoming } from "../../helper/Randoming";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import { LFW } from "../../LFW";
 import type { IStageCallbacks } from "../../stage/IStageCallbacks";
 import { Stage } from "../../stage/Stage";
 import { max } from "../../utils";
-import { traversal } from '../../utils/container_help/traversal';
 import { range } from "../../utils/math/range";
 import { Times } from "../../utils/Times";
 import type { IUIKeyEvent } from "../IUIKeyEvent";
 import { UINode } from "../UINode";
 import { CameraCtrl } from "./CameraCtrl";
-import { ComponentFSMState } from "./ComponentFSMState";
 import { ComponentsPlayer } from "./ComponentsPlayer";
 import { FighterStatBar } from "./FighterStatBar";
+import { GameModeFSMState_BeforeEnd, GameModeFSMState_End, GameModeFSMState_Running, type GameModeFSMState } from "./GameModeFSMState";
 import { Jalousie } from "./Jalousie";
 import { Label } from "./Label";
+import { ModeState } from "./ModeState";
 import { UIComponent } from "./UIComponent";
 
-
-enum StateKey {
-  Base = 'Base',
-  BeforeEnd = 'BeforeEnd',
-  End = 'End',
-  BeforeWin = 'BeforeWin',
-  Win = 'Win',
-  Restart = "Restart",
-}
-class DemoFSMState_Base extends ComponentFSMState<StateKey, DemoModeLogic> {
-  override readonly key: StateKey = StateKey.Base;
-  get fsm(): FSM<StateKey, DemoFSMState_Base> { return this.owner.fsm }
-}
-class DemoFSMState_BeforeEnd extends DemoFSMState_Base {
-  override readonly key: StateKey = StateKey.BeforeEnd;
-  override update() {
-    if (this.fsm.state_time > 3000)
-      return StateKey.End;
-  }
-}
-class DemoFSMState_End extends DemoFSMState_Base {
-  override readonly key: StateKey = StateKey.End;
-  override update() {
-    if (this.fsm.state_time > 5000)
-      return StateKey.Restart;
-  }
-  override enter(): void {
-    this.lfw.sounds.play_preset("end");
-    this.owner.props.score_board?.set_visible(true);
-  }
-  override leave(): void {
-    this.owner.props.score_board?.set_visible(false);
-  }
-}
-class DemoFSMState_BeforeWin extends DemoFSMState_Base {
-  override readonly key: StateKey = StateKey.BeforeWin;
-  override update() {
-    if (this.fsm.state_time > 3000)
-      return StateKey.Win;
-  }
-}
-class DemoFSMState_Win extends DemoFSMState_Base {
-  override readonly key: StateKey = StateKey.Win;
-  override update() {
-    if (this.fsm.state_time > 5000)
-      return StateKey.Restart;
-  }
-  override enter(): void {
-    this.lfw.sounds.play_preset("pass");
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(true);
-  }
-  override leave(): void {
-    const score_board = this.node.find_child("score_board")
-    score_board?.set_visible(false);
-  }
-}
-class DemoFSMState_Restart extends DemoFSMState_Base {
-  override readonly key: StateKey = StateKey.Restart;
-  override update() {
-    this.owner.clearup()
-    this.owner.startup()
-    return StateKey.Base;
-  }
-}
 export interface IDemoModeLogicProps {
   focus_prefix?: Label;
   focus_on?: Label;
@@ -126,13 +59,10 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     gogogo: ComponentsPlayer,
     gogogo_loop: ComponentsPlayer,
   };
-  readonly fsm = new FSM<StateKey, DemoFSMState_Base>(`DemoFSM`).add(
-    new DemoFSMState_Base(this),
-    new DemoFSMState_BeforeEnd(this),
-    new DemoFSMState_End(this),
-    new DemoFSMState_BeforeWin(this),
-    new DemoFSMState_Win(this),
-    new DemoFSMState_Restart(this)
+  readonly fsm = new FSM<ModeState, GameModeFSMState>(`DemoFSM`).add(
+    new GameModeFSMState_Running(this),
+    new GameModeFSMState_BeforeEnd(this),
+    new GameModeFSMState_End(this),
   )
 
   protected _staring?: Entity | undefined;
@@ -270,17 +200,13 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       if (on_end?.length) this.handle_stage_actions(on_end)
       if (on_start?.length) this.handle_stage_actions(on_start)
     },
-    on_chapter_finish: (stage: Stage) => {
-      this.debug('on_chapter_finish', stage)
-      this.fsm.use(StateKey.BeforeWin)
-    },
     on_requrie_goto_next_stage: (stage: Stage) => {
       this.debug('on_requrie_goto_next_stage', stage)
       if (this.props.jalousie) this.props.jalousie.open = false;
     }
   }
   startup() {
-    this.fsm.use(StateKey.Base)
+    this.fsm.use(ModeState.Running)
     this.props.focus_text_node?.set_visible(false)
     let stage: IStageInfo | undefined
     if (this.is_stage_mode) {
@@ -365,8 +291,6 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       --i;
     }
 
-    fighters.forEach(f => f.callbacks.add(this.entity_callbacks))
-
     if (is_stage_mode && stage) {
       this.lfw.change_stage(stage.id ?? "");
       this.lfw.world.stage.callbacks.add(this.stage_callbacks);
@@ -393,40 +317,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     super.on_stop?.();
     this.clearup()
   }
-  protected entity_callbacks: IEntityCallbacks = {
-    on_dead: () => {
-      const has_player = this.world.puppets.size;
-      const all_teams: { [x in string]?: number } = {};
-      const player_teams: { [x in string]?: number } = {};
-
-      for (const [, f] of this.world.puppets)
-        player_teams[f.team] = 0 // 玩家队伍
-
-      for (const e of this.world.entities) {
-        if (!is_fighter(e)) continue;
-        if (e.hp <= 0) continue;
-        const { team } = e;
-        if (player_teams[team] !== void 0)
-          ++player_teams[team];
-
-        all_teams[team] ??= 0;
-        ++all_teams[team];
-      }
-
-      // 剩余队伍数
-      let team_remains = 0;
-      traversal(has_player ? player_teams : all_teams, (_, v) => {
-        if (v) ++team_remains;
-      })
-
-      // 剩余队伍大于一队，继续
-      this.fsm.use(team_remains > 1 ? StateKey.Base : StateKey.BeforeEnd)
-    }
-  }
   protected world_callbacks: IWorldCallbacks = {
-    on_fighter_add: (entity: Entity): void => {
-      entity.callbacks.add(this.entity_callbacks)
-    },
     on_stage_change: (stage, prev) => {
       if (!this.is_stage_mode) return;
       prev.callbacks.del(this.stage_callbacks)
@@ -476,7 +367,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     if (this.is_stage_mode) {
       if (this.props.jalousie && !this.props.jalousie.open && this.props.jalousie.anim.done) {
         this.lfw.goto_next_stage()
-        this.fsm.use(StateKey.Base)
+        this.fsm.use(ModeState.Running)
         this.props.jalousie.open = true;
       }
     }
