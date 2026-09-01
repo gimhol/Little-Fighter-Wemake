@@ -10,9 +10,9 @@ export class SmoothNumber {
   private done: boolean = false;
 
   get value(): number { return this._v; }
-  set value(v: number) { this._v = this._t = v; this.done = true; }
+  set value(v: number) { if (this._t == v) return; this._v = this._t = v; this.done = true; }
   get target(): number { return this._t }
-  set target(v: number) { this._t = v; this.done = false; }
+  set target(v: number) { if (this._t == v) return; this._t = v; this.done = false; }
 
   handler(v: (self: this) => void) {
     this._c = v;

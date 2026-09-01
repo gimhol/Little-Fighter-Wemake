@@ -2,7 +2,7 @@ import { get_team_outline_color } from "@/LFW/base/get_team_shadow_color";
 import { get_team_text_color } from "@/LFW/base/get_team_text_color";
 import { is_fighter, type Entity } from "@/LFW/entity";
 import { StatBarType } from "@/LFW/entity/StatBarType";
-import { floor, round } from "@/LFW/utils";
+import { round } from "@/LFW/utils";
 import * as T from "../_t";
 import { Bar } from "./Bar";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -30,6 +30,7 @@ export class EntityStatRender {
   protected toughness_value_bar: Bar;
 
   protected _heading: boolean = false;
+  protected _last_sync_lifetime = -1;
 
   entity: Entity;
   world_renderer: WorldRenderer;
@@ -138,7 +139,7 @@ export class EntityStatRender {
     this.toughness_value_bar.max = e.toughness_max;
   }
 
-  private update_reverse(e: Entity) {
+  private update_reverse_text(e: Entity) {
     const { reserve } = e;
     if (!reserve) {
       this._reserve_mesh?.removeFromParent()
@@ -161,44 +162,45 @@ export class EntityStatRender {
       mesh.fillStyle = get_team_text_color(team);
       mesh.strokeStyle = get_team_outline_color(team);
     }
-    let { x, y, z } = this.owner.position;
+  }
+
+  private update_reverse_text_position(e: Entity) {
+    const mesh = this._reserve_mesh;
+    if (!mesh) return;
+    const { x, y, z } = this.owner.position;
     const { frame: { centery } } = e
-    y = round(y + centery + mesh.scale.y / 2)
-    mesh.position.set(x, y, z)
+    mesh.position.set(x, round(y + centery + mesh.scale.y / 2), z)
   }
 
   render() {
-    const { x, y, z } = this.owner.position;
-    const {
-      invisible, frame: { centery }, hp, key_role,
-      stat_bar_type
-    } = this.entity;
+    const { invisible, hp, key_role, stat_bar_type } = this.entity;
     const _is_fighter = is_fighter(this.entity)
     this.bars_node.visible = !!(stat_bar_type & StatBarType.Float) && _is_fighter && key_role && !invisible && hp > 0;
-    this.sync_bars(this.entity)
-    this.update_reverse(this.entity)
-    if (this.entity.healing) {
-      const heading = (this.entity.lifetime % 8) < 4;
-      if (this._heading != heading) {
-        this.hp_bar.color = heading ? "rgb(255, 130, 130)" : "rgb(255,0,0)"
-        this._heading = heading
+    const { lifetime } = this.entity;
+    if (lifetime !== this._last_sync_lifetime) {
+      this._last_sync_lifetime = lifetime;
+      this.sync_bars(this.entity);
+      this.update_reverse_text(this.entity);
+      if (this.entity.healing) {
+        const heading = (this.entity.lifetime % 8) < 4;
+        if (this._heading != heading) {
+          this.hp_bar.color = heading ? "rgb(255, 130, 130)" : "rgb(255,0,0)"
+          this._heading = heading
+        }
+      } else if (this._heading) {
+        this.hp_bar.color = "rgb(255,0,0)";
+        this._heading = false;
       }
-    } else if (this._heading) {
-      this.hp_bar.color = "rgb(255,0,0)";
-      this._heading = false;
     }
-    const bar_y = floor(y + BAR_BG_H + 5 + centery);
-    const bar_x = floor(x - BAR_BG_W / 2);
-    const bar_z = floor(z);
-    this.set_bars_position(bar_x, bar_y, bar_z);
+    this.update_reverse_text_position(this.entity)
   }
 
-  set_bars_position(x: number, y: number, z: number) {
-    const old_y = this.bars_node.position.y
-    const _y = y ?? old_y
-    let __y = old_y === 0 ? _y : old_y + (_y - old_y) * 0.2
-    this.bars_node.position.set(x, __y, z);
-    if (!this.bars_node.parent || !this.bars_node.visible)
-      __y -= BAR_BG_H + 5
+  set_bars_position() {
+    const { frame: { centery } } = this.entity;
+    const { x, y, z } = this.owner.position;
+    const bar_y = round(y + BAR_BG_H + 5 + centery);
+    const bar_x = round(x - BAR_BG_W / 2);
+    const bar_z = round(z);
+    this.bars_node.position.set(bar_x, bar_y, bar_z);
   }
 }
