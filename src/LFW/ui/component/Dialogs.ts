@@ -23,6 +23,7 @@ export class Dialogs extends UIComponent<IDialogsProps> {
   protected _listner = new StageDialogListener(this, (d) => this.set_dialog(d));
   protected _head_loader = new UIImgLoader(() => this.props.head_node)
   protected _transform = new Transform()
+  protected _hiding = false
 
   override on_start(): void {
     super.on_start?.();
@@ -33,15 +34,16 @@ export class Dialogs extends UIComponent<IDialogsProps> {
     this._listner.stop();
   }
   hide_dialog() {
-    this._transform.scale_to(0, 0, 1, true)
-    this.node.visible = false;
+    this._hiding = true;
+    this._transform.scale_to(0, 0, 1)
     this.props.text?.set_text('');
     this.props.talker?.set_text('');
     this._head_loader.set_img('').catch(e => Ditto.warn('' + e))
   }
   show_dialog(dialog: IDialogInfo) {
-    this._transform.scale_to(1, 1, 1, true)
+    this._hiding = false;
     this.node.visible = true;
+    this._transform.scale_to(1, 1, 1)
     const text = this.lfw.string(dialog.i18n || "")
     this.props.text?.set_text(text);
 
@@ -59,7 +61,11 @@ export class Dialogs extends UIComponent<IDialogsProps> {
     }
   }
   override update(dt: number): void {
-    this._transform.update();
+    this._transform.update(dt);
+    if (this._hiding && this._transform.is_arrived()) {
+      this._hiding = false;
+      this.node.visible = false;
+    }
     this.node.set_scale(
       this._transform.scale_x,
       this._transform.scale_y,
@@ -72,6 +78,6 @@ export class Dialogs extends UIComponent<IDialogsProps> {
     } else {
       this.hide_dialog()
     }
-    this.world.transform.move_to(0, dialog ? 60 : 0, 0, true)
+    this.world.transform.move_to(0, dialog ? 60 : 0, 0)
   }
 }
