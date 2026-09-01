@@ -161,8 +161,7 @@ export class WorldRenderer implements IWorldRenderer {
       this.ui_offset.z
     )
     const { dataset: { entity_flags }, transform } = this.world;
-    let { x, y, z, earthquake, earthquake_level, scale_x, scale_y, scale_z } = transform
-    if (earthquake) x += Math.floor(Math.random() * (earthquake_level * 2 + 1)) - earthquake_level
+    const { x, y, z, scale_x, scale_y, scale_z } = transform
     this.world_node.position.set(
       x + this.world_offset.x,
       y + this.world_offset.y,

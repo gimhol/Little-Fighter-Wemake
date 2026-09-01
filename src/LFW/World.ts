@@ -97,13 +97,18 @@ export class World {
   readonly collisions = new Map<string, Collision>()
   private _alive_players = new Set<Entity>();
   public has_players_alive: boolean = false;
-  TU: number = 1;
+  public TU: number = 1;
+
   get bg() { return this._bg; }
   set bg(v: Background) {
     if (v === this._bg) return;
     const o = this._bg;
     this._bg = v;
-    this.transform.scale_to(this._bg.zoom_x, this._bg.zoom_y, this._bg.zoom_z)
+    this.transform.scale_to(
+      this._bg.zoom_x,
+      this._bg.zoom_y,
+      this._bg.zoom_z
+    )
     o.dispose();
   }
   get stage() {

@@ -12,10 +12,6 @@ export class Transform implements ITransform {
     x: 0, y: 0, z: 0,
     scale_x: 1, scale_y: 1, scale_z: 1
   };
-  // 临时写着玩的
-  earthquake_level: number = 0;
-  // 临时写着玩的
-  earthquake: number = 0;
   get d(): ITransform { return this._d }
   get x(): number { return this._x }
   get y(): number { return this._y }
@@ -35,8 +31,6 @@ export class Transform implements ITransform {
     return { x, y, z, scale_x, scale_y, scale_z }
   }
   update(): void {
-    if (this.earthquake)
-      this.earthquake--;
     const d = this._d
     if (d) {
       const c = this
