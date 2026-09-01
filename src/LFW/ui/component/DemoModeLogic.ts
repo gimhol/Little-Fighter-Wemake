@@ -205,7 +205,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
         teams: ['2', '2', '2', '2', '1', '1', '1', '1', '1', '1', '1'],
         oids: [
           OID.LouisEX, OID.Monk, OID.Monk, OID.Monk,
-          OID.Deep, OID.John, OID.Henry, OID.Rudolf, 
+          OID.Deep, OID.John, OID.Henry, OID.Rudolf,
           OID.Firen, OID.Freeze, OID.Dennis, OID.Woody, OID.Davis,
         ]
       },
@@ -328,7 +328,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       if (!fighter_data) continue;
 
       const fighter = this.lfw.factory.create_entity(this.world, fighter_data);
-      if (!fighter) return;
+      if (!fighter) continue;
       fighter.team = team ?? this.lfw.new_team;
       this.lfw.mt.mark = 'demo_startup_fighter_facing'
       fighter.facing = is_stage_mode ?
@@ -338,7 +338,9 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       fighter.key_role = true;
       fighter.name_visible = true;
       fighter.stat_bar_type = StatBarType.UI;
-      fighter.ctrl = this.lfw.factory.create_ctrl(fighter_data.id, '', fighter);
+
+      const player = this.lfw.player('' + i)
+      fighter.ctrl = this.lfw.factory.create_ctrl(fighter_data.id, player.id, fighter);
 
       this.lfw.mt.mark = 'demo_startup_fighter_x'
       const x = this.lfw.mt.range(min_x, max_x)
@@ -390,37 +392,32 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
   }
   protected entity_callbacks: IEntityCallbacks = {
     on_dead: () => {
-      // 队伍存活计数
+      const has_player = this.world.puppets.size;
+      const all_teams: { [x in string]?: number } = {};
       const player_teams: { [x in string]?: number } = {};
+
       for (const [, f] of this.world.puppets)
         player_teams[f.team] = 0 // 玩家队伍
 
       for (const e of this.world.entities) {
-        if (is_fighter(e) && e.hp > 0 && player_teams[e.team] !== void 0)
-          ++player_teams[e.team]!; // 存活计数++
-      }
-      // 剩余队伍数
-      let plater_team_remains = 0;
-      traversal(player_teams, (_, v) => {
-        if (v) ++plater_team_remains;
-      })
-      const { is_stage_mode, is_vs_mode } = this;
-      if (is_stage_mode) {
-        // 大于0队，继续打
-        if (plater_team_remains > 0) {
-          this.fsm.use(StateKey.Base)
-        } else {
-          this.fsm.use(StateKey.BeforeEnd)
-        }
-      } else if (is_vs_mode) {
-        // 大于一队，继续打
-        if (plater_team_remains > 1) {
-          this.fsm.use(StateKey.Base)
-        } else {
-          this.fsm.use(StateKey.BeforeEnd)
-        }
+        if (!is_fighter(e)) continue;
+        if (e.hp <= 0) continue;
+        const { team } = e;
+        if (player_teams[team] !== void 0)
+          ++player_teams[team];
+
+        all_teams[team] ??= 0;
+        ++all_teams[team];
       }
 
+      // 剩余队伍数
+      let team_remains = 0;
+      traversal(has_player ? player_teams : all_teams, (_, v) => {
+        if (v) ++team_remains;
+      })
+
+      // 剩余队伍大于一队，继续
+      this.fsm.use(team_remains > 1 ? StateKey.Base : StateKey.BeforeEnd)
     }
   }
   protected world_callbacks: IWorldCallbacks = {
