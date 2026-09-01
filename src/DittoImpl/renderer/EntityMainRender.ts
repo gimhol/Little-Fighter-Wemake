@@ -1,7 +1,16 @@
 import type { Entity, IEntityData, IFrameInfo, IFramePic, IPictureInfo, TFace } from "@/LFW";
 import { Buff_Electroshock, clamp, cos, floor, LFW, max, sin, StateEnum, World } from "@/LFW";
+import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
-import { BufferGeometry, Mesh, MeshBasicMaterial, Object3D } from "../_t";
+import { Ditto } from "@/LFW/ditto";
+import { AnimationMixer, BufferGeometry, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion } from "../_t";
+import type { AnimationAction, AnimationClip, Bone } from "../_t";
+import { ZipGLTFLoader } from "./GLTFZipLoader";
+
+interface IModelCache {
+  root: Object3D;
+  animations: AnimationClip[];
+}
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -44,6 +53,21 @@ export class EntityMainRender {
   protected files: Record<string, IPictureInfo> = {};
   protected models: Record<string, IModelInfo> = {};
   protected model_variants = new Map<string, string[]>();
+  protected model_node = new Object3D();
+  protected model_key = "";
+  protected gltf_loader!: ZipGLTFLoader;
+  protected model_cache = new Map<string, IModelCache>();
+  protected model_loading = new Set<string>();
+  protected mixer: AnimationMixer | undefined;
+  protected mixer_actions = new Map<string, AnimationAction>();
+  protected bone_list: Bone[] = [];
+  protected bone_by_name = new Map<string, Bone>();
+  protected _q1 = new Quaternion();
+  protected _q2 = new Quaternion();
+  protected playing_anim = "";
+  protected anim_loop = false;
+  protected anim_speed = 1;
+  protected prev_lifetime = 0;
   protected img: RImageInfo | undefined;
   protected render_effect_time = -1;
   protected variant: number = -1;
@@ -54,11 +78,12 @@ export class EntityMainRender {
     const { entity } = owner;
     this.entity = entity;
     this.lfw = entity.lfw;
+    this.gltf_loader = new ZipGLTFLoader(this.lfw);
     this.world = entity.world;
     this.data = entity.data;
     this.frame = entity.frame;
     this.facing = entity.facing;
-    this.node.add(this.meshs[0], this.blood_mesh)
+    this.node.add(this.meshs[0], this.blood_mesh, this.model_node)
   }
 
   reset(): void {
@@ -88,6 +113,7 @@ export class EntityMainRender {
       img.pic?.texture && (img.pic.texture.needsUpdate = true);
     }
 
+    this.dispose_model();
     this.meshs[0].visible = false;
     this.meshs[0].name = `Entity Mesh 0: ${this.entity.name}`;
 
@@ -163,9 +189,22 @@ export class EntityMainRender {
     this.node.position.copy(this.owner.position);
     const { invisible } = this.owner;
     const { blinking, facing } = entity;
+    const visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0)
+
+    // 3D 模型与 2D 精灵可共存：frame 同时有 pic 和 model 时叠加渲染
+    const model = this.get_frame_model(this.frame)
+    if (model) {
+      this.update_model(model)
+      this.update_model_visual(model)
+      this.model_node.visible = visible
+      this.model_node.position.set(this.centerx + this.shaking_x, this.centery, 0)
+      this.model_node.scale.set(facing, 1, 1)
+    } else {
+      this.model_node.visible = false
+    }
+
     const { pic } = this.frame;
     const mesh = meshs[0]
-    const visible = !invisible && (!blinking || floor(blinking / 4) % 2 === 0)
     mesh.visible = visible;
 
     if (pic) {
@@ -194,6 +233,251 @@ export class EntityMainRender {
     this.render_bpoint();
     this.update_outline();
   }
+
+  /** 获取当前帧要使用的模型（含队伍变体解析） */
+  private get_frame_model(frame: IFrameInfo): IFrameModel | undefined {
+    const m = frame.model
+    if (!m) return void 0
+    const { variant } = this.entity
+    if (variant) {
+      const id = this.model_variants.get(m.id)?.at(variant)
+      if (id) return { ...m, id }
+    }
+    return m
+  }
+
+  /** 切换/加载模型（含缓存；姿态/片段驱动在 update_model_visual） */
+  private update_model(model: IFrameModel): void {
+    if (this.model_key === model.id) return
+    this.model_key = model.id
+    const info = this.models[model.id]
+    if (!info) {
+      this.model_node.visible = false
+      Ditto.warn(`[EntityMainRender] model "${model.id}" 未在 base.models 中声明`)
+      return
+    }
+    const cached = this.model_cache.get(info.path)
+    if (cached) {
+      this.attach_model(cached)
+      return
+    }
+    this.model_node.visible = false
+    void this.load_model(info)
+  }
+
+  /** 异步加载 GLB 并缓存；加载完成时若仍是当前需要的模型则挂载 */
+  private async load_model(info: IModelInfo): Promise<void> {
+    if (this.model_loading.has(info.path)) return
+    this.model_loading.add(info.path)
+    try {
+      let path = info.path
+      let exact = true
+      if (path.startsWith('!')) path = path.substring(1)
+      else if (path.startsWith('?')) { path = path.substring(1); exact = false }
+      const dir = path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : ''
+      const [buf] = await this.lfw.import_array_buffer(path, exact)
+      this.gltf_loader.set_glb_dir(dir)
+      const gltf = await this.gltf_loader.parseAsync(buf, '')
+      const cache: IModelCache = {
+        root: gltf.scene ?? new Object3D(),
+        animations: gltf.animations ?? [],
+      }
+      this.model_cache.set(info.path, cache)
+      if (this.models[this.model_key] === info) {
+        this.attach_model(cache)
+      }
+    } catch (e) {
+      Ditto.warn(`[EntityMainRender] 3D 模型加载失败: ${info.path}`, e)
+    } finally {
+      this.model_loading.delete(info.path)
+    }
+  }
+
+  /** 挂载模型到 model_node；替换旧模型时回收其 GPU 资源（并从缓存移除） */
+  private attach_model(cache: IModelCache): void {
+    const root = cache.root
+    const old = this.model_node.children[0] as Object3D | undefined
+    if (old && old !== root) {
+      this.model_node.remove(old)
+      this.dispose_root(old)
+      for (const [k, c] of this.model_cache) {
+        if (c.root === old) this.model_cache.delete(k)
+      }
+    }
+    this.model_node.add(root)
+    this.model_node.visible = true
+    this.collect_bones(root)
+    this.setup_mixer(root, cache.animations)
+    this.playing_anim = ""
+    this.prev_lifetime = this.entity.lifetime
+  }
+
+  /** 每帧驱动模型视觉：姿态插值（模式A）与动画片段（模式B） */
+  private update_model_visual(model: IFrameModel): void {
+    const sim_dt = (this.entity.lifetime - this.prev_lifetime) * this.atom_time()
+    this.prev_lifetime = this.entity.lifetime
+
+    if (model.pose) {
+      const total = this.frame.wait
+      const t = total > 0 ? clamp(1 - this.entity.wait / total, 0, 1) : 1
+      this.apply_pose_blend(model.pose, this.get_next_model_pose(), t)
+    }
+    if (model.anim) this.play_anim(model, sim_dt)
+    else this.stop_anim()
+  }
+
+  /** 下一帧的姿态（用于当前帧姿态向下一帧插值） */
+  private get_next_model_pose(): IFrameModelPose | undefined {
+    const next = this.frame.next
+    if (!next) return void 0
+    const id = typeof next === 'string' ? next : Array.isArray(next) ? (next[0] as any)?.id : (next as any)?.id
+    if (!id) return void 0
+    return this.data.frames?.[id]?.model?.pose
+  }
+
+  /** 应用姿态（与下一帧姿态按 t 混合，t∈[0,1]） */
+  private apply_pose_blend(from: IFrameModelPose, to: IFrameModelPose | undefined, t: number): void {
+    const bones = this.pose_bones(from)
+    if (!bones.length) return
+    const { rot, pos, scl } = from
+    const rot2 = to?.rot, pos2 = to?.pos, scl2 = to?.scl
+    const has_to = !!(to && (rot2 || pos2 || scl2))
+    for (let i = 0; i < bones.length; ++i) {
+      const bone = bones[i]
+      if (rot && rot.length >= (i + 1) * 4) {
+        const q = this._q1.set(rot[i * 4], rot[i * 4 + 1], rot[i * 4 + 2], rot[i * 4 + 3])
+        if (has_to && rot2 && rot2.length >= (i + 1) * 4) {
+          this._q2.set(rot2[i * 4], rot2[i * 4 + 1], rot2[i * 4 + 2], rot2[i * 4 + 3])
+          q.slerp(this._q2, t)
+        }
+        bone.quaternion.copy(q)
+      }
+      if (pos && pos.length >= (i + 1) * 3) {
+        let x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2]
+        if (has_to && pos2 && pos2.length >= (i + 1) * 3) {
+          x += (pos2[i * 3] - x) * t
+          y += (pos2[i * 3 + 1] - y) * t
+          z += (pos2[i * 3 + 2] - z) * t
+        }
+        bone.position.set(x, y, z)
+      }
+      if (scl && scl.length >= (i + 1) * 3) {
+        let x = scl[i * 3], y = scl[i * 3 + 1], z = scl[i * 3 + 2]
+        if (has_to && scl2 && scl2.length >= (i + 1) * 3) {
+          x += (scl2[i * 3] - x) * t
+          y += (scl2[i * 3 + 1] - y) * t
+          z += (scl2[i * 3 + 2] - z) * t
+        }
+        bone.scale.set(x, y, z)
+      }
+    }
+  }
+
+  /** 按 pose.bones（名称）或骨骼遍历顺序取骨骼列表 */
+  private pose_bones(pose: IFrameModelPose): Bone[] {
+    const names = pose.bones
+    if (names?.length) {
+      const ret: Bone[] = []
+      for (const n of names) {
+        const b = this.bone_by_name.get(n)
+        if (b) ret.push(b)
+      }
+      return ret
+    }
+    return this.bone_list
+  }
+
+  /** 收集模型根下的骨骼 */
+  private collect_bones(root: Object3D): void {
+    this.bone_list = []
+    this.bone_by_name.clear()
+    root.traverse(obj => {
+      const bone = obj as Bone
+      if (bone.isBone) {
+        this.bone_list.push(bone)
+        if (obj.name) this.bone_by_name.set(obj.name, bone)
+      }
+    })
+  }
+
+  /** 用 glTF 动画片段初始化 mixer */
+  private setup_mixer(root: Object3D, animations: AnimationClip[]): void {
+    this.mixer = new AnimationMixer(root)
+    this.mixer_actions.clear()
+    for (const clip of animations) {
+      this.mixer_actions.set(clip.name, this.mixer.clipAction(clip))
+    }
+  }
+
+  /** 播放/推进动画片段（确定性：用实体 lifetime 差作为模拟时钟） */
+  private play_anim(model: IFrameModel, sim_dt: number): void {
+    if (!this.mixer) return
+    const name = model.anim ?? ''
+    const loop = !!model.loop
+    const speed = model.time_scale ?? 1
+    if (this.playing_anim !== name || this.anim_loop !== loop) {
+      this.playing_anim = name
+      this.anim_loop = loop
+      this.anim_speed = speed
+      for (const [, a] of this.mixer_actions) a.stop()
+      const action = this.mixer_actions.get(name)
+      if (action) {
+        action.setLoop(loop ? LoopRepeat : LoopOnce, loop ? Infinity : 1)
+        action.timeScale = speed
+        action.reset().play()
+      }
+    } else if (this.anim_speed !== speed) {
+      this.anim_speed = speed
+      this.mixer_actions.get(name)?.setEffectiveTimeScale(speed)
+    }
+    this.mixer.update(sim_dt)
+  }
+
+  private stop_anim(): void {
+    if (!this.playing_anim) return
+    this.playing_anim = ""
+    for (const [, a] of this.mixer_actions) a.stop()
+  }
+
+  private atom_time(): number {
+    return this.world.dataset.atom_time
+  }
+
+  /** 清空模型节点、mixer、缓存，并回收 GPU 资源 */
+  private dispose_model(): void {
+    this.model_key = ""
+    this.model_node.visible = false
+    this.mixer?.stopAllAction()
+    this.mixer = undefined
+    this.mixer_actions.clear()
+    this.playing_anim = ""
+    this.bone_list = []
+    this.bone_by_name.clear()
+    for (const child of [...this.model_node.children]) {
+      this.model_node.remove(child)
+      this.dispose_root(child as Object3D)
+    }
+    this.model_cache.clear()
+  }
+
+  /** 递归回收几何/材质/贴图 */
+  private dispose_root(root: Object3D): void {
+    root.traverse(obj => {
+      const mesh = obj as Mesh
+      if (!mesh.isMesh) return
+      mesh.geometry?.dispose()
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      for (const m of mats) {
+        const mat = m as MeshBasicMaterial
+        for (const key of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap', 'bumpMap', 'specularMap', 'envMap', 'lightMap']) {
+          const tex = (mat as any)[key]
+          if (tex?.isTexture) tex.dispose()
+        }
+        mat.dispose()
+      }
+    })
+  }
+
   private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number, cz: number) {
     const rad = pic?.rad
     if (!pic || !rad) {

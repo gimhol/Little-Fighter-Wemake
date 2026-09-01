@@ -7,6 +7,7 @@ import { bpoint_info_fields, type IBpointInfo } from "./IBpointInfo";
 import { chase_info_fields as chase_info_fields, type IChaseInfo } from "./IChaseInfo";
 import { cpoint_info_fields, type ICpoint } from "./ICpoint";
 import { frame_pic_fields, Schema_IFramePic, type IFramePic } from "./IFramePic";
+import { frame_model_fields, Schema_IFrameModel, type IFrameModel } from "./IFrameModel";
 import { hit_key_map_fields } from "./IHitKeyMap";
 import type { IHitKeyMap } from "./IHitKeyMap";
 import type { IItrInfo } from "./IItrInfo";
@@ -66,6 +67,15 @@ export interface IFrameInfo extends IVelocityInfo {
    */
   pic?: IFramePic;
   pics?: IFramePic[];
+  /**
+   * 帧的 3D 模型视觉（可选）
+   *
+   * 存在时优先用模型渲染；否则回退到 pic/pics（2D 精灵）
+   *
+   * @see {IFrameModel}
+   * @type {?IFrameModel}
+   */
+  model?: IFrameModel;
   /**
    *
    * @see {StateEnum}
@@ -291,6 +301,7 @@ export const frame_info_fields = fields<IFrameInfo>({
   ref: str("预制信息ID", { nullable: true }),
   pic: obj('pic', { nullable: true, fields: frame_pic_fields }),
   pics: obj('pics', { nullable: true, array: true, fields: frame_pic_fields }),
+  model: obj('model', { nullable: true, fields: frame_model_fields }),
   hp: int('hp', { nullable: true }),
   mp: int('mp', { nullable: true }),
   state: int("状态", { nullable: false }),
@@ -412,6 +423,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     jump_flag: { type: 'number', oneof: [0, 1], nullable: true },
     pic: { type: Schema_IFramePic.type, nullable: true },// TODO!
     pics: { type: 'array', items: Schema_IFramePic, nullable: true },
+    model: { type: Schema_IFrameModel.type, nullable: true },
     next: { type: 'object' },// TODO!
     width: { type: 'number' },
     height: { type: 'number' },
