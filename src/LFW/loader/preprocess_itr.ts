@@ -9,6 +9,7 @@ import { get_val_geter_from_collision } from "./get_val_from_collision";
 import type { IItrInfoContext } from "./IEntityDataContext";
 import { preprocess_action } from "./preprocess_action";
 import { preprocess_next_frame } from "./preprocess_next_frame";
+import { prefab_error, resolve_prefab } from "./resolve_prefab";
 
 /**
  * Description placeholder
@@ -21,9 +22,10 @@ import { preprocess_next_frame } from "./preprocess_next_frame";
 export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
   const { lfw, data, jobs } = ctx;
   let { itr } = ctx;
-  const ref = itr.ref ?? itr.prefab_id;
-  const prefab = ref !== void 0 ? data.itr_prefabs?.[ref] : void 0;
-  if (prefab) itr = { ...prefab, ...itr };
+  const merged = resolve_prefab(itr, data.itr_prefabs);
+  if (!merged.ok)
+    throw prefab_error('preprocess_itr', data.id, 'itr', merged);
+  itr = merged.value;
   if (itr.catchingact) preprocess_next_frame(itr.catchingact);
   if (itr.caughtact) preprocess_next_frame(itr.caughtact);
   switch (itr.kind) {

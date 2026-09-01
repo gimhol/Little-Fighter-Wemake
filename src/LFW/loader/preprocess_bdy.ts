@@ -5,13 +5,15 @@ import { between, ensure } from "../utils";
 import { get_val_geter_from_collision } from "./get_val_from_collision";
 import type { IBdyInfoContext } from "./IEntityDataContext";
 import { preprocess_action } from "./preprocess_action";
+import { prefab_error, resolve_prefab } from "./resolve_prefab";
 
 export function preprocess_bdy(ctx: IBdyInfoContext): IBdyInfo {
   const { lfw, data, jobs, frame } = ctx;
   let { bdy } = ctx;
-  const ref = bdy.ref ?? bdy.prefab_id;
-  const prefab = ref ? data.bdy_prefabs?.[ref] : void 0;
-  if (prefab) bdy = { ...prefab, ...bdy };
+  const merged = resolve_prefab(bdy, data.bdy_prefabs);
+  if (!merged.ok)
+    throw prefab_error('preprocess_bdy', data.id, 'bdy', merged);
+  bdy = merged.value;
   const { kind } = bdy;
 
   if (kind === B_K.Normal && frame.state === StateEnum.Caught && bdy.hit_flag == void 0)
@@ -34,7 +36,7 @@ export function preprocess_bdy(ctx: IBdyInfoContext): IBdyInfo {
           .or(C_Val.AttackerOID, "==", O_ID.RudolfWeapon),
         ),
       ).done();
-      
+
     bdy.actions = ensure(bdy.actions, {
       type: ActionType.V_NEXT_FRAME,
       data: { id: `${kind - 1000}` },

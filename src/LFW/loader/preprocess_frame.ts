@@ -15,6 +15,7 @@ import { preprocess_itr } from "./preprocess_itr";
 import { preprocess_next_frame } from "./preprocess_next_frame";
 import { preprocess_opoint } from "./preprocess_opoint";
 import { preprocess_pic } from "./preprocess_pic";
+import { prefab_error, resolve_prefab } from "./resolve_prefab";
 
 
 const breakfall_j_expression = new CondMaker<EV>()
@@ -23,41 +24,14 @@ const breakfall_j_expression = new CondMaker<EV>()
   .and(EV.CAUGHT, "!=", 1)
   .done()
 
-function merge_frame(ctx: IFrameInfoContext): IFrameInfo {
-  const { data } = ctx;
-  const { frame } = ctx;
-  const chain: string[] = [];
-  const stack: IFrameInfo[] = [frame];
-  let cur: IFrameInfo = frame;
-  // 允许 prefab 的 ref 继续指向另一个 prefab（链式继承）
-  while (cur.ref !== void 0) {
-    const ref = cur.ref;
-    if (chain.includes(ref)) {
-      throw new Error(
-        `[preprocess_frame::merge_frame] 帧 "${data.id}:${frame.id}" 的 prefab 引用成环: ${[...chain, ref].join(' -> ')}`
-      );
-    }
-    const prefab = data.frame_prefabs?.[ref];
-    if (!prefab) {
-      throw new Error(
-        `[preprocess_frame::merge_frame] 帧 "${data.id}:${frame.id}" 引用了不存在的 prefab: "${ref}"`
-      );
-    }
-    chain.push(ref);
-    stack.push(prefab);
-    cur = prefab;
-  }
-  if (stack.length === 1) return frame;
-  // 从最底层的 prefab 开始逐层合并，后声明者覆盖先声明者
-  let merged = stack[stack.length - 1];
-  for (let i = stack.length - 2; i >= 0; i--)
-    merged = { ...merged, ...stack[i] };
-  return merged;
-}
-
 export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   const { lfw, data, jobs } = ctx;
-  const frame = merge_frame(ctx);
+  const { frame: raw_frame } = ctx;
+  const merged = resolve_prefab(raw_frame, data.frame_prefabs);
+  if (!merged.ok)
+    throw prefab_error('preprocess_frame', `${data.id}:${raw_frame.id}`, 'frame', merged);
+  const frame = merged.value;
+
   if (data.processed != false) { }
   else if (is_ball_data(data)) { preprocess_ball_frame(ctx); }
   else if (is_weapon_data(data)) {

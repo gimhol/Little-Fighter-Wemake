@@ -64,21 +64,12 @@ export async function preprocess_entity_data(ctx: IEntityDataContext): Promise<I
   }
   if (data.on_dead) data.on_dead = preprocess_next_frame(data.on_dead);
   if (data.on_exhaustion) data.on_exhaustion = preprocess_next_frame(data.on_exhaustion);
-  const { frames, frame_prefabs, base: { files, portraits } } = data;
+  const { frames, base: { files, portraits } } = data;
 
   traversal(files, (_, v) => jobs.push(images.load_by_pic_info(v)));
   if (jobs.length) await Promise.all(jobs);
 
   traversal(portraits, (k, v, o) => o[k] = preprocess_pic(lfw, data, v));
-
-
-  traversal(frame_prefabs, (fid, frame, o) => {
-    if (!frame) return;
-    o[fid] = preprocess_frame({ ...ctx, frame });
-    const pics = frame.pics?.length;
-    if (pics) data.__pics = max(pics, data.__pics || 0);
-  });
-
 
   traversal(frames, (fid, frame, o) => {
     o[fid] = preprocess_frame({ ...ctx, frame });
