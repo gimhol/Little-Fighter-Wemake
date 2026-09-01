@@ -1,5 +1,5 @@
 import { ChaseLost } from "../../defines/ChaseLost";
-import { ChaseStratedy } from "../../defines/ChaseStratedy";
+import { ChaseStrategy } from "../../defines/ChaseStrategy";
 import { Defines as D } from "../../defines/defines";
 import { FacingFlag as FF } from "../../defines/FacingFlag";
 import { HitFlag } from "../../defines/HitFlag";
@@ -43,8 +43,8 @@ export function make_fb_jan_angle_blessing(frame: IFrameInfo) {
     test: new CondMaker().and(C_Val.VictimIsChasing, "==", 1).done()
   });
   frame.chase = {
-    stratedy: ChaseStratedy.TillLost,
+    stratedy: ChaseStrategy.StopOnLost,
     flag: HitFlag.AllyFighter,
-    lost: ChaseLost.Leave | ChaseLost.End
+    lost: ChaseLost.Leave
   };
 }

@@ -1,5 +1,5 @@
 import { ALL_CHASE_LOST, CHASE_LOST_DESC_MAP, CHASE_LOST_LABEL_MAP, ChaseLost } from "./ChaseLost";
-import { ALL_CHASE_STRATEDY, CHASE_STRATEDY_DESC_MAP, CHASE_STRATEDY_LABEL_MAP, ChaseStratedy } from "./ChaseStratedy";
+import { ALL_CHASE_STRATEGY, CHASE_STRATEGY_DESC_MAP, CHASE_STRATEGY_LABEL_MAP, ChaseStrategy } from "./ChaseStrategy";
 import { ALL_HIT_FLAG, HIT_FLAG_DESC_MAP, HIT_FLAG_NAME_MAP, HitFlag } from "./HitFlag";
 import { fields, int } from "../fields";
 
@@ -7,7 +7,7 @@ export interface IChaseInfo {
   /**
    * 切换跟踪对象的策略
    */
-  stratedy?: number | ChaseStratedy;
+  stratedy?: number | ChaseStrategy;
 
   /**
    * 跟踪对象的标志
@@ -31,10 +31,10 @@ export function chase_info_new(): IChaseInfo {
 
 export const chase_info_fields = fields<IChaseInfo>({
   stratedy: int("切换跟踪对象的策略", {
-    options: ALL_CHASE_STRATEDY.map(v => ({
+    options: ALL_CHASE_STRATEGY.map(v => ({
       value: v,
-      label: CHASE_STRATEDY_LABEL_MAP[v],
-      desc: CHASE_STRATEDY_DESC_MAP[v],
+      label: CHASE_STRATEGY_LABEL_MAP[v],
+      desc: CHASE_STRATEGY_DESC_MAP[v],
     })),
   }),
   flag: int("跟踪对象的标志", {

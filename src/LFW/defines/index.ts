@@ -8,7 +8,7 @@ export * from "./BotVal";
 export * from "./CMD";
 export * from "./CPointKind";
 export * from "./ChaseLost";
-export * from "./ChaseStratedy";
+export * from "./ChaseStrategy";
 export * from "./CheatType";
 export * from "./CollisionVal";
 export * from "./CtrlDevice";

@@ -5,7 +5,7 @@ import { FacingFlag as FF } from "../../defines/FacingFlag";
 import { HitFlag } from "../../defines/HitFlag";
 import type { IFrameInfo } from "../../defines/IFrameInfo";
 import { SpeedMode } from "../../defines/SpeedMode";
-import { ChaseStratedy } from "../../defines/ChaseStratedy";
+import { ChaseStrategy } from "../../defines/ChaseStrategy";
 export function make_fb_chasing_same_enemy(frame: IFrameInfo, oid: string) {
   frame.facing = FF.VX;
   frame.dvx = 14;
@@ -30,8 +30,8 @@ export function make_fb_chasing_same_enemy(frame: IFrameInfo, oid: string) {
     }
   });
   frame.chase = {
-    stratedy: ChaseStratedy.TillLost,
+    stratedy: ChaseStrategy.UntilLost,
     flag: HitFlag.EnemyFighter,
-    lost: ChaseLost.Hover | ChaseLost.End
+    lost: ChaseLost.Hover
   };
 }

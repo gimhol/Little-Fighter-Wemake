@@ -1,5 +1,5 @@
 
-import { ChaseStratedy, EMPTY_FRAME_INFO, FID, FrameBehavior, GK, type IChaseInfo, type IVector3 } from "../defines";
+import { ChaseStrategy, EMPTY_FRAME_INFO, FID, FrameBehavior, GK, type IChaseInfo, type IVector3 } from "../defines";
 import { ChaseLost } from "../defines/ChaseLost";
 import type { Entity } from "../entity/Entity";
 import { closer_one, manhattan_xz } from "../helper";
@@ -12,6 +12,7 @@ export class BallController extends BaseController {
   private _chasing: Entity | null = null;
   private _chase_target: IVector3 | null = null;
   private _frame = EMPTY_FRAME_INFO;
+  private _stop_chase = false;
   get chasing(): Entity | null { return this._chasing; }
   set chasing(e: Entity | null) { this._chasing = e || null; }
   get chase_target(): Readonly<IVector3> {
@@ -33,15 +34,32 @@ export class BallController extends BaseController {
     if (!chase) return;
 
     const { stratedy } = chase;
+    if (stratedy === ChaseStrategy.StopOnLost && this._stop_chase)
+      return;
     const a = this.chasing;
     const b = this.should_chase(a) ? a : this.chasing = null;
-    if (a && stratedy === ChaseStratedy.TillLost) {
+    if (a && stratedy === ChaseStrategy.UntilLost) {
       this.set_chase_target(
         a.position.x,
         a.position.y,
         a.position.z
       )
       return true
+    }
+    if (a && stratedy === ChaseStrategy.StopOnLost) {
+      if (b) {
+        // 目标仍在：持续锁定跟踪
+        this.set_chase_target(
+          a.position.x,
+          a.position.y,
+          a.position.z
+        )
+        return true
+      }
+      // 目标已丢失：停止跟踪，不再寻找新目标
+      this._stop_chase = true;
+      this.stop_chasing();
+      return;
     }
     const c = this.should_chase(lookup) ? lookup : null;
     const d = this.chasing = closer_one(this.entity, b, c);
@@ -69,7 +87,7 @@ export class BallController extends BaseController {
     const { chase } = this.entity.frame;
     if (!chase) return;
     const { stratedy } = chase;
-    if (stratedy !== ChaseStratedy.TillLost)
+    if (stratedy !== ChaseStrategy.UntilLost && stratedy !== ChaseStrategy.StopOnLost)
       this.chasing = null;
     const self = this.entity;
     const x0 = self.position.x;
@@ -109,6 +127,7 @@ export class BallController extends BaseController {
     const { chase, behavior } = frame;
 
     if (hp > 0 && this._frame != frame) {
+      this._stop_chase = false;
       if (this._frame.chase && !chase) {
         this.stop_chasing()
       }
