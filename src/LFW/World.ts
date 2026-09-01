@@ -6,7 +6,6 @@ import { Camera } from './Camera';
 import { CMDS } from './cmds/CMDS';
 import { type Collision, collision_get } from "./collision/Collision";
 import { collisions_keeper } from "./collision/CollisionKeeper";
-import { BallController } from "./controller/BallController";
 import {
   BGG,
   CheatEnum,
@@ -79,7 +78,6 @@ export class World {
   /** 待移除实体 */
   private _gones = new Set<Entity>();
   // private _freshs = new Set<Entity>();
-  private _chasers = new Set<BallController>();
   private _paused: 0 | 1 | 2 = 0;
   private _fn_locked: 0 | 1 = 0;
   readonly camera: Camera;
@@ -451,15 +449,6 @@ export class World {
     this._restrict_result.y = this.ground.y(seg, x, z);
     this._restrict_result.z = z;
     return this._restrict_result;
-  }
-
-  add_chaser(ctrl: BallController) {
-    this._chasers.add(ctrl);
-  }
-  del_chaser(ctrl: BallController) {
-    this._chasers.delete(ctrl);
-    ctrl.chase_pos.copy(ctrl.entity.position);
-    ctrl.chasing = null;
   }
 
   protected update_ui() {

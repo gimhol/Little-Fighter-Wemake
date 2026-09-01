@@ -1,10 +1,9 @@
-import type { IHitKeyMap, IVector3, LGK, TNextFrame } from "../defines";
+import type { IHitKeyMap, LGK, TNextFrame } from "../defines";
 import { AGK, CONFLICTS_KEY_MAP, GK, GKLabels, StateEnum as SE } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { is_bot_ctrl, is_human_ctrl } from "../entity/type_check";
 import type { LFW } from "../LFW";
 import type { PlayerInfo } from "../PlayerInfo";
-import { is_f_num, round_float } from "../utils";
 import { Times } from "../utils/Times";
 import type { World } from "../World";
 import { ControllerDoubleClicks } from "./ControllerDoubleClicks";
@@ -30,7 +29,6 @@ export class BaseController {
 
   player_id: string;
   player: PlayerInfo | undefined;
-  private _chase_pos: IVector3 | null = null;
   entity: Entity;
 
   private _key_list: string = '';
@@ -55,11 +53,6 @@ export class BaseController {
   get time() {
     return this._time.value;
   }
-  get chase_pos(): Readonly<IVector3> {
-    if (!this._chase_pos)
-      this._chase_pos = this.entity.position.clone()
-    return this._chase_pos
-  }
   get LR(): 0 | 1 | -1 {
     const L = !this.keys.L.is_end() || this.keys.L.is_start();
     const R = !this.keys.R.is_end() || this.keys.R.is_start();
@@ -82,15 +75,6 @@ export class BaseController {
   get dj(): 0 | 1 | -1 { return -this.jd as 0 | 1 | -1 }
 
   get key_list() { return this._readable_key_list; }
-
-  set_chase_pos(x: number, y: number, z: number) {
-    if (is_f_num(x) || is_f_num(y) || is_f_num(z)) debugger;
-    this.chase_pos.set(
-      round_float(x),
-      round_float(y),
-      round_float(z)
-    )
-  }
 
   constructor(player_id: string, entity: Entity) {
     this.player_id = player_id;

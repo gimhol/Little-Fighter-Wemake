@@ -1,18 +1,32 @@
 
-import { ChaseStratedy, EMPTY_FRAME_INFO, FID, FrameBehavior, GK, type IChaseInfo } from "../defines";
+import { ChaseStratedy, EMPTY_FRAME_INFO, FID, FrameBehavior, GK, type IChaseInfo, type IVector3 } from "../defines";
 import { ChaseLost } from "../defines/ChaseLost";
 import type { Entity } from "../entity/Entity";
 import { closer_one, manhattan_xz } from "../helper";
-import { round_float } from "../utils";
+import { is_f_num, round_float } from "../utils";
 import { BaseController } from "./BaseController";
 import type { ControllerResult } from "./ControllerResult";
 const { L, R, U, D, j, d } = GK
 export class BallController extends BaseController {
   readonly __is_ball_ctrl__ = true;
   private _chasing: Entity | null = null;
+  private _chase_target: IVector3 | null = null;
   private _frame = EMPTY_FRAME_INFO;
   get chasing(): Entity | null { return this._chasing; }
   set chasing(e: Entity | null) { this._chasing = e || null; }
+  get chase_target(): Readonly<IVector3> {
+    if (!this._chase_target)
+      this._chase_target = this.entity.position.clone()
+    return this._chase_target
+  }
+  set_chase_target(x: number, y: number, z: number) {
+    if (is_f_num(x) || is_f_num(y) || is_f_num(z)) debugger;
+    this.chase_target.set(
+      round_float(x),
+      round_float(y),
+      round_float(z)
+    )
+  }
 
   lookup(lookup: Entity) {
     const { chase } = this.entity.frame;
@@ -22,7 +36,7 @@ export class BallController extends BaseController {
     const a = this.chasing;
     const b = this.should_chase(a) ? a : this.chasing = null;
     if (a && stratedy === ChaseStratedy.TillLost) {
-      this.set_chase_pos(
+      this.set_chase_target(
         a.position.x,
         a.position.y,
         a.position.z
@@ -33,7 +47,7 @@ export class BallController extends BaseController {
     const d = this.chasing = closer_one(this.entity, b, c);
     // lost
     if (!d && a) {
-      this.set_chase_pos(
+      this.set_chase_target(
         this.entity.position.x,
         this.entity.position.y,
         this.entity.position.z
@@ -43,7 +57,7 @@ export class BallController extends BaseController {
 
     // follow
     if (d) {
-      this.set_chase_pos(
+      this.set_chase_target(
         d.position.x,
         d.position.y,
         d.position.z
@@ -96,12 +110,10 @@ export class BallController extends BaseController {
 
     if (hp > 0 && this._frame != frame) {
       if (this._frame.chase && !chase) {
-        this.world.del_chaser(this)
-      } else if (chase && !this._frame.chase) {
-        this.world.add_chaser(this)
+        this.stop_chasing()
       }
     } else if (hp <= 0 && chase) {
-      this.world.del_chaser(this)
+      this.stop_chasing()
     }
 
     if (behavior === FrameBehavior.JohnBiscuitLeaving) {
@@ -121,7 +133,7 @@ export class BallController extends BaseController {
     if (!this._chasing && chasing) this.start_chasing(chase)
     const me = this.entity.position;
 
-    let { x, y, z } = chasing?.position || this.chase_pos;
+    let { x, y, z } = chasing?.position || this.chase_target;
     if (chasing)
       y = round_float(y + chasing.frame.centery * (chase.oy ?? 0.5))
 
@@ -150,10 +162,15 @@ export class BallController extends BaseController {
   private start_chasing(chase: IChaseInfo) {
   }
   private end_chasing(chase: IChaseInfo) {
-    this.set_chase_pos(
+    this.set_chase_target(
       this.entity.position.x,
       this.entity.position.y,
       this.entity.position.z,
     )
+  }
+  /** 停止追击：复位目标点与追击实体 */
+  private stop_chasing() {
+    this.chase_target.copy(this.entity.position);
+    this.chasing = null;
   }
 }
