@@ -47,7 +47,7 @@ export class CameraCtrl extends UIComponent {
       this.lfw.push_cmd(CMD.DIST_CAM, `${x},${y}`)
     }
     if (this._staring) {
-      this._staring.outline_width = round((cos(this.world.lifetime) + 1) * 2.5);
+      this._staring.outline_width = round((cos(this.world.lifetime * this.world.dataset.atom_time) + 1) * 2);
 
     }
     if (this.staring && (this.staring.hp <= 0 || !this.staring.mounted))

@@ -178,7 +178,7 @@ export class WorldRenderer implements IWorldRenderer {
     this.bg_render.set_indicator_visible(!!(bg_flags & BG_INDICATINGS.layer));
     this.render_entities(dt, this.dfactor);
     for (const ui_stack of this.lfw.ui_stacks)
-      ui_stack.ui?.renderer.render(dt)
+      ui_stack.ui?.renderer.render(dt, this.dfactor)
 
     const { scene } = this;
     for (const camera of this._cameras) {
