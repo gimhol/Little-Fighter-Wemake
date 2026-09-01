@@ -218,7 +218,7 @@ export class Stage {
             min(hp_respawn_r, f.hp_max)
           f.hp_r = max(hp_r, hp)
           if (typeof _respawn_x === 'number') {
-            f.set_position_x(_respawn_x);
+            f.set_position(_respawn_x, null, null);
           }
         } else if (f.hp > 0 && hp_recovery) {
           const hp = hp_recovery < 1 ?
@@ -264,18 +264,22 @@ export class Stage {
         entity.facing = player_f
 
       this.lfw.mt.mark = `criminal_respawn`
+
+      let x: number | null = null;
+      let z: number | null = null;
       if (typeof player_x === 'number') {
-        const l = max(this.player_l, player_x - 50)
-        const r = min(this.player_r, player_x + 50)
-        const x = this.lfw.mt.range(l, r)
-        entity.set_position_x(x);
+        x = this.lfw.mt.range(
+          max(this.player_l, player_x - 50),
+          min(this.player_r, player_x + 50)
+        )
       }
       if (typeof player_z === 'number') {
-        const f = max(this.far, player_z - 50)
-        const n = min(this.near, player_z + 50)
-        const z = this.lfw.mt.range(f, n)
-        entity.set_position_z(z);
+        z = this.lfw.mt.range(
+          max(this.far, player_z - 50),
+          min(this.near, player_z + 50)
+        )
       }
+      entity.set_position(x, null, z);
     }
     if (dialogs?.length) this.push_dialogs(dialogs)
   }

@@ -135,7 +135,7 @@ export class LittleFunnyAutoGame extends UIComponent {
     const facing = fighter.facing = lr ? -1 : 1;
     const x = (this._ox = (this._ox + 1) % 2) * -facing
     fighter.callbacks.add(this._fighter_cbs)
-    fighter.set_position_x(lr * this.world.bg.width + x)
+    fighter.set_position(lr * this.world.bg.width + x)
     fighter.hp = fighter.hp_r = fighter.hp_max = 150 * (data.base.ce ?? 1);
     fighter.stat_bar_type = StatBarType.None;
     fighter.wakeup_invuln = true;

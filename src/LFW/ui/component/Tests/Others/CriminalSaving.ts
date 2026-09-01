@@ -50,7 +50,7 @@ override readonly director = new ActionDirector().offset(300, () => {
     )
     w1?.attach();
 
-    this.fighters[4].set_position_x(
+    this.fighters[4].set_position(
       this.fighters[4].position.x - 50
     )
     const w2 = this.spawn(O_ID.Weapon_baseball)

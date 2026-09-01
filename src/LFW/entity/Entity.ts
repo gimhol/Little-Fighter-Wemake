@@ -1609,9 +1609,9 @@ export class Entity {
               min(round(friend.position.z - 100), this.world.stage.far),
               max(round(friend.position.z + 100), this.world.stage.near)
             )
-            this.set_position(x, 550, z)
+            this.set_position(x, 300, z)
           } else {
-            this.set_position_y(550)
+            this.set_position(null, 300)
           }
           this.enter_frame(Defines.NEXT_FRAME_AUTO)
         }
@@ -2392,18 +2392,6 @@ export class Entity {
       this._state?.on_restrict?.(this, x, y, z);
     }
     this._ground_y = this.world.ground.y(this.terrain, this.position.x, this.position.z);
-  }
-
-  set_position_x(x: number) {
-    this.set_position(x)
-  }
-
-  set_position_y(y: number) {
-    this.set_position(null, y)
-  }
-
-  set_position_z(z: number) {
-    this.set_position(null, null, z)
   }
 
   /** 离地 */
