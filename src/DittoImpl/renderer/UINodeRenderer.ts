@@ -14,6 +14,9 @@ import { BLACK, OutlineMaterial } from "./materials/OutlineMaterial";
 import styles from "./ui_node_style.module.scss";
 import { UITextRenderer } from "./UITextRenderer";
 import type { WorldRenderer } from "./WorldRenderer";
+/** 平滑时间常数(ms)：约一帧(60fps)，每帧都移动、无停顿，避免 30UPS/60FPS 下 df 复位造成的抖动 */
+const SMOOTH_TAU = 1000 / 60;
+
 interface IUserData {
   w?: number;
   h?: number;
@@ -39,9 +42,7 @@ export class UINodeRenderer implements IUINodeRenderer {
   protected _text_renderer: UITextRenderer | undefined;
   protected _uv_anim_angle: number = 0;
   protected _uv_anim_vec = new T.Vector2(0, 0);
-  protected _p0 = new T.Vector3();
   protected _p1 = new T.Vector3();
-  protected _s0 = new T.Vector3(1, 1, 1);
   protected _s1 = new T.Vector3(1, 1, 1);
   protected _old_alpha: number | null = null;
   protected _last_sync_lifetime = -1;
@@ -138,8 +139,6 @@ export class UINodeRenderer implements IUINodeRenderer {
     const { x, y, z } = this.ui;
     this.mesh.position.set(x, -y, z)
     this.update_pos_scale()
-    this._p0.copy(this._p1)
-    this._s0.copy(this._s1)
     this.mesh.visible = this.ui.visible;
     this.mesh.name = `layout(name= ${this.ui.name}, id=${this.ui.id})`
     this.apply();
@@ -313,9 +312,7 @@ export class UINodeRenderer implements IUINodeRenderer {
       tx === this._p1.x && ty === this._p1.y && tz === this._p1.z &&
       sx === this._s1.x && sy === this._s1.y && sz === this._s1.z
     ) return;
-    this._p0.copy(this._p1);
     this._p1.set(tx, ty, tz);
-    this._s0.copy(this._s1);
     this._s1.set(sx, sy, sz);
   }
 
@@ -346,8 +343,9 @@ export class UINodeRenderer implements IUINodeRenderer {
     this.mesh.visible = ui.visible
     this.update_texture_attributes(dt)
     this.update_pos_scale();
-    this.mesh.position.lerpVectors(this._p0, this._p1, df);
-    this.mesh.scale.lerpVectors(this._s0, this._s1, df);
+    const t = 1 - Math.exp(-dt / SMOOTH_TAU);
+    this.mesh.position.lerp(this._p1, t);
+    this.mesh.scale.lerp(this._s1, t);
 
     if (this.world.lifetime !== this._last_sync_lifetime) {
       this._last_sync_lifetime = this.world.lifetime;
