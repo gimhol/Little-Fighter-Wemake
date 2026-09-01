@@ -189,11 +189,11 @@ export class World {
   add_entities(...entities: Entity[]) {
     for (const e of entities) {
       if (this.entity_map.has(e.id)) continue;
-      // this.freshs.add(entity)
+
       if (is_fighter(e)) {
         this.callbacks.call("on_fighter_add", e);
         const player = this.lfw.players.get(e.ctrl.player_id)
-        if (player) {
+        if (player) { // ugly. -Gim
           player.fighter = e;
           this.puppets.set(e.ctrl.player_id, e);
           e.puppet = true
@@ -555,6 +555,7 @@ export class World {
     if (this._paused == 2) this._paused = 1
     this._game_time.add();
     this.team_alive_counts.clear();
+    this.puppet_teams.clear()
 
     if (this.stage.world_pause) return;
     if (Ditto.DEV && this.entities.length > MAX_DEBUG_ENTITIES)
@@ -624,6 +625,7 @@ export class World {
           }
         }
         if (a.puppet == true) {
+          this.puppet_teams.add(a.team)
           puppet_x_sum += x;
           puppet_z_sum += z;
           puppet_count++;
@@ -842,17 +844,20 @@ export class World {
   }
 
   /** Map<队伍, 队伍存活人数> */
-  private team_alive_counts = new Map<string, number>();
+  private readonly team_alive_counts = new Map<string, number>();
 
 
   private calc_alives() {
+
+    this.puppet_teams.clear();
     this.team_alive_counts.clear();
     for (const e of this.entities) {
       if (!is_fighter(e)) continue;
       if (e.hp <= 0) continue;
-      const { team } = e;
+      const { team, puppet } = e;
       const count = this.team_alive_counts.get(team) ?? 0;
       this.team_alive_counts.set(team, count + 1);
+      if (puppet) this.puppet_teams.add(team)
     }
   }
 
