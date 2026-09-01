@@ -359,6 +359,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       const fighter = fighters[i]
       stat_bar.node.visible = !!fighter;
       stat_bar.node.disabled = !fighter;
+      stat_bar.set_entity(fighter)
       if (fighter) continue;
       stat_bars.splice(i, 1);
       --i;
@@ -371,8 +372,10 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       this.lfw.world.stage.callbacks.add(this.stage_callbacks);
     }
     this.lfw.world.callbacks.add(this.world_callbacks);
-    this.props.cam_ctrl?.focus_lr(1);
+    const { cam_ctrl } = this.props;
+    if (cam_ctrl) cam_ctrl.staring = fighters[0];
     this.world.camera.jump_x(cam_x);
+
   }
   clearup() {
     this.lfw.world.stage.callbacks.del(this.stage_callbacks)
