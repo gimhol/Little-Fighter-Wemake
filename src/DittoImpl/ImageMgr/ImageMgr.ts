@@ -16,7 +16,7 @@ import { is_positive_int, max, round } from "../../LFW/utils";
 import { create_img_ele } from "../../Utils/create_img_ele";
 import { get_blob } from "../../Utils/get_blob";
 import * as T from "../_t";
-import { AsyncValuesKeeper } from "../AsyncValuesKeeper";
+import { AsyncCache } from "../AsyncCache";
 import { RImageInfo } from "../RImageInfo";
 import { handle_image_operation_crop, handle_image_operation_flip, handle_image_operation_mask, handle_image_operation_resize } from "./handle_image_operation";
 export class ImageMgr implements IImageMgr {
@@ -31,7 +31,7 @@ export class ImageMgr implements IImageMgr {
     typeof (OffscreenCanvas.prototype as any).transferToImageBitmap === 'function';
 
   protected pictures = new Map<string, IPicture>();
-  protected infos = new AsyncValuesKeeper<RImageInfo>();
+  protected infos = new AsyncCache<RImageInfo>();
   protected disposables = new Map<string, RImageInfo>();
   readonly lfw: LFW;
   constructor(lfw: LFW) { this.lfw = lfw; }

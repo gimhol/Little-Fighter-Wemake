@@ -1,4 +1,4 @@
-import { AsyncValuesKeeper } from "@/DittoImpl/AsyncValuesKeeper";
+import { AsyncCache } from "@/DittoImpl/AsyncCache";
 import { Graves } from "@/LFW/base/Graves";
 import { CMD } from "@/LFW/defines/CMD";
 import { Defines } from "@/LFW/defines/defines";
@@ -19,7 +19,7 @@ export class __Modern extends BaseSounds {
     gain_node: GainNode;
   } | null = null;
 
-  protected _r = new AsyncValuesKeeper<AudioBuffer>();
+  protected _r = new AsyncCache<AudioBuffer>();
   protected _bgm_name: string | null = null;
   protected _sound_id = 0;
   protected _playings = new Map<

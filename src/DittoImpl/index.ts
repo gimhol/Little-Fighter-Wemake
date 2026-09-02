@@ -1,5 +1,5 @@
 /*** AUTO EXPORT START ***/
-export * from "./AsyncValuesKeeper";
+export * from "./AsyncCache";
 export * from "./FullScreen";
 export * from "./Importer";
 export * from "./Interval";
