@@ -127,7 +127,9 @@ export class EntityRenderer implements IEntityRenderer {
     this.stat?.render();
     this.indi?.render();
     this.ctrl?.render()
-    this.holder?.render(dt, df);
+    
+    this.entity.holding?.renderer?.render(dt, df);
+    this.entity.catching?.renderer?.render(dt, df);
   }
   mount() {
     this.main.on_mount();
