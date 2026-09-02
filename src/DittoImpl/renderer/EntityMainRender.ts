@@ -5,12 +5,7 @@ import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
 import { AnimationMixer, BufferGeometry, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion } from "../_t";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { ZipGLTFLoader } from "./GLTFZipLoader";
-
-interface IModelCache {
-  root: Object3D;
-  animations: AnimationClip[];
-}
+import { ModelCache, type IModelCacheEntry } from "./ModelCache";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -55,9 +50,8 @@ export class EntityMainRender {
   protected model_variants = new Map<string, string[]>();
   protected model_node = new Object3D();
   protected model_key = "";
-  protected gltf_loader!: ZipGLTFLoader;
-  protected model_cache = new Map<string, IModelCache>();
-  protected model_loading = new Set<string>();
+  /** 当前挂载的模型缓存 key（用于引用计数 release） */
+  protected model_path = "";
   protected mixer: AnimationMixer | undefined;
   protected mixer_actions = new Map<string, AnimationAction>();
   protected bone_list: Bone[] = [];
@@ -78,7 +72,6 @@ export class EntityMainRender {
     const { entity } = owner;
     this.entity = entity;
     this.lfw = entity.lfw;
-    this.gltf_loader = new ZipGLTFLoader(this.lfw);
     this.world = entity.world;
     this.data = entity.data;
     this.frame = entity.frame;
@@ -101,19 +94,22 @@ export class EntityMainRender {
       file.variants?.length && this.file_variants.set(k, [k, ...file.variants]);
     }
 
+    const model_list: IModelInfo[] = [];
     const models = this.models = data.base.models ?? {};
     for (const k in models) {
       const model = models[k];
       model.variants?.length && this.model_variants.set(k, [k, ...model.variants]);
+      model_list.push(model);
     }
 
     this.data = data;
     get_img_map(this.lfw, data, this.images);
-    for (const img of this.images.values()) {
-      img.pic?.texture && (img.pic.texture.needsUpdate = true);
-    }
+    // 贴图与全局 ImageMgr 共享（clip 走 uniforms，无需隔离 texture）。
+    // 不要在这里设 needsUpdate：它会 bump 共享 source.version，
+    // 导致所有引用同一贴图的实体都在下一帧重新上传 GPU。
 
     this.dispose_model();
+    for (const info of model_list) this.preload_model(info);
     this.meshs[0].visible = false;
     this.meshs[0].name = `Entity Mesh 0: ${this.entity.name}`;
 
@@ -256,60 +252,63 @@ export class EntityMainRender {
       Ditto.warn(`[EntityMainRender] model "${model.id}" 未在 base.models 中声明`)
       return
     }
-    const cached = this.model_cache.get(info.path)
+    const { path } = this.resolve_model_path(info)
+    const cached = ModelCache.instance.peek(path)
     if (cached) {
-      this.attach_model(cached)
+      this.attach_model(path, cached)
       return
     }
-    this.model_node.visible = false
+    // 未缓存：保留旧模型（若有）直至新模型加载完成，避免切换瞬间闪没
     void this.load_model(info)
   }
 
-  /** 异步加载 GLB 并缓存；加载完成时若仍是当前需要的模型则挂载 */
+  /** 预加载模型到缓存（不挂载），消除首次渲染的加载空窗 */
+  private preload_model(info: IModelInfo): void {
+    void this.load_model(info)
+  }
+
+  /** 解析 info.path 的查找前缀（! 精确 / ? 模糊） */
+  private resolve_model_path(info: IModelInfo): { path: string; exact: boolean } {
+    let path = info.path
+    let exact = true
+    if (path.startsWith('!')) path = path.substring(1)
+    else if (path.startsWith('?')) { path = path.substring(1); exact = false }
+    return { path, exact }
+  }
+
+  /** 异步加载 GLB 到全局缓存；加载完成时若仍是当前需要的模型则挂载 */
   private async load_model(info: IModelInfo): Promise<void> {
-    if (this.model_loading.has(info.path)) return
-    this.model_loading.add(info.path)
+    const { path, exact } = this.resolve_model_path(info)
     try {
-      let path = info.path
-      let exact = true
-      if (path.startsWith('!')) path = path.substring(1)
-      else if (path.startsWith('?')) { path = path.substring(1); exact = false }
-      const dir = path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : ''
-      const [buf] = await this.lfw.import_array_buffer(path, exact)
-      this.gltf_loader.set_glb_dir(dir)
-      const gltf = await this.gltf_loader.parseAsync(buf, '')
-      const cache: IModelCache = {
-        root: gltf.scene ?? new Object3D(),
-        animations: gltf.animations ?? [],
-      }
-      this.model_cache.set(info.path, cache)
+      const entry = await ModelCache.instance.get(this.lfw, path, exact)
       if (this.models[this.model_key] === info) {
-        this.attach_model(cache)
+        this.attach_model(path, entry)
       }
     } catch (e) {
       Ditto.warn(`[EntityMainRender] 3D 模型加载失败: ${info.path}`, e)
-    } finally {
-      this.model_loading.delete(info.path)
+      ModelCache.instance.invalidate(path)
+      // 允许后续帧重试（否则 model_key 已切换且加载失败，模型将永久不显示）
+      if (this.model_key === info.id) this.model_key = ""
     }
   }
 
-  /** 挂载模型到 model_node；替换旧模型时回收其 GPU 资源（并从缓存移除） */
-  private attach_model(cache: IModelCache): void {
+  /** 挂载模型到 model_node；替换旧模型时释放其引用（全局缓存决定是否回收） */
+  private attach_model(path: string, cache: IModelCacheEntry): void {
     const root = cache.root
-    const old = this.model_node.children[0] as Object3D | undefined
-    if (old && old !== root) {
-      this.model_node.remove(old)
-      this.dispose_root(old)
-      for (const [k, c] of this.model_cache) {
-        if (c.root === old) this.model_cache.delete(k)
-      }
+    const old_path = this.model_path
+    if (old_path && old_path !== path) {
+      const old = this.model_node.children[0] as Object3D | undefined
+      if (old && old !== root) this.model_node.remove(old)
+      ModelCache.instance.release(old_path)
     }
+    ModelCache.instance.retain(path)
     this.model_node.add(root)
     this.model_node.visible = true
     this.collect_bones(root)
     this.setup_mixer(root, cache.animations)
     this.playing_anim = ""
     this.prev_lifetime = this.entity.lifetime
+    this.model_path = path
   }
 
   /** 每帧驱动模型视觉：姿态插值（模式A）与动画片段（模式B） */
@@ -443,7 +442,7 @@ export class EntityMainRender {
     return this.world.dataset.atom_time
   }
 
-  /** 清空模型节点、mixer、缓存，并回收 GPU 资源 */
+  /** 卸载模型节点、释放引用（全局缓存决定是否回收 GPU 资源） */
   private dispose_model(): void {
     this.model_key = ""
     this.model_node.visible = false
@@ -453,29 +452,11 @@ export class EntityMainRender {
     this.playing_anim = ""
     this.bone_list = []
     this.bone_by_name.clear()
-    for (const child of [...this.model_node.children]) {
-      this.model_node.remove(child)
-      this.dispose_root(child as Object3D)
+    if (this.model_path) {
+      ModelCache.instance.release(this.model_path)
+      this.model_path = ""
     }
-    this.model_cache.clear()
-  }
-
-  /** 递归回收几何/材质/贴图 */
-  private dispose_root(root: Object3D): void {
-    root.traverse(obj => {
-      const mesh = obj as Mesh
-      if (!mesh.isMesh) return
-      mesh.geometry?.dispose()
-      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-      for (const m of mats) {
-        const mat = m as MeshBasicMaterial
-        for (const key of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap', 'bumpMap', 'specularMap', 'envMap', 'lightMap']) {
-          const tex = (mat as any)[key]
-          if (tex?.isTexture) tex.dispose()
-        }
-        mat.dispose()
-      }
-    })
+    this.model_node.clear()
   }
 
   private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number, cz: number) {

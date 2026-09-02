@@ -14,6 +14,7 @@ export * from "./GeometryKeeper";
 export * from "./INDICATINGS";
 export * from "./INDICATORS_INFO";
 export * from "./Keeper";
+export * from "./ModelCache";
 export * from "./NinePatchGeometry";
 export * from "./TerrainIndicator";
 export * from "./UINodeRenderer";

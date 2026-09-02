@@ -49,31 +49,23 @@ function guess_image_mime(uri: string): string {
  * 并改写为 blob: URL，再交给基类 parse() 解析。
  *
  * 用法：
- *   const loader = new ZipGLTFLoader(lfw)
- *   loader.set_glb_dir('builtin_data/model')   // GLB 所在目录
- *   const gltf = await loader.parseAsync(buf, '')
+ *   const loader = new ZipGLTFLoader(lfw)      // 无状态，可全局共享
+ *   const gltf = await loader.parse_package(buf, 'builtin_data/model')
  */
 export class ZipGLTFLoader extends T.GLTFLoader {
   protected lfw: LFW;
-  protected base_dir = "";
 
   constructor(lfw: LFW) {
     super()
     this.lfw = lfw
   }
 
-  /** 设置 GLB 所在目录，用于解析相对资源 */
-  set_glb_dir(dir: string): this {
-    this.base_dir = dir
-    return this
-  }
-
-  /** 把 GLB 内的相对/绝对资源路径解析为数据包路径 */
-  protected resolve_url(url: string): string {
+  /** 把 GLB 内的相对/绝对资源路径解析为数据包路径（base_dir 为 GLB 所在目录） */
+  protected resolve_url(base_dir: string, url: string): string {
     if (/^([a-z]+:)?\/\//i.test(url) || url.startsWith('data:')) return url
     const clean = url.replace(/^\.\//, '')
-    if (!this.base_dir) return clean
-    return `${this.base_dir}/${clean}`.replace(/\/+/g, '/')
+    if (!base_dir) return clean
+    return `${base_dir}/${clean}`.replace(/\/+/g, '/')
   }
 
   override load(
@@ -82,15 +74,10 @@ export class ZipGLTFLoader extends T.GLTFLoader {
     onProgress?: (event: ProgressEvent) => void,
     onError?: (event: ErrorEvent) => void,
   ): void {
-    const full = this.resolve_url(url)
-    void this.lfw.import_array_buffer(full, true)
-      .then(([buf]) => {
-        if (!this.base_dir) {
-          const idx = full.lastIndexOf('/')
-          if (idx >= 0) this.base_dir = full.substring(0, idx)
-        }
-        return this.import_gltf(buf)
-      })
+    const idx = url.lastIndexOf('/')
+    const base_dir = idx >= 0 ? url.substring(0, idx) : ''
+    void this.lfw.import_array_buffer(url, true)
+      .then(([buf]) => this.import_gltf(buf, base_dir))
       .then(gltf => onLoad(gltf))
       .catch(err => onError?.(err))
   }
@@ -99,19 +86,24 @@ export class ZipGLTFLoader extends T.GLTFLoader {
     return this.import_gltf(data)
   }
 
+  /** 解析数据包中的 GLB/GLTF（base_dir 为 GLB 所在目录，用于解析相对资源） */
+  parse_package(data: string | ArrayBuffer, base_dir = ""): Promise<T.GLTF> {
+    return this.import_gltf(data, base_dir)
+  }
+
   /** 解析 GLB/GLTF：重写外部资源为 blob: URL 后交给基类 parse */
-  protected async import_gltf(data: string | ArrayBuffer): Promise<T.GLTF> {
+  protected async import_gltf(data: string | ArrayBuffer, base_dir = ""): Promise<T.GLTF> {
     const { json, bin } = typeof data === 'string'
       ? { json: JSON.parse(data), bin: undefined }
       : read_glb(data)
-    await this.rewrite_resources(json, bin)
+    await this.rewrite_resources(json, bin, base_dir)
     return new Promise<T.GLTF>((resolve, reject) => {
       this.parse(json as any, '', resolve, reject)
     })
   }
 
   /** 把外部 .bin/贴图 URI 改写为可从数据包加载的 blob: URL */
-  protected async rewrite_resources(json: any, bin?: ArrayBuffer): Promise<void> {
+  protected async rewrite_resources(json: any, bin: ArrayBuffer | undefined, base_dir: string): Promise<void> {
     const buffers: any[] = Array.isArray(json.buffers) ? json.buffers : []
     for (const buffer of buffers) {
       if (!buffer) continue
@@ -121,24 +113,24 @@ export class ZipGLTFLoader extends T.GLTFLoader {
         continue
       }
       if (uri.startsWith('data:')) continue
-      buffer.uri = await this.import_buffer_url(uri)
+      buffer.uri = await this.import_buffer_url(base_dir, uri)
     }
     const images: any[] = Array.isArray(json.images) ? json.images : []
     for (const image of images) {
       if (!image || image.bufferView !== undefined) continue
       const uri = image.uri
       if (!uri || uri.startsWith('data:')) continue
-      image.uri = await this.import_image_url(uri)
+      image.uri = await this.import_image_url(base_dir, uri)
     }
   }
 
-  protected async import_buffer_url(uri: string): Promise<string> {
-    const [buf] = await this.lfw.import_array_buffer(this.resolve_url(uri), true)
+  protected async import_buffer_url(base_dir: string, uri: string): Promise<string> {
+    const [buf] = await this.lfw.import_array_buffer(this.resolve_url(base_dir, uri), true)
     return this.blob_url(buf)
   }
 
-  protected async import_image_url(uri: string): Promise<string> {
-    const [buf] = await this.lfw.import_array_buffer(this.resolve_url(uri), true)
+  protected async import_image_url(base_dir: string, uri: string): Promise<string> {
+    const [buf] = await this.lfw.import_array_buffer(this.resolve_url(base_dir, uri), true)
     return URL.createObjectURL(new Blob([buf], { type: guess_image_mime(uri) }))
   }
 
