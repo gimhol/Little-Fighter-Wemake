@@ -193,9 +193,10 @@ export class EntityStatRender {
       }
     }
     this.update_reverse_text_position(this.entity)
+    this.update_bars_position();
   }
 
-  set_bars_position() {
+  update_bars_position() {
     const { frame: { centery } } = this.entity;
     const { x, y, z } = this.owner.position;
     const bar_y = round(y + BAR_BG_H + 5 + centery);
