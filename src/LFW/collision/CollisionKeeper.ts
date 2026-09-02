@@ -226,6 +226,7 @@ const HANDLER_CONFIGS: IHandlerConfig[] = [
     a_type: [EntityEnum.Fighter],
     itr: [ItrKind.Pick, ItrKind.PickSecretly],
     v_type: [EntityEnum.Weapon],
+    v_state: [StateEnum.Weapon_OnGround, StateEnum.HeavyWeapon_OnGround],
     bdy: [BdyKind.Normal],
     handler: handle_weapon_picked,
   },
