@@ -108,7 +108,13 @@ export class UINodeRenderer implements IUINodeRenderer {
   }
   on_resume(): void {
     const world_renderer = this.lf2.world.renderer as WorldRenderer;
-    if (this.ui.root === this.ui) world_renderer.ui_container.add(this.mesh);
+    if (this.ui.root === this.ui) {
+      // 按根节点 z 分层：z<0 → 背景层（世界后），z>=0 → 前景层（世界前）
+      const container = (this.ui.z ?? 0) < 0
+        ? world_renderer.ui_bg_container
+        : world_renderer.ui_fg_container;
+      container.add(this.mesh);
+    }
     const text_input = this.ui.find_component(TextInput)
     if (text_input) {
       const ele_input = this._input = document.createElement('input');
@@ -129,7 +135,12 @@ export class UINodeRenderer implements IUINodeRenderer {
   on_pause(): void {
     const text_input = this.ui.find_component(TextInput)
     const world_renderer = this.lf2.world.renderer as WorldRenderer;
-    if (this.ui.root === this.ui) world_renderer.ui_container.remove(this.mesh);
+    if (this.ui.root === this.ui) {
+      const container = (this.ui.z ?? 0) < 0
+        ? world_renderer.ui_bg_container
+        : world_renderer.ui_fg_container;
+      container.remove(this.mesh);
+    }
     if (text_input) this.release_dom()
   }
   on_show(): void { }

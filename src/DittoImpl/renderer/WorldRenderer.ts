@@ -16,7 +16,10 @@ export class WorldRenderer implements IWorldRenderer {
   readonly bg_render: BgRender;
   readonly bg_flags: TerrainIndicator;
   readonly camera: Camera;
-  readonly ui_container: Object3D;
+  readonly ui_bg_camera: OrthographicCamera;
+  readonly ui_fg_camera: OrthographicCamera;
+  readonly ui_bg_container: Object3D;
+  readonly ui_fg_container: Object3D;
   readonly ui_offset = new Vector3(0, 0, 0);
   readonly bg_container: Object3D;
   readonly bg_offset = new Vector3(0, 0, 0);
@@ -28,6 +31,8 @@ export class WorldRenderer implements IWorldRenderer {
   protected _css_renderer?: CSS2DRenderer;
   protected _canvas_ob = new MutationObserver(() => this.on_win_resize());
   protected scene: Scene = new Scene();
+  protected ui_bg_scene = new Scene();
+  protected ui_fg_scene = new Scene();
   protected renderer_w: number = 0;
   protected renderer_h: number = 0;
   /** 渲染缓冲尺寸（LineMaterial.resolution 需要与之匹配，否则线宽错误） */
@@ -74,8 +79,10 @@ export class WorldRenderer implements IWorldRenderer {
     this.set_renderer_size(w * 4, h * 4);
     this.scene.add(this.world_node);
 
-    this.ui_container = new Object3D();
-    this.scene.add(this.ui_container);
+    this.ui_bg_container = new Object3D();
+    this.ui_bg_scene.add(this.ui_bg_container);
+    this.ui_fg_container = new Object3D();
+    this.ui_fg_scene.add(this.ui_fg_container);
 
     this.bg_container = new Object3D();
     this.scene.add(this.bg_container);
@@ -93,6 +100,8 @@ export class WorldRenderer implements IWorldRenderer {
       camera.name = "default_orthographic_camera"
       this.add_camera(camera);
       camera.updateProjectionMatrix();
+      this.ui_bg_camera = this.make_ui_camera(camera, "ui_bg_camera")
+      this.ui_fg_camera = this.make_ui_camera(camera, "ui_fg_camera")
     }
 
     window.addEventListener('resize', this.on_win_resize)
@@ -155,11 +164,12 @@ export class WorldRenderer implements IWorldRenderer {
     }
 
     this.camera.position.lerpVectors(this.cam_p0, this.cam_p1, this.dfactor)
-    this.ui_container.position.set(
-      this.camera.position.x + this.ui_offset.x,
-      this.camera.position.y + this.world.dataset.screen_h + this.ui_offset.y,
-      this.ui_offset.z
-    )
+    this.ui_bg_camera.position.copy(this.camera.position);
+    this.ui_fg_camera.position.copy(this.camera.position);
+    const ui_x = this.camera.position.x + this.ui_offset.x;
+    const ui_y = this.camera.position.y + this.world.dataset.screen_h + this.ui_offset.y;
+    this.ui_bg_container.position.set(ui_x, ui_y, this.ui_offset.z)
+    this.ui_fg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     const { dataset: { entity_flags }, transform } = this.world;
     const { x, y, z, scale_x, scale_y, scale_z } = transform
     this.world_node.position.set(
@@ -179,12 +189,36 @@ export class WorldRenderer implements IWorldRenderer {
     for (const ui_stack of this.lfw.ui_stacks)
       ui_stack.ui?.renderer.render(dt, this.dfactor)
 
-    const { scene } = this;
-    for (const camera of this._cameras) {
-      this._renderer?.render(scene, camera);
-      this._css_renderer?.render(scene, camera);
-    }
+    this.render_layers();
     this.dirty = false;
+  }
+
+  protected make_ui_camera(src: Camera, name: string): OrthographicCamera {
+    const o = src as OrthographicCamera
+    const c = new OrthographicCamera()
+    c.left = o.left; c.right = o.right;
+    c.top = o.top; c.bottom = o.bottom;
+    c.near = o.near; c.far = o.far;
+    c.position.copy(o.position);
+    c.name = name;
+    c.updateProjectionMatrix();
+    return c;
+  }
+
+  protected render_layers(): void {
+    const r = this._renderer;
+    if (!r) return;
+    const css = this._css_renderer;
+    r.autoClear = false;
+    r.clear(true, true, true);
+    r.render(this.ui_bg_scene, this.ui_bg_camera);
+    css?.render(this.ui_bg_scene, this.ui_bg_camera);
+    r.clearDepth();
+    r.render(this.scene, this.camera);
+    css?.render(this.scene, this.camera);
+    r.clearDepth();
+    r.render(this.ui_fg_scene, this.ui_fg_camera);
+    css?.render(this.ui_fg_scene, this.ui_fg_camera);
   }
   set_canvas(canvas: HTMLCanvasElement | null | undefined) {
     if (this._renderer) {
