@@ -134,13 +134,8 @@ export class UINodeRenderer implements IUINodeRenderer {
 
   on_pause(): void {
     const text_input = this.ui.find_component(TextInput)
-    const world_renderer = this.lf2.world.renderer as WorldRenderer;
-    if (this.ui.root === this.ui) {
-      const container = (this.ui.z ?? 0) < 0
-        ? world_renderer.ui_bg_container
-        : world_renderer.ui_fg_container;
-      container.remove(this.mesh);
-    }
+    if (this.ui.root === this.ui) 
+      this.mesh.parent?.remove(this.mesh);
     if (text_input) this.release_dom()
   }
   on_show(): void { }
