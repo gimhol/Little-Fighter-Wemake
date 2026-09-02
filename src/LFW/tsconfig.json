@@ -28,6 +28,6 @@
 
     "skipLibCheck": true
   },
-  "include": ["./**/*.ts", "../DittoImpl/AsyncCache.ts"],
+  "include": ["./**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

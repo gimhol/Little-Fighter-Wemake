@@ -1,5 +1,5 @@
 
-export class AsyncCache<V> {
+export class AsyncValuesKeeper<V> {
 
   readonly values = new Map<string, V>();
   protected _pending = new Map<string, Promise<V>>();
@@ -7,18 +7,16 @@ export class AsyncCache<V> {
   get(key: string): V | undefined {
     return this.values.get(key)
   }
+
   has(key: string): boolean {
     return this.values.has(key)
   }
-
+  
   fetch(key: string, job: () => Promise<V>): Promise<V> {
-
-
-    if (this.values.has(key)) 
-      return Promise.resolve(this.values.get(key)!);
+    if (this.values.has(key)) return Promise.resolve(this.values.get(key)!);
 
     let ret = this._pending.get(key);
-    if (ret) return ret
+    if (ret) return ret;
     const promise = Promise.resolve().then(job);
 
     ret = promise.then(value => {
