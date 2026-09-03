@@ -37,7 +37,8 @@ function make_model_hull_material(): ShaderMaterial {
     fragmentShader: Shaders.Fragment.ModelOutline,
     transparent: true,
     depthWrite: false,
-    side: DoubleSide,
+    // 只渲染外扩壳的背面(far side)：正面更靠近相机、会盖住模型，背面才在轮廓外露出
+    side: BackSide,
   })
 }
 
@@ -526,17 +527,21 @@ export class EntityMainRender {
   private update_model_outline(): void {
     const hulls = this.model_hulls
     if (!hulls.length) return
-    const { ghosted, outline_color, outline_alpha, outline_width, outline_enabled } = this.entity
+    const { ghosted, outline_color, outline_alpha, outline_width, outline_enabled, facing } = this.entity
     const show = !ghosted && !!outline_color && !!outline_alpha && !!outline_enabled
-    const key = `${show}:${outline_color || ''}:${outline_alpha}:${outline_width}:${outline_enabled}:${this.model_sx}`
+    const left = facing < 0
+    const key = `${show}:${left}:${outline_color || ''}:${outline_alpha}:${outline_width}:${outline_enabled}:${this.model_sx}`
     if (key === this.model_outline_key) return
     this.model_outline_key = key
+    // 世界宽度（像素/LF2 单位）→ 本地外扩：除以模型缩放
     const width_local = show ? outline_width / this.model_sx : 0
     for (const hull of hulls) {
       const m = hull.material as ShaderMaterial
       m.uniforms.uOutline.value = width_local
       m.uniforms.uColor.value.set(outline_color || '#000')
       m.uniforms.uAlpha.value = show ? outline_alpha : 0
+      // scale.x=-1 镜像会反转绕序，需把“背面”翻到 FrontSide，保证只露轮廓不盖模型
+      m.side = left ? FrontSide : BackSide
       hull.visible = show
     }
   }
