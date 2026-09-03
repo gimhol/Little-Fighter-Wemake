@@ -194,14 +194,21 @@ export class EntityMainRender {
       this.update_model_visual(model)
       this.model_node.visible = visible
       this.model_node.position.set(this.centerx + this.shaking_x, this.centery, 0)
-      this.model_node.scale.set(facing, 1, 1)
+      const b = this.models[model.id]?.scale
+      const s = model.scale
+      const sx = (b?.x ?? 1) * (s?.x ?? 1)
+      const sy = (b?.y ?? 1) * (s?.y ?? 1)
+      const sz = (b?.z ?? 1) * (s?.z ?? 1)
+      this.model_node.scale.set(facing * sx, sy, sz)
+      const rad = model.rad ?? 0
+      this.model_node.rotation.z = facing < 0 ? -rad : rad
     } else {
       this.model_node.visible = false
     }
 
     const { pic } = this.frame;
     const mesh = meshs[0]
-    mesh.visible = visible;
+    mesh.visible = visible && !(model && !pic);
 
     if (pic) {
       const cx = this.centerx + this.shaking_x;

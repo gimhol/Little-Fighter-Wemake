@@ -3,7 +3,7 @@ import type { IWorldRenderer } from "@/LFW/ditto/render/IWorldRenderer";
 import type { Entity } from "@/LFW/entity";
 import type { LFW } from "@/LFW/LFW";
 import type { World } from "@/LFW/World";
-import { CSS2DRenderer, Camera, Object3D, OrthographicCamera, Scene, Vector3, WebGLRenderer } from "../_t";
+import { AmbientLight, CSS2DRenderer, Camera, DirectionalLight, Object3D, OrthographicCamera, Scene, Vector3, WebGLRenderer } from "../_t";
 import { BgRender } from "./BgRender";
 import { EntityRenderer } from "./EntityRenderer";
 import { BG_INDICATINGS } from "./INDICATINGS";
@@ -25,6 +25,8 @@ export class WorldRenderer implements IWorldRenderer {
   readonly bg_offset = new Vector3(0, 0, 0);
   readonly world_node = new Object3D();
   readonly world_offset = new Vector3(0, 0, 0);
+  readonly ambient_light: AmbientLight;
+  readonly directional_light: DirectionalLight;
   readonly is_scene_node = true;
   protected _cameras = new Set<Camera>();
   protected _renderer?: WebGLRenderer;
@@ -103,6 +105,13 @@ export class WorldRenderer implements IWorldRenderer {
       this.ui_bg_camera = this.make_ui_camera(camera, "ui_bg_camera")
       this.ui_fg_camera = this.make_ui_camera(camera, "ui_fg_camera")
     }
+    // 场景光：GLB/GLTF 是 PBR（MeshStandardMaterial），无光则全黑。
+    // 2D 精灵/背景均为 MeshBasicMaterial / 自定义 ShaderMaterial（无光照），不受这些灯影响。
+    this.ambient_light = new AmbientLight(0xffffff, 0.7);
+    this.directional_light = new DirectionalLight(0xffffff, 1.4);
+    // 左上前方照向原点（平行光只看方向）；可后续按观感调整
+    this.directional_light.position.set(-300, 400, 600);
+    this.scene.add(this.ambient_light, this.directional_light);
 
     window.addEventListener('resize', this.on_win_resize)
   }

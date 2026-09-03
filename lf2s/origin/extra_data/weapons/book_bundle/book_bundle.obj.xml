@@ -1,6 +1,7 @@
 <entity id="book_bundle" type="16" processed="true">
   <base type="2" name="book_bundle" weight="1.1" group="VsWeapon,StageWeapon" drop_hurt="200" hit_sounds="data/010.wav.mp3" drop_sounds="data/010.wav.mp3" dead_sounds="data/021.wav.mp3">
     <file id="0" path="sprite/sys/weapon1.png" row="10" col="10" cell_w="58" cell_h="58"/>
+    <model id="book_bundle" path="weapons/book_bundle/book_bundle.glb" scale="20,20,20"/>
     <broken kind="1" oid="999" pos="0,-1" pos_type="1" dv="-1,5" unimportant="1" inherit_speed="0.5,0.5,0.5">
       <action id="0,1,2,3"/>
     </broken>
@@ -23,59 +24,59 @@
   <on_dead id="gone"/>
   <indexes in_the_skys="0,1,2,3,4,5,21" throwings="0,1,2,3,4,5,21" on_hands="10" on_ground="20" just_on_ground="21" throw_on_ground="71"/>
   <frame id="0" name="in_the_sky" state="2000" wait="7" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="0,0,58,58"/>
+    <model id="book_bundle" rad="0"/>
     <next id="1"/>
     <bdy kind="0" hit_flag="63" qube="6,9,44,46"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="1" name="in_the_sky" state="2000" wait="5" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="59,0,58,58"/>
+    <model id="book_bundle" rad="1.0471975511965976"/>
     <next id="2"/>
     <bdy kind="0" hit_flag="63" qube="6,9,44,46"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="2" name="in_the_sky" state="2000" wait="7" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="118,0,58,58"/>
+    <model id="book_bundle" rad="2.0943951023931953"/>
     <next id="3"/>
     <bdy kind="0" hit_flag="63" qube="6,9,44,46"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="3" name="in_the_sky" state="2000" wait="5" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="177,0,58,58"/>
+    <model id="book_bundle" rad="3.141592653589793"/>
     <next id="4"/>
     <bdy kind="0" hit_flag="63" qube="6,9,44,46"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="4" name="in_the_sky" state="2000" wait="7" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="236,0,58,58"/>
+    <model id="book_bundle" rad="4.1887902047863905"/>
     <next id="5"/>
     <bdy kind="0" hit_flag="63" qube="6,9,44,46"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="5" name="in_the_sky" state="2000" wait="5" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="295,0,58,58"/>
+    <model id="book_bundle" rad="5.235987755982989"/>
     <next id="auto"/>
     <bdy kind="0" hit_flag="63" qube="6,9,44,46"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="10" name="on_hand" state="2001" wait="1" center="29,56" size="58,58" no_shadow="1" landable="1" state_label="HeavyWeapon_OnHand">
-    <pic tex="0" rect="295,0,58,58"/>
+    <model id="book_bundle"/>
     <next/>
     <wpoint kind="2" pos="29,56,0" weaponact="35"/>
   </frame>
   <frame id="20" name="on_ground" state="2004" wait="1" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_OnGround">
-    <pic tex="0" rect="295,0,58,58"/>
+    <model id="book_bundle"/>
     <next/>
     <bdy kind="0" qube="11,15,36,40"/>
     <itr hit_flag="63" motionless="0" shaking="0" kind="14" vrest="2" qube="21,37,16,18" test="bdy_kind==0"/>
   </frame>
   <frame id="21" name="just_on_ground" state="2000" wait="3" center="29,56" size="58,58" landable="1" state_label="HeavyWeapon_InTheSky">
-    <pic tex="0" rect="177,0,58,58"/>
+    <model id="book_bundle"/>
     <next id="auto"/>
     <itr kind="0" fall="140" vrest="34" bdefend="60" injury="60" qube="6,9,44,46" dv="5,-7"/>
   </frame>
   <frame id="399" name="dummy" state="0" wait="5" center="29,56" size="58,58" landable="1" state_label="Standing">
-    <pic tex="0" rect="295,0,58,58"/>
+    <model id="book_bundle"/>
     <next id="auto"/>
     <bdy kind="0" qube="1,19,46,15"/>
   </frame>

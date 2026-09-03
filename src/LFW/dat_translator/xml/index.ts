@@ -28,6 +28,7 @@ export * from "./xml_x_entity_data";
 export * from "./xml_x_entity_info";
 export * from "./xml_x_frame";
 export * from "./xml_x_frame_indexes";
+export * from "./xml_x_frame_model";
 export * from "./xml_x_frame_pic";
 export * from "./xml_x_hit_key_map";
 export * from "./xml_x_itr";

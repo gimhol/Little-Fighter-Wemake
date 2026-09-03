@@ -36,6 +36,10 @@ export interface IFrameModel {
   loop?: boolean;
   /** 动画速度倍率（配合 wait 控制节奏） */
   time_scale?: number;
+  /** 整模型绕 Z 轴旋转角（弧度，缺省 0），类似 2D pic 的 rad */
+  rad?: number;
+  /** 帧级缩放系数（x,y,z，缺省 1）；与 base 模型 scale 同时存在时逐轴相乘 */
+  scale?: { x?: number; y?: number; z?: number };
 }
 export function frame_model_new(): IFrameModel {
   return { id: "" }
@@ -46,12 +50,19 @@ const frame_model_pose_fields = fields<IFrameModelPose>({
   rot: flt('旋转(四元数)', { array: true }),
   scl: flt('缩放', { array: true }),
 });
+const vec3_scale_fields = fields<{ x?: number; y?: number; z?: number }>({
+  x: flt('X'),
+  y: flt('Y'),
+  z: flt('Z'),
+});
 export const frame_model_fields = fields<IFrameModel>({
   id: str('模型ID'),
   pose: obj('姿态', { nullable: true, fields: frame_model_pose_fields }),
   anim: str('动画片段', { nullable: true }),
   loop: bool('循环', { nullable: true }),
   time_scale: flt('速度倍率', { nullable: true }),
+  rad: flt('Z轴旋转(弧度)', { nullable: true }),
+  scale: obj('缩放', { nullable: true, fields: vec3_scale_fields }),
 });
 
 export const Schema_IFrameModel = make_schema<IFrameModel>({
@@ -63,5 +74,14 @@ export const Schema_IFrameModel = make_schema<IFrameModel>({
     anim: { type: "string", nullable: true, description: "动画片段名" },
     loop: { type: "boolean", nullable: true, description: "是否循环" },
     time_scale: { type: "number", nullable: true, description: "速度倍率" },
+    rad: { type: "number", nullable: true, description: "Z轴旋转(弧度)" },
+    scale: {
+      type: "object", nullable: true, description: "缩放系数(x,y,z)",
+      properties: {
+        x: { type: "number" },
+        y: { type: "number" },
+        z: { type: "number" },
+      },
+    },
   },
 });

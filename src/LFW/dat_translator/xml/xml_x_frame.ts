@@ -10,6 +10,7 @@ import { xml_2_bdy, xml_x_bdy } from "./xml_x_bdy";
 import { xml_2_bpoint, xml_x_bpoint } from "./xml_x_bpoint";
 import { xml_2_chase, xml_x_chase } from "./xml_x_chase";
 import { xml_2_cpoint, xml_x_cpoint } from "./xml_x_cpoint";
+import { xml_2_frame_model, xml_x_frame_model } from "./xml_x_frame_model";
 import { xml_2_frame_pic, xml_x_frame_pic } from "./xml_x_frame_pic";
 import { xml_2_hit_key_map, xml_x_hit_key_map } from "./xml_x_hit_key_map";
 import { xml_2_itr, xml_x_itr } from "./xml_x_itr";
@@ -25,6 +26,8 @@ export function xml_x_frame(xml: IXML, f: IFrameInfo, tag: string): IXMLElement 
   ret.set_attr("ref", f.ref)
   if (f.pic) ret.insert(xml_x_frame_pic(xml, f.pic, 'pic'))
   if (f.pics) f.pics.forEach(pic => ret.insert(xml_x_frame_pic(xml, pic, 'pic')))
+  const model_el = xml_x_frame_model(xml, f.model, 'model')
+  if (model_el) ret.insert(model_el)
   ret.set_attr("state", f.state)
   ret.set_attr("wait", f.wait)
 
@@ -84,6 +87,8 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   const pics = el.children_by_tag('pic').map(v => xml_2_frame_pic(v));
   if (pics.length > 0) ret.pic = pics[0];
   if (pics.length > 1) ret.pics = pics.slice(1);
+
+  ret.model /**/ = xml_2_frame_model(el.child_by_tag('model'));
 
   ret.state           /**/ = el.get_num("state", ret.state);
   ret.wait            /**/ = el.get_num("wait", ret.wait);
