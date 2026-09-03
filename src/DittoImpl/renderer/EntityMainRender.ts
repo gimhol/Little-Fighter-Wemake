@@ -4,7 +4,7 @@ import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { AnimationMixer, BufferGeometry, Color, DoubleSide, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial } from "../_t";
+import { AnimationMixer, BackSide, BufferGeometry, Color, FrontSide, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
