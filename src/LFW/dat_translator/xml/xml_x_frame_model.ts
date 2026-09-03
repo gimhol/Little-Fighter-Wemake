@@ -30,6 +30,14 @@ export function xml_2_frame_model(el: IXMLElement | undefined): IFrameModel | un
     if (scale[2] != null) s.z = scale[2] as number;
     ret.scale = s;
   }
+  const offset = el.nums_attr_soft("offset");
+  if (offset?.some(v => v != null)) {
+    const s: { x?: number; y?: number; z?: number } = {};
+    if (offset[0] != null) s.x = offset[0] as number;
+    if (offset[1] != null) s.y = offset[1] as number;
+    if (offset[2] != null) s.z = offset[2] as number;
+    ret.offset = s;
+  }
 
   const pose_el = el.child_by_tag("pose");
   if (pose_el) {
@@ -56,6 +64,7 @@ export function xml_x_frame_model(xml: IXML, m: IFrameModel | undefined, tag: st
   ret.set_attr("time_scale", m.time_scale);
   ret.set_attr("rad", m.rad);
   if (m.scale) ret.set_arr_attr_soft("scale", [m.scale.x, m.scale.y, m.scale.z]);
+  if (m.offset) ret.set_arr_attr_soft("offset", [m.offset.x, m.offset.y, m.offset.z]);
   if (m.pose) {
     const pe = xml.create("pose");
     pe.set_attr("bones", m.pose.bones);

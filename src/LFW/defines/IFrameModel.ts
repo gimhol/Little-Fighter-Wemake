@@ -40,6 +40,8 @@ export interface IFrameModel {
   rad?: number;
   /** 帧级缩放系数（x,y,z，缺省 1）；与 base 模型 scale 同时存在时逐轴相乘 */
   scale?: { x?: number; y?: number; z?: number };
+  /** 帧级平移偏移（x,y,z，缺省 0）；与 base 模型 offset 逐轴相加 */
+  offset?: { x?: number; y?: number; z?: number };
 }
 export function frame_model_new(): IFrameModel {
   return { id: "" }
@@ -55,6 +57,11 @@ const vec3_scale_fields = fields<{ x?: number; y?: number; z?: number }>({
   y: flt('Y'),
   z: flt('Z'),
 });
+const vec3_offset_fields = fields<{ x?: number; y?: number; z?: number }>({
+  x: flt('X'),
+  y: flt('Y'),
+  z: flt('Z'),
+});
 export const frame_model_fields = fields<IFrameModel>({
   id: str('模型ID'),
   pose: obj('姿态', { nullable: true, fields: frame_model_pose_fields }),
@@ -63,6 +70,7 @@ export const frame_model_fields = fields<IFrameModel>({
   time_scale: flt('速度倍率', { nullable: true }),
   rad: flt('Z轴旋转(弧度)', { nullable: true }),
   scale: obj('缩放', { nullable: true, fields: vec3_scale_fields }),
+  offset: obj('偏移', { nullable: true, fields: vec3_offset_fields }),
 });
 
 export const Schema_IFrameModel = make_schema<IFrameModel>({
@@ -77,6 +85,14 @@ export const Schema_IFrameModel = make_schema<IFrameModel>({
     rad: { type: "number", nullable: true, description: "Z轴旋转(弧度)" },
     scale: {
       type: "object", nullable: true, description: "缩放系数(x,y,z)",
+      properties: {
+        x: { type: "number" },
+        y: { type: "number" },
+        z: { type: "number" },
+      },
+    },
+    offset: {
+      type: "object", nullable: true, description: "平移偏移(x,y,z)",
       properties: {
         x: { type: "number" },
         y: { type: "number" },

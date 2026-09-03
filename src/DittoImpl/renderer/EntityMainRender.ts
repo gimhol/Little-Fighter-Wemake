@@ -1,17 +1,18 @@
 import type { Entity, IEntityData, IFrameInfo, IFramePic, IPictureInfo, TFace } from "@/LFW";
-import { Buff_Electroshock, clamp, cos, floor, LFW, max, sin, StateEnum, World } from "@/LFW";
+import { Buff_Electroshock, clamp, cos, floor, LFW, max, sin, World } from "@/LFW";
 import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
-import { AnimationMixer, BufferGeometry, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion } from "../_t";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { ModelCache, type IModelCacheEntry } from "./ModelCache";
+import { AnimationMixer, BufferGeometry, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
 import { MeshFactory, MeshKind } from "./factory";
 import { OutlineMaterial } from "./materials/OutlineMaterial";
 import { OutlineMesh } from "./meshs/OutlineMesh";
+import { clone as clone_skeleton } from "three/addons/utils/SkeletonUtils.js";
+import { ModelCache, type IModelCacheEntry } from "./ModelCache";
 import type { WorldRenderer } from "./WorldRenderer";
 
 const get_img_map = (lfw: LFW, data: IEntityData, out: Map<string, RImageInfo>): void => {
@@ -50,7 +51,6 @@ export class EntityMainRender {
   protected model_variants = new Map<string, string[]>();
   protected model_node = new Object3D();
   protected model_key = "";
-  /** 当前挂载的模型缓存 key（用于引用计数 release） */
   protected model_path = "";
   protected mixer: AnimationMixer | undefined;
   protected mixer_actions = new Map<string, AnimationAction>();
@@ -192,15 +192,21 @@ export class EntityMainRender {
     if (model) {
       this.update_model(model)
       this.update_model_visual(model)
-      this.model_node.visible = visible
-      this.model_node.position.set(this.centerx + this.shaking_x, this.centery, 0)
       const b = this.models[model.id]?.scale
       const s = model.scale
       const sx = (b?.x ?? 1) * (s?.x ?? 1)
       const sy = (b?.y ?? 1) * (s?.y ?? 1)
       const sz = (b?.z ?? 1) * (s?.z ?? 1)
-      this.model_node.scale.set(facing * sx, sy, sz)
       const rad = model.rad ?? 0
+      // 平移 = base 模型 offset + 帧 model offset（缺省 0，逐轴相加，y 向上为正）
+      const bo = this.models[model.id]?.offset
+      const fo = model.offset
+      const ox = (bo?.x ?? 0) + (fo?.x ?? 0)
+      const oy = (bo?.y ?? 0) + (fo?.y ?? 0)
+      const oz = (bo?.z ?? 0) + (fo?.z ?? 0)
+      this.model_node.visible = visible
+      this.model_node.position.set(this.shaking_x + ox, oy, oz)
+      this.model_node.scale.set(facing * sx, sy, sz)
       this.model_node.rotation.z = facing < 0 ? -rad : rad
     } else {
       this.model_node.visible = false
@@ -299,20 +305,21 @@ export class EntityMainRender {
     }
   }
 
-  /** 挂载模型到 model_node；替换旧模型时释放其引用（全局缓存决定是否回收） */
   private attach_model(path: string, cache: IModelCacheEntry): void {
-    const root = cache.root
+    if (this.model_path === path) return
     const old_path = this.model_path
-    if (old_path && old_path !== path) {
-      const old = this.model_node.children[0] as Object3D | undefined
-      if (old && old !== root) this.model_node.remove(old)
+    if (old_path) {
+      this.model_node.clear()
       ModelCache.instance.release(old_path)
     }
     ModelCache.instance.retain(path)
-    this.model_node.add(root)
+    // 缓存 root 是共享模板（同一 Object3D 只能有一个父节点），直接 add 会被后挂载者抢走 → 只剩一个可见。
+    // 每个实体克隆一棵场景图：SkeletonUtils.clone 几何/材质仍共享，蒙皮会克隆并重绑骨架供逐实体动画。
+    const clone = clone_skeleton(cache.root)
+    this.model_node.add(clone)
     this.model_node.visible = true
-    this.collect_bones(root)
-    this.setup_mixer(root, cache.animations)
+    this.collect_bones(clone)
+    this.setup_mixer(clone, cache.animations)
     this.playing_anim = ""
     this.prev_lifetime = this.entity.lifetime
     this.model_path = path

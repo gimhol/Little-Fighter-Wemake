@@ -106,6 +106,8 @@ export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
     };
     const scale = m.nums_attr_soft("scale");
     if (scale?.some(v => v !== void 0)) model.scale = { x: scale[0], y: scale[1], z: scale[2] };
+    const offset = m.nums_attr_soft("offset");
+    if (offset?.some(v => v !== void 0)) model.offset = { x: offset[0], y: offset[1], z: offset[2] };
     const quat = m.nums_attr_soft("quaternion");
     if (quat?.some(v => v !== void 0)) model.quaternion = { x: quat[0], y: quat[1], z: quat[2], w: quat[3] };
     models[name] = model;
