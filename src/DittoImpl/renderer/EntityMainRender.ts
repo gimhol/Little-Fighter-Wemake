@@ -4,13 +4,14 @@ import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { AnimationMixer, BufferGeometry, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion } from "../_t";
+import { AnimationMixer, BufferGeometry, Color, DoubleSide, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
 import { MeshFactory, MeshKind } from "./factory";
 import { OutlineMaterial } from "./materials/OutlineMaterial";
 import { OutlineMesh } from "./meshs/OutlineMesh";
+import { Shaders } from "./shader";
 import { clone as clone_skeleton } from "three/addons/utils/SkeletonUtils.js";
 import { ModelCache, type IModelCacheEntry } from "./ModelCache";
 import type { WorldRenderer } from "./WorldRenderer";
@@ -24,6 +25,37 @@ const get_img_map = (lfw: LFW, data: IEntityData, out: Map<string, RImageInfo>):
     img && out.set(key, img.clone());
   }
 };
+
+function make_model_hull_material(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uOutline: { value: 0 },
+      uColor: { value: new Color('#000000') },
+      uAlpha: { value: 1 },
+    },
+    vertexShader: Shaders.Vertex.ModelOutline,
+    fragmentShader: Shaders.Fragment.ModelOutline,
+    transparent: true,
+    depthWrite: false,
+    side: DoubleSide,
+  })
+}
+
+function build_model_hulls(root: Object3D): Mesh[] {
+  const hulls: Mesh[] = []
+  root.traverse(obj => {
+    const mesh = obj as Mesh
+    if (!mesh.isMesh) return
+    const geo = mesh.geometry as BufferGeometry
+    if (!geo?.getAttribute?.('normal')) return
+    const hull = new Mesh(geo, make_model_hull_material())
+    hull.name = 'model_outline_hull'
+    hull.visible = false
+    mesh.parent?.add(hull)
+    hulls.push(hull)
+  })
+  return hulls
+}
 
 
 export class EntityMainRender {
@@ -52,6 +84,9 @@ export class EntityMainRender {
   protected model_node = new Object3D();
   protected model_key = "";
   protected model_path = "";
+  protected model_hulls: Mesh[] = [];
+  protected model_sx = 1;
+  protected model_outline_key = "";
   protected mixer: AnimationMixer | undefined;
   protected mixer_actions = new Map<string, AnimationAction>();
   protected bone_list: Bone[] = [];
@@ -198,6 +233,8 @@ export class EntityMainRender {
       const sy = (b?.y ?? 1) * (s?.y ?? 1)
       const sz = (b?.z ?? 1) * (s?.z ?? 1)
       const rad = model.rad ?? 0
+      this.model_sx = Math.max(Math.abs(sx), 1e-4)
+      this.update_model_outline()
       // 平移 = base 模型 offset + 帧 model offset（缺省 0，逐轴相加，y 向上为正）
       const bo = this.models[model.id]?.offset
       const fo = model.offset
@@ -310,12 +347,15 @@ export class EntityMainRender {
     const old_path = this.model_path
     if (old_path) {
       this.model_node.clear()
+      this.dispose_model_hulls()
       ModelCache.instance.release(old_path)
     }
     ModelCache.instance.retain(path)
     // 缓存 root 是共享模板（同一 Object3D 只能有一个父节点），直接 add 会被后挂载者抢走 → 只剩一个可见。
     // 每个实体克隆一棵场景图：SkeletonUtils.clone 几何/材质仍共享，蒙皮会克隆并重绑骨架供逐实体动画。
     const clone = clone_skeleton(cache.root)
+    this.model_hulls = build_model_hulls(clone)
+    this.model_outline_key = ""
     this.model_node.add(clone)
     this.model_node.visible = true
     this.collect_bones(clone)
@@ -471,6 +511,34 @@ export class EntityMainRender {
       this.model_path = ""
     }
     this.model_node.clear()
+    this.dispose_model_hulls()
+    this.model_sx = 1
+    this.model_outline_key = ""
+  }
+
+  private dispose_model_hulls(): void {
+    for (const hull of this.model_hulls) {
+      (hull.material as ShaderMaterial)?.dispose?.()
+    }
+    this.model_hulls = []
+  }
+
+  private update_model_outline(): void {
+    const hulls = this.model_hulls
+    if (!hulls.length) return
+    const { ghosted, outline_color, outline_alpha, outline_width, outline_enabled } = this.entity
+    const show = !ghosted && !!outline_color && !!outline_alpha && !!outline_enabled
+    const key = `${show}:${outline_color || ''}:${outline_alpha}:${outline_width}:${outline_enabled}:${this.model_sx}`
+    if (key === this.model_outline_key) return
+    this.model_outline_key = key
+    const width_local = show ? outline_width / this.model_sx : 0
+    for (const hull of hulls) {
+      const m = hull.material as ShaderMaterial
+      m.uniforms.uOutline.value = width_local
+      m.uniforms.uColor.value.set(outline_color || '#000')
+      m.uniforms.uAlpha.value = show ? outline_alpha : 0
+      hull.visible = show
+    }
   }
 
   private update_mesh_position(pic: IFramePic, mesh: Mesh<BufferGeometry, OutlineMaterial>, cx: number, cy: number, cz: number) {
