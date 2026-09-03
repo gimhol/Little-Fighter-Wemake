@@ -44,12 +44,18 @@ function make_model_hull_material(center: Vector3): ShaderMaterial {
 }
 
 function build_model_hulls(root: Object3D): Mesh[] {
-  const hulls: Mesh[] = []
+  // 先收集目标 mesh，遍历结束后再挂 hull。
+  // 若在 traverse 回调里给 mesh.add(hull)，three 的 traverse 会继续下钻到刚
+  // 挂上的 hull（它同样带 normal 的 Mesh）再挂一层……无限递归导致卡死。
+  const meshes: Mesh[] = []
   root.traverse(obj => {
     const mesh = obj as Mesh
-    if (!mesh.isMesh) return
+    if (mesh.isMesh) meshes.push(mesh)
+  })
+  const hulls: Mesh[] = []
+  for (const mesh of meshes) {
     const geo = mesh.geometry as BufferGeometry
-    if (!geo?.getAttribute?.('normal')) return
+    if (!geo?.getAttribute?.('normal')) continue
     // 外扩中心取 mesh 自身几何包围盒中心，而非模型原点：
     // 封闭外壳始终围绕自身，单 mesh 物品（盒体/球等）硬边也能得到连续描边
     geo.computeBoundingBox()
@@ -58,9 +64,13 @@ function build_model_hulls(root: Object3D): Mesh[] {
     const hull = new Mesh(geo, make_model_hull_material(center))
     hull.name = 'model_outline_hull'
     hull.visible = false
-    mesh.parent?.add(hull)
+    // 挂到 mesh 节点自身之下而非其兄弟节点：mesh 节点通常自带 rotation/
+    // translation（如 book_bundle 的 Cube 节点带旋转），兄弟节点不会继承该
+    // 变换，会导致外壳与模型错位。作为子节点则继承节点变换，且顶点偏移仍
+    // 在 mesh 局部空间进行（偏移方向随模型一起旋转，保持均匀外扩）。
+    mesh.add(hull)
     hulls.push(hull)
-  })
+  }
   return hulls
 }
 
@@ -539,7 +549,8 @@ export class EntityMainRender {
     if (key === this.model_outline_key) return
     this.model_outline_key = key
     // 世界宽度（像素/LF2 单位）→ 本地外扩：除以模型缩放
-    const width_local = show ? outline_width / this.model_sx : 0
+    // 3D hull 默认比 2D 精灵描边再宽 1px，视觉上更清晰
+    const width_local = show ? (outline_width + 1) / this.model_sx : 0
     for (const hull of hulls) {
       const m = hull.material as ShaderMaterial
       m.uniforms.uOutline.value = width_local
