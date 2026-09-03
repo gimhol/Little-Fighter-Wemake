@@ -4,7 +4,7 @@ import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { AnimationMixer, BackSide, BufferGeometry, Color, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial } from "../_t";
+import { AnimationMixer, BackSide, BufferGeometry, Color, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, Vector3 } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -26,10 +26,11 @@ const get_img_map = (lfw: LFW, data: IEntityData, out: Map<string, RImageInfo>):
   }
 };
 
-function make_model_hull_material(): ShaderMaterial {
+function make_model_hull_material(center: Vector3): ShaderMaterial {
   return new ShaderMaterial({
     uniforms: {
       uOutline: { value: 0 },
+      uCenter: { value: center },
       uColor: { value: new Color('#000000') },
       uAlpha: { value: 1 },
     },
@@ -49,7 +50,12 @@ function build_model_hulls(root: Object3D): Mesh[] {
     if (!mesh.isMesh) return
     const geo = mesh.geometry as BufferGeometry
     if (!geo?.getAttribute?.('normal')) return
-    const hull = new Mesh(geo, make_model_hull_material())
+    // 外扩中心取 mesh 自身几何包围盒中心，而非模型原点：
+    // 封闭外壳始终围绕自身，单 mesh 物品（盒体/球等）硬边也能得到连续描边
+    geo.computeBoundingBox()
+    const center = new Vector3()
+    geo.boundingBox?.getCenter(center)
+    const hull = new Mesh(geo, make_model_hull_material(center))
     hull.name = 'model_outline_hull'
     hull.visible = false
     mesh.parent?.add(hull)
