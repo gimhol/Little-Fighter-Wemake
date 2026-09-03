@@ -4,7 +4,7 @@ import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { AnimationMixer, BackSide, BufferGeometry, Color, FrontSide, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial } from "../_t";
+import { AnimationMixer, BackSide, BufferGeometry, Color, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -527,10 +527,9 @@ export class EntityMainRender {
   private update_model_outline(): void {
     const hulls = this.model_hulls
     if (!hulls.length) return
-    const { ghosted, outline_color, outline_alpha, outline_width, outline_enabled, facing } = this.entity
+    const { ghosted, outline_color, outline_alpha, outline_width, outline_enabled } = this.entity
     const show = !ghosted && !!outline_color && !!outline_alpha && !!outline_enabled
-    const left = facing < 0
-    const key = `${show}:${left}:${outline_color || ''}:${outline_alpha}:${outline_width}:${outline_enabled}:${this.model_sx}`
+    const key = `${show}:${outline_color || ''}:${outline_alpha}:${outline_width}:${outline_enabled}:${this.model_sx}`
     if (key === this.model_outline_key) return
     this.model_outline_key = key
     // 世界宽度（像素/LF2 单位）→ 本地外扩：除以模型缩放
@@ -540,8 +539,9 @@ export class EntityMainRender {
       m.uniforms.uOutline.value = width_local
       m.uniforms.uColor.value.set(outline_color || '#000')
       m.uniforms.uAlpha.value = show ? outline_alpha : 0
-      // scale.x=-1 镜像会反转绕序，需把“背面”翻到 FrontSide，保证只露轮廓不盖模型
-      m.side = left ? FrontSide : BackSide
+      // 恒定 BackSide：three 会按 matrixWorld 行列式为负自动翻转 frontFace，
+      // 镜像(scale.x=-1)时仍渲染世界背面(far side)，不会把外扩正面盖到模型上
+      m.side = BackSide
       hull.visible = show
     }
   }

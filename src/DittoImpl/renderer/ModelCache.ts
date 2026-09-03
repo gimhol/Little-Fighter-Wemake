@@ -1,20 +1,6 @@
 import type { LFW } from "@/LFW";
-import { AnimationClip, DoubleSide, Mesh, MeshBasicMaterial, Object3D } from "../_t";
+import { AnimationClip, Mesh, MeshBasicMaterial, Object3D } from "../_t";
 import { ZipGLTFLoader } from "./GLTFZipLoader";
-
-/** 把模型根下所有材质设为双面：实体朝左用 scale.x=-1 镜像会反转绕序，
- * 若不双面渲染会被 FrontSide 背面剔除导致整模型不可见 */
-function make_double_sided(root: Object3D): void {
-  root.traverse(obj => {
-    const mesh = obj as Mesh
-    if (!mesh.isMesh) return
-    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-    for (const m of mats) {
-      const mat = m as { isMaterial?: boolean; side?: unknown }
-      if (mat?.isMaterial && 'side' in mat) mat.side = DoubleSide
-    }
-  })
-}
 
 export interface IModelCacheEntry {
   root: Object3D;
@@ -65,8 +51,8 @@ export class ModelCache {
     const [buf] = await lfw.import_array_buffer(path, exact)
     const gltf = await loader.parse_package(buf, ModelCache.glb_dir_of(path))
     const root = gltf.scene ?? new Object3D()
-    // 朝向镜像用 scale.x=-1（会反转绕序），统一双面渲染，避免被 FrontSide 背面剔除
-    make_double_sided(root)
+    // 材质保留 GLB 自身 side：镜像(scale.x=-1)时 three 会按负行列式自动翻转 frontFace，
+    // FrontSide 材质左右两向都能正确渲染（无需强制双面）。
     const entry: IModelCacheEntry = {
       root,
       animations: gltf.animations ?? [],
