@@ -27,7 +27,9 @@ export function handle_weapon_hit_other(collision: Collision): void {
         attacker.data.indexes?.throwings,
         attacker.data.indexes?.in_the_skys
       )
+      const { arest } = attacker
       attacker.enter_frame(nf);
+      attacker.arest = arest;
       break;
   }
 }

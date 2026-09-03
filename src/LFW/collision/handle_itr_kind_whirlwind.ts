@@ -1,4 +1,4 @@
-import { StateEnum } from "../defines";
+import { StateEnum, WT } from "../defines";
 import { is_ball, is_weapon } from "../entity";
 import { round } from "../utils/math/base";
 import { normalize } from "../utils/math/normalize";
@@ -25,6 +25,9 @@ export function handle_itr_kind_whirlwind(c: Collision) {
   victim.set_velocity(vx, vy, vz);
 
   if (!is_weapon(victim)) return;
+  if (!victim.bearer && victim.base_type !== WT.Heavy) {
+    victim.team = attacker.team;
+  }
 
   switch (victim.state) {
     case StateEnum.Weapon_OnHand:

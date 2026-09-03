@@ -91,8 +91,8 @@ export namespace Defines {
     [WT.Stick]:     /**/ 99,
     [WT.Heavy]:     /**/ 1,
     [WT.Knife]:     /**/ 99,
-    [WT.Baseball]:  /**/ 4,
-    [WT.Drink]:     /**/ 4,
+    [WT.Baseball]:  /**/ 4.5,
+    [WT.Drink]:     /**/ 4.5,
   }
   export const WT_FAST_Z: Record<WT, number> = {
     [WT.None]:     /**/ 99,
