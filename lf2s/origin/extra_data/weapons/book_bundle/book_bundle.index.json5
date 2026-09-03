@@ -1,0 +1,9 @@
+{
+  objects:[
+    {
+      id: "book_bundle",
+      type: "4",
+      file: "weapons/book_bundle/book_bundle.obj.xml",
+    },
+  ]
+}
