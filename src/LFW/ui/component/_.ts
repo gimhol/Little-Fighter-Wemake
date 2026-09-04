@@ -7,6 +7,7 @@ export const regist_components = () => {
   _registed = true;
   [
     _.Alignment,
+    _.ArrowSwitcher,
     _.BGMSwitcher,
     _.BackgroundSwitcher,
     _.CameraCtrl,

@@ -114,6 +114,14 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   get lang(): string { return this._i18n.lang }
   set lang(v: string) { this.set_lang(v) }
 
+  /**
+   * 把语言码（可为地区码/别名，如 'zh-cn'、'en-us'）解析成规范码
+   * （'zh-hans' / 'zh-hant' / '' 等，沿别名表解析到无别名为止）。
+   */
+  canonical_lang(lang: string = this.lang): string {
+    return this._i18n.canonical(lang);
+  }
+
   set_lang(lang: string): void {
     if (!is_str(lang)) {
       this.warn('set_lang', `lang should be string, but got ${lang}`)

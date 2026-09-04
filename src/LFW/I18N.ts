@@ -69,6 +69,16 @@ export class I18N {
     return ret;
   }
 
+  /**
+   * 沿别名表把语言解析到“无别名”的规范码
+   *
+   * 例：'zh-cn' → 'zh-hans'、'en-us' → ''、'fr' → 'fr'。
+   * 无别名（含 ''）时返回自身。
+   */
+  canonical(lang = this._lang): string {
+    return this.alias(lang) ?? lang;
+  }
+
   string(name: string, lang = this._lang): string {
     const m = this._words.get(lang);
     if (lang == '') return m?.[name] ?? name;

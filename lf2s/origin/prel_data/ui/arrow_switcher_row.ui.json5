@@ -1,0 +1,97 @@
+{
+  id: "arrow_switcher_row",
+  name: "arrow_switcher_row",
+  size: "600,36",
+  center: "0.5,0.5",
+  component: [
+    {
+      cls: "Flex",
+      properties: {
+        direction: "row",
+        align: "center",
+      },
+    },
+    {
+      cls: "FocusBehavior",
+    },
+    {
+      cls: "HoverBehavior",
+      properties: {
+        behavior: "focus",
+      },
+    },
+    "Reachable(misc_settings)",
+  ],
+  items: [
+    {
+      size: "140,36",
+      center: "0.5,0.5",
+      items: [
+        {
+          center: "0.5,0.5",
+          i18n: "$val:prefix",
+          style: {
+            font: "18px Arial",
+            fill_style: "#5A73D6",
+          },
+          component: [
+            {
+              cls: "Label",
+              id: "prefix_label",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "switcher_bar_node",
+      size: "440,36",
+      color: "#00000099",
+      center: "0.5,0.5",
+      component: [
+        {
+          cls: "ArrowSwitcher",
+          properties: {
+            items: "$val:items",
+            left: "arrow_left",
+            right: "arrow_right",
+            label: "value_label",
+            responser: "parent:1",
+            left_text: "◀",
+            right_text: "▶",
+          },
+        },
+      ],
+      items: [
+        {
+          id: "arrow_left",
+          pos: "-176,0",
+          size: "40,36",
+          center: "0.5,0.5",
+          style: {
+            font: "18px Arial",
+            fill_style: "#5A73D6",
+          },
+        },
+        {
+          id: "value_label",
+          center: "0.5,0.5",
+          style: {
+            font: "18px Arial",
+            fill_style: "#FFFFFF",
+          },
+        },
+        {
+          id: "arrow_right",
+          pos: "176,0",
+          size: "40,36",
+          center: "0.5,0.5",
+          style: {
+            font: "18px Arial",
+            fill_style: "#5A73D6",
+          },
+        },
+      ],
+    },
+  ],
+}

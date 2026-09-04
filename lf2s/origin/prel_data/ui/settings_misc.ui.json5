@@ -35,6 +35,14 @@
       ],
       items: [
         {
+          id: "language_row",
+          values: {
+            prefix: "language",
+            items: "lang.en,lang.zh-hans,lang.zh-hant,lang.de,lang.es,lang.fr,lang.it,lang.ja,lang.ko,lang.nl,lang.pl,lang.pt,lang.ru",
+          },
+          template: "ui/arrow_switcher_row.ui.json5",
+        },
+        {
           id: "main_volume_row",
           values: {
             prefix: "main_volume",

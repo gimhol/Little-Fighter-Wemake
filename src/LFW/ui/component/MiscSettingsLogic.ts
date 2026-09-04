@@ -2,6 +2,7 @@ import { SyncRenderEnum } from "../../defines/SyncRenderEnum";
 import type { ISoundsCallback } from "../../ditto/sounds/ISoundsCallback";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import { round_float } from "../../utils/math/round_float";
+import { ArrowSwitcher } from "./Slider/ArrowSwitcher";
 import { SliderHandle } from "./Slider/SliderHandle";
 import { UIComponent } from "./UIComponent";
 const render_rate_options = [
@@ -11,6 +12,8 @@ const render_rate_options = [
   SyncRenderEnum.FPS_120,
   SyncRenderEnum.Unlimited
 ]
+/** 语言行选项顺序，须与 language_row 的 items 一致（'' 表示英文 base） */
+const lang_codes = ["", "zh-hans", "zh-hant", "de", "es", "fr", "it", "ja", "ko", "nl", "pl", "pt", "ru"]
 export class MiscSettingsLogic extends UIComponent {
   static override readonly TAGS: string[] = ["MiscSettingsLogic"];
   protected _anys: { [x in string]?: any } = {}
@@ -22,6 +25,7 @@ export class MiscSettingsLogic extends UIComponent {
   get render_rate(): SliderHandle | undefined   /**/ { return this._anys.f ||= this.node.search_node("render_rate_row")?.search_component(SliderHandle) }
   get main_volume(): SliderHandle | undefined   /**/ { return this._anys.g ||= this.node.search_node("main_volume_row")?.search_component(SliderHandle) }
   get ups(): SliderHandle | undefined           /**/ { return this._anys.h ||= this.node.search_node("ups_row")?.search_component(SliderHandle) }
+  get lang_row(): ArrowSwitcher | undefined    /**/ { return this._anys.i ||= this.node.search_node("language_row")?.search_component(ArrowSwitcher) }
 
 
   cbs: ISoundsCallback = {
@@ -82,6 +86,10 @@ export class MiscSettingsLogic extends UIComponent {
       this.world.dataset.key_hit_duration = key_hit_duration_arr[v];
       this.lfw.sounds.play_preset('ok')
     })
+    this.lang_row?.on_value_changed((v) => {
+      this.lfw.set_lang(lang_codes[v]);
+      this.lfw.sounds.play_preset('ok')
+    })
   }
 
   override on_resume(): void {
@@ -94,6 +102,8 @@ export class MiscSettingsLogic extends UIComponent {
     this.render_rate?.set_value(render_rate_options.indexOf(this.world.dataset.sync_render));
     const ups_arr = [30, 60, 90, 120]
     this.ups?.set_value(ups_arr.indexOf(this.world.dataset.UPS));
+    const cur_lang = this.lfw.canonical_lang();
+    this.lang_row?.set_value(lang_codes.indexOf(cur_lang));
   }
   override on_stop(): void {
     this.lfw.sounds.callbacks.del(this.cbs)
