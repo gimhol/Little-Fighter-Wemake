@@ -41,6 +41,7 @@ export interface IUIInfo {
   size?: number[] | string;
   visible?: boolean | string;
   disabled?: boolean | string;
+  clips?: boolean | string;
   color?: string;
   background?: string;
   backgroundAlpha?: number | string;

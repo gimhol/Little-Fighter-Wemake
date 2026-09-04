@@ -64,6 +64,8 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   if (visible != null) ret.visible = visible === 'true';
   const disabled = el.attr('disabled');
   if (disabled != null) ret.disabled = disabled === 'true';
+  const clips = el.attr('clips');
+  if (clips != null) ret.clips = clips === 'true';
   const bgAlpha = el.attr('backgroundAlpha');
   if (bgAlpha != null) ret.backgroundAlpha = Number(bgAlpha);
   const fgAlpha = el.attr('foregroundAlpha');
