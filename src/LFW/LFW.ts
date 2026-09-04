@@ -556,19 +556,6 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     if (i >= 0) LFW.instances.splice(i, 1);
   }
 
-  add_puppet(player_id: string, oid: string, team: string = ''): void {
-    this.push_cmd(
-      CMD.SET_PUPPET,
-      `--player_id=${player_id}`,
-      `--oid=${oid}`,
-      `--team=${team}`
-    )
-  }
-
-  del_puppet(player_id: string): void {
-    this.push_cmd(CMD.DEL_PUPPET, player_id)
-  }
-
   change_bg(bg: string): void {
     this.world.change_bg(bg);
   }
@@ -576,7 +563,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   change_stage(stage: string): void {
     this.world.change_stage(stage);
   }
-  
+
   goto_next_stage() {
     this.debug(`goto_next_stage`)
     const next = this.world.stage.data.next;

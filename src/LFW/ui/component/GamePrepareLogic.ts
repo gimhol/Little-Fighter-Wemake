@@ -77,7 +77,6 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
         debugger;
         continue;
       }
-
       const fighter = this.lfw.factory.create_entity(this.world, fighter_data)
       if (!fighter) {
         Ditto.warn(`[${GamePrepareLogic.TAG}::start_game] failed to create fighter. figher data: ${fighter_data}`);

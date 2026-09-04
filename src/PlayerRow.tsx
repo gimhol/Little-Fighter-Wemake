@@ -106,7 +106,7 @@ export function PlayerRow(props: Props) {
   if (!lfw || visible === false) return null;
 
   const on_click_toggle = () => {
-    if (puppet) { lfw.del_puppet(info.id) }
+    if (puppet) { lfw.push_cmd(CMD.DEL_PUPPET, info.id) }
     const _oid = oid ?? lfw.datas.fighters[Math.floor(Math.random() * lfw.datas.fighters.length)]?.id;
     if (!_oid) { debugger; return; }
     lfw.push_cmd(
