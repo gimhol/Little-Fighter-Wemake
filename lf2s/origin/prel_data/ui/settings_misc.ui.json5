@@ -20,20 +20,35 @@
 
   items: [
     {
-      id: "settings_misc_view",
+      id: "settings_view",
+      size: "600,323",
       component: [
         {
-          cls: "Flex",
+          cls: "ScrollView",
           properties: {
-            direction: "column",
-            align: "center",
-            gap: 5,
-            padding: "0,0,0,0",
-            fit: true,
+            direction: "col",
+            content: "settings_list",
+            scrollbar: "misc_scrollbar",
+            step: 41,
           },
         },
       ],
       items: [
+        {
+          id: "settings_list",
+          component: [
+            {
+              cls: "Flex",
+              properties: {
+                direction: "column",
+                align: "center",
+                gap: 5,
+                padding: "0,0,0,0",
+                fit: true,
+              },
+            },
+          ],
+          items: [
         {
           id: "language_row",
           values: {
@@ -147,24 +162,26 @@
           template: "ui/switcher_row.ui.json5",
         },
       ],
+        },
+      ],
     },
     {
+      id: "settings_scrollbar",
       size: "36,323",
       color: "black",
       center: "0.5,0.5",
       items: [
         {
+          id: "scroll_thumb",
           size: "36,36",
           color: "white",
           center: "0.5,0.5",
           component: [
             {
               cls: "SliderHandle",
+              id: "misc_scrollbar",
               properties: {
-                mode: "items_scroll_bar",
                 direction: "col",
-                visible_items: 8,
-                items_container: "id:settings_misc_view",
               },
             },
           ],
