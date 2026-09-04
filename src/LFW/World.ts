@@ -3,7 +3,7 @@ import { FPS } from './base/FPS';
 import { Background } from "./bg/Background";
 import { Buff } from "./buff/Buff";
 import { Camera } from './Camera';
-import { CMDS } from './cmds/CMDS';
+import { CMDS } from './cmds';
 import { type Collision, collision_get } from "./collision/Collision";
 import { collisions_keeper } from "./collision/CollisionKeeper";
 import {

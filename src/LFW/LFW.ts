@@ -570,13 +570,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
 
   change_bg(bg: string): void {
-    this.world.change_bg(bg)
-    // this.push_cmd(CMD.CHANGE_BG, bg)
+    this.world.change_bg(bg);
   }
+
   change_stage(stage: string): void {
-    this.world.change_stage(stage)
-    // this.push_cmd(CMD.CHANGE_STAGE, stage)
+    this.world.change_stage(stage);
   }
+  
   goto_next_stage() {
     this.debug(`goto_next_stage`)
     const next = this.world.stage.data.next;

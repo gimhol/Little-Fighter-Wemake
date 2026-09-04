@@ -53,7 +53,14 @@ export const enum CMD {
   BGM = "bgm",
   /** 暂停 */
   PAUSE = "PAUSE",
+  /** 生成实体 */
+  SPAWN = "SPAWN",
+  /** 移除指定实体（直接删除） */
+  DESPAWN = "DESPAWN",
+  /** 击杀指定实体（hp=0，触发死亡流程） */
+  KILL = "KILL"
 }
+
 export const CMD_NAMES: Record<CMD, string> = {
   [CMD.F1]: "F1",
   [CMD.F2]: "F2",
@@ -80,5 +87,8 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.CHANGE_BG]: "CHANGE_BG",
   [CMD.CHANGE_STAGE]: "CHANGE_STAGE",
   [CMD.BGM]: "BGM",
-  [CMD.PAUSE]: "PAUSE"
+  [CMD.PAUSE]: "PAUSE",
+  [CMD.SPAWN]: "SPAWN",
+  [CMD.DESPAWN]: "DESPAWN",
+  [CMD.KILL]: "KILL",
 }
