@@ -92,9 +92,8 @@ export class UIInputHandle implements IUIInputHandle {
     }
     this._pointer_down_uis.clear()
   }
-  on_click(e: IPointingEvent): void {
-    // throw new Error("Method not implemented.");
-  }
+  on_click(e: IPointingEvent): void { }
+  on_wheel(e: IPointingEvent): void { }
   protected intersections(x: number, y: number, ui: UINode): IIntersection[] {
     this.pointer_vec_2.x = x;
     this.pointer_vec_2.y = y;
@@ -109,6 +108,12 @@ export class UIInputHandle implements IUIInputHandle {
       const ui = t.object.userData.owner;
       if (!(ui instanceof UINode)) continue;
       if (!ui.visible || ui.disabled) continue;
+      // overflow:hidden 裁剪：命中点落在祖先视口矩形之外的部分不响应指针
+      const clip = (ui.renderer as UINodeRenderer).effective_clip_rect(true);
+      if (clip) {
+        const { x: px, y: py } = t.point;
+        if (px < clip.x0 || px > clip.x1 || py < clip.y0 || py > clip.y1) continue;
+      }
       const item = { extra: ui, point: t.point }
       ret.push(item);
     }
