@@ -4,7 +4,7 @@
     bgm: "BGM",
     sfx: "Efekty dźwiękowe",
     bgm_volume: "Głośność BGM",
-    sfx_volume: "Głośność efektów dźwiękowych",
+    sfx_volume: "Głośność SFX",
     team_outline: "Obrys drużyny",
     sync_0: "Bez limitu",
     sync_1: "Połowa",

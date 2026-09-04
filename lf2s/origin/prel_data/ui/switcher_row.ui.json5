@@ -1,7 +1,7 @@
 {
   id: "switcher_row",
   name: "switcher_row",
-  size: "600,36",
+  size: "700,36",
   center: "0.5,0.5",
   component: [
     {
@@ -24,7 +24,7 @@
   ],
   items: [
     {
-      size: "140,36",
+      size: "180,36",
       center: "0.5,0.5",
       items: [
         {
@@ -45,13 +45,13 @@
     },
     {
       id: "slider_bar_node",
-      size: "440,36",
+      size: "520,36",
       color: "#00000099",
       center: "0.5,0.5",
       items: [
         {
           id: "options_node",
-          size: "440,36",
+          size: "520,36",
           center: "0.5,0.5",
           items: [
             {

@@ -21,7 +21,7 @@
   items: [
     {
       id: "settings_view",
-      size: "600,323",
+      size: "700,323",
       component: [
         {
           cls: "ScrollView",

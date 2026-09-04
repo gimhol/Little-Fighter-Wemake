@@ -13,6 +13,10 @@ export interface IArrowSwitcherProps {
   left?: UINode;
   /** 右箭头节点（点击 +1） */
   right?: UINode;
+  /** 左箭头高亮叠层节点（hover 时淡入，与左箭头同字形同位置） */
+  left_hl?: UINode;
+  /** 右箭头高亮叠层节点（hover 时淡入） */
+  right_hl?: UINode;
   /** 当前选项文字节点：每次变化 set_text(items[value]) */
   label?: UINode;
   /** 键盘 ◀/▶ 生效所需的焦点节点（缺省使用本组件所在节点） */
@@ -45,6 +49,8 @@ export class ArrowSwitcher extends UIComponent<IArrowSwitcherProps, IArrowSwitch
     items: String,
     left: UINode,
     right: UINode,
+    left_hl: UINode,
+    right_hl: UINode,
     label: UINode,
     responser: UINode,
     left_text: String,
@@ -52,6 +58,9 @@ export class ArrowSwitcher extends UIComponent<IArrowSwitcherProps, IArrowSwitch
   }
 
   protected _value = 0;
+  /** 左右箭头高亮叠层当前透明度（平滑趋近 0/1） */
+  protected _hl_l = 0;
+  protected _hl_r = 0;
 
   get items(): string[] {
     return this.props.items?.split(',') ?? [];
@@ -69,6 +78,12 @@ export class ArrowSwitcher extends UIComponent<IArrowSwitcherProps, IArrowSwitch
   }
   get right(): UINode | undefined {
     return this.props.right;
+  }
+  get left_hl(): UINode | undefined {
+    return this.props.left_hl;
+  }
+  get right_hl(): UINode | undefined {
+    return this.props.right_hl;
   }
   get label(): UINode | undefined {
     return this.props.label;
@@ -99,10 +114,33 @@ export class ArrowSwitcher extends UIComponent<IArrowSwitcherProps, IArrowSwitch
     this.right?.callbacks.del(this._p_right);
   }
   override update(_dt: number): void {
+    // 高亮始终跟随 hover（不依赖焦点）
+    this.update_highlights(_dt);
+
     const resp = this.responser;
     if (!resp?.focused && !this.node.focused) return;
     if (this.keys.L.is_start()) this.step(-1);
     if (this.keys.R.is_start()) this.step(1);
+  }
+
+  /**
+   * 箭头高亮：hover 时把白色叠层淡入（盖住蓝色常态），离开时淡出。
+   * 指针是否落在箭头节点由其自身 hit 判定（箭头带尺寸的不可见 quad 即可命中）。
+   */
+  protected update_highlights(dt: number): void {
+    const lh = this.left_hl;
+    const rh = this.right_hl;
+    const k = Math.min(1, dt / 90); // 约 90ms 的淡入/淡出
+    if (lh) {
+      const t = this.left?.pointer_over ? 1 : 0;
+      this._hl_l += (t - this._hl_l) * k;
+      lh.opacity = this._hl_l;
+    }
+    if (rh) {
+      const t = this.right?.pointer_over ? 1 : 0;
+      this._hl_r += (t - this._hl_r) * k;
+      rh.opacity = this._hl_r;
+    }
   }
 
   /** 点击箭头：聚焦并切换 */
@@ -154,5 +192,10 @@ export class ArrowSwitcher extends UIComponent<IArrowSwitcherProps, IArrowSwitch
     if (l && l.text?.text !== lt) l.set_text(lt);
     const r = this.right;
     if (r && r.text?.text !== rt) r.set_text(rt);
+    // 高亮叠层与箭头同字形
+    const lh = this.left_hl;
+    if (lh && lh.text?.text !== lt) lh.set_text(lt);
+    const rh = this.right_hl;
+    if (rh && rh.text?.text !== rt) rh.set_text(rt);
   }
 }

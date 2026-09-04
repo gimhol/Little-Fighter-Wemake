@@ -4,7 +4,7 @@
     bgm: "Musique",
     sfx: "Effets sonores",
     bgm_volume: "Volume (musique)",
-    sfx_volume: "Volume (effets sonores)",
+    sfx_volume: "Volume (effets)",
     team_outline: "Contour d'équipe",
     sync_0: "Illimité",
     sync_1: "Moitié",

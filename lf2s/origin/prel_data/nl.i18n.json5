@@ -4,7 +4,7 @@
     bgm: "BGM",
     sfx: "Geluidseffecten",
     bgm_volume: "BGM-volume",
-    sfx_volume: "Volume geluidseffecten",
+    sfx_volume: "SFX-volume",
     team_outline: "Teamomtrek",
     sync_0: "Onbeperkt",
     sync_1: "Half",

@@ -130,13 +130,19 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const prev = this._i18n.lang;
     if (prev === lang) return;
 
-    const recs: { node: UI.UINode, key: string }[] = [];
+    const recs: { node: UI.UINode, key: string, resolved: boolean }[] = [];
     const collect = (node: UI.UINode): void => {
-      const key = node.data.i18n;
-      if (key && node.text) {
-        const old_txt = this._i18n.string(key, prev);
-        if (node.text.text === old_txt)
-          recs.push({ node, key });
+      const txt = node.text;
+      if (txt?.text && typeof txt.text === 'string') {
+        const t = txt.text;
+        const translated = this._i18n.string(t, prev);
+        if (translated !== t) {
+          recs.push({ node, key: t, resolved: false });
+        } else {
+          const key = node.data.i18n;
+          if (key && t === this._i18n.string(key, prev))
+            recs.push({ node, key, resolved: true });
+        }
       }
       for (const child of node.children) collect(child);
     };
@@ -146,9 +152,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
     this._i18n.lang = lang;
 
-    for (const { node, key } of recs) {
-      const style = node.text?.style;
-      node.text = this.images.measure_text(this.string(key), style);
+    for (const { node, key, resolved } of recs) {
+      if (resolved) {
+        const style = node.text?.style;
+        node.text = this.images.measure_text(this.string(key), style);
+      } else {
+        node.set_text(key, node.text?.style);
+      }
     }
 
     this.callbacks.call('on_lang_changed', lang, prev, this);

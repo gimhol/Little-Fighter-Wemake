@@ -4,7 +4,7 @@
     bgm: "BGM",
     sfx: "Soundeffekte",
     bgm_volume: "BGM-Lautstärke",
-    sfx_volume: "Lautstärke Soundeffekte",
+    sfx_volume: "SFX-Lautstärke",
     team_outline: "Teamkontur",
     sync_0: "Unbegrenzt",
     sync_1: "Halbe Geschwindigkeit",
