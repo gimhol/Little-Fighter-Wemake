@@ -1,5 +1,7 @@
 [
   "builtin_data/launch/comonent_demo/alignment_1.ui.json5",
+  "builtin_data/launch/comonent_demo/scroll_demo.ui.json5",
+  "builtin_data/launch/comonent_demo/scroll_h_demo.ui.json5",
   "builtin_data/launch/bg.ui.json5",
   "builtin_data/launch/loading_anim.ui.json5",
   "builtin_data/launch/main_text_button.ui.json5",

@@ -1,0 +1,115 @@
+{
+  id: "scroll_h_demo_1",
+  name: "COMPONENT DEMO: scroll view (horizontal)",
+  color: "rgba(16,32,80,1)",
+  items: [
+    {
+      id: "title",
+      i18n: "SCROLL VIEW DEMO (H)\n←/→ or drag to scroll\n(wheel also works)",
+      style: {
+        font: "14px Arial",
+        text_align: "center",
+      },
+      center: "0.5,0",
+      pos: "397,20",
+    },
+    {
+      id: "viewport",
+      background: "rgb(20,20,28)",
+      backgroundAlpha: 1,
+      size: "300,180",
+      pos: "97,70",
+      center: "0,0",
+      auto_focus: true,
+      component: [
+        {
+          cls: "ScrollView",
+          properties: {
+            direction: "row",
+            content: "list",
+            step: 40,
+          },
+        },
+      ],
+      items: [
+        {
+          id: "list",
+          pos: "0,0",
+          center: "0,0",
+          items: [
+            {
+              id: "col_0",
+              color: "rgba(255,90,90,1)",
+              size: "80,160",
+              pos: "10,10",
+              center: "0,0",
+            },
+            {
+              id: "col_1",
+              color: "rgba(255,150,80,1)",
+              size: "80,160",
+              pos: "110,10",
+              center: "0,0",
+            },
+            {
+              id: "col_2",
+              color: "rgba(255,210,70,1)",
+              size: "80,160",
+              pos: "210,10",
+              center: "0,0",
+            },
+            {
+              id: "col_3",
+              color: "rgba(160,230,80,1)",
+              size: "80,160",
+              pos: "310,10",
+              center: "0,0",
+            },
+            {
+              id: "col_4",
+              color: "rgba(80,220,160,1)",
+              size: "80,160",
+              pos: "410,10",
+              center: "0,0",
+            },
+            {
+              id: "col_5",
+              color: "rgba(90,190,255,1)",
+              size: "80,160",
+              pos: "510,10",
+              center: "0,0",
+            },
+            {
+              id: "col_6",
+              color: "rgba(110,130,255,1)",
+              size: "80,160",
+              pos: "610,10",
+              center: "0,0",
+            },
+            {
+              id: "col_7",
+              color: "rgba(170,110,255,1)",
+              size: "80,160",
+              pos: "710,10",
+              center: "0,0",
+            },
+            {
+              id: "col_8",
+              color: "rgba(240,110,255,1)",
+              size: "80,160",
+              pos: "810,10",
+              center: "0,0",
+            },
+            {
+              id: "col_9",
+              color: "rgba(255,110,190,1)",
+              size: "80,160",
+              pos: "910,10",
+              center: "0,0",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}

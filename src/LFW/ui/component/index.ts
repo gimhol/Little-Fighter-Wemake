@@ -63,6 +63,7 @@ export * from "./Reachable";
 export * from "./ReachableGroup";
 export * from "./ScaleAnimation";
 export * from "./ScaleClickable";
+export * from "./ScrollView";
 export * from "./SettingsLogic";
 export * from "./SineOpacity";
 export * from "./Sounds";
