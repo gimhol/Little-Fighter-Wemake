@@ -56,12 +56,18 @@ uniform float deburrMin;
 uniform float deburrMax;
 uniform float deburrJudge;
 
+/** 是否启用裁剪（overflow:hidden） */
+uniform float clipEnabled;
+/** 裁剪矩形（世界坐标，x0,y0,x1,y1） */
+uniform vec4 clipRect;
+
 // 灰度权重
 const vec3 GRAY_WEIGHT = vec3(0.299, 0.587, 0.114);
 
 const float gamma = 2.2;
 
 varying vec2 vUv;
+varying vec3 vWorldPosition;
 
 vec3 gamma_correct(vec3 color) {
   return pow(color, vec3(1.0 / gamma));
@@ -116,6 +122,12 @@ float getBlackRatio(vec4 rgba) {
 
 
 void main() {
+  // 裁剪：超出祖先 overflow:hidden 视口的部分不绘制
+  if(clipEnabled > 0.5) {
+    vec2 wp = vWorldPosition.xy;
+    if(wp.x < clipRect.x || wp.x > clipRect.z || wp.y < clipRect.y || wp.y > clipRect.w)
+      discard;
+  }
   /** 原图像素宽 */
   float ow = tw / tsw;
   /** 原图像素高 */
