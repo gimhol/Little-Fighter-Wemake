@@ -76,25 +76,25 @@ export async function find_ui_template(
   const is_xml = path.endsWith('.ui.xml');
 
   if (is_xml) {
-    const [root] = await lfw.import_xml(path, true);
+    const { data: root } = await lfw.resources.import_xml(path, true);
     return xml_to_ui_info(root);
   }
   if (is_json) {
-    const [data] = await lfw.import_json<IUIInfo>(path, true);
+    const { data } = await lfw.resources.import_json<IUIInfo>(path, true);
     return data;
   }
   try {
-    ret = await lfw.import_json<IUIInfo>(path + '.ui.json5', true).then(r => r[0]);
+    ret = await lfw.resources.import_json<IUIInfo>(path + '.ui.json5', true).then(r => r.data);
     if (ret && Object.keys(ret).length) return ret;
   } catch { /* fall through */ }
 
   try {
-    ret = await lfw.import_json<IUIInfo>(path + '.ui.json', true).then(r => r[0]);
+    ret = await lfw.resources.import_json<IUIInfo>(path + '.ui.json', true).then(r => r.data);
     if (ret && Object.keys(ret).length) return ret;
   } catch { /* fall through to xml */ }
 
   try {
-    const [root] = await lfw.import_xml(path + '.ui.xml', true);
+    const { data: root } = await lfw.resources.import_xml(path + '.ui.xml', true);
     if (root) {
       ret = xml_to_ui_info(root);
       if (ret && Object.keys(ret).length) return ret;

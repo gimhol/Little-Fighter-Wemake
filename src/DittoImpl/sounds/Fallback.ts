@@ -141,7 +141,7 @@ export class __Fallback extends BaseSounds {
   }
 
   override async load(name: string, src: string): Promise<void> {
-    const [url] = await this.lfw.import_resource(src, false);
+    const { data: url } = await this.lfw.resources.import_resource(src, false);
     this._r.set(name, url);
   }
 

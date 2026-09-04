@@ -1,6 +1,5 @@
 import { Callbacks } from './base/Callbacks';
 import { type IDebugging, make_debugging } from "./base/Debugging";
-import { deduped } from './base/dedup';
 import { get_short_file_size_txt } from './base/get_short_file_size_txt';
 import { Graves } from "./base/Graves";
 import { regist_buffs } from './buff/_';
@@ -27,6 +26,7 @@ import { loop_offset } from './utils/container_help/loop_offset';
 import { MersenneTwister } from './utils/math/MersenneTwister';
 import { is_str } from './utils/type_check/is_str';
 import { World } from "./World";
+import { Resources } from "./Resources";
 export interface IZipResult {
   origin: string;
   file: I.IZipObject;
@@ -205,6 +205,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   readonly balls = new Helper.BallsHelper(this);
   readonly uis = new Helper.UIHelper(this)
   readonly datas: DatMgr;
+  readonly resources: Resources;
   readonly sounds: I.ISounds;
   readonly images: I.IImageMgr;
   readonly keyboard: I.IKeyboard;
@@ -255,99 +256,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return ret;
   }
 
-  /**
-   * TODO
-   *
-   * @template C 
-   * @param {string} path
-   * @param {boolean} exact 准确匹配
-   * @return {Promise<C>}
-   * @memberof LFW
-   */
-  async import_json<C = any>(path: string, exact: boolean = true): Promise<[C, I.HitUrl, string?]> {
-    const key = `LFW.import_json.${path}.${exact}`;
-    return deduped(key, async () => {
-      const paths = exact ? [path] : get_import_fallbacks(path)[0];
-      const { file, origin: tag } = this.find_from_zips(paths, true).at(0) || {}
-      if (file && tag) return [await file.json<C>(), file.name, tag];
-      return await I.Ditto.Importer.import_as_json<C>(paths);
-    });
-  }
-
-  /**
-   * 加载资源
-   *
-   * @param {string} path 资源路径
-   * @param {boolean} exact 准确匹配
-   * @return {Promise<[I.BlobUrl, I.HitUrl]>}
-   * @memberof LFW
-   */
-  async import_resource(path: string, exact: boolean): Promise<[I.BlobUrl, I.HitUrl, string?]> {
-    const key = `LFW.import_resource.${path}.${exact}`;
-    return deduped(key, async () => {
-      const paths = exact ? [path] : get_import_fallbacks(path)[0];
-      const { file, origin: tag } = this.find_from_zips(paths, true).at(0) || {}
-      if (file && tag) return [await file.blob_url(), file.name, tag];
-      return I.Ditto.Importer.import_as_blob_url(paths);
-    });
-  }
-
-  /**
-   * 以 ImageBitmap 形式加载图片资源
-   * 比 import_resource 更高效：跳过 Blob URL 创建，直接解码为 GPU 可用的 ImageBitmap
-   *
-   * @param {string} path 资源路径
-   * @param {boolean} exact 准确匹配
-   * @return {Promise<[ImageBitmap, I.HitUrl, string?]>}
-   * @memberof LFW
-   */
-  async import_image_bitmap(path: string, exact: boolean): Promise<[ImageBitmap, I.HitUrl, string?]> {
-    const key = `LFW.import_image_bitmap.${path}.${exact}`;
-    return deduped(key, async () => {
-      const paths = exact ? [path] : get_import_fallbacks(path)[0];
-      const { file, origin: tag } = this.find_from_zips(paths, true).at(0) || {}
-      if (file && tag) return [await file.image_bitmap(), file.name, tag];
-      // 网络回退：fetch → Blob → ImageBitmap
-      const [blob_url] = await I.Ditto.Importer.import_as_blob_url(paths);
-      const resp = await fetch(blob_url);
-      const blob = await resp.blob();
-      return [await createImageBitmap(blob), paths[0], undefined];
-    });
-  }
-
-  async import_array_buffer(path: string, exact: boolean): Promise<[ArrayBuffer, I.HitUrl, string?]> {
-    const key = `LFW.import_array_buffer.${path}.${exact}`;
-    return deduped(key, async () => {
-      const paths = exact ? [path] : get_import_fallbacks(path)[0];
-      const { file, origin: tag } = this.find_from_zips(paths, true).at(0) || {}
-      if (file && tag) return [await file.array_buffer(), file.name, tag];
-      return I.Ditto.Importer.import_as_array_buffer(paths);
-    });
-  }
-
-  async import_xml(path: string, exact: boolean = true): Promise<[I.IXMLElement, I.HitUrl, string?]> {
-    const key = `LFW.import_xml.${path}.${exact}`;
-    return deduped(key, async () => {
-      const paths = exact ? [path] : get_import_fallbacks(path)[0];
-      const { file, origin: tag } = this.find_from_zips(paths, true).at(0) || {}
-      let text: string;
-      if (file && tag) {
-        text = await file.text();
-      } else {
-        [text] = await I.Ditto.Importer.import_as_text(paths);
-      }
-      const root = I.Ditto.XML.parse(text);
-      if (!root) throw new Error(`[LFW::import_xml] failed to parse: ${path}`);
-      return [root, file?.name || paths[0], tag];
-    });
-  }
-
   constructor(dev = false) {
     regist_components()
     regist_buffs();
     this.dev = dev;
     make_debugging(this)
     this.debug(`constructor`)
+    this.resources = new Resources(this)
     this.datas = new DatMgr(this);
     this.sounds = new I.Ditto.Sounds(this);
     this.images = new I.Ditto.ImageMgr(this);
@@ -520,7 +435,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this._loading = true;
     this.callbacks.call("on_loading_start");
     if (is_first) {
-      const [obj] = await this.import_json("builtin_data/launch/strings.json5")
+      const { data: obj } = await this.resources.import_json("builtin_data/launch/strings.json5")
       this._i18n.add(obj)
     }
 
@@ -701,7 +616,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
   protected async load_builtin_ui(): Promise<UI.ICookedUIInfo[]> {
     this._dispose_check('load_builtin_ui')
-    const [paths] = await this.import_json<string[]>("builtin_data/launch/_index.json5")
+    const { data: paths } = await this.resources.import_json<string[]>("builtin_data/launch/_index.json5")
     const ret: UI.ICookedUIInfo[] = []
     for (const path of paths) {
       const cooked_ui_info = await UI.cook_ui_info(this, path);

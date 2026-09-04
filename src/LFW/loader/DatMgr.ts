@@ -150,11 +150,11 @@ class Inner {
       let partial: Partial<IDataLists>;
       const f = file.toLowerCase()
       if (f.endsWith(".xml")) {
-        const [el] = await this.lfw.import_xml(file, true)
+        const { data: el } = await this.lfw.resources.import_xml(file, true)
         this.check_cancelled();
         partial = xml_2_data_lists(el);
       } else if (f.endsWith(".json") || f.endsWith(".json5")) {
-        const [result] = await this.lfw.import_json<Partial<IDataLists>>(file, true)
+        const { data: result } = await this.lfw.resources.import_json<Partial<IDataLists>>(file, true)
         partial = result
       } else {
         Ditto.warn(`UNSUPPORTED DAT INDEX FILE, SKIPPED: ${file}`)
@@ -181,7 +181,7 @@ class Inner {
       const src = (Defines.BuiltIn_Dats as any)[k];
       if (!is_non_blank_str(src)) continue;
       this.lfw.emit_progress(`${src}`, 0);
-      const raw = await this.lfw.import_json<IEntityData>(src).then(r => r[0])
+      const raw = await this.lfw.resources.import_json<IEntityData>(src).then(r => r.data)
       const cooked = await this._cook_data(raw) as IEntityData;
       this._add_object(src, cooked);
       if (this.cancelled) throw new Error("cancelled");
@@ -191,9 +191,9 @@ class Inner {
     for (const { id, file, skipped } of data.bots) {
       if (skipped) continue;
       this.lfw.emit_progress(`${file}`, 0);
-      const raw = await this.lfw.import_json<IBotData>(file, true)
+      const raw = await this.lfw.resources.import_json<IBotData>(file, true)
         .then(r => {
-          return r[0]
+          return r.data
         }).catch(e => {
           Ditto.warn(`FAILED TO LOAD BOT DATA: ${file}`);
           return undefined
@@ -214,8 +214,8 @@ class Inner {
       try {
         this.lfw.emit_progress(`${file}`, 0);
         const raw = file.endsWith(".obj.xml") || file.endsWith(".xml")
-          ? xml_2_entity_data((await this.lfw.import_xml(file, true))[0])
-          : await this.lfw.import_json<IEntityData>(file, true).then(r => r[0]);
+          ? xml_2_entity_data((await this.lfw.resources.import_xml(file, true)).data)
+          : await this.lfw.resources.import_json<IEntityData>(file, true).then(r => r.data);
         const cooked = await this._cook_data(raw) as IEntityData;
         this._add_object(id, cooked);
         if (id != file) this._add_object(file, cooked);
@@ -231,8 +231,8 @@ class Inner {
       try {
         this.lfw.emit_progress(`${file}`, 0);
         const raw = file.endsWith(".bg.xml")
-          ? xml_2_bg_data((await this.lfw.import_xml(file, true))[0])
-          : await this.lfw.import_json(file, true).then(r => r[0]);
+          ? xml_2_bg_data((await this.lfw.resources.import_xml(file, true)).data)
+          : await this.lfw.resources.import_json(file, true).then(r => r.data);
         const cooked = await this._cook_data(raw) as IBgData;
         this._add_bg(cooked)
       } catch (e) {
@@ -244,9 +244,9 @@ class Inner {
       if (stage_file.skipped) continue;
       this.lfw.emit_progress(`${stage_file.file}`, 0);
       const stage_datas = stage_file.file.endsWith(".xml") || stage_file.file.endsWith(".stage.xml")
-        ? xml_to_stage_info_list((await this.lfw.import_xml(stage_file.file, true))[0])
-        : await this.lfw.import_json<IStageInfo[]>(stage_file.file, true)
-          .then(r => r[0])
+        ? xml_to_stage_info_list((await this.lfw.resources.import_xml(stage_file.file, true)).data)
+        : await this.lfw.resources.import_json<IStageInfo[]>(stage_file.file, true)
+          .then(r => r.data)
           .catch(e => { Ditto.warn(`FAILED TO LOAD STATE: ${stage_file.file}`); return [] as IStageInfo[] });
       if (this.cancelled) throw new Error("cancelled");
       this.lfw.emit_progress(`${stage_file.file}`, 100);

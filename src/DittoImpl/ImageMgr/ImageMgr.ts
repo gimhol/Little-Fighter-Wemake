@@ -63,7 +63,7 @@ export class ImageMgr implements IImageMgr {
     // 无图片操作：优先使用 ImageBitmap 路径（减少 Blob 创建，支持零拷贝 GPU 上传）
     if (!vaild_operations?.length) {
       try {
-        const [bitmap, src_url] = await this.lfw.import_image_bitmap(src, exact);
+        const { data: bitmap, file: src_url = '' } = await this.lfw.resources.import_image_bitmap(src, exact);
         const scale = this.get_img_scale(src_url);
         const ret = new RImageInfo({
           key,
@@ -85,7 +85,7 @@ export class ImageMgr implements IImageMgr {
     // 有图片操作：也优先 ImageBitmap 作为源，最终产出 ImageBitmap
     if (vaild_operations?.length) {
       try {
-        const [bitmap, src_url] = await this.lfw.import_image_bitmap(src, exact);
+        const { data: bitmap, file: src_url = '' } = await this.lfw.resources.import_image_bitmap(src, exact);
         const scale = this.get_img_scale(src_url);
 
         // 将 ImageBitmap 转为带属性的 Canvas，供操作管线使用
@@ -116,7 +116,7 @@ export class ImageMgr implements IImageMgr {
 
     // 回退路径：blob URL + Image 元素（无操作或 ImageBitmap 失败时）
     {
-      const [blob_url, src_url] = await this.lfw.import_resource(src, exact);
+      const { data: blob_url, file: src_url = '' } = await this.lfw.resources.import_resource(src, exact);
       const img = await create_img_ele(blob_url);
       img.setAttribute('src-url', src_url)
 

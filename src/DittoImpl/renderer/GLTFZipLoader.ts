@@ -77,8 +77,8 @@ export class ZipGLTFLoader extends T.GLTFLoader {
   ): void {
     const idx = url.lastIndexOf('/')
     const base_dir = idx >= 0 ? url.substring(0, idx) : ''
-    void this.lfw.import_array_buffer(url, true)
-      .then(([buf]) => this.import_gltf(buf, base_dir))
+    void this.lfw.resources.import_array_buffer(url, true)
+      .then(r => this.import_gltf(r.data, base_dir))
       .then(gltf => onLoad(gltf))
       .catch(err => onError?.(err))
   }
@@ -130,12 +130,12 @@ export class ZipGLTFLoader extends T.GLTFLoader {
   }
 
   protected async import_buffer_url(base_dir: string, uri: string): Promise<string> {
-    const [buf] = await this.lfw.import_array_buffer(this.resolve_url(base_dir, uri), true)
+    const { data: buf } = await this.lfw.resources.import_array_buffer(this.resolve_url(base_dir, uri), true)
     return this.blob_url(buf)
   }
 
   protected async import_image_url(base_dir: string, uri: string): Promise<string> {
-    const [buf] = await this.lfw.import_array_buffer(this.resolve_url(base_dir, uri), true)
+    const { data: buf } = await this.lfw.resources.import_array_buffer(this.resolve_url(base_dir, uri), true)
     return this.blob_url(buf, guess_image_mime(uri))
   }
 

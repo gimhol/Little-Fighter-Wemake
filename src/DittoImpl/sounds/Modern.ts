@@ -156,7 +156,7 @@ export class __Modern extends BaseSounds {
   override load(name: string, src: string): Promise<AudioBuffer> {
     return this._r.fetch(name, async () => {
       this.lfw.emit_progress(`${name}`, 0);
-      const [dat, , origin] = await this.lfw.import_array_buffer(src, false);
+      const { data: dat, origin } = await this.lfw.resources.import_array_buffer(src, false);
       const buf = this.ctx.decodeAudioData(dat);
       this.lfw.emit_progress(`${name}`, 100);
       if (origin) this.set_origin(name, origin)

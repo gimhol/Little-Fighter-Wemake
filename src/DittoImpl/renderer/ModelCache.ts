@@ -48,7 +48,7 @@ export class ModelCache {
 
   protected async load(lfw: LFW, path: string, exact: boolean): Promise<IModelCacheEntry> {
     const loader = new ZipGLTFLoader(lfw)
-    const [buf] = await lfw.import_array_buffer(path, exact)
+    const { data: buf } = await lfw.resources.import_array_buffer(path, exact)
     const gltf = await loader.parse_package(buf, ModelCache.glb_dir_of(path))
     const root = gltf.scene ?? new Object3D()
     // 材质保留 GLB 自身 side：镜像(scale.x=-1)时 three 会按负行列式自动翻转 frontFace，
