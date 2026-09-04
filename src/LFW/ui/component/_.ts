@@ -77,6 +77,7 @@ export const regist_components = () => {
     _.StageTitleText,
     _.StageTransitions,
     _.SummaryLogic,
+    _.SwitcherHandle,
     _.TeamSituationText,
     _.Tests,
     _.TextInput,
