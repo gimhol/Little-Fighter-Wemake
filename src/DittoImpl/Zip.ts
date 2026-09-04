@@ -2,6 +2,7 @@ import axios from "axios";
 import json5 from "json5";
 import JSZIP from "jszip";
 import type { IReadable, IZip, IZipObject } from "../LFW/ditto";
+import { md5_buf } from "./md5";
 import { is_str } from "../LFW/utils/type_check";
 
 export class ZipObject implements IZipObject {
@@ -51,11 +52,11 @@ export class __Zip implements IZip {
   static async read_file(file: IReadable): Promise<IZip> {
     const buf = await file.arrayBuffer().then((raw) => new Uint8Array(raw));
     const jszip = await JSZIP.loadAsync(buf);
-    return new __Zip(file.name, jszip);
+    return new __Zip(file.name, jszip, md5_buf(buf));
   }
   static async read_buf(name: string, buf: Uint8Array): Promise<IZip> {
     const jszip = await JSZIP.loadAsync(buf);
-    return new __Zip(name, jszip);
+    return new __Zip(name, jszip, md5_buf(buf));
   }
   static async download(
     url: string,
@@ -74,17 +75,19 @@ export class __Zip implements IZip {
       })
       .then((resp) => new Uint8Array(resp.data));
     const jszip = await JSZIP.loadAsync(buf);
-    return new __Zip(url, jszip);
+    return new __Zip(url, jszip, md5_buf(buf));
   }
 
   readonly name: string;
+  readonly md5: string;
   private inner: JSZIP;
   private _files: { [key in string]?: ZipObject } | null = null;
   private _caches: { [key in string]?: ZipObject[] } = {};
 
-  private constructor(name: string, inner: JSZIP) {
+  private constructor(name: string, inner: JSZIP, md5: string) {
     this.inner = inner;
     this.name = name;
+    this.md5 = md5;
   }
 
   file(path: string): ZipObject | null;

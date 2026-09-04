@@ -56,7 +56,7 @@ export function Networking(props: INetworkingProps) {
   useCallbacks(lf2?.callbacks, {
     on_loading_end: () => {
       if (!lf2 || !conn) return;
-      if (lf2.zips.length < 1) return;
+      if (lf2.zips.zips.length < 1) return;
       conn?.send(MsgEnum.Tick, { seq: 0 });
     }
   }, [lf2, conn])

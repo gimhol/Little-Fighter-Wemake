@@ -12,6 +12,7 @@ import Titled from "./Component/Titled";
 import { BaseController, Entity, TeamEnum } from "./LFW";
 import { DummyEnum } from "./LFW/bot/DummyEnum";
 import { LocalController } from "./LFW/controller/LocalController";
+import { CMD } from "./LFW/defines/CMD";
 import { GameKey } from "./LFW/defines/GameKey";
 import { is_bot_ctrl } from "./LFW/entity/type_check";
 import { LFW } from "./LFW";
@@ -108,7 +109,12 @@ export function PlayerRow(props: Props) {
     if (puppet) { lfw.del_puppet(info.id) }
     const _oid = oid ?? lfw.datas.fighters[Math.floor(Math.random() * lfw.datas.fighters.length)]?.id;
     if (!_oid) { debugger; return; }
-    lfw.add_puppet(info.id, _oid, team);
+    lfw.push_cmd(
+      CMD.SET_PUPPET,
+      `--player_id=${info.id}`,
+      `--oid=${_oid}`,
+      ...(team ? [`--team=${team}`] : []),
+    );
   }
   const { t } = useTranslation()
   return (

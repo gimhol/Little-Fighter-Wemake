@@ -219,7 +219,7 @@ export class __Modern extends BaseSounds {
       this.apply_bgm_volume();
     };
     do {
-      const { file, origin } = this.lfw.find_from_zips([real_name], false).at(0) || {}
+      const { file, origin } = this.lfw.zips.find([real_name], false).at(0) || {}
       // 非本地存在资源，说明来自网络，不必重载
       if (!file || !origin) break;
 

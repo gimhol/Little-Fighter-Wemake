@@ -73,7 +73,7 @@ export class BaseSounds implements ISounds {
         await this.load(src, src);
         break;
       }
-      const { file, origin } = this.lfw.find_from_zips([src], false).at(0) || {}
+      const { file, origin } = this.lfw.zips.find([src], false).at(0) || {}
       // 非本地存在资源，说明来自网络，不必重载
       if (!file || !origin) break;
 

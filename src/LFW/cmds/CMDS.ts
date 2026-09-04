@@ -1,13 +1,14 @@
+import { LocalController } from "../controller/LocalController";
 import { CheatEnum, is_cheat_type } from "../defines/CheatType";
 import { CMD } from "../defines/CMD";
 import { Defines } from "../defines/defines";
-import { Difficulty, is_difficulty } from "../defines/Difficulty";
+import { is_difficulty } from "../defines/Difficulty";
 import { EntityGroup } from "../defines/EntityGroup";
 import { Ditto } from "../ditto/Instance";
-import { is_fighter, is_weapon } from "../entity";
+import { is_fighter, is_human_ctrl, is_weapon } from "../entity";
 import type { World } from "../World";
 
-export interface ICMDHandler { (ctx: CMDS): void; }
+export interface ICMDHandler { (ctx: CMDS): unknown; }
 
 export class CMDS {
   private static readonly handlers = new Map<string, ICMDHandler>();
@@ -28,12 +29,14 @@ export class CMDS {
   readonly world: World;
   words: string[] = [];
   cmd: string = '';
+  private _args: { [name in string]: string } | undefined;
   private constructor(world: World) {
     this.world = world;
   }
   set_cmd(cmd: string) {
     this.cmd = cmd;
-    this.words = cmd.split(' ');
+    this.words = cmd.split(' ').filter(t => t !== '');
+    this._args = void 0; // 使命名参数缓存失效
   }
   str(index: number): string | undefined {
     return this.words[index]
@@ -48,6 +51,41 @@ export class CMDS {
     if (str == void 0) return void 0;
     return str.split(',').map(Number);
   }
+
+  private get args(): { [name in string]: string } {
+    if (this._args) return this._args;
+    const map: { [name in string]: string } = {};
+    for (const token of this.words) {
+      const eq = token.indexOf('=');
+      if (eq > 0) {
+        map[token.slice(0, eq)] = token.slice(eq + 1);
+      } else {
+        map[token] = '';
+      }
+    }
+    return this._args = map;
+  }
+
+  private arg_value(name: string): string | undefined {
+    const value = this.args[name];
+    return value === void 0 ? void 0 : value;
+  }
+
+  str_arg(name: string): string | undefined {
+    return this.arg_value(name)
+  }
+
+  num_arg(name: string): number | undefined {
+    const s = this.arg_value(name);
+    if (s == void 0) return void 0;
+    return Number(s);
+  }
+
+  nums_arg(name: string): number[] | undefined {
+    const s = this.arg_value(name);
+    if (s == void 0) return void 0;
+    return s.split(',').map(Number);
+  }
 }
 
 CMDS.register(CMD.SET_DIFFICULTY, (ctx) => {
@@ -55,6 +93,44 @@ CMDS.register(CMD.SET_DIFFICULTY, (ctx) => {
   if (!is_difficulty(d)) return Ditto.warn(`SET_DIFFICULTY failed, must "SET_DIFFICULTY \${1|2|3|4}", got: ${ctx.cmd}`)
   ctx.world.dataset.difficulty = d;
 })
+
+
+CMDS.register(CMD.SET_PUPPET, (ctx) => {
+  const player_id = ctx.str_arg('--player_id');
+  const oid = ctx.str_arg('--oid');
+  const team = ctx.str_arg('--team');
+
+  if (!player_id || !oid)
+    return Ditto.warn(`SET_PUPPET failed, must "SET_PUPPET --player_id=1 --oid=deep [--team=...]", got: ${ctx.cmd}`)
+
+  const lfw = ctx.world.lfw;
+  const player_info = lfw.players.get(player_id);
+  if (!player_info)
+    return Ditto.warn(`SET_PUPPET failed, player not found: ${player_id}`)
+
+  const data = lfw.datas.fighters.find((v) => v.id === oid);
+  if (!data)
+    return Ditto.warn(`SET_PUPPET failed, fighter oid not found: ${oid}`)
+
+  let f = ctx.world.puppets.get(player_id);
+
+  if (!f) {
+    f = lfw.factory.create_entity(ctx.world, data)
+    if (!f)
+      return Ditto.warn(`SET_PUPPET failed to create puppet: ${oid}`)
+    const { x, z } = lfw.world.stage.middle;
+    f.set_position(x, 450, z);
+  }
+
+  f.name = player_info.name;
+  if (team) f.team = team;
+  if (f.data !== data) f.transform(data);
+  if (!is_human_ctrl(f.ctrl) || f.ctrl.player_id != player_id)
+    f.ctrl = new LocalController(player_id, f);
+  f.attach();
+  return f.id;
+})
+
 
 CMDS.register(CMD.DEL_PUPPET, (ctx) => {
   const player_id = ctx.str(1);

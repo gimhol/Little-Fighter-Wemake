@@ -1,10 +1,10 @@
 import { Callbacks } from './base/Callbacks';
-import { type IDebugging, make_debugging } from "./base/Debugging";
+import { make_debugging, type IDebugging } from "./base/Debugging";
 import { get_short_file_size_txt } from './base/get_short_file_size_txt';
 import { Graves } from "./base/Graves";
 import { regist_buffs } from './buff/_';
 import type { Collision } from './collision/Collision';
-import { LocalController } from './controller/LocalController';
+import type { IDataInfo } from './defines';
 import * as D from "./defines";
 import { CMD, CMD_NAMES } from "./defines/CMD";
 import { AGK } from './defines/GameKey';
@@ -18,20 +18,16 @@ import { I18N } from "./I18N";
 import type { ILFWCallback } from "./ILFWCallback";
 import { Keys } from "./Keys";
 import { DatMgr } from "./loader/DatMgr";
-import { get_import_fallbacks } from "./loader/get_import_fallbacks";
 import { PlayerInfo } from "./PlayerInfo";
+import { Resources } from "./Resources";
 import * as UI from "./ui";
 import { regist_components } from './ui/component/_';
 import { loop_offset } from './utils/container_help/loop_offset';
 import { MersenneTwister } from './utils/math/MersenneTwister';
 import { is_str } from './utils/type_check/is_str';
 import { World } from "./World";
-import { Resources } from "./Resources";
-export interface IZipResult {
-  origin: string;
-  file: I.IZipObject;
-  zip: I.IZip;
-}
+import { ZipMgr, type ILoadedZip } from "./ZipMgr";
+
 const DEFAULT_INFO: Readonly<IGameZipInfo> = {
   type: "FULL",
   version: 0,
@@ -77,7 +73,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   static get ui() { return this.instance.ui }
   static get ditto() { return I.Ditto }
   static get uis() { return this.instance.uis }
-  static get DATA_INFOS() { return this.instance.data_infos; }
+  static get DATA_INFOS() { return this.instance.zips.data_infos; }
 
   /**
    * 收集本客户端完整的数据包信息（已加载 + 即将加载）
@@ -91,7 +87,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   static async collect_data_infos(): Promise<D.IDataInfo[]> {
     const inst = LFW.instance;
     if (!inst) return [];
-    const loaded = inst.data_infos;
+    const loaded = inst.zips.data_infos;
     const loaded_md5s = new Set(loaded.map(v => v?.md5));
     const ret: D.IDataInfo[] = [...loaded];
     for (const a of LFW.ZIPS) {
@@ -108,6 +104,12 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     }
     return ret;
   }
+  static IgnoreDisposed(e: any) {
+    I.Ditto.warn(e);
+    if (e.is_disposed_error === true) return;
+    throw e;
+  }
+
 
   get lang(): string { return this._i18n.lang }
   set lang(v: string) { this._i18n.lang = v }
@@ -123,8 +125,6 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
   protected __id = 100;
   protected __team = Number(D.TeamEnum.Max);
-
-
   protected _disposed: boolean = false;
   protected _ui_stacks: UI.UIStack[] = [];
   protected _loading: boolean = false;
@@ -176,18 +176,6 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   get new_team() { return `team_${++this.__team}` }
 
   readonly world: World;
-
-  /**
-   * 资源包列表
-   * 
-   * 
-   * @readonly
-   * @type {I.IZip[]}
-   * @memberof LFW
-   */
-  readonly zips: I.IZip[] = [];
-  readonly md5s: string[] = [];
-  readonly data_infos: D.IDataInfo[] = [];
   readonly players: Map<string, PlayerInfo> = new Map([
     ["1", new PlayerInfo("1")],
     ["2", new PlayerInfo("2")],
@@ -204,6 +192,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   readonly objects = new Helper.ObjectsHelper(this);
   readonly balls = new Helper.BallsHelper(this);
   readonly uis = new Helper.UIHelper(this)
+  readonly zips = new ZipMgr();
   readonly datas: DatMgr;
   readonly resources: Resources;
   readonly sounds: I.ISounds;
@@ -234,35 +223,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return ret
   }
 
-  find_from_zips(paths: string[], exact: boolean): IZipResult[] {
-    if (!exact) {
-      const temp = new Set(paths);
-      for (const path of paths) {
-        const [more] = get_import_fallbacks(path)
-        for (const path of more) {
-          temp.add(path)
-        }
-      }
-      paths = Array.from(temp)
-    }
-    const ret: IZipResult[] = [];
-    for (const zip of this.zips) {
-      for (const path of paths) {
-        const file = zip.file(path)
-        if (!file) continue;
-        ret.push({ file, zip, origin: `[${zip.name}]${file.name}` })
-      }
-    }
-    return ret;
-  }
-
   constructor(dev = false) {
     regist_components()
     regist_buffs();
     this.dev = dev;
     make_debugging(this)
     this.debug(`constructor`)
-    this.resources = new Resources(this)
+    this.resources = new Resources(this.zips)
     this.datas = new DatMgr(this);
     this.sounds = new I.Ditto.Sounds(this);
     this.images = new I.Ditto.ImageMgr(this);
@@ -309,12 +276,14 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     if (!D.is_cheat_type(name)) return false;
     return !!this.world.dataset[name];
   }
+
   set_cheat(name: string | D.CheatEnum, enable: boolean = !this.is_cheat(name)) {
     if (enable == this.is_cheat(name)) return;
     this.push_cmd(name, enable ? '1' : '');
     this._cheat_keys = "";
     this._cheat_gkeys.clear();
   }
+
   on_key_down(e: I.IKeyEvent) {
     this.debug('on_key_down', e)
     const key_code = e.key.toLowerCase();
@@ -369,44 +338,86 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.emit_progress(txt, progress);
   }
 
-  protected async load_zip_from_info_url(info_url: string): Promise<[I.IZip, string, D.IDataInfo]> {
-    this._dispose_check('load_zip_from_info_url')
+  protected async _load_zip_from_url(info_url: string): Promise<ILoadedZip> {
+    const check = this.dispose_guard('load_zip_from_url');
     this.emit_progress(`${info_url}`, 0);
     const [raw] = await I.Ditto.Importer.import_as_json<Record<string, unknown>>([info_url]);
+    check()
+
     const info = pick_data_info(raw);
-    const { url = '', md5 = '' } = info;
-    const zip_url = full_zip_url(info_url, url)
-    this._dispose_check('load_zip_from_info_url')
-    const exists = await I.Ditto.Cache.get(md5);
-    this._dispose_check('load_zip_from_info_url')
-    let ret: I.IZip | null = null;
-    if (exists) {
-      if (exists.data) {
-        ret = await I.Ditto.Zip.read_buf(exists.name, exists.data);
-      } else if (exists.blob) {
-        const buf = new Uint8Array(await exists.blob.arrayBuffer());
-        ret = await I.Ditto.Zip.read_buf(exists.name, buf);
-      }
-      if (ret)
-        this._dispose_check('load_zip_from_info_url')
+    if (!info.url)
+      throw new Error(`[LFW::load_zip_from_url] info json url got: ${info_url}`);
+
+    let zip: I.IZip | null = null;
+
+    const { url, md5 } = info;
+    const exists = md5 ? await I.Ditto.Cache.get(md5) : undefined;
+    if (exists) check()
+
+    if (exists?.data) {
+      zip = await I.Ditto.Zip.read_buf(exists.name, exists.data);
+      check()
+    } else if (exists?.blob) {
+      const buf = new Uint8Array(await exists.blob.arrayBuffer());
+      zip = await I.Ditto.Zip.read_buf(exists.name, buf);
+      check()
     }
-    if (!ret) {
-      ret = await I.Ditto.Zip.download(zip_url, (progress, full_size) =>
+
+    if (!zip) {
+      const zip_url = full_zip_url(info_url, url)
+      zip = await I.Ditto.Zip.download(zip_url, (progress, full_size) =>
         this.on_loading_file(zip_url, progress, full_size),
       );
-      this._dispose_check('load_zip_from_info_url')
-      await I.Ditto.Cache.del(info_url, "");
-      this._dispose_check('load_zip_from_info_url')
+      check()
 
+      await I.Ditto.Cache.del(info_url, "");
+      check()
+    }
+
+    if (md5) {
       await I.Ditto.Cache.put({
         name: md5,
         version: LFW.DATA_VERSION,
         type: LFW.DATA_TYPE,
-        data: await ret.blob()
+        data: await zip.blob()
       });
+      check()
     }
+
     this.emit_progress(`${url}`, 100);
-    return [ret, md5, info];
+    return { zip, info };
+  }
+
+  private async _load_zip_from_object(zip: I.IZip): Promise<ILoadedZip> {
+    const check = this.dispose_guard('_load_zip_from_object');
+    const info = await this._pick_zip_info(zip)
+    check();
+
+    return { zip, info }
+  }
+
+  private async _pick_zip_info(zip: I.IZip): Promise<IDataInfo> {
+    let raw: Record<string, unknown> | undefined;
+    for (const name of ['__info.json', '__info.json5']) {
+      const file = zip.file(name)
+      if (!file) continue;
+      const v = await file.json().catch(() => undefined);
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        raw = v as Record<string, unknown>;
+        break;
+      }
+    }
+    const picked = raw ? pick_data_info(raw) : {};
+    return {
+      type: picked.type ?? LFW.INFO?.type,
+      url: picked.url,
+      title: picked.title ?? LFW.INFO?.title ?? zip.name,
+      description: picked.description ?? LFW.INFO?.description,
+      author: picked.author ?? LFW.INFO?.author,
+      version: picked.version ?? LFW.INFO?.version,
+      time: picked.time,
+      md5: zip.md5,
+    };
   }
 
   /**
@@ -431,44 +442,29 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
    */
   async load(...arg1: (I.IZip | string)[]): Promise<void> {
     const is_first = this.zips.length === 0;
-    this._dispose_check('load')
+    const check = this.dispose_guard('load');
     this._loading = true;
     this.callbacks.call("on_loading_start");
     if (is_first) {
-      const { data: obj } = await this.resources.import_json("builtin_data/launch/strings.json5")
-      this._i18n.add(obj)
-    }
+      const { data } = await this.resources.import_json("builtin_data/launch/strings.json5")
+      check()
+      this._i18n.add(data)
 
-
-    this._dispose_check('load')
-
-    if (is_first) {
       await this.load_builtin_ui()
-      this._dispose_check('load_ui')
+      check()
       const ui = this.uis.all.find(v => v.id === this.first_ui)
       this.set_ui({ id: ui?.id! })
     }
 
     try {
       for (const a of arg1) {
-        let zip: I.IZip;
-        let md5: string;
-        let info: D.IDataInfo;
-        if (is_str(a)) {
-          [zip, md5, info] = await this.load_zip_from_info_url(a);
-        } else {
-          zip = a;
-          md5 = 'unknown';
-          info = {
-            type: LFW.INFO?.type,
-            title: LFW.INFO?.title || zip.name,
-            description: LFW.INFO?.description,
-            author: LFW.INFO?.author,
-            version: LFW.INFO?.version,
-            md5,
-          };
-        }
-        await this.load_data(zip, md5, info);
+        const zip = is_str(a) ?
+          await this._load_zip_from_url(a) :
+          await this._load_zip_from_object(a)
+        check()
+
+        await this.load_data(zip);
+        check()
       }
       if (is_first) this.callbacks.call("on_prel_loaded", this);
       this._playable = true;
@@ -480,48 +476,46 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       this._loading = false;
     }
   }
-  static IgnoreDisposed = (e: any) => {
-    I.Ditto.warn(e)
-    if (e.is_disposed_error === true) return;
-    throw e;
-  }
-  private _dispose_check = (fn: string) => {
-    if (!this._disposed) return;
-    const error = Object.assign(
-      new Error(`[${LFW.TAG}::${fn}] instance disposed.`),
-      { is_disposed_error: true }
-    )
-    throw error;
+
+  private dispose_guard = (fn: string) => {
+    const ret = () => {
+      if (!this._disposed) return;
+      const error = Object.assign(
+        new Error(`[${LFW.TAG}::${fn}] instance disposed.`),
+        { is_disposed_error: true }
+      )
+      throw error;
+    }
+    ret();
+    return ret;
   }
 
-  private async load_data(zip: I.IZip, md5: string, info: D.IDataInfo) {
-    this._dispose_check('load_data')
+  private async load_data({ zip, info }: ILoadedZip) {
+    const check = this.dispose_guard('load_data');
 
     let r = await zip.file("strings.json")?.json();
     if (r) this._i18n.add(r)
 
-    this._dispose_check('load_data')
+    check()
     r = await zip.file("strings.json5")?.json()
     if (r) this._i18n.add(r)
 
-    this._dispose_check('load_data')
+    check()
     const i18n_files = zip.file(/\.i18n\.json5?$/)
     for (const file of i18n_files) {
       const i18n_words = await file.json().catch(() => null);
-      this._dispose_check('load_data')
+      check()
       if (i18n_words) this._i18n.add(i18n_words)
     }
 
-    this._dispose_check('load_data')
-    this.zips.unshift(zip);
-    this.md5s.unshift(md5);
-    this.data_infos.unshift(info);
-    this.callbacks.call("on_zips_changed", this.zips);
+    check()
+    this.zips.add({ zip, info });
+    this.callbacks.call("on_zips_changed", this.zips.zips);
 
     const index_files = zip.file(/\.index\.(json5|xml)$/g).map(v => v.name)
     await this.datas.load(index_files);
 
-    this._dispose_check('load_data')
+    check()
     const regist = (helper: any, d: D.IEntityData) => {
       const name = d.base.name?.toLowerCase() ?? d.type + "_id_" + d.id;
       Object.defineProperty(helper, `add_${name}`, {
@@ -561,29 +555,20 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const i = LFW.instances.indexOf(this);
     if (i >= 0) LFW.instances.splice(i, 1);
   }
-  add_puppet(player_id: string, oid: string, team?: string): Entity | undefined {
-    const player_info = this.players.get(player_id);
-    if (!player_info) { debugger; return; }
-    const data = this.datas.fighters.find((v) => v.id === oid);
-    if (!data) { debugger; return; }
-    let fighter = this.world.puppets.get(player_id);
-    if (!fighter) {
-      fighter = this.factory.create_entity(this.world, data)
-      if (!fighter) return void 0;
-      fighter.name = player_info.name;
-      fighter.team = team || this.new_team;
-      fighter.ctrl = new LocalController(player_id, fighter);
-      fighter.attach();
-      this.random_entity_info(fighter);
-    } else {
-      if (team) fighter.team = team
-      fighter.transform(data)
-    }
-    return fighter;
+
+  add_puppet(player_id: string, oid: string, team: string = ''): void {
+    this.push_cmd(
+      CMD.SET_PUPPET,
+      `--player_id=${player_id}`,
+      `--oid=${oid}`,
+      `--team=${team}`
+    )
   }
-  del_puppet(player_id: string) {
+
+  del_puppet(player_id: string): void {
     this.push_cmd(CMD.DEL_PUPPET, player_id)
   }
+
   change_bg(bg: string): void {
     this.world.change_bg(bg)
     // this.push_cmd(CMD.CHANGE_BG, bg)
@@ -622,12 +607,12 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   strings(name: string): string[] { return this._i18n.strings(name) }
 
   protected async load_builtin_ui(): Promise<UI.ICookedUIInfo[]> {
-    this._dispose_check('load_builtin_ui')
+    const check = this.dispose_guard('load_builtin_ui');
     const { data: paths } = await this.resources.import_json<string[]>("builtin_data/launch/_index.json5")
     const ret: UI.ICookedUIInfo[] = []
     for (const path of paths) {
       const cooked_ui_info = await UI.cook_ui_info(this, path);
-      this._dispose_check('load_builtin_ui')
+      check()
       ret.unshift(cooked_ui_info);
     }
     this.uis.add(...ret);
@@ -635,7 +620,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
 
   async load_ui(zip: I.IZip): Promise<ReadonlyArray<UI.ICookedUIInfo>> {
-    this._dispose_check('load_ui')
+    const check = this.dispose_guard('load_ui');
     const files = zip.file(/^ui\/.*?\.ui\.(json5?|xml)$/)
     const ret: UI.ICookedUIInfo[] = []
 
@@ -643,21 +628,21 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       const is_xml = file.name.endsWith('.xml');
       if (is_xml) {
         const text = await file.text().catch(() => null);
-        this._dispose_check('load_ui')
+        check()
         if (!text) continue;
         const root = I.Ditto.XML.parse(text);
         if (!root) continue;
         const ui_info = UI.xml_to_ui_info(root);
         if (!ui_info || !Object.keys(ui_info).length) continue;
         const cooked_ui_info = await UI.cook_ui_info(this, ui_info);
-        this._dispose_check('load_ui')
+        check()
         ret.push(cooked_ui_info);
       } else {
         const json = await file.json().catch(() => null);
-        this._dispose_check('load_ui')
+        check()
         if (!json || Array.isArray(json)) continue;
         const cooked_ui_info = await UI.cook_ui_info(this, json);
-        this._dispose_check('load_ui')
+        check()
         ret.push(cooked_ui_info);
       }
     }
@@ -797,12 +782,6 @@ function pick_data_info(raw: unknown): D.IDataInfo {
   }
 }
 
-/**
- * 
- * @param {string} info_url 
- * @param {string} url 
- * @returns 
- */
 function full_zip_url(info_url: string, zip_url: string) {
   if (
     zip_url.startsWith('http://') ||

@@ -1,7 +1,7 @@
 import { deduped } from './base/dedup';
 import * as I from "./ditto";
 import { get_import_fallbacks } from "./loader/get_import_fallbacks";
-import type { LFW, IZipResult } from "./LFW";
+import type { IZipResult, ZipMgr } from "./ZipMgr";
 
 /** 资源导入的统一返回结构 */
 export interface ImportResult<T = any> {
@@ -13,19 +13,13 @@ export interface ImportResult<T = any> {
   origin?: string;
 }
 
-/**
- * 统一资源加载服务：按路径从数据包(zip)或网络取 json / 文本 / 二进制 / 图片 / URL。
- *
- * 数据包来源由 LFW 提供（zips + find_from_zips），本类只负责“解析 + 回退 + 去重”。
- * 与 LFW 采用组合关系：`lfw.resources.import_*`（已彻底迁移，LFW 不再有转发方法）。
- */
 export class Resources {
   static readonly TAG = 'Resources'
-  constructor(protected readonly lfw: LFW) { }
+  constructor(protected readonly zip_mgr: ZipMgr) { }
 
   /** 在已加载数据包中查找路径（命中数据包/文件名），未命中交给网络 Importer */
   protected find(paths: string[], exact: boolean): IZipResult[] {
-    return this.lfw.find_from_zips(paths, exact)
+    return this.zip_mgr.find(paths, exact)
   }
 
   async import_json<C = any>(path: string, exact: boolean = true): Promise<ImportResult<C>> {

@@ -4,7 +4,7 @@ import { BotController } from "../bot/BotController";
 import { BallController } from "../controller/BallController";
 import { xml_2_data_lists } from "../dat_translator/xml/xml_to_data_lists";
 import { xml_2_bg_data, xml_x_bg_data } from "../dat_translator/xml/xml_x_bg_data";
-import { xml_2_entity_data } from "../dat_translator/xml/xml_x_entity_data";
+import { xml_2_entity_data, xml_x_entity_data } from "../dat_translator/xml/xml_x_entity_data";
 import { xml_to_stage_info_list } from "../dat_translator/xml/xml_x_stage_info";
 import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IStageInfo } from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
@@ -96,6 +96,7 @@ class Inner {
     }
     this.alias_map.set(alias, data);
   }
+
   private _add_object(id: string, data: IEntityData) {
     const prev = this.data_map.get(id)
     if (prev) {
@@ -116,7 +117,23 @@ class Inner {
       const idx = list.findIndex(v => v.id === data.id)
       if (idx < 0) list.push(data); else list[idx] = data;
     }
+
+    Object.defineProperty(data, 'xml', {
+      configurable: true,
+      get: function () { return xml_x_entity_data(Ditto.XML, this) }
+    })
+    Object.defineProperty(data, 'xml_roundtrip', {
+      configurable: true,
+      get: function () { return xml_2_entity_data(this.xml) }
+    })
+    Object.defineProperty(data, 'xml_roundtrip_ok', {
+      configurable: true,
+      get: function () {
+        return JSON.stringify(this.xml_roundtrip) === JSON.stringify(this)
+      }
+    })
   }
+
   private _add_bg(data: IBgData) {
     const list = this.datas[data.type];
     const idx = list.findIndex(v => v.id === data.id);
@@ -138,6 +155,7 @@ class Inner {
       }
     })
   }
+  
   private check_cancelled() {
     if (this.cancelled) throw new Error("cancelled");
   }
