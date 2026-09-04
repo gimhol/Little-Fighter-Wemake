@@ -54,6 +54,7 @@ function guess_image_mime(uri: string): string {
  */
 export class ZipGLTFLoader extends T.GLTFLoader {
   protected lfw: LFW;
+  protected _object_urls = new Set<string>();
 
   constructor(lfw: LFW) {
     super()
@@ -97,9 +98,13 @@ export class ZipGLTFLoader extends T.GLTFLoader {
       ? { json: JSON.parse(data), bin: undefined }
       : read_glb(data)
     await this.rewrite_resources(json, bin, base_dir)
-    return new Promise<T.GLTF>((resolve, reject) => {
-      this.parse(json as any, '', resolve, reject)
-    })
+    try {
+      return await new Promise<T.GLTF>((resolve, reject) => {
+        this.parse(json as any, '', resolve, reject)
+      })
+    } finally {
+      this.revoke_object_urls()
+    }
   }
 
   /** 把外部 .bin/贴图 URI 改写为可从数据包加载的 blob: URL */
@@ -131,10 +136,17 @@ export class ZipGLTFLoader extends T.GLTFLoader {
 
   protected async import_image_url(base_dir: string, uri: string): Promise<string> {
     const [buf] = await this.lfw.import_array_buffer(this.resolve_url(base_dir, uri), true)
-    return URL.createObjectURL(new Blob([buf], { type: guess_image_mime(uri) }))
+    return this.blob_url(buf, guess_image_mime(uri))
   }
 
-  protected blob_url(buf: ArrayBuffer): string {
-    return URL.createObjectURL(new Blob([buf]))
+  protected blob_url(buf: ArrayBuffer, mime?: string): string {
+    const url = URL.createObjectURL(mime ? new Blob([buf], { type: mime }) : new Blob([buf]))
+    this._object_urls.add(url)
+    return url
+  }
+
+  protected revoke_object_urls(): void {
+    for (const url of this._object_urls) URL.revokeObjectURL(url)
+    this._object_urls.clear()
   }
 }
