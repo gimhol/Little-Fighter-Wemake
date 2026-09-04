@@ -1,7 +1,14 @@
-import { Color, type ColorRepresentation, ShaderMaterial, Texture } from "../../_t";
+import { Color, type ColorRepresentation, ShaderMaterial, Texture, Vector4 } from "../../_t";
 import { MaterialFactory, MaterialKind } from "../factory/MaterialFactory";
 import { Shaders } from "../shader";
 export const BLACK = new Color("#000000");
+
+export interface IUIClipRect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
 
 export class OutlineMaterial extends ShaderMaterial {
   static readonly KIND = MaterialKind.Outline;
@@ -46,6 +53,10 @@ export class OutlineMaterial extends ShaderMaterial {
     deburrMin: { value: 0.75 },
     deburrMax: { value: 0.95 },
     deburrJudge: { value: 0.75 },
+    /** 是否启用裁剪（本节点祖先中 overflow:hidden 视口的矩形交集） */
+    clipEnabled: { value: 0 },
+    /** 裁剪矩形（世界坐标，x0,y0,x1,y1） */
+    clipRect: { value: new Vector4() },
   }
   constructor() {
     super({
@@ -91,6 +102,8 @@ export class OutlineMaterial extends ShaderMaterial {
     this.uniforms.deburrMin.value = 0.75;
     this.uniforms.deburrMax.value = 0.95;
     this.uniforms.deburrJudge.value = 0.75;
+    this.uniforms.clipEnabled.value = 0;
+    this.uniforms.clipRect.value.set(0, 0, 0, 0);
   }
   get texture(): Texture | undefined { return this.uniforms.tex.value }
   set texture(v: Texture | undefined) { this.uniforms.tex.value = v }
@@ -155,6 +168,11 @@ export class OutlineMaterial extends ShaderMaterial {
     u.th.value = h;
     u.tsw.value = scale_x;
     u.tsh.value = scale_y;
+  }
+  /** 设置裁剪矩形（overflow:hidden）；传 null 表示不裁剪 */
+  set_clip_rect(clip: IUIClipRect | null): void {
+    this.uniforms.clipEnabled.value = clip ? 1 : 0;
+    if (clip) this.uniforms.clipRect.value.set(clip.x0, clip.y0, clip.x1, clip.y1);
   }
 }
 

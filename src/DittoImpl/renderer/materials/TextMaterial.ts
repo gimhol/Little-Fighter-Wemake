@@ -1,7 +1,7 @@
-import { Color, type ColorRepresentation, ShaderMaterial, Texture } from "../../_t";
+import { Color, type ColorRepresentation, ShaderMaterial, Texture, Vector4 } from "../../_t";
 import { MaterialFactory, MaterialKind } from "../factory/MaterialFactory";
 import { Shaders } from "../shader";
-import { BLACK } from "./OutlineMaterial";
+import { BLACK, type IUIClipRect } from "./OutlineMaterial";
 
 export class TextMaterial extends ShaderMaterial {
   static readonly KIND = MaterialKind.Text;
@@ -41,7 +41,11 @@ export class TextMaterial extends ShaderMaterial {
         coverColor: { value: BLACK.clone() },
         coverStength: { value: 0 },
         gray: { value: 0 },
-        keepout: { value: true }
+        keepout: { value: true },
+        /** 是否启用裁剪（本节点祖先中 overflow:hidden 视口的矩形交集） */
+        clipEnabled: { value: 0 },
+        /** 裁剪矩形（世界坐标，x0,y0,x1,y1） */
+        clipRect: { value: new Vector4() },
       }
     });
     return ret;
@@ -76,6 +80,8 @@ export class TextMaterial extends ShaderMaterial {
     c.uniforms.coverStength.value = 0
     c.uniforms.gray.value = 0
     c.uniforms.keepout.value = true
+    c.uniforms.clipEnabled.value = 0
+    c.uniforms.clipRect.value.set(0, 0, 0, 0)
   }
 
   // ===== 封装属性 =====
@@ -100,5 +106,11 @@ export class TextMaterial extends ShaderMaterial {
 
   get alpha(): number { return this.uniforms.opacity.value ?? 1 }
   set alpha(v: number) { this.uniforms.opacity.value = v }
+
+  /** 设置裁剪矩形（overflow:hidden）；传 null 表示不裁剪 */
+  set_clip_rect(clip: IUIClipRect | null): void {
+    this.uniforms.clipEnabled.value = clip ? 1 : 0;
+    if (clip) this.uniforms.clipRect.value.set(clip.x0, clip.y0, clip.x1, clip.y1);
+  }
 }
 MaterialFactory.register(TextMaterial)
