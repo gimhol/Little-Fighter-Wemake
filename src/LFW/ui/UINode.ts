@@ -67,6 +67,7 @@ export class UINode implements IDebugging {
   protected _state: any = {};
   protected _visible = true;
   protected _disabled = false;
+  protected _clip_children = false;
   protected _opacity = 1;
 
   readonly pos: IVector3 = new D.Vector3();
@@ -183,6 +184,17 @@ export class UINode implements IDebugging {
 
   get self_visible() {
     return this._visible
+  }
+  /**
+   * 是否裁剪子节点（overflow:hidden）
+   *
+   * 开启后，本节点矩形之外的子节点不再绘制、也不再响应指针。
+   */
+  get clip_children(): boolean {
+    return this._clip_children;
+  }
+  set clip_children(v: boolean) {
+    this._clip_children = v;
   }
   /**
    * 当前节点是否可见
@@ -370,6 +382,7 @@ export class UINode implements IDebugging {
     this._root = parent?.root ?? this;
     this._disabled = this.data.disabled == true
     this._visible = this.data.visible != false
+    this._clip_children = this.data.clips == true
     this._opacity = this.data.opacity ?? 1
     this.center.set(...this.data.center);
     this.pos.set(...this.data.pos);

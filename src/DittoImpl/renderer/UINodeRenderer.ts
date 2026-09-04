@@ -10,12 +10,20 @@ import { CSS2DObject, SRGBColorSpace } from "../_t";
 import { ImageMgr } from "../ImageMgr";
 import { MaterialFactory, MaterialKind } from "./factory/MaterialFactory";
 import { get_ninepatch_geometry, get_plane_geometry, get_static_plane_geometry } from "./GeometryKeeper";
-import { BLACK, OutlineMaterial } from "./materials/OutlineMaterial";
+import { BLACK, OutlineMaterial, type IUIClipRect } from "./materials/OutlineMaterial";
 import styles from "./ui_node_style.module.scss";
 import { UITextRenderer } from "./UITextRenderer";
 import type { WorldRenderer } from "./WorldRenderer";
 /** 平滑时间常数(ms)：约一帧(60fps)，每帧都移动、无停顿，避免 30UPS/60FPS 下 df 复位造成的抖动 */
 const SMOOTH_TAU = 1000 / 60;
+
+function intersect_clip(a: IUIClipRect, b: IUIClipRect): IUIClipRect | null {
+  const x0 = Math.max(a.x0, b.x0);
+  const y0 = Math.max(a.y0, b.y0);
+  const x1 = Math.min(a.x1, b.x1);
+  const y1 = Math.min(a.y1, b.y1);
+  return x0 < x1 && y0 < y1 ? { x0, y0, x1, y1 } : null;
+}
 
 interface IUserData {
   w?: number;
@@ -46,6 +54,8 @@ export class UINodeRenderer implements IUINodeRenderer {
   protected _s1 = new T.Vector3(1, 1, 1);
   protected _old_alpha: number | null = null;
   protected _last_sync_lifetime = -1;
+  protected _frame_rect: IUIClipRect | null = null;
+  protected readonly _v_tmp = new T.Vector3();
 
   protected get dom() {
     if (this._dom) return this._dom;
@@ -358,10 +368,62 @@ export class UINodeRenderer implements IUINodeRenderer {
       this.sync();
     }
 
+    this.apply_clip(this.compute_effective_clip());
+    if (ui.clip_children) this.update_frame_rect();
+
     for (const child of ui.children) {
       if (child.visible || (child.visible != child.renderer.visible))
         child.renderer.render(dt, df)
     }
+  }
+
+  quad_world_rect(): IUIClipRect | null {
+    return this.update_frame_rect();
+  }
+
+  effective_clip_rect(refresh: boolean = false): IUIClipRect | null {
+    let ret: IUIClipRect | null = null;
+    let p = this.ui.parent;
+    while (p) {
+      if (p.clip_children) {
+        const r = refresh
+          ? (p.renderer as UINodeRenderer).update_frame_rect()
+          : (p.renderer as UINodeRenderer)._frame_rect;
+        if (r) ret = ret ? intersect_clip(ret, r) : r;
+      }
+      p = p.parent;
+    }
+    return ret;
+  }
+
+  protected apply_clip(clip: IUIClipRect | null): void {
+    this.mesh.material.set_clip_rect(clip);
+    if (this._text_renderer) this._text_renderer.mesh.material.set_clip_rect(clip);
+  }
+
+  protected update_frame_rect(): IUIClipRect | null {
+    const { _w: w, _h: h, _tran_x: tx, _tran_y: ty } = this;
+    if (!(w > 0) || !(h > 0)) return this._frame_rect = null;
+    this.mesh.updateWorldMatrix(true, false);
+    const m = this.mesh.matrixWorld;
+    const v = this._v_tmp;
+    const x0 = tx - w / 2;
+    const y0 = ty - h / 2;
+    const x1 = tx + w / 2;
+    const y1 = ty + h / 2;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [cx, cy] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1]] as const) {
+      v.set(cx, cy, 0).applyMatrix4(m);
+      if (v.x < minX) minX = v.x;
+      if (v.y < minY) minY = v.y;
+      if (v.x > maxX) maxX = v.x;
+      if (v.y > maxY) maxY = v.y;
+    }
+    return this._frame_rect = { x0: minX, y0: minY, x1: maxX, y1: maxY };
+  }
+
+  protected compute_effective_clip(): IUIClipRect | null {
+    return this.effective_clip_rect(false);
   }
 
   protected sync() {
