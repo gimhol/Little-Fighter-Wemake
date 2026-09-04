@@ -504,6 +504,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     r = await zip.file("strings.json5")?.json()
     if (r) this._i18n.add(r)
 
+    this._dispose_check('load_data')
+    const i18n_files = zip.file(/\.i18n\.json5?$/)
+    for (const file of i18n_files) {
+      const i18n_words = await file.json().catch(() => null);
+      this._dispose_check('load_data')
+      if (i18n_words) this._i18n.add(i18n_words)
+    }
 
     this._dispose_check('load_data')
     this.zips.unshift(zip);

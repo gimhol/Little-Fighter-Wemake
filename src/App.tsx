@@ -314,6 +314,7 @@ function App() {
 
     let { lang, dev } = params;
     if (typeof lang !== 'string') lang = navigator.language.toLowerCase()
+    else lang = lang.toLowerCase()
     const lf2 = ref_lfw.current = new LFW(dev == '1');
     if (
       location.pathname.endsWith('demo') ||
