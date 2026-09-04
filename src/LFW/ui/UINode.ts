@@ -388,7 +388,10 @@ export class UINode implements IDebugging {
     this.pos.set(...this.data.pos);
     this.size.set(...this.data.size);
     this.scale.set(...this.data.scale);
-    this.text = this.data.txt_info ?? null;
+    const txt_info = this.data.txt_info;
+    this.text = txt_info && this.data.i18n
+      ? this.make_i18n_text(txt_info, this.data.i18n)
+      : txt_info ?? null;
     this.image = this.data.img_info ?? null;
     this.color = this.data.color ?? '';
     this.renderer = new D.UINodeRenderer(this);
@@ -397,6 +400,18 @@ export class UINode implements IDebugging {
     this._outlineAlpha = this.data.outlineAlpha
     if (this.data.style) this.style.assign(this.data.style)
     make_debugging(this)
+  }
+
+  /**
+   * 按“当前语言”解析 i18n 词条并重新测量文本
+   *
+   * UI 数据加载时，i18n 文字已按当时的语言烤进 txt_info（缓存起来避免反复测量）；
+   * 若运行中切换了语言，新建/重开页面时会用当前语言重新测量（语言未变时直接复用原 txt_info）。
+   */
+  protected make_i18n_text(baked: TextInfo, key: string): TextInfo {
+    const resolved = this.lfw.string(key);
+    if (resolved === baked.text) return baked;
+    return this.lfw.images.measure_text(resolved, baked.style ?? this.data.style ?? void 0);
   }
 
   /**

@@ -112,7 +112,39 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
 
   get lang(): string { return this._i18n.lang }
-  set lang(v: string) { this._i18n.lang = v }
+  set lang(v: string) { this.set_lang(v) }
+
+  set_lang(lang: string): void {
+    if (!is_str(lang)) {
+      this.warn('set_lang', `lang should be string, but got ${lang}`)
+      return;
+    }
+    const prev = this._i18n.lang;
+    if (prev === lang) return;
+
+    const recs: { node: UI.UINode, key: string }[] = [];
+    const collect = (node: UI.UINode): void => {
+      const key = node.data.i18n;
+      if (key && node.text) {
+        const old_txt = this._i18n.string(key, prev);
+        if (node.text.text === old_txt)
+          recs.push({ node, key });
+      }
+      for (const child of node.children) collect(child);
+    };
+    for (const stack of this._ui_stacks)
+      for (const ui of stack.uis)
+        collect(ui);
+
+    this._i18n.lang = lang;
+
+    for (const { node, key } of recs) {
+      const style = node.text?.style;
+      node.text = this.images.measure_text(this.string(key), style);
+    }
+
+    this.callbacks.call('on_lang_changed', lang, prev, this);
+  }
   dev: boolean = false;
   __debugging = false
   debug(..._1: any[]): void { };

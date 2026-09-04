@@ -30,6 +30,8 @@ export interface ILFWCallback {
   on_ui_loaded?(ui_infos: ICookedUIInfo[]): void;
   on_prel_loaded?(lfw: LFW): void;
 
+  on_lang_changed?(lang: string, prev: string, lfw: LFW): void;
+
   on_broadcast?(message: string, lfw: LFW): void;
 
   on_zips_changed?(zips: IZip[]): void;
