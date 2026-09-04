@@ -40,6 +40,7 @@ import { PlayerRow } from "./PlayerRow";
 import SettingsRows from "./SettingsRows";
 import { download } from "./Utils/download";
 import { open_file } from "./Utils/open_file";
+import i18n from "./i18n";
 import img_btn_0_3 from "./assets/btn_0_3.png";
 import img_btn_0_4 from "./assets/btn_0_4.png";
 import img_btn_1_0 from "./assets/btn_1_0.png";
@@ -142,7 +143,9 @@ function App() {
   const { params } = useMemo(() => {
     const sobj = qs.parse(l.search.substring(1))
     const hobj = qs.parse(l.hash.substring(1))
-    return { sobj, hobj, params: { ...sobj, ...hobj } }
+    const qi = l.hash.indexOf('?')
+    const hsobj = qi >= 1 ? qs.parse(l.hash.substring(qi + 1)) : {}
+    return { sobj, hobj, params: { ...sobj, ...hobj, ...hsobj } }
   }, [l])
 
   const [fullscreen] = useState(() => new Ditto.FullScreen());
@@ -290,6 +293,12 @@ function App() {
       btn?.set_disabled(networking)
     }
   }, [networking, lfw])
+
+  useEffect(() => {
+    if (typeof params.lang === 'string' && params.lang) {
+      i18n.changeLanguage(params.lang)
+    }
+  }, [params.lang])
 
   useCallbacks(lfw?.world.callbacks, {
     on_stage_change: (s) => _set_bg_id(s.bg.id),
