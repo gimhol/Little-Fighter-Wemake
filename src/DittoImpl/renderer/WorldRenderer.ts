@@ -10,6 +10,14 @@ import { BG_INDICATINGS } from "./INDICATINGS";
 import csses from "./styles.module.scss";
 import { TerrainIndicator } from "./TerrainIndicator";
 
+/** 组内是否有成员当前显示 3D 模型（模块级函数，避免每帧生成闭包） */
+const group_has_model = (g: EntityRenderer[]): boolean => {
+  for (let i = 0; i < g.length; i++) if (g[i].has_model) return true;
+  return false;
+};
+/** 组按代表实体 z 远→近排序 */
+const by_group_z = (a: EntityRenderer[], b: EntityRenderer[]) => a[0].position.z - b[0].position.z;
+
 export class WorldRenderer implements IWorldRenderer {
   readonly lfw: LFW;
   readonly world: World;
@@ -24,6 +32,7 @@ export class WorldRenderer implements IWorldRenderer {
   readonly bg_container: Object3D;
   readonly bg_offset = new Vector3(0, 0, 0);
   readonly world_node = new Object3D();
+  readonly overlay_node = new Object3D();
   readonly world_offset = new Vector3(0, 0, 0);
   readonly ambient_light: AmbientLight;
   readonly directional_light: DirectionalLight;
@@ -42,6 +51,11 @@ export class WorldRenderer implements IWorldRenderer {
     return { w: this.renderer_w, h: this.renderer_h };
   }
   indicators: number = 0;
+
+  /** 实体分组复用缓冲（避免每帧 new） */
+  protected _grp_pool: EntityRenderer[][] = [];
+  protected _grp_map = new Map<EntityRenderer, EntityRenderer[]>();
+  protected _grps: EntityRenderer[][] = [];
 
   private cam_p0 = new Vector3()
   private cam_p1 = new Vector3()
@@ -80,6 +94,7 @@ export class WorldRenderer implements IWorldRenderer {
     this.bg_flags = new TerrainIndicator(this);
     this.set_renderer_size(w * 4, h * 4);
     this.scene.add(this.world_node);
+    this.world_node.add(this.overlay_node);
 
     this.ui_bg_container = new Object3D();
     this.ui_bg_scene.add(this.ui_bg_container);
@@ -222,13 +237,113 @@ export class WorldRenderer implements IWorldRenderer {
     r.clear(true, true, true);
     r.render(this.ui_bg_scene, this.ui_bg_camera);
     css?.render(this.ui_bg_scene, this.ui_bg_camera);
+
+    // 背景（MeshBasic 无光照，单独成根绘制，始终位于实体之后）
     r.clearDepth();
-    r.render(this.scene, this.camera);
+    r.render(this.bg_container, this.camera);
+    // 实体：跨实体遮挡按“实体 z 平面”画家判定（组间清深度、组内真实深度）。
+    // 纯 2D 时所有组合并为一次渲染，行为与单次 scene 渲染一致。
+    const groups = this.collect_entity_groups();
+    this.render_world_entities(groups);
+    this.render_world_overlay(groups);
+    // 归还复用的组数组，供下一帧再次使用
+    for (let i = 0; i < groups.length; i++) this._grp_pool.push(groups[i]);
     css?.render(this.scene, this.camera);
+
     r.clearDepth();
     r.render(this.ui_fg_scene, this.ui_fg_camera);
     css?.render(this.ui_fg_scene, this.ui_fg_camera);
   }
+
+  /** 收集已挂载实体渲染器为“组”：持有者与其持有/抓住的实体同组；组按 z 远→近排序（复用缓冲） */
+  protected collect_entity_groups(): EntityRenderer[][] {
+    const { entities } = this.world;
+    const map = this._grp_map;
+    map.clear();
+    const out = this._grps;
+    out.length = 0;
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      const er = e.renderer as EntityRenderer | undefined;
+      if (!er?.mounted || !er.body) continue;
+      const holder = (e.bearer ?? e.catcher) as Entity | undefined;
+      const hr = holder?.renderer as EntityRenderer | undefined;
+      let key = er;
+      if (holder && hr?.mounted && hr.body) key = hr;
+      let g = map.get(key);
+      if (!g) {
+        g = this._grp_pool.pop();
+        if (!g) g = [];
+        g.length = 1;
+        g[0] = key;
+        map.set(key, g);
+      }
+      if (er !== key) g.push(er);
+    }
+    for (const g of map.values()) out.push(g);
+    out.sort(by_group_z);
+    return out;
+  }
+
+  /**
+   * 实体主体绘制：组已按 z 远→近排序。
+   * - 含 3D 模型的组各自独立 pass（必须隔离深度）；
+   * - 连续纯 2D 组并入同一 pass（2D-2D 靠画家排序本就正确），
+   *   渲染次数与“模型实体数”成正比而非实体总数。
+   * 仅用索引循环，不建 passes/闭包，避免每帧分配。
+   */
+  protected render_world_entities(groups: EntityRenderer[][]): void {
+    const r = this._renderer;
+    if (!r || !groups.length) return;
+    this.bg_container.visible = false;
+    this.overlay_node.visible = false;
+    this.world_node.updateMatrixWorld(true);
+    for (const g of groups) for (const er of g) er.body.visible = false;
+
+    const n = groups.length;
+    let i = 0;
+    while (i < n) {
+      const g = groups[i];
+      if (group_has_model(g)) {
+        // 模型组：独立 pass
+        for (const er of g) er.body.visible = true;
+        r.clearDepth();
+        r.render(this.scene, this.camera);
+        for (const er of g) er.body.visible = false;
+        i++;
+      } else {
+        // 连续纯 2D 组并入一次 pass（同一 scene.render 内仍按 z 画家排序）
+        let j = i;
+        while (j < n && !group_has_model(groups[j])) {
+          for (const er of groups[j]) er.body.visible = true;
+          j++;
+        }
+        r.clearDepth();
+        r.render(this.scene, this.camera);
+        for (let k = i; k < j; k++) for (const er of groups[k]) er.body.visible = false;
+        i = j;
+      }
+    }
+    this.bg_container.visible = true;
+    this.overlay_node.visible = true;
+  }
+
+  protected render_world_overlay(groups: EntityRenderer[][]): void {
+    const r = this._renderer;
+    if (!r) return;
+    // 叠加层仅剩地面调试网格等，平时为空 → 整段跳过，省一次 scene.render
+    if (this.overlay_node.children.length) {
+      this.bg_container.visible = false;
+      for (const g of groups) for (const er of g) er.body.visible = false;
+      this.world_node.updateMatrixWorld(true);
+      r.clearDepth();
+      r.render(this.scene, this.camera);
+      this.bg_container.visible = true;
+    }
+    // 实体主体恢复可见（供下一帧 css / 单次渲染等读取）
+    for (const g of groups) for (const er of g) er.body.visible = true;
+  }
+
   set_canvas(canvas: HTMLCanvasElement | null | undefined) {
     if (this._renderer) {
       if (canvas === this._renderer.domElement)

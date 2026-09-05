@@ -6,7 +6,7 @@ import { foreach } from "@/LFW/utils/container_help/foreach";
 import * as T from "../_t";
 import { ENTITY_INDICATINGS } from "./INDICATINGS";
 import { INDICATORS_INFO } from "./INDICATORS_INFO";
-import type { WorldRenderer } from "./WorldRenderer";
+import type { EntityRenderer } from "./EntityRenderer";
 const line_geometry = new T.LineGeometry();
 const line_vertices = new Float32Array([
   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1,
@@ -65,8 +65,8 @@ export class FrameIndicators {
   private _prev_frame?: IFrameInfo;
   private _prev_face?: number;
 
-  get world_node() {
-    return (this._entity.world.renderer as WorldRenderer).world_node;
+  get body() {
+    return (this._entity.renderer as EntityRenderer).body;
   }
   get frame() {
     return this._entity.frame;
@@ -101,7 +101,7 @@ export class FrameIndicators {
       new T.LineMaterial(mp),
     )
     this._indicators_map[k][idx] = ret;
-    this.world_node.add(ret);
+    this.body.add(ret);
     return ret;
   }
 
@@ -162,7 +162,7 @@ export class FrameIndicators {
   hide_indicators(k: keyof typeof this._indicators_map) {
     const indicators = this._indicators_map[k]
     if (!indicators.length) return
-    this.world_node.remove(...indicators);
+    this.body.remove(...indicators);
     indicators.length = 0;
   }
 
@@ -215,7 +215,7 @@ export class FrameIndicators {
     const group = new T.Object3D();
     group.name = 'ft_indicator';
     group.add(dot, vline, circle);
-    this.world_node.add(group);
+    this.body.add(group);
     this._indicators_map.ft[0] = group;
   }
 
@@ -242,7 +242,7 @@ export class FrameIndicators {
 
   on_unmount() {
     foreach(this._indicators_map, (list) => {
-      list.forEach((item) => this.world_node.remove(item));
+      list.forEach((item) => this.body.remove(item));
       list.length = 0;
     });
   }

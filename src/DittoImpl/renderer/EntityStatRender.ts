@@ -40,7 +40,7 @@ export class EntityStatRender {
     if (this._reserve_mesh) return this._reserve_mesh;
     const ret = this._reserve_mesh = TextMesh.get()
     ret.name = `reserve_mesh_${this.entity.name}_${this.entity.id}`;
-    this.world_renderer.world_node.add(ret)
+    this.owner.body.add(ret)
     return ret
   }
   constructor(owner: EntityRenderer) {
@@ -112,9 +112,7 @@ export class EntityStatRender {
 
   on_mount() {
     const { entity: e } = this;
-    this.world_renderer.world_node.add(
-      this.bars_node
-    );
+    this.owner.body.add(this.bars_node);
     this.bars_node.visible = e.key_role
   }
 

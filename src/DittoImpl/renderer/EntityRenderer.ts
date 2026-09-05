@@ -1,5 +1,5 @@
 import { clamp, FID, is_fighter, OID, SE, StateEnum, type Entity, type IEntityRenderer, type LFW, type World } from "@/LFW";
-import { Vector3 } from "../_t";
+import { Object3D, Vector3 } from "../_t";
 import { EntityCtrlRender } from "./EntityCtrlRender";
 import { EntityMainRender } from "./EntityMainRender";
 import { EntityNameRender } from "./EntityNameRender";
@@ -24,6 +24,7 @@ export class EntityRenderer implements IEntityRenderer {
   readonly p0 = new Vector3()
   readonly p1 = new Vector3()
   readonly position = new Vector3();
+  readonly body = new Object3D();
 
   get holder(): EntityRenderer | undefined {
     const { entity: { bearer, catcher } } = this;
@@ -37,6 +38,10 @@ export class EntityRenderer implements IEntityRenderer {
     if (frame.id == FID.Gone) return true
     if (frame.state == SE.Gone) return true
     return invisible;
+  }
+  /** 当前是否正在显示 3D 模型（用于是否启用逐实体深度隔离渲染） */
+  get has_model(): boolean {
+    return this.main.model_active;
   }
   constructor(e: Entity) {
     this.owner = e.world.renderer as WorldRenderer;
@@ -132,6 +137,7 @@ export class EntityRenderer implements IEntityRenderer {
     this.entity.catching?.renderer?.render(dt, df);
   }
   mount() {
+    this.owner.world_node.add(this.body);
     this.main.on_mount();
     this.name.on_mount();
     this.shad.on_mount();
@@ -152,5 +158,6 @@ export class EntityRenderer implements IEntityRenderer {
     this.stat = null
     this.indi = null
     this.ctrl = null
+    this.body.removeFromParent();
   }
 }

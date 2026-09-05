@@ -19,8 +19,8 @@ export class TerrainIndicator {
     this.world_renderer = world_renderer;
   }
 
-  get world_node() {
-    return this.world_renderer.world_node;
+  get overlay_node() {
+    return this.world_renderer.overlay_node;
   }
 
   set_visible(v: boolean): void {
@@ -105,7 +105,7 @@ export class TerrainIndicator {
       group.add(fill_mesh);
       group.add(line);
       group.add(hline);
-      this.world_node.add(group);
+      this.overlay_node.add(group);
       this.groups.push(group);
     }
   }

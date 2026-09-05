@@ -21,7 +21,7 @@ export class EntityCtrlRender {
   get ctrl_node(): Object3D {
     if (this._ctrl_node) return this._ctrl_node;
     this._ctrl_node = new Object3D();
-    this.world_renderer.world_node.add(this._ctrl_node);
+    this.owner.body.add(this._ctrl_node);
     return this._ctrl_node;
   }
   get ctrls(): Map<GameKey | 'bot' | 'keys', TextMesh> {

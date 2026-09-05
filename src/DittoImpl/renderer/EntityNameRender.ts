@@ -12,7 +12,7 @@ export class EntityNameRender {
     if (this._mesh) return this._mesh;
     const ret = this._mesh = TextMesh.get()
     ret.name = `EntityNameRender_${this.entity.name}_${this.entity.id}`;
-    this.world_renderer.world_node.add(ret)
+    this.owner.body.add(ret)
     return ret
   }
   constructor(owner: EntityRenderer) {

@@ -199,7 +199,12 @@ export class EntityMainRender {
     this.reset()
     this.update_texture();
     this.update_outline();
-    this.world_renderer.world_node.add(this.node);
+    this.owner.body.add(this.node);
+  }
+
+  /** 当前帧是否正在显示 3D 模型（决定是否启用逐实体深度隔离渲染） */
+  get model_active(): boolean {
+    return this.model_node.visible;
   }
 
   on_unmount(): void {

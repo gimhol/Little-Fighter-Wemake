@@ -50,7 +50,7 @@ export class EntityShadowRender {
     this.mesh.renderOrder = 0;
   }
   on_mount() {
-    this.world_renderer.world_node.add(this.mesh);
+    this.owner.body.add(this.mesh);
     this.update_position(true);
     this.update_scale_opacity(true);
   }
