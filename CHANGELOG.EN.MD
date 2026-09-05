@@ -24,7 +24,6 @@ by [**Gim**](https://gim.ink)
 
 - Fixed wrong team-alive checks in campaign mode
 - Campaign shutter animation is now pure black
-- Fixed occlusion between 3D models and 2D characters/items so they no longer appear to interpenetrate: front/back is now decided by Z, so a front (larger-Z) 2D entity fully covers a 3D one behind it, and a 2D one behind is fully covered by a 3D one in front (unproofread)
 
 ## [v0.1.46](https://lf.gim.ink/0.1.46)
 
