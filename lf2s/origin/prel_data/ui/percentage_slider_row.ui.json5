@@ -28,18 +28,13 @@
       center: "0.5,0.5",
       items: [
         {
+          id: "prefix_label",
           center: "0.5,0.5",
           i18n: "$val:prefix",
           style: {
             font: "18px Arial",
             fill_style: "#5A73D6",
           },
-          component: [
-            {
-              cls: "Label",
-              id: "prefix_label",
-            },
-          ],
         },
       ],
     },
@@ -69,18 +64,13 @@
           ],
           items: [
             {
+              id: "handle_label",
               center: "0.5,0.5",
               i18n: "0",
               style: {
                 font: "18px Arial",
                 fill_style: "black",
               },
-              component: [
-                {
-                  cls: "Label",
-                  id: "handle_label",
-                },
-              ],
             },
           ],
         },

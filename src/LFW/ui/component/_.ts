@@ -38,7 +38,6 @@ export const regist_components = () => {
     _.ImgLoop,
     _.IntegerPicker,
     _.Jalousie,
-    _.Label,
     _.LabelButton,
     _.LaunchPage,
     _.LittleFunnyAutoGame,

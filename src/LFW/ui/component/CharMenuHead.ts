@@ -3,12 +3,11 @@ import type { IPropsMeta } from "../../defines/ISchema";
 import { floor } from '../../utils/math/base';
 import { UINode } from '../UINode';
 import { GamePrepareLogic } from "./GamePrepareLogic";
-import { Label } from './Label';
 import { Picture } from "./Picture";
 import { UIComponent } from "./UIComponent";
 
 export interface ICharMenuHeadProps {
-  countdown_label?: Label,
+  countdown_label?: UINode,
   hints_node?: UINode,
   head_pic?: Picture,
 }
@@ -22,7 +21,7 @@ export interface ICharMenuHeadProps {
 export class CharMenuHead extends UIComponent<ICharMenuHeadProps> {
   static override readonly TAGS: string[] = ["CharMenuHead"];
   static override readonly PROPS: IPropsMeta<ICharMenuHeadProps> = {
-    countdown_label: { type: Label, nullable: false },
+    countdown_label: { type: UINode, nullable: false },
     hints_node: { type: UINode, nullable: false },
     head_pic: { type: Picture, nullable: false },
   };
@@ -32,9 +31,6 @@ export class CharMenuHead extends UIComponent<ICharMenuHeadProps> {
   get countdown_node() { return this.node.find_child("countdown_text") }
   get gpl(): GamePrepareLogic | undefined {
     return this.node.root.find_component(GamePrepareLogic);
-  }
-  override on_start(): void {
-    this.props.countdown_label?.preload(["5", "4", "3", "2", "1"])
   }
   join(path: string): void {
     this._joined = true;

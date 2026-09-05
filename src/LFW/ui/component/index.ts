@@ -39,7 +39,6 @@ export * from "./HorizontalLayout";
 export * from "./HoverBehavior";
 export * from "./ImgLoop";
 export * from "./IntegerPicker";
-export * from "./Label";
 export * from "./LabelButton";
 export * from "./LaunchPageLogic";
 export * from "./LittleFunnyAutoGame";

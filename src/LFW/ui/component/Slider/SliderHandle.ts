@@ -1,7 +1,7 @@
 import {
   clamp, Defines, type IPointingEvent, type IPointingsCallback, type IPropsMeta,
   type IUICallback, type IUICompnentCallbacks,
-  Label, LF2PointerEvent, max, min, round, round_float, UIComponent, UINode
+  LF2PointerEvent, max, min, round, round_float, UIComponent, UINode
 } from "../../..";
 export interface ISliderHandleProps {
   mode?: string;
@@ -14,7 +14,7 @@ export interface ISliderHandleProps {
 
   container?: UINode;
   responser?: UINode;
-  handle_label?: Label;
+  handle_label?: UINode;
   direction?: 'row' | 'col';
 
   items_container?: UINode;
@@ -40,7 +40,7 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
     container: UINode,
     responser: UINode,
     items_container: UINode,
-    handle_label: Label,
+    handle_label: UINode,
     items: String,
     visible_items: Number,
     direction: { type: String, oneof: ["row", "col"], nullable: true }

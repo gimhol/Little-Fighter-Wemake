@@ -2,9 +2,9 @@ import { Delay } from "../../animation";
 import { Easing } from "../../animation/Easing";
 import { Sequence } from "../../animation/Sequence";
 import { Stage } from "../../stage/Stage";
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class StageTitleShow extends Label {
+export class StageTitleShow extends UIComponent {
   static override readonly TAGS: string[] = ["StageTitleShow"];
   private _opactiy: Sequence = new Sequence(
     new Easing(0, 1).set_duration(500),
@@ -12,8 +12,8 @@ export class StageTitleShow extends Label {
     new Easing(1, 0).set_duration(500),
   );
 
-  override set_text(text: string): this {
-    super.set_text(text);
+  set_text(text: string): this {
+    this.node.set_text(text);
     this._opactiy.start(false);
     return this;
   }

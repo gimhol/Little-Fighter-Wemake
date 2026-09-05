@@ -1,7 +1,7 @@
 import { CheatEnum, Defines, type IStageInfo, StageGroup as SG } from "../../defines";
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class StageSwitcher extends Label {
+export class StageSwitcher extends UIComponent {
   static override readonly TAGS: string[] = ["StageSwitcher"];
   private _stage: IStageInfo = Defines.VOID_STAGE;
   get show_all(): boolean {
@@ -58,6 +58,6 @@ export class StageSwitcher extends Label {
       const bdt = this.world.lfw.datas.backgrounds.find(v => v.id === this._stage.bg);
       this.world.stage.change_bg(bdt ?? Defines.VOID_BG)
     }
-    this.set_text(this.stage_text)
+    this.node.set_text(this.stage_text)
   }
 }

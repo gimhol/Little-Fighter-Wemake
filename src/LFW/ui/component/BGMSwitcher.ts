@@ -1,14 +1,14 @@
 import { loop_offset } from "../../utils/container_help/loop_offset";
 import { LF2PointerEvent } from "../LF2PointerEvent";
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class BGMSwitcher extends Label {
+export class BGMSwitcher extends UIComponent {
   static override readonly TAGS: string[] = ["BGMSwitcher"];
   private _which: 'Silent' | 'Random' | '' = '';
   get which(): string { return this._which || this.lfw.sounds.bgm() || "Silent"; }
   get offset(): number { return this.num(0) ?? 0; }
   private _sounds_cbs = {
-    on_bgm_changed: () => this.set_text('BGM: ' + this.which)
+    on_bgm_changed: () => this.node.set_text('BGM: ' + this.which)
   }
   override on_resume(): void {
     if (this.lfw.sounds.is_random)

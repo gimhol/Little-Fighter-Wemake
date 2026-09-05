@@ -1,8 +1,8 @@
 import { parse_call_func_expression } from "../utils";
 import { FadeOutOpacity } from "./FadeOutOpacity";
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class LoadingContentText extends Label {
+export class LoadingContentText extends UIComponent {
   static override readonly TAGS: string[] = ["LoadingContentText"]
   get fade_out_duration() { return this.num(1) ?? 0 };
   get fade_out_delay() { return this.num(2) ?? 0 }
@@ -41,6 +41,6 @@ export class LoadingContentText extends Label {
   on_progress(text: string, progress: number) {
     this.fadeout?.start();
     const str = progress ? `loading: ${text}(${progress}%)` : ` loading: ${text}`;
-    this.set_text(str)
+    this.node.set_text(str)
   }
 }

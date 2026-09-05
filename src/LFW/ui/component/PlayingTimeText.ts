@@ -1,11 +1,11 @@
 import { floor } from '../../utils/math/base';
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class PlayingTimeText extends Label {
+export class PlayingTimeText extends UIComponent {
   static override readonly TAGS: string[] = ["PlayingTimeText"];
   
   override on_show(): void {
-    this.text = this.get_txt();
+    this.node.set_text(this.get_txt());
   }
 
   protected get_txt(): string {

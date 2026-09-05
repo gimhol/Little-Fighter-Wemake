@@ -34,7 +34,6 @@
       outlineColor: "#000000",
       outlineWidth: 1,
       outlineAlpha: 1,
-      component: [ { cls: "Label" } ],
     },
     {
       visible: false,
@@ -51,7 +50,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ "Text()" ],
         },
         {
           id: "f6",
@@ -60,7 +58,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ { id: "f6", cls: "Text" } ],
         },
         {
           i18n: " F7: ",
@@ -68,7 +65,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ "Text()" ],
         },
         {
           id: "f7",
@@ -77,7 +73,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ { id: "f7", cls: "Text" } ],
         },
         {
           i18n: " F8: ",
@@ -85,7 +80,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ "Text()" ],
         },
         {
           id: "f8",
@@ -94,7 +88,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ { id: "f8", cls: "Text" } ],
         },
         {
           i18n: " F9: ",
@@ -102,7 +95,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ "Text()" ],
         },
         {
           id: "f9",
@@ -111,7 +103,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ { id: "f9", cls: "Text" } ],
         },
         {
           i18n: " F10: ",
@@ -119,7 +110,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ "Text()" ],
         },
         {
           id: "f10",
@@ -128,7 +118,6 @@
           outlineWidth: 1,
           outlineAlpha: 1,
           style: "$val:txt_style",
-          component: [ { id: "f10", cls: "Text" } ],
         },
       ],
     },

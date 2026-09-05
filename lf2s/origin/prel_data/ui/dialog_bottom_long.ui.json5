@@ -89,8 +89,8 @@
           cls: "Dialogs",
           properties: {
             head_node: "head_pos",
-            text: "dialog_text",
-            talker: "talker_name",
+            text: "txt_pos",
+            talker: "talker_pos",
           },
         },
       ],
@@ -119,10 +119,6 @@
           },
           component: [
             {
-              id: "dialog_text",
-              cls: "Text",
-            },
-            {
               cls: "Alignment",
               properties: {
                 followed: "id:head_pos",
@@ -143,10 +139,6 @@
             font: "13px Arial",
           },
           component: [
-            {
-              id: "talker_name",
-              cls: "Text",
-            },
             {
               cls: "Alignment",
               properties: {

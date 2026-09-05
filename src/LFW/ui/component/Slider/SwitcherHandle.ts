@@ -2,7 +2,6 @@ import type { IPropsMeta } from "../../../defines/ISchema";
 import { max, round } from "../../../utils/math/base";
 import { UINode } from "../../UINode";
 import type { IUICompnentCallbacks } from "../IUICompnentCallbacks";
-import { Label } from "../Label";
 import { SliderHandle, type ISliderHandleProps } from "./SliderHandle";
 
 export interface ISwitcherHandleProps extends ISliderHandleProps {
@@ -41,7 +40,7 @@ export class SwitcherHandle extends SliderHandle {
     container: UINode,
     responser: UINode,
     items_container: UINode,
-    handle_label: Label,
+    handle_label: UINode,
     items: String,
     visible_items: Number,
     direction: { type: String, oneof: ["row", "col"], nullable: true },

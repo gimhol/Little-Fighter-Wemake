@@ -1,9 +1,9 @@
 import { Defines } from "../../defines/defines";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import type { IWorldDataset } from "../../defines/IWorldDataset";
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class DifficultyText extends Label implements IWorldCallbacks {
+export class DifficultyText extends UIComponent implements IWorldCallbacks {
   static override readonly TAGS: string[] = ["DifficultyText", "difficulty_text"];
   override on_resume(): void {
     this.world.callbacks.add(this);
@@ -14,6 +14,6 @@ export class DifficultyText extends Label implements IWorldCallbacks {
   }
   on_dataset_change<K extends keyof IWorldDataset>(key: K): void {
     if (key !== 'difficulty') return;
-    this.text = this.lfw.string(Defines.DifficultyLabels[this.world.dataset.difficulty]);
+    this.node.set_text(Defines.DifficultyLabels[this.world.dataset.difficulty]);
   }
 }

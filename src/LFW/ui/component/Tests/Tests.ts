@@ -1,7 +1,6 @@
 import { FSM } from "../../../base/FSM";
 import { GK, type IClazz } from "../../../defines";
 import type { IUIKeyEvent } from "../../IUIKeyEvent";
-import { Label } from "../Label";
 import { UIComponent } from "../UIComponent";
 import { Ball_3000_vs_Ball_3000, Ball_3000_vs_Ball_3005, Ball_3000_vs_Ball_3006, Ball_3000_vs_BurnRun, Ball_3000_vs_JohnShield, Ball_3000_vs_ManyPunch, Ball_3005_vs_Ball_3005, Ball_3005_vs_Ball_3006, Ball_3005_vs_BurnRun, Ball_3005_vs_JohnShield, Ball_3005_vs_ManyPunch, Ball_3006_vs_Ball_3006, Ball_3006_vs_BurnRun, Ball_3006_vs_JohnShield, Ball_3006_vs_ManyPunch } from './Ball/Ball';
 import { Bat_DUJ_0, Bat_DUJ_1, Bat_DUJ_2, Bat_DUJ_3 } from './Bat/Bat_DUJ';
@@ -99,7 +98,7 @@ export class Tests extends UIComponent {
     this.fsm.callbacks.add({
       on_state_changed: (f) => {
         const n = f.state?.name ?? 'None'
-        const nn = this.node.search_component(Label, v => v.id === 'test_case_name')
+        const nn = this.node.search_node('test_case_name')
         nn?.set_text(`Case: ${n}`)
       }
     })

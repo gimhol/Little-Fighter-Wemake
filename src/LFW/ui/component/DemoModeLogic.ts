@@ -23,16 +23,15 @@ import { ComponentsPlayer } from "./ComponentsPlayer";
 import { FighterStatBar } from "./FighterStatBar";
 import { GameModeFSMState_BeforeEnd, GameModeFSMState_End, GameModeFSMState_Running, type GameModeFSMState } from "./GameModeFSMState";
 import { Jalousie } from "./Jalousie";
-import { Label } from "./Label";
 import { ModeState } from "./ModeState";
 import { UIComponent } from "./UIComponent";
 
 export interface IDemoModeLogicProps {
-  focus_prefix?: Label;
-  focus_on?: Label;
+  focus_prefix?: UINode;
+  focus_on?: UINode;
   cam_ctrl?: CameraCtrl;
   score_board?: UINode;
-  situation_name?: Label,
+  situation_name?: UINode,
   focus_text_node?: UINode,
   jalousie?: Jalousie,
   gogogo?: ComponentsPlayer,
@@ -49,11 +48,11 @@ interface DemoSituation {
 export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
   static override readonly TAGS: string[] = ["DemoModeLogic"];
   static override readonly PROPS: IPropsMeta<IDemoModeLogicProps> = {
-    focus_prefix: Label,
-    focus_on: Label,
+    focus_prefix: UINode,
+    focus_on: UINode,
     cam_ctrl: CameraCtrl,
     score_board: UINode,
-    situation_name: Label,
+    situation_name: UINode,
     focus_text_node: UINode,
     jalousie: Jalousie,
     gogogo: ComponentsPlayer,
@@ -356,11 +355,11 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       this._free = free
       if (!free) {
         this.props.focus_prefix?.set_text("cam_controlling");
-        this.props.focus_on?.node.set_visible(false)
+        this.props.focus_on?.set_visible(false)
       }
       const txt = staring ? `[${staring.team}] ${staring.name}` : '-'
       this.props.focus_prefix?.set_text("curr_focus")
-      this.props.focus_on?.node.set_visible(true)
+      this.props.focus_on?.set_visible(true)
       this.props.focus_on?.set_text(txt)
 
     } while (0)

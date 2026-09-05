@@ -1,26 +1,25 @@
 import type { IPropsMeta } from "../../defines/ISchema";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import { UINode } from "../../ui/UINode";
-import { Label } from "./Label";
 import { UIComponent } from "./UIComponent";
 
 export interface IFnKeysCountsProps {
-  f6?: Label;
-  f7?: Label;
-  f8?: Label;
-  f9?: Label;
-  f10?: Label;
+  f6?: UINode;
+  f7?: UINode;
+  f8?: UINode;
+  f9?: UINode;
+  f10?: UINode;
   fn_key_counts?: UINode;
   fn_key_locked?: UINode;
 }
 export class FnKeysCounts extends UIComponent<IFnKeysCountsProps> {
   static override readonly TAGS: string[] = ["FnKeysCounts"];
   static override readonly PROPS: IPropsMeta<IFnKeysCountsProps> = {
-    f6: Label,
-    f7: Label,
-    f8: Label,
-    f9: Label,
-    f10: Label,
+    f6: UINode,
+    f7: UINode,
+    f8: UINode,
+    f9: UINode,
+    f10: UINode,
     fn_key_counts: UINode,
     fn_key_locked: UINode
   }

@@ -5,8 +5,8 @@
     {
       cls: "DemoModeLogic",
       properties: {
-        focus_prefix: "focus_prefix",
-        focus_on: "focus_on",
+        focus_prefix: "curr_focus_prefix",
+        focus_on: "focus_text_node",
         cam_ctrl: "cam_ctrl",
         score_board: "score_board",
         situation_name: "situation_name",
@@ -46,7 +46,7 @@
       },
       center: "0,0",
       pos: "0,0",
-      component: [ { id: "situation_name", cls: "Label" } ],
+      id: "situation_name",
     },
     {
       id: "demo_play_link",
@@ -116,10 +116,6 @@
         font: "9px Arial",
       },
       component: [
-        {
-          id: "focus_prefix",
-          cls: "Label",
-        },
         { cls: "Alignment", properties: { left: "left", bottom: "bottom" } },
       ],
       center: "0,1",
@@ -135,10 +131,6 @@
         font: "9px Arial",
       },
       component: [
-        {
-          id: "focus_on",
-          cls: "Label",
-        },
         {
           cls: "Alignment",
           properties: { left: "right", bottom: "bottom", followed: { l: "id:curr_focus_prefix" } },

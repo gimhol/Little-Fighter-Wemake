@@ -1,8 +1,8 @@
-import { Label } from './Label';
 import { Defines } from "../../defines";
 import { GameKey } from "../../defines/GameKey";
+import { UIComponent } from "./UIComponent";
 
-export class PlayerKeyText extends Label {
+export class PlayerKeyText extends UIComponent {
   static override readonly TAGS: string[] = ["PlayerKeyText"];
   get player_id() { return this.info.args[0] || this.node.find_parent(v => v.data.values?.player_id)?.data.values?.player_id || ''; }
   get key_name() { return this.info.args[1] || this.node.find_parent(v => v.data.values?.key_name)?.data.values?.key_name || ''; }
@@ -21,6 +21,6 @@ export class PlayerKeyText extends Label {
     this.player?.callbacks.del(this)
   }
   on_key_changed() {
-    this.set_text(this.key_code)
+    this.node.set_text(this.key_code)
   }
 }

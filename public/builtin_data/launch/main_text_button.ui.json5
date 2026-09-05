@@ -35,26 +35,16 @@
   },
   items: [
     {
+      id: "back_label",
       center: "0.5,0.5",
       i18n: "$val:text",
       style: "$val:style_normal",
-      component: [
-        {
-          cls: "Label",
-          id: "back_label",
-        },
-      ],
     },
     {
+      id: "hover_label",
       center: "0.5,0.5",
       i18n: "$val:text",
       style: "$val:style_hover",
-      component: [
-        {
-          cls: "Label",
-          id: "hover_label",
-        },
-      ],
     },
   ],
 }

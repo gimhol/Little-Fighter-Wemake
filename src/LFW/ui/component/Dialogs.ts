@@ -4,21 +4,20 @@ import { Ditto } from "../../ditto/Instance";
 import { Transform } from "../../Transform";
 import { UIImgLoader } from "../UIImgLoader";
 import { UINode } from "../UINode";
-import { Label } from "./Label";
 import { StageDialogListener } from "./StageDialogListener";
 import { UIComponent } from "./UIComponent";
 
 export interface IDialogsProps {
   head_node?: UINode | null;
-  text?: Label | null;
-  talker?: Label | null;
+  text?: UINode | null;
+  talker?: UINode | null;
 }
 export class Dialogs extends UIComponent<IDialogsProps> {
   static override readonly TAGS: string[] = ["Dialogs"];
   static override readonly PROPS: IPropsMeta<IDialogsProps> = {
     head_node: UINode,
-    text: Label,
-    talker: Label
+    text: UINode,
+    talker: UINode
   }
   protected _listner = new StageDialogListener(this, (d) => this.set_dialog(d));
   protected _head_loader = new UIImgLoader(() => this.props.head_node)
@@ -44,13 +43,11 @@ export class Dialogs extends UIComponent<IDialogsProps> {
     this._hiding = false;
     this.node.visible = true;
     this._transform.scale_to(1, 1, 1)
-    const text = this.lfw.string(dialog.i18n || "")
-    this.props.text?.set_text(text);
+    this.props.text?.set_text(dialog.i18n || '');
 
     const fighter = dialog.fighter ? this.lfw.datas.find_fighter(dialog.fighter) : void 0
     if (fighter) {
-      const fighter_name = this.lfw.string(fighter.base.name)
-      this.props.talker?.set_text(fighter_name)
+      this.props.talker?.set_text(fighter.base.name || '')
     } else {
       this.props.talker?.set_text('')
     }

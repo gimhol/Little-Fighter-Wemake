@@ -2,7 +2,6 @@ import { Defines, T_E, type IPropsMeta } from "../../defines";
 import { Entity, type IEntityCallbacks } from "../../entity";
 import { StatBarType } from "../../entity/StatBarType";
 import { UINode } from "../UINode";
-import { Label } from "./Label";
 import { Picture } from "./Picture";
 import { SmoothNumber } from "./SmoothNumber";
 import { UIComponent } from "./UIComponent";
@@ -16,7 +15,7 @@ interface IFighterStatBarProps {
   defend_value_bar?: UINode;
   toughness_bar?: UINode;
   head_img?: Picture;
-  name_txt?: Label;
+  name_txt?: UINode;
 }
 export class FighterStatBar extends UIComponent<IFighterStatBarProps> {
   static override readonly TAGS: string[] = ["FighterStatBar"];
@@ -29,7 +28,7 @@ export class FighterStatBar extends UIComponent<IFighterStatBarProps> {
     defend_value_bar: UINode,
     toughness_bar: UINode,
     head_img: Picture,
-    name_txt: Label,
+    name_txt: UINode,
   };
   protected entity?: Entity;
   protected defend_value_max = new SmoothNumber().handler(() => this.update_defend_value())
@@ -183,8 +182,8 @@ export class FighterStatBar extends UIComponent<IFighterStatBarProps> {
     if (!name_txt) return;
     const team = this.entity?.team ?? 0;
     const { txt_color, txt_outline_color } = Defines.TeamInfoMap[team] || Defines.TeamInfoMap[T_E.Independent]
-    name_txt.node.outlineColor = txt_outline_color;
-    name_txt.node.style.fill_style = txt_color;
+    name_txt.outlineColor = txt_outline_color;
+    name_txt.style.fill_style = txt_color;
   }
   override update(): void {
     this.update_name();

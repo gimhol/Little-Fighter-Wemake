@@ -2,18 +2,18 @@ import { Difficulty } from "../../defines";
 import type { IPropsMeta } from "../../defines/ISchema";
 import type { IUIKeyEvent } from "../IUIKeyEvent";
 import type { IUIPointerEvent } from "../IUIPointerEvent";
+import { UINode } from "../UINode";
 import { type IJalousieCallbacks, Jalousie } from "./Jalousie";
-import { Label } from './Label';
 import { UIComponent } from "./UIComponent";
 
 export interface IEndingPageLogicProps {
-  label: Label | undefined;
+  label: UINode | undefined;
   jalousie: Jalousie | undefined;
 }
 export class EndingPageLogic extends UIComponent<IEndingPageLogicProps> {
   static override readonly TAGS: string[] = [`EndingPageLogic`];
   static override readonly PROPS: IPropsMeta<IEndingPageLogicProps> = {
-    label: { type: Label, nullable: false },
+    label: { type: UINode, nullable: false },
     jalousie: { type: Jalousie, nullable: false },
   }
   protected texts_idx = 0;
@@ -34,7 +34,6 @@ export class EndingPageLogic extends UIComponent<IEndingPageLogicProps> {
   override on_start(): void {
     super.on_start?.();
     this.texts_idx = -1
-    this.props.label?.preload(this.texts)
     this.props.jalousie?.callbacks.add(this.jalousie_cbs)
   }
   override on_resume(): void {

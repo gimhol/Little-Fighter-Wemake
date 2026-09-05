@@ -1,7 +1,7 @@
 import { BGG, Defines, type IBgData } from "../../defines";
-import { Label } from "./Label";
+import { UIComponent } from "./UIComponent";
 
-export class BackgroundSwitcher extends Label {
+export class BackgroundSwitcher extends UIComponent {
   static override readonly TAGS: string[] = ["BackgroundSwitcher"];
   private _background: IBgData = Defines.RANDOM_BG;
   get backgrounds(): IBgData[] {
@@ -22,11 +22,8 @@ export class BackgroundSwitcher extends Label {
   get background(): IBgData {
     return this._background;
   }
-  override on_start(): void {
-    super.on_start();
-  }
   override on_resume(): void {
-    this.set_text(this._background.base.name || this._background.id)
+    this.node.set_text(this._background.base.name || this._background.id)
     this.lfw.callbacks.add(this)
   }
   override on_pause(): void {
@@ -58,7 +55,7 @@ export class BackgroundSwitcher extends Label {
       this._background = backgrounds[0];
       this.world.stage.change_bg(this._background)
     }
-    this.set_text(
+    this.node.set_text(
       this._background.base.name || this._background.id
     )
   }

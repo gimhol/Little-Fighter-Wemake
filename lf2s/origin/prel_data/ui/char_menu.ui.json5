@@ -21,7 +21,7 @@
             {
               cls: "CharMenuHead",
               properties: {
-                countdown_label: "countdown_label",
+                countdown_label: "countdown_text",
                 hints_node: "hints",
                 head_pic: "head_pic",
               },
@@ -54,12 +54,6 @@
               style: {
                 font: '90px "Arial Black", Arial',
               },
-              component: [
-                {
-                  id: "countdown_label",
-                  cls: "Label",
-                },
-              ],
             },
           ],
         },

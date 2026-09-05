@@ -192,11 +192,8 @@
         fill_style: "white",
         font: "9px Arial"
       },
+      id: "name_txt",
       component: [
-        {
-          id: "name_txt",
-          cls: "Text",
-        },
         {
           cls: "Alignment",
           properties: {
