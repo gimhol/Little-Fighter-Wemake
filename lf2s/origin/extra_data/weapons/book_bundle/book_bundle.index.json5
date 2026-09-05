@@ -5,5 +5,20 @@
       type: "4",
       file: "weapons/book_bundle/book_bundle.obj.xml",
     },
+    {
+      id: "book_red",
+      type: "4",
+      file: "weapons/book_bundle/book_red.obj.xml",
+    },
+    {
+      id: "book_blue",
+      type: "4",
+      file: "weapons/book_bundle/book_blue.obj.xml",
+    },
+    {
+      id: "book_green",
+      type: "4",
+      file: "weapons/book_bundle/book_green.obj.xml",
+    },
   ]
 }

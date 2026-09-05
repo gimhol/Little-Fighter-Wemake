@@ -2,20 +2,14 @@
   <base type="2" name="book_bundle" weight="1.1" group="VsWeapon,StageWeapon" drop_hurt="200" hit_sounds="data/010.wav.mp3" drop_sounds="data/010.wav.mp3" dead_sounds="data/021.wav.mp3">
     <file id="0" path="sprite/sys/weapon1.png" row="10" col="10" cell_w="58" cell_h="58"/>
     <model id="book_bundle" path="weapons/book_bundle/book_bundle.glb" scale="15,15,15" offset="0,14,0"/>
-    <broken kind="1" oid="999" pos="0,-1" pos_type="1" dv="-1,5" unimportant="1" inherit_speed="0.5,0.5,0.5">
-      <action id="0,1,2,3"/>
+    <broken kind="1" oid="book_red" pos="0,-1" pos_type="1" dv="-1.5,5" inherit_speed="0.5,0.5,0.5">
+      <action id="0"/>
     </broken>
-    <broken kind="1" oid="999" pos="0,-1" pos_type="1" dv="1,5" unimportant="1" inherit_speed="0.5,0.5,0.5">
-      <action id="0,1,2,3"/>
+    <broken kind="1" oid="book_blue" pos="0,-1" pos_type="1" dv="0,5.5" inherit_speed="0.5,0.5,0.5">
+      <action id="0"/>
     </broken>
-    <broken kind="1" oid="999" pos="0,-1" pos_type="1" dv=",3" unimportant="1" inherit_speed="0.5,0.5,0.5">
-      <action id="4,5,6,7"/>
-    </broken>
-    <broken kind="1" oid="999" pos="0,-1" pos_type="1" dv="2,2" unimportant="1" inherit_speed="0.5,0.5,0.5">
-      <action id="4,5,6,7"/>
-    </broken>
-    <broken kind="1" oid="999" pos="0,-1" pos_type="1" dv="-2,2" unimportant="1" inherit_speed="0.5,0.5,0.5">
-      <action id="4,5,6,7"/>
+    <broken kind="1" oid="book_green" pos="0,-1" pos_type="1" dv="1.5,5" inherit_speed="0.5,0.5,0.5">
+      <action id="0"/>
     </broken>
     <dataset type="object">
       <value type="number" value="800" name="hp_max"/>

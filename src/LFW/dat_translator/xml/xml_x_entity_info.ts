@@ -36,7 +36,7 @@ export function xml_x_entity_info(xml: IXML, info: IEntityInfo, tag: string): IX
   xml_x_map(xml, info.portraits, "portrait", xml_x_frame_pic, ret)
   ret.insert(xml_from_world_dataset(xml, info, "dataset"));
   return ret;
-} 
+}
 
 export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
   const ret = entity_info_new();
@@ -115,12 +115,13 @@ export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
   if (Object.keys(models).length) ret.models = models as any;
 
 
-  // brokens (<opoint> children)
-  const opointEls = el.children_by_tag("opoint");
-  if (opointEls.length) {
-    ret.brokens = opointEls.map(v => xml_2_opoint(v));
-  }
 
+  const brokens = [
+    ...el.children_by_tag("broken"),
+    ...el.children_by_tag("opoint")
+  ].map(v => xml_2_opoint(v));
+  if (brokens.length) ret.brokens = brokens;
+  
   // dataset overrides
   const ds = xml_to_world_dataset(el.child_by_tag("dataset"));
   for (const k of Object.keys(ds)) (ret as any)[k] = (ds as any)[k];

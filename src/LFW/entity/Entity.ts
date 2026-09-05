@@ -502,6 +502,7 @@ export class Entity {
         this.frame.id !== FrameId.Gone &&
         this._data.base.brokens?.length
       ) {
+        console.warn('[broken] apply brokens', this.id, 'count=', this._data.base.brokens.length, this._data.base.brokens.map(b => b.oid));
         this.apply_opoints(this._data.base.brokens);
         this.play_sound(this._data.base.dead_sounds);
       }
@@ -1138,6 +1139,7 @@ export class Entity {
     }
     const data = this.lfw.datas.find(oid);
     if (!data) {
+      console.warn('[broken-spawn] data not found for oid:', oid);
       Ditto.warn(
         `[Entity::spawn_object] failed, oid: ${oid}, data: `,
         data,
@@ -1149,6 +1151,7 @@ export class Entity {
     }
     const entity = this.lfw.factory.create_entity(this.world, data);
     if (!entity) {
+      console.warn('[broken-spawn] create_entity failed for oid:', oid);
       Ditto.warn(
         `[Entity::spawn_object] failed, oid: ${oid}, data: `,
         data,
@@ -1158,6 +1161,7 @@ export class Entity {
       debugger;
       return;
     }
+    console.warn('[broken-spawn] spawned', oid, 'at', this.position.x, this.position.y);
     entity.ctrl =
       this.lfw.factory.create_ctrl(entity._data.id, "", entity) ?? entity.ctrl;
     entity
