@@ -4,6 +4,8 @@ by [**Gim**](https://gim.ink)
 
 ### What's New
 
+- You can now switch the language (unproofread)
+![switch_lang_w400.gif](../../image/switch_lang_w400.gif)
 - New weapon: Book Bundle (the first 3D-model weapon; heavy weapon)
 - The editor got new controls for adding content like models
 
@@ -18,4 +20,3 @@ by [**Gim**](https://gim.ink)
 
 - Fixed wrong team-alive checks in campaign mode
 - Campaign shutter animation is now pure black
-
