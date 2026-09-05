@@ -21,6 +21,13 @@ export interface IScrollViewProps {
   content?: UINode;
   /** 可选：关联的滚动条（SliderHandle 组件 id），会自动双向同步 */
   scrollbar?: SliderHandle;
+  /**
+   * 可选：滚动条 thumb 节点（UINode）。
+   *
+   * 提供时 ScrollView 直接控制该节点的尺寸（轨道×视口/内容）与位置（随 factor），
+   * 并支持点击/拖拽轨道滚动；与 scrollbar（SliderHandle）二选一，优先本项。
+   */
+  scrollbar_thumb?: UINode;
   /** 是否允许鼠标拖拽内容滚动（默认 true） */
   draggable?: boolean;
   /** 是否允许使用方向键滚动（默认 true，需视口/内容节点持有焦点） */
@@ -60,6 +67,7 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     direction: { type: String, oneof: ["row", "col"], nullable: true },
     content: UINode,
     scrollbar: SliderHandle,
+    scrollbar_thumb: UINode,
     draggable: { type: Boolean, nullable: true },
     keyboard: { type: Boolean, nullable: true },
     wheel: { type: Boolean, nullable: true },
@@ -98,6 +106,11 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
 
   // 滚动条同步
   protected _last_slider_factor: number | null = null;
+  protected _scrollbar: SliderHandle | undefined;
+  protected _sb_thumb: UINode | undefined;
+  protected _sb_dragging = false;
+  /** 拖动时指针相对 thumb 起始端的偏移（点中轨道时=len/2，使 thumb 居中于指针） */
+  protected _sb_grab = 0;
 
   get direction() { return this.props.direction ?? 'col'; }
   get is_col() { return this.direction === 'col'; }
@@ -124,6 +137,44 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     this._captured = false;
     this._target_offset = 0;
     this._offset = 0;
+  }
+
+  /**
+   * 直接受控的滚动条 thumb 节点（跨子树，按 id 整树兜底查找并缓存）。
+   */
+  protected get scrollbar_thumb(): UINode | undefined {
+    if (this._sb_thumb) return this._sb_thumb;
+    const p = this.props.scrollbar_thumb;
+    if (p) return this._sb_thumb = p;
+    const raw = (this.props_holder as any).raw ?? {};
+    // 兼容旧数据（可能没有 scrollbar_thumb 配置）：默认按约定 id 查找
+    const id =
+      this.props_holder.str('scrollbar_thumb') ??
+      (typeof raw.scrollbar_thumb === 'string' ? raw.scrollbar_thumb : void 0) ??
+      'scroll_thumb';
+    const found =
+      this.node.root?.search_node(id) ??
+      this.lfw.ui?.search_node(id);
+    if (found) this._sb_thumb = found;
+    return found;
+  }
+
+  /**
+   * 关联的滚动条 SliderHandle
+   *
+   * 常规 props 解析只查自身子树/祖先自身的组件；滚动条常在兄弟子树深处
+   * （如视口右侧的独立轨道），因此额外做一次整棵树的兜底查找。
+   * 找到后缓存；没找到不缓存，后续帧会继续重试（通常首帧即命中）。
+   */
+  protected get scrollbar(): SliderHandle | undefined {
+    if (this._scrollbar) return this._scrollbar;
+    const p = this.props.scrollbar;
+    if (p) return this._scrollbar = p;
+    const id = this.props_holder.str('scrollbar');
+    if (!id) return void 0;
+    const found = this.node.root?.search_component(SliderHandle, c => c.id === id);
+    if (found) this._scrollbar = found;
+    return found;
   }
 
   /** 可滚动像素（内容超出视口的部分）；内容不足一屏时为 0 */
@@ -213,23 +264,23 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
 
     // 内容尺寸变化后收敛目标
     this._target_offset = clamp(this._target_offset, 0, this.max_scroll);
-    if (this._dragging || this.speed <= 0 || this.speed >= 1) {
+    if (this._dragging || this._sb_dragging || this.speed <= 0 || this.speed >= 1) {
       this._offset = this._target_offset;
     } else {
       this._offset += (this._target_offset - this._offset) * this.speed;
       if (Math.abs(this._target_offset - this._offset) < 0.5) this._offset = this._target_offset;
     }
 
-    // 焦点位于内容内时，自动滚动保持其可见
-    if (this.follow_focus) {
+    // 拖拽中不抢焦点跟随（否则 ensure_visible 会与拖拽互相拉扯）
+    if (this.follow_focus && !this._dragging && !this._sb_dragging) {
       const foc = this.focused_in(c);
       if (foc) this.ensure_visible(foc);
     }
 
     this.apply_offset();
+    this.sync_scrollbar(); // 尽早同步滚动条（内容一变就更新 thumb）
     this.update_cull();
     this.update_keys(dt);
-    this.sync_scrollbar();
 
     const o = round(this._offset);
     if (o !== this._reported) {
@@ -376,6 +427,14 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     return void 0;
   }
 
+  /** 让内容子树内持有焦点的节点失焦（拖拽开始时调用，避免松开后被焦点跟随吸回） */
+  protected unfocus_content(): void {
+    const c = this.content;
+    if (!c) return;
+    const f = this.focused_in(c);
+    if (f) f.focused = false;
+  }
+
   protected pointer_axis_px(e: IPointingEvent): number {
     if (this.is_col) {
       return Defines.MODERN_SCREEN_HEIGHT * (1 - e.scene_y) / 2;
@@ -391,19 +450,75 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     const fx = Defines.MODERN_SCREEN_WIDTH * (e.scene_x + 1) / 2;
     return fx >= g.left && fx <= g.right;
   }
+  /** 指针是否落在某节点矩形内（双向判定，便于命中轨道） */
+  protected pointer_in_node(e: IPointingEvent, n: UINode): boolean {
+    const g = n.geo;
+    const fx = Defines.MODERN_SCREEN_WIDTH * (e.scene_x + 1) / 2;
+    const fy = Defines.MODERN_SCREEN_HEIGHT * (1 - e.scene_y) / 2;
+    return fx >= g.left && fx <= g.right && fy >= g.top && fy <= g.bottom;
+  }
+
+  /** 由滚动条轨道上的指针位置换算进度（考虑抓取偏移 _sb_grab） */
+  protected scrollbar_pointer(e: IPointingEvent): void {
+    const thumb = this.scrollbar_thumb;
+    const track = thumb?.parent;
+    if (!thumb || !track) return;
+    const m = this.max_scroll;
+    if (m <= 0) return;
+    const len = this.is_col ? thumb.h : thumb.w;
+    const tlen = this.is_col ? track.h : track.w;
+    const travel = tlen - len;
+    if (travel <= 0) return;
+    const g = track.geo;
+    const start = this.is_col ? g.top : g.left;
+    // thumb 起始端 = 指针 - 抓取偏移；轨道点击时 _sb_grab=len/2 → thumb 居中于指针
+    const p = this.pointer_axis_px(e) - this._sb_grab;
+    const f = clamp((p - start) / travel, 0, 1);
+    this.factor = f;
+    this._offset = this._target_offset; // 拖动时即时跟随
+    this.apply_offset();
+    this.sync_scrollbar(); // thumb 立刻跟到指针下
+  }
+
   protected p: IPointingsCallback = {
     on_pointer_down: (e: IPointingEvent): void => {
-      if (!this.draggable) return;
       if (!this.node.visible || this.node.disabled) return;
       if (e.button !== 0) return;
       if (this.max_scroll <= 0) return;
-      if (!this.pointer_in_view(e)) return;
+      // 滚动条轨道优先（轨道在视口外/右，需先于内容拖拽判定）
+      const thumb = this.scrollbar_thumb;
+      const track = thumb?.parent;
+      if (thumb && track && this.pointer_in_node(e, track)) {
+        this.unfocus_content();
+        this._sb_dragging = true;
+        const axis = this.pointer_axis_px(e);
+        if (this.pointer_in_node(e, thumb)) {
+          // 点中 thumb 本体：只“抓住”，保持指针相对 thumb 起始端的偏移，不立即滚动
+          const cur_start = this.is_col ? thumb.geo.top : thumb.geo.left;
+          this._sb_grab = axis - cur_start;
+        } else {
+          // 点中轨道空白：跳到指针处（指针=thumb 中心）
+          const len = this.is_col ? thumb.h : thumb.w;
+          this._sb_grab = len / 2;
+          this.scrollbar_pointer(e);
+        }
+        return;
+      }
+      // 内容拖拽仅限真正的视口矩形内（含横向范围）
+      if (!this.draggable) return;
+      if (!this.pointer_in_node(e, this.node)) return;
+      // 子控件（如音量滑条）已抢占本次手势时，内容拖拽让位
+      if (this.lfw.pointings.grabbing !== void 0) return;
       this._armed = true;
       this._dragging = false;
       this._drag_dist = 0;
       this._last_axis = this.pointer_axis_px(e);
     },
     on_pointer_move: (e: IPointingEvent): void => {
+      if (this._sb_dragging) {
+        this.scrollbar_pointer(e);
+        return;
+      }
       if (!this._armed) return;
       const px = this.pointer_axis_px(e);
       const d = px - this._last_axis;
@@ -412,22 +527,24 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
         this._drag_dist += Math.abs(d);
         if (this._drag_dist < this.drag_threshold) return;
         this._dragging = true;
+        this.unfocus_content();
         this.callbacks.call('on_scroll_start', this);
       }
       // 内容跟随指针移动
       this._target_offset = clamp(this._target_offset - d, 0, this.max_scroll);
       this._offset = this._target_offset;
       this.apply_offset();
+      this.sync_scrollbar();
     },
     on_pointer_up: (): void => this.end_drag(),
     on_pointer_cancel: (): void => this.end_drag(),
     on_wheel: (e: IPointingEvent): void => {
       if (!this.wheel_enabled) return;
       if (!this.node.visible || this.node.disabled) return;
-      if (this._armed || this._dragging) return;
+      if (this._armed || this._dragging || this._sb_dragging) return;
       if (this.max_scroll <= 0) return;
-      // 只有光标位于视口内时才滚动
-      if (!this.pointer_in_view(e)) return;
+      // 只有光标真正位于视口矩形内时才滚动（不含右侧滚动条）
+      if (!this.pointer_in_node(e, this.node)) return;
       // 主方向增量优先，其次使用另一轴：
       // 例如横向列表可用普通鼠标的“垂直滚轮”滚动（Shift/触控板横滑时系统会把增量放到 deltaX/deltaY 其中之一）
       const dx = e.delta_x ?? 0;
@@ -441,10 +558,17 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     if (this._dragging) this.callbacks.call('on_scroll_end', this);
     this._armed = false;
     this._dragging = false;
+    this._sb_dragging = false;
   }
 
   protected sync_scrollbar(): void {
-    const sb = this.props.scrollbar;
+    // 直接受控的 thumb 节点优先（尺寸+位置都由本组件负责，不依赖 SliderHandle）
+    const thumb = this.scrollbar_thumb;
+    if (thumb) {
+      this.sync_thumb(thumb);
+      return;
+    }
+    const sb = this.scrollbar;
     if (!sb) return;
     if (sb.min_value !== 0) sb.min_value = 0;
     if (sb.max_value !== 100) sb.max_value = 100;
@@ -457,5 +581,63 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     const want = this.factor;
     if (Math.abs(sb.factor - want) > 1e-4) sb.factor = want;
     this._last_slider_factor = sb.factor;
+
+    const sbt = sb.node;
+    const track = sbt.parent;
+    if (!track) return;
+    const view = this.is_col ? this.node.h : this.node.w;
+    const m = this.max_scroll;
+    if (!(view > 0)) return;
+    const track_len = this.is_col ? track.h : track.w;
+    if (!(track_len > 0)) return;
+    const content_len = view + m;
+    const ratio = content_len > 0 ? view / content_len : 1;
+    const min_len = Math.min(20, track_len);
+    const len = Math.round(clamp(track_len * ratio, min_len, track_len));
+    if (this.is_col) {
+      if (sbt.h !== len) sbt.resize(sbt.w, len);
+    } else {
+      if (sbt.w !== len) sbt.resize(len, sbt.h);
+    }
+  }
+
+  /**
+   * 直接驱动滚动条 thumb：尺寸 = 轨道 × 视口/内容；位置随 factor（内容进度）。
+   * 轨道 = thumb 的父节点；坐标系取各自 cross（thumb 居中与否都成立）。
+   */
+  protected sync_thumb(thumb: UINode): void {
+    const track = thumb.parent;
+    if (!track) return;
+    const view = this.is_col ? this.node.h : this.node.w;
+    const m = this.max_scroll;
+    if (!(view > 0)) return;
+    const track_len = this.is_col ? track.h : track.w;
+    if (!(track_len > 0)) return;
+
+    // 尺寸
+    const content_len = view + m;
+    const ratio = content_len > 0 ? clamp(view / content_len, 0, 1) : 1;
+    const min_len = Math.min(20, track_len);
+    const len = Math.round(clamp(track_len * ratio, min_len, track_len));
+    if (this.is_col) {
+      if (thumb.h !== len) thumb.resize(thumb.w, len);
+    } else {
+      if (thumb.w !== len) thumb.resize(len, thumb.h);
+    }
+
+    // 位置：thumb 顶端 = 轨道顶端 + 行程 × factor
+    const travel = track_len - len;
+    if (travel <= 0) return;
+    const f = this.factor;
+    const top = (this.is_col ? track.cross.top : track.cross.left) + travel * f;
+    // 节点 pos（track 局部）= rect 顶端 - cross.axis
+    const pos = top - (this.is_col ? thumb.cross.top : thumb.cross.left);
+    if (this.is_col) {
+      const y = round(pos);
+      if (thumb.y !== y) thumb.y = y;
+    } else {
+      const x = round(pos);
+      if (thumb.x !== x) thumb.x = x;
+    }
   }
 }

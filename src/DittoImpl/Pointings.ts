@@ -10,8 +10,41 @@ export class __Pointings implements IPointings {
   get callback(): NoEmitCallbacks<IPointingsCallback> {
     return this._callbacks;
   }
-  private _on_pointer_down = (e: PointerEvent) =>
+
+  protected _grab_prev_epoch = -1;
+  protected _grab_epoch = 0;
+  protected _grabbing: unknown = void 0;
+  get grabbing(): unknown {
+    return this._grabbing !== void 0 && this._grab_prev_epoch === this._grab_epoch
+      ? this._grabbing
+      : void 0;
+  }
+  grab(who: unknown): boolean {
+    if (
+      this._grabbing !== void 0 &&
+      this._grabbing !== who &&
+      this._grab_prev_epoch === this._grab_epoch
+    ) return false;
+
+    this._grabbing = who;
+    this._grab_prev_epoch = this._grab_epoch;
+    return true;
+  }
+  ungrab(grabbing: unknown): void {
+    if (this._grabbing === grabbing) this._grabbing = void 0;
+  }
+  protected grab_begin(): void {
+    ++this._grab_epoch;
+  }
+  protected reset_grab(): void {
+    this._grabbing = void 0;
+    this._grab_prev_epoch = -1;
+  }
+
+  private _on_pointer_down = (e: PointerEvent) => {
+    this.grab_begin();
     this.enabled && this._callbacks.call("on_pointer_down", new __PointingEvent(this._ele, e));
+  };
   private _on_pointer_up = (e: PointerEvent) =>
     this.enabled && this._callbacks.call("on_pointer_up", new __PointingEvent(this._ele, e));
   private _on_pointer_move = (e: PointerEvent) =>
@@ -31,6 +64,7 @@ export class __Pointings implements IPointings {
     this._ele?.removeEventListener("pointerdown", this._on_pointer_down);
     this._ele?.removeEventListener("pointerup", this._on_pointer_up);
     this._ele?.removeEventListener("wheel", this._on_wheel);
+    this.reset_grab();
     this._callbacks.clear()
   }
 

@@ -3,6 +3,10 @@ import type { IPointingsCallback } from "./IPointingsCallback";
 
 export interface IPointings {
   get callback(): NoEmitCallbacks<IPointingsCallback>;
-  enabled: boolean;
+  get grabbing(): unknown;
+  get enabled(): boolean;
+  set enabled(v: boolean);
+  grab(grabbing: unknown): boolean;
+  ungrab(grabbing: unknown): void;
   dispose(): void;
 }

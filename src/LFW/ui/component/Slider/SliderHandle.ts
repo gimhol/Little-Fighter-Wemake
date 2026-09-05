@@ -59,6 +59,7 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
       if (responser) responser.focused = true
       else if (container) container.focused = true
       else return;
+      this.lfw.pointings.grab(this);
       const { min_value, max_value, precision, step } = this;
       if (min_value == 0 && max_value == 1 && precision == 1 && step == 1) {
         this.factor = this._factor ? 0 : 1;
@@ -78,15 +79,19 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
       this.handle_pointing_event(e);
     },
     on_pointer_up: (e: IPointingEvent): void => {
-      if (!this._on_me) return;
-      this.handle_pointing_event(e);
-      this.callbacks.call('on_value_changed', this.value, this)
-      this._on_me = false;
+      if (this._on_me) {
+        this.handle_pointing_event(e);
+        this.callbacks.call('on_value_changed', this.value, this)
+        this._on_me = false;
+      }
+      this.lfw.pointings.ungrab(this);
     },
     on_pointer_cancel: (e) => {
-      if (!this._on_me) return;
-      this.callbacks.call('on_value_changed', this.value, this)
-      this._on_me = false;
+      if (this._on_me) {
+        this.callbacks.call('on_value_changed', this.value, this)
+        this._on_me = false;
+      }
+      this.lfw.pointings.ungrab(this);
     },
   }
   get container(): UINode | undefined {
@@ -168,6 +173,7 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
   override on_stop(): void {
     this.container?.callbacks.del(this.p)
     this.lfw.pointings.callback.del(this.b)
+    this.lfw.pointings.ungrab(this);
   }
   override update(dt: number): void {
     const { container, responser } = this;
