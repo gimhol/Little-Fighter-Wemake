@@ -4,7 +4,7 @@ import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
-import { AnimationMixer, BackSide, BufferGeometry, Color, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, Vector3 } from "../_t";
+import { AnimationMixer, BackSide, BufferGeometry, Color, Euler, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, Vector3 } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
 import type { RImageInfo } from "../RImageInfo";
 import type { EntityRenderer } from "./EntityRenderer";
@@ -110,6 +110,12 @@ export class EntityMainRender {
   protected bone_by_name = new Map<string, Bone>();
   protected _q1 = new Quaternion();
   protected _q2 = new Quaternion();
+  // 模型旋转合成（base*帧）临时量
+  protected _rot_qa = new Quaternion();
+  protected _rot_qb = new Quaternion();
+  protected _rot_ea = new Euler();
+  protected _rot_eb = new Euler();
+  protected _rot_e = new Euler();
   protected playing_anim = "";
   protected anim_loop = false;
   protected anim_speed = 1;
@@ -244,24 +250,38 @@ export class EntityMainRender {
     if (model) {
       this.update_model(model)
       this.update_model_visual(model)
-      const b = this.models[model.id]?.scale
+      const base = this.models[model.id]
+      const b = base?.scale
       const s = model.scale
       const sx = (b?.x ?? 1) * (s?.x ?? 1)
       const sy = (b?.y ?? 1) * (s?.y ?? 1)
       const sz = (b?.z ?? 1) * (s?.z ?? 1)
-      const rad = model.rad ?? 0
       this.model_sx = Math.max(Math.abs(sx), 1e-4)
       this.update_model_outline()
       // 平移 = base 模型 offset + 帧 model offset（缺省 0，逐轴相加，y 向上为正）
-      const bo = this.models[model.id]?.offset
+      const bo = base?.offset
       const fo = model.offset
       const ox = (bo?.x ?? 0) + (fo?.x ?? 0)
       const oy = (bo?.y ?? 0) + (fo?.y ?? 0)
       const oz = (bo?.z ?? 0) + (fo?.z ?? 0)
+      // 旋转 = base 模型 rotation * 帧 rotation（帧作用于模型自身坐标系；rad 兼容为 rotation.z）
+      const br = base?.rotation
+      const fr = model.rotation
+      this._rot_ea.set(br?.x ?? 0, br?.y ?? 0, br?.z ?? 0)
+      this._rot_eb.set(fr?.x ?? 0, fr?.y ?? 0, fr?.z ?? (model.rad ?? 0))
+      this._rot_qa.setFromEuler(this._rot_ea)
+      this._rot_qb.setFromEuler(this._rot_eb)
+      this._rot_qa.multiply(this._rot_qb)
+      this._rot_e.setFromQuaternion(this._rot_qa)
+      // 朝向镜像（scale.x<0，模型绕 X 轴不变、Y/Z 反向）
       this.model_node.visible = visible
       this.model_node.position.set(this.shaking_x + ox, oy, oz)
       this.model_node.scale.set(facing * sx, sy, sz)
-      this.model_node.rotation.z = facing < 0 ? -rad : rad
+      this.model_node.rotation.set(
+        this._rot_e.x,
+        facing < 0 ? -this._rot_e.y : this._rot_e.y,
+        facing < 0 ? -this._rot_e.z : this._rot_e.z,
+      )
     } else {
       this.model_node.visible = false
     }

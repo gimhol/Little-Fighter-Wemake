@@ -7,6 +7,7 @@ export function xml_x_model_info(xml: IXML, f: IModelInfo, tag: string) {
   ret.set_attr("id", f.id);
   ret.set_attr("path", f.path);
   ret.set_attr("variants", f.variants?.join());
+  if (f.rotation) ret.set_arr_attr_soft("rotation", [f.rotation.x, f.rotation.y, f.rotation.z]);
   if (f.scale) ret.set_arr_attr_soft("scale", [f.scale.x, f.scale.y, f.scale.z]);
   if (f.offset) ret.set_arr_attr_soft("offset", [f.offset.x, f.offset.y, f.offset.z]);
   return ret;
@@ -30,6 +31,14 @@ export function xml_x_model_info(xml: IXML, f: IModelInfo, tag: string) {
     if (offset[1] != null) s.y = offset[1] as number;
     if (offset[2] != null) s.z = offset[2] as number;
     ret.offset = s;
+  }
+  const rotation = el.nums_attr_soft('rotation');
+  if (rotation?.some(v => v != null)) {
+    const s: { x?: number; y?: number; z?: number } = {};
+    if (rotation[0] != null) s.x = rotation[0] as number;
+    if (rotation[1] != null) s.y = rotation[1] as number;
+    if (rotation[2] != null) s.z = rotation[2] as number;
+    ret.rotation = s;
   }
   return ret;
 }

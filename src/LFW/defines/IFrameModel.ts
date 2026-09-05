@@ -36,8 +36,17 @@ export interface IFrameModel {
   loop?: boolean;
   /** 动画速度倍率（配合 wait 控制节奏） */
   time_scale?: number;
-  /** 整模型绕 Z 轴旋转角（弧度，缺省 0），类似 2D pic 的 rad */
+  /**
+   * 整模型绕 Z 轴旋转角（弧度，缺省 0），rotation.z 的简写，类似 2D pic 的 rad
+   * @deprecated 用 rotation.z
+   */
   rad?: number;
+  /**
+   * 任意旋转（欧拉角，弧度，缺省 0；three.js 默认 XYZ 顺序）。
+   * 与 base 模型 rotation 组合：先应用 base 旋转，帧旋转作用于模型自身坐标系。
+   * 兼容旧数据：rotation.z 缺省时回退到 rad。
+   */
+  rotation?: { x?: number; y?: number; z?: number };
   /** 帧级缩放系数（x,y,z，缺省 1）；与 base 模型 scale 同时存在时逐轴相乘 */
   scale?: { x?: number; y?: number; z?: number };
   /** 帧级平移偏移（x,y,z，缺省 0）；与 base 模型 offset 逐轴相加 */
@@ -62,6 +71,11 @@ const vec3_offset_fields = fields<{ x?: number; y?: number; z?: number }>({
   y: flt('Y'),
   z: flt('Z'),
 });
+const vec3_rotation_fields = fields<{ x?: number; y?: number; z?: number }>({
+  x: flt('X'),
+  y: flt('Y'),
+  z: flt('Z'),
+});
 export const frame_model_fields = fields<IFrameModel>({
   id: str('模型ID'),
   pose: obj('姿态', { nullable: true, fields: frame_model_pose_fields }),
@@ -69,6 +83,7 @@ export const frame_model_fields = fields<IFrameModel>({
   loop: bool('循环', { nullable: true }),
   time_scale: flt('速度倍率', { nullable: true }),
   rad: flt('Z轴旋转(弧度)', { nullable: true }),
+  rotation: obj('旋转(弧度 x,y,z)', { nullable: true, fields: vec3_rotation_fields }),
   scale: obj('缩放', { nullable: true, fields: vec3_scale_fields }),
   offset: obj('偏移', { nullable: true, fields: vec3_offset_fields }),
 });
@@ -83,6 +98,14 @@ export const Schema_IFrameModel = make_schema<IFrameModel>({
     loop: { type: "boolean", nullable: true, description: "是否循环" },
     time_scale: { type: "number", nullable: true, description: "速度倍率" },
     rad: { type: "number", nullable: true, description: "Z轴旋转(弧度)" },
+    rotation: {
+      type: "object", nullable: true, description: "旋转(弧度 x,y,z)",
+      properties: {
+        x: { type: "number" },
+        y: { type: "number" },
+        z: { type: "number" },
+      },
+    },
     scale: {
       type: "object", nullable: true, description: "缩放系数(x,y,z)",
       properties: {

@@ -22,6 +22,14 @@ export function xml_2_frame_model(el: IXMLElement | undefined): IFrameModel | un
   ret.loop = el.get_bool("loop");
   ret.time_scale = el.get_num("time_scale");
   ret.rad = el.get_num("rad");
+  const rotation = el.nums_attr_soft("rotation");
+  if (rotation?.some(v => v != null)) {
+    const s: { x?: number; y?: number; z?: number } = {};
+    if (rotation[0] != null) s.x = rotation[0] as number;
+    if (rotation[1] != null) s.y = rotation[1] as number;
+    if (rotation[2] != null) s.z = rotation[2] as number;
+    ret.rotation = s;
+  }
   const scale = el.nums_attr_soft("scale");
   if (scale?.some(v => v != null)) {
     const s: { x?: number; y?: number; z?: number } = {};
@@ -63,6 +71,7 @@ export function xml_x_frame_model(xml: IXML, m: IFrameModel | undefined, tag: st
   ret.set_attr("loop", m.loop);
   ret.set_attr("time_scale", m.time_scale);
   ret.set_attr("rad", m.rad);
+  if (m.rotation) ret.set_arr_attr_soft("rotation", [m.rotation.x, m.rotation.y, m.rotation.z]);
   if (m.scale) ret.set_arr_attr_soft("scale", [m.scale.x, m.scale.y, m.scale.z]);
   if (m.offset) ret.set_arr_attr_soft("offset", [m.offset.x, m.offset.y, m.offset.z]);
   if (m.pose) {
