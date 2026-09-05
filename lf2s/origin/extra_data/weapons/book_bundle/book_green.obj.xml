@@ -1,6 +1,6 @@
 <entity id="book_green" type="16" processed="true">
   <base type="4" name="book_green" group="VsWeapon,StageWeapon" drop_hurt="48" bounce="0.6,0.3" bounce_min="2,2" hit_sounds="data/038.wav.mp3" drop_sounds="data/038.wav.mp3" dead_sounds="data/038.wav.mp3">
-    <model id="book_green" path="weapons/book_bundle/book_green.glb" scale="15,15,15" offset="0,14,0"/>
+    <model id="1" path="weapons/book_bundle/book_green.glb" scale="15,15,15" offset="0,14,0"/>
     <dataset type="object">
       <value type="number" value="750" name="hp_max"/>
     </dataset>
@@ -15,317 +15,268 @@
   throwings="40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55" 
   on_hands="20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35" 
   on_ground="60" just_on_ground="70" throw_on_ground="71"/>
-  <frame id="0" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="0" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="0"/>
     <next id="1"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="1" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0.39269908169872414"/>
-
+  <frame id="1" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="0.3927"/>
     <next id="2"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="2" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0.7853981633974483"/>
-
+  <frame id="2" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="0.7854"/>
     <next id="3"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="3" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.1780972450961724"/>
-
+  <frame id="3" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="1.1781"/>
     <next id="4"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="4" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.5707963267948966"/>
-
+  <frame id="4" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="1.5708"/>
     <next id="5"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="5" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.9634954084936207"/>
-
+  <frame id="5" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="1.9635"/>
     <next id="6"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="6" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="2.356194490192345"/>
-
+  <frame id="6" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="2.3562"/>
     <next id="7"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="7" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="2.748893571891069"/>
-
+  <frame id="7" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="2.7489"/>
     <next id="8"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="8" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.141592653589793"/>
-
+  <frame id="8" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="3.1416"/>
     <next id="9"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="9" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.534291735288517"/>
-
+  <frame id="9" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="3.5343"/>
     <next id="10"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="10" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.9269908169872414"/>
-
+  <frame id="10" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="3.927"/>
     <next id="11"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="11" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="4.319689898685966"/>
-
+  <frame id="11" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="4.3197"/>
     <next id="12"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="12" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="4.71238898038469"/>
-
+  <frame id="12" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="4.7124"/>
     <next id="13"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="13" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.105088062083414"/>
-
+  <frame id="13" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="5.1051"/>
     <next id="14"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="14" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.497787143782138"/>
-
+  <frame id="14" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="5.4978"/>
     <next id="15"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="15" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.8904862254808625"/>
-
+  <frame id="15" name="in_the_sky" state="1000" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_InTheSky">    <model id="1" rotation="-1.5708,0" rad="5.8905"/>
     <next id="auto"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
   </frame>
-  <frame id="20" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="20" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="0"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="17,2,13,44"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="21" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0.39269908169872414"/>
-
+  <frame id="21" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="0.3927"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="15,20,12,23" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="22" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0.7853981633974483"/>
-
+  <frame id="22" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="0.7854"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="15,21,10,17" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="23" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.1780972450961724"/>
-
+  <frame id="23" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="1.1781"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="9,25,14,13" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="24" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.5707963267948966"/>
-
+  <frame id="24" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="1.5708"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="8,24,18,12" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="25" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.9634954084936207"/>
-
+  <frame id="25" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="1.9635"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="6,18,24,15" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="26" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="2.356194490192345"/>
-
+  <frame id="26" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="2.3562"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="12,12,16,17" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="27" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="2.748893571891069"/>
-
+  <frame id="27" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="2.7489"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="12,8,14,19" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="28" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.141592653589793"/>
-
+  <frame id="28" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="3.1416"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="18,9,13,19" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="29" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.534291735288517"/>
-
+  <frame id="29" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="3.5343"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="18,6,14,24" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="30" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.9269908169872414"/>
-
+  <frame id="30" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="3.927"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="22,12,19,15" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="31" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="4.319689898685966"/>
-
+  <frame id="31" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="4.3197"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="19,15,22,14" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="32" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="4.71238898038469"/>
-
+  <frame id="32" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="4.7124"/>
     <next/>
     <itr kind="5" qube="20,20,22,12"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="33" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.105088062083414"/>
-
+  <frame id="33" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="5.1051"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="22,25,20,15" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="34" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.497787143782138"/>
-
+  <frame id="34" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="5.4978"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="22,25,17,16" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="35" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.8904862254808625"/>
-
+  <frame id="35" name="on_hand" state="1001" wait="1" center="24,35" size="48,48" no_shadow="1" landable="1" state_label="Weapon_OnHand">    <model id="1" rotation="-1.5708,0" rad="5.8905"/>
     <next/>
     <itr kind="5" fall="40" bdefend="32" injury="789" qube="19,23,13,21" dv="8"/>
     <wpoint kind="2" pos="24,28,0" weaponact="0"/>
   </frame>
-  <frame id="40" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="40" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="0"/>
     <next id="41"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="41" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0.39269908169872414"/>
-
+  <frame id="41" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="0.3927"/>
     <next id="42"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="42" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0.7853981633974483"/>
-
+  <frame id="42" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="0.7854"/>
     <next id="43"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="43" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.1780972450961724"/>
-
+  <frame id="43" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="1.1781"/>
     <next id="44"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="44" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.5707963267948966"/>
-
+  <frame id="44" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="1.5708"/>
     <next id="45"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="45" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="1.9634954084936207"/>
-
+  <frame id="45" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="1.9635"/>
     <next id="46"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="46" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="2.356194490192345"/>
-
+  <frame id="46" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="2.3562"/>
     <next id="47"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="47" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="2.748893571891069"/>
-
+  <frame id="47" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="2.7489"/>
     <next id="48"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="48" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.141592653589793"/>
-
+  <frame id="48" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="3.1416"/>
     <next id="49"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="49" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.534291735288517"/>
-
+  <frame id="49" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="3.5343"/>
     <next id="50"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="50" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="3.9269908169872414"/>
-
+  <frame id="50" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="3.927"/>
     <next id="51"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="51" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="4.319689898685966"/>
-
+  <frame id="51" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="4.3197"/>
     <next id="52"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="52" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="4.71238898038469"/>
-
+  <frame id="52" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="4.7124"/>
     <next id="53"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="53" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.105088062083414"/>
-
+  <frame id="53" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="5.1051"/>
     <next id="54"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="54" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.497787143782138"/>
-
+  <frame id="54" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="5.4978"/>
     <next id="55"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="55" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="5.8904862254808625"/>
-
+  <frame id="55" name="throwing" state="1002" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_Throwing">    <model id="1" rotation="-1.5708,0" rad="5.8905"/>
     <next id="40"/>
     <bdy kind="0" hit_flag="63" qube="16,16,19,19"/>
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
-  <frame id="60" name="on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="60" name="on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,0.2" offset="0,-10,0"/>
     <next id="61"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
-  <frame id="61" name="on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="61" name="on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,0.1" offset="0,-5,0"/>
     <next id="62"/>
   </frame>
-  <frame id="62" name="on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="62" name="on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,-0.1" offset="0,-5,0"/>
     <next id="63"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
-  <frame id="63" name="on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="63" name="on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,-0.2" offset="0,-5,0"/>
     <next id="64"/>
   </frame>
-  <frame id="64" name="on_ground" state="1004" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_OnGround">    <model id="book_green" rotation="-0.5235987755982988,0.5235987755982988"/>
-
+  <frame id="64" name="on_ground" state="1004" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_OnGround">
+    <model id="1" rotation="0.5,-0.50" offset="0,-7,0" />
     <next/>
     <bdy kind="0" qube="1,19,46,15"/>
   </frame>
-  <frame id="70" name="just_on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="70" name="just_on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,0.2" offset="0,-5,0"/>
     <next id="71"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
-  <frame id="71" name="just_on_on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="71" name="just_on_on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,0.1" offset="0,-5,0"/>
     <next id="72"/>
   </frame>
-  <frame id="72" name="just_on_on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="72" name="just_on_on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
+    <model id="1" rotation="0.5,-0.5,-0.2" offset="0,-5,0"/>
     <next id="64"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
-  <frame id="399" name="dummy" state="0" wait="1" center="24,35" size="48,48" landable="1" state_label="Standing">    <model id="book_green" rotation="-1.5707963267948966,0" rad="0"/>
-
+  <frame id="399" name="dummy" state="0" wait="1" center="24,35" size="48,48" landable="1" state_label="Standing">    <model id="1" rotation="-1.5708,0" rad="0"/>
     <next/>
     <bdy kind="0" qube="1,19,46,15"/>
   </frame>
