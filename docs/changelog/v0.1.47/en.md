@@ -2,12 +2,14 @@
 
 by [**Gim**](https://gim.ink)
 
+"UNZIP !"
+
 ### What's New
 
 - You can now switch the language (unproofread)
-![switch_lang_w400.gif](../../image/switch_lang_w400.gif)
-- New weapon: Book Bundle (the first 3D-model weapon; heavy weapon)
-- The editor got new controls for adding content like models
+  ![switch_lang_w400.gif](../../image/switch_lang_w400.gif)
+- New weapon: Book Bundle + Book x3 (the first 3D-model weapon; heavy weapon / light thrown 3D-model weapons)
+- ![unzip_w400.gif](../../image/unzip_w400.gif)
 
 ### Weapons / Feel
 
@@ -20,3 +22,4 @@ by [**Gim**](https://gim.ink)
 
 - Fixed wrong team-alive checks in campaign mode
 - Campaign shutter animation is now pure black
+- Fixed occlusion between 3D models and 2D characters/items so they no longer appear to interpenetrate: front/back is now decided by Z, so a front (larger-Z) 2D entity fully covers a 3D one behind it, and a 2D one behind is fully covered by a 3D one in front (unproofread)
