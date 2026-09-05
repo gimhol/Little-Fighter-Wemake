@@ -284,39 +284,39 @@
     <itr kind="0" fall="120" bdefend="32" injury="35" qube="16,16,19,19"/>
   </frame>
   <frame id="60" name="on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,0.2" offset="0,-10,0"/>
+    <model id="1" rotation="0.5,0.5,0.2" offset="0,-10,0"/>
     <next id="61"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
   <frame id="61" name="on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,0.1" offset="0,-5,0"/>
+    <model id="1" rotation="0.5,0.5,0.1" offset="0,-5,0"/>
     <next id="62"/>
   </frame>
   <frame id="62" name="on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,-0.1" offset="0,-5,0"/>
+    <model id="1" rotation="0.5,0.5,-0.1" offset="0,-5,0"/>
     <next id="63"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
   <frame id="63" name="on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,-0.2" offset="0,-5,0"/>
+    <model id="1" rotation="0.5,0.5,-0.2" offset="0,-5,0"/>
     <next id="64"/>
   </frame>
   <frame id="64" name="on_ground" state="1004" wait="1" center="24,35" size="48,48" landable="1" state_label="Weapon_OnGround">
-    <model id="1" rotation="0.5,-0.50" offset="0,-7,0" />
+    <model id="1" rotation="0.5,0.50" offset="0,-7,0" />
     <next/>
     <bdy kind="0" qube="1,19,46,15"/>
   </frame>
   <frame id="70" name="just_on_ground" state="1003" wait="3" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,0.2" offset="0,-5,0"/>
+    <model id="1" rotation="0.5,0.5,0.2" offset="0,-5,0"/>
     <next id="71"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
   <frame id="71" name="just_on_on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,0.1" offset="0,-5,0"/>
+    <model id="1" rotation="0.5,0.5,0.1" offset="0,-5,0"/>
     <next id="72"/>
   </frame>
   <frame id="72" name="just_on_on_ground" state="1003" wait="5" center="24,35" size="48,48" landable="1" state_label="Weapon_Rebounding">
-    <model id="1" rotation="0.5,-0.5,-0.2" offset="0,-5,0"/>
+    <model id="1" rotation="0.5,0.5,-0.2" offset="0,-5,0"/>
     <next id="64"/>
     <sound value="data/038.wav.mp3"/>
   </frame>
