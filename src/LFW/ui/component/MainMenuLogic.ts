@@ -18,6 +18,13 @@ export class MainMenuLogic extends UIComponent<{}> {
       .filter((v): v is UINode => !!v);
     return this._survival_btns;
   }
+  protected _danmu_btns: UINode[] | undefined;
+  protected get danmu_btns(): UINode[] {
+    if (this._danmu_btns !== undefined) return this._danmu_btns;
+    const btn = this.node.search_node("btn_danmu_mode");
+    this._danmu_btns = btn ? [btn] : [];
+    return this._danmu_btns;
+  }
   protected get reachable_group(): ReachableGroup | undefined {
     return this.node.search_component(ReachableGroup);
   }
@@ -26,6 +33,11 @@ export class MainMenuLogic extends UIComponent<{}> {
     for (const btn of this.survival_btns) {
       btn.set_visible(available);
       btn.set_disabled(!available);
+    }
+    const danmu_available = this.lfw.danmu_available;
+    for (const btn of this.danmu_btns) {
+      btn.set_visible(danmu_available);
+      btn.set_disabled(!danmu_available);
     }
     // 生存入口不可用时，初始焦点交给菜单里第一个可用项（vs mode），
     // 否则 auto_focus 落在被隐藏的入口上，整个菜单都没有焦点

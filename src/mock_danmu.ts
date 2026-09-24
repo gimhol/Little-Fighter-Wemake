@@ -107,6 +107,7 @@ const installed = new WeakSet<LFW>();
 
 export function install_mock_danmu_if_requested(lfw: LFW): void {
   if (!/[?&#]DANMU=1/i.test(window.location.href)) return;
+  lfw.danmu_available = true;
   if (installed.has(lfw)) return;
   installed.add(lfw);
   console.log(LOG_TAG, "已启用模拟弹幕入队/应援（URL 参数 DANMU=1）");

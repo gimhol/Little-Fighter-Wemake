@@ -224,6 +224,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
   /** 是否运行在 B站 Toy 容器环境（由外部 App 注入；主菜单“生存排行”入口仅在此环境显示） */
   toy_env: boolean = false;
+  danmu_available: boolean = false;
   /** B站生存排行模式：开启时每进入一个新的 Survival 阶段触发 on_survival_rank_phase */
   survival_rank_mode: boolean = false;
   /** 每进入一个 Survival 阶段时回调（phase_reached = 当前阶段编号，从 0 起） */

@@ -188,6 +188,7 @@ const installed = new WeakSet<LFW>();
 export function install_danmu_bridge_if_requested(lfw: LFW): void {
   const url = get_bridge_url();
   if (!url) return;
+  lfw.danmu_available = true;
   if (installed.has(lfw)) return;
   installed.add(lfw);
   new DanmuBridge(lfw, url);

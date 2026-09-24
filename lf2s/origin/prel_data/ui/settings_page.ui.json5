@@ -76,37 +76,6 @@
       ],
     },
     {
-      id: "btn_move_table_normal",
-      i18n: "goto_special_moves_table",
-      style: {
-        fill_style: "#5A73D6",
-        underline_color: "#5A73D6",
-        underline_width: 1,
-        font: "12px Arial",
-      },
-      center: "0, 1",
-      pos: "5, 445",
-    },
-    {
-      id: "btn_move_table_hover",
-      i18n: "goto_special_moves_table",
-      style: {
-        fill_style: "white",
-        underline_color: "white",
-        underline_width: 1,
-        font: "12px Arial",
-      },
-      center: "0, 1",
-      pos: "5, 445",
-      component: ["OpacityHover(0,1)"],
-      actions: {
-        click: [
-          "sound(ok)",
-          "push_ui(move_table_page, 1)",
-        ],
-      },
-    },
-    {
       i18n: "goto_github_url",
       style: {
         fill_style: "#5A73D6",
