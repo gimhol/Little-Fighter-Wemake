@@ -11,19 +11,6 @@ export const APP_SRC = join(BRIDGE, "app");
 export const ICON = join(ROOT, "public", "favicon.ico");
 const CREATE_REQUIRE_BANNER = 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);';
 
-const CONFIG_TEMPLATE = `{
-  // B站互动玩法（开放平台）应用密钥：创作者服务中心 ▶ 我的项目 ▶ 项目详情
-  app_id: "",
-  access_key: "",
-  access_key_secret: "",
-
-  // 可选：本地调试用直播间号（填了不填 code 也能先用 web 模式收弹幕）
-  // room: "",
-
-  score_weights: { kills: 10, spawns: 1, cheers: 1, deads: 0, damages: 0 },
-}
-`;
-
 const TOOL_CONSOLE_CMD = `@echo off
 cd /d "%~dp0.."
 echo Little Fighter Wemake - data tool
@@ -213,8 +200,8 @@ export function stage_extra(extra_dir, { converters = true } = {}) {
     const ready = /app_id\s*:\s*["']\S/.test(raw) && /access_key?\s*:\s*["']\S/.test(raw);
     step(`内置配置文件: ${relative(ROOT, conf_src)}${ready ? "" : "（app_id/access_key 看起来还是空的，上传前记得补）"}`);
   } else {
-    writeFileSync(join(extra_dir, "danmu.json5"), CONFIG_TEMPLATE);
-    step("未找到 desktop/danmu.json5，已放入模板（上传前请填写应用密钥）");
+    copyFileSync(join(BRIDGE, "danmu.example.json5"), join(extra_dir, "danmu.json5"));
+    step("未找到 desktop/danmu.json5，已放入 danmu.example.json5 作为默认配置（应用密钥为空，上传前请填写）");
   }
   writeFileSync(join(extra_dir, "readme.txt"), README_TEXT);
   copyFileSync(join(BRIDGE, "help.md"), join(extra_dir, "help.md"));

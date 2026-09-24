@@ -68,7 +68,7 @@
 
 ## 四、弹幕配置（danmu.json5）
 
-- 位置：与 `start.exe` 同目录；包内已带一份模板（不含任何密钥），直接编辑即可
+- 位置：与 `start.exe` 同目录；包内已带一份完整默认配置（关键词与角色昵称已预置，不含任何密钥），直接编辑即可
 - 也支持 `danmu.json`（纯 JSON），或命令行 `--config <path>` / 环境变量 `DANMU_BRIDGE_CONFIG` 指定任意路径
 - 优先级：命令行 > 环境变量 > danmu.json5 / danmu.json > 默认值
 

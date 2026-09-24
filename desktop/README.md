@@ -137,6 +137,7 @@ B站常规弹幕流没有离场事件（只有进入/互动），所以采用活
 # 1) 先准备好开平应用密钥（会被打进包里的 danmu.json5）
 copy desktop\danmu.example.json5 desktop\danmu.json5
 #    编辑 danmu.json5：app_id / access_key / access_key_secret
+#    （没有 desktop\danmu.json5 时，构建会把 danmu.example.json5 原样作为包内默认配置）
 # 2) 构建（build:desktop 是同一脚本的别名）
 npm run build:playable
 #    输出 release/Little Fighter Wemake_<version>.zip（上传用）
