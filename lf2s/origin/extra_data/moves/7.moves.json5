@@ -1,6 +1,6 @@
 {
   oid: "7",
-  enemies: [
+  entities: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },
     { oid: "30", dx: 260, dz: -45 },
@@ -9,6 +9,6 @@
     { name: "moves.fire_ball", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 15 },
     { name: "moves.blaze", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 15 },
     { name: "moves.inferno", keys: "D + v + J", seq: [{ time: 0, clicks: "dDj" }], mp: 30 },
-    { name: "moves.explosion", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 60, enemies: [], desc: "moves.explosion.desc" },
+    { name: "moves.explosion", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 60, entities: [], desc: "moves.explosion.desc" },
   ],
 }

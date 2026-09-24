@@ -1,3 +1,14 @@
 {
   oid: "0",
+  moves: [
+    { name: "moves.walk", keys: "< / > / ^ / v", seq: [{ time: 0, keydowns: "R" }, { time: 800, keyups: "R" }, { time: 900, keydowns: "U" }, { time: 1700, keyups: "U" }, { time: 1800, keydowns: "D" }, { time: 2600, keyups: "D" }, { time: 2700, keydowns: "L" }, { time: 3500, keyups: "L" }] },
+    { name: "moves.defend", keys: "D", seq: [{ time: 0, keydowns: "d" }, { time: 1500, keyups: "d" }] },
+    { name: "moves.dodge", keys: "> > + D", seq: [{ time: 0, clicks: "R" }, { time: 150, clicks: "R" }, { time: 450, clicks: "d" }] },
+    { name: "moves.punch", keys: "A+A..", seq: [{ time: 0, clicks: "a" }, { time: 400, clicks: "a" }, { time: 800, clicks: "a" }, { time: 1200, clicks: "a" }], entities: [{ oid: "30", dx: 55 }] },
+    { name: "moves.run_attack", keys: "> > + A", seq: [{ time: 0, clicks: "R" }, { time: 150, clicks: "R" }, { time: 400, clicks: "a" }], entities: [{ oid: "30", dx: 150 }] },
+    { name: "moves.jump_attack", keys: "J + A", seq: [{ time: 0, clicks: "j" }, { time: 300, clicks: "a" }], entities: [{ oid: "30", dx: 60 }] },
+    { name: "moves.dodge_landing", keys: "J + D", seq: [{ time: 0, clicks: "j" }, { time: 400, clicks: "d" }] },
+    { name: "moves.dash_attack", keys: "> > + J + A", seq: [{ time: 0, clicks: "R" }, { time: 150, clicks: "R" }, { time: 450, clicks: "j" }, { time: 550, clicks: "a" }], entities: [{ oid: "30", dx: 220 }] },
+    { name: "moves.breakfall", keys: "J", desc: "moves.breakfall.desc" },
+  ],
 }

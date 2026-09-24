@@ -1,4 +1,4 @@
-import { Defines, FacingFlag, GK, StateEnum, type IMoveDemoEnemy, type IMoveInfo, type IMoveListData, type LGK } from "../../../defines";
+import { CheatEnum, Defines, EntityGroup, FacingFlag, GK, StateEnum, type IMoveDemoEntity, type IMoveInfo, type IMoveListData, type IMoveStep, type LGK } from "../../../defines";
 import { LFW } from "../../../LFW";
 import type { Entity } from "../../../entity";
 import type { IUIKeyEvent } from "../../IUIKeyEvent";
@@ -7,9 +7,10 @@ import { Picture } from "../Picture";
 import { UIComponent } from "../UIComponent";
 
 const DEFAULT_BG = "bg_move_table";
-const DEFAULT_ENEMY_DX = 150;
-const DEFAULT_ENEMY_HP = 9999;
+const DEFAULT_ENTITY_DX = 150;
+const DEFAULT_ENTITY_HP = 9999;
 const DEFAULT_STEP_WAIT = 100;
+const START_DELAY = 1000;
 const MIN_INPUT_TIME = 200;
 const MAX_INPUT_TIME = 4000;
 const DEMO_MP = 1000000;
@@ -17,7 +18,8 @@ const ACTOR_DX = 60;
 const ROW_COUNT = 8;
 const ROW_CURSOR = "▶ ";
 const ROW_INDENT = "   ";
-const NO_ENEMIES: IMoveDemoEnemy[] = [];
+const NO_ENTITIES: IMoveDemoEntity[] = [];
+const NO_MOVES: IMoveInfo[] = [];
 
 enum StepKind { Click, Down, Up }
 
@@ -25,15 +27,18 @@ interface IKeyStep {
   at: number;
   kind: StepKind;
   keys: string;
+  entity?: number;
 }
 
 export class MoveTableLogic extends UIComponent {
   static override readonly TAGS: string[] = ["MoveTableLogic"];
 
   private _list_index = 0;
+  private _list_ref: IMoveListData | undefined;
   private _move_index = 0;
   private _actor: Entity | null = null;
-  private _enemies: Entity[] = [];
+  private _entities: Entity[] = [];
+  private _entity_specs: IMoveDemoEntity[] = [];
   private _steps: IKeyStep[] = [];
   private _step_index = 0;
   private _move_time = 0;
@@ -48,7 +53,16 @@ export class MoveTableLogic extends UIComponent {
   private _row_keys: UINode[] = [];
 
   private get lists(): IMoveListData[] {
-    return this.lfw.datas.moves;
+    const moves = this.lfw.datas.moves;
+    const cheat_0 = this.lfw.is_cheat(CheatEnum.LF2_NET);
+    const cheat_1 = this.lfw.is_cheat(CheatEnum.GIM_INK);
+    if (cheat_0 && cheat_1) return moves;
+    return moves.filter(v => {
+      const groups = this.lfw.datas.find(v.oid)?.base.group;
+      if (!cheat_0 && groups?.some(g => g === EntityGroup.Hidden)) return false;
+      if (!cheat_1 && groups?.some(g => g === EntityGroup.Dev)) return false;
+      return true;
+    });
   }
   private get list(): IMoveListData | undefined {
     return this.lists[this._list_index];
@@ -90,7 +104,7 @@ export class MoveTableLogic extends UIComponent {
   override on_stop(): void {
     this.world.clear();
     this._actor = null;
-    this._enemies.length = 0;
+    this._entities.length = 0;
   }
 
   override on_key_down(e: IUIKeyEvent): void {
@@ -106,7 +120,11 @@ export class MoveTableLogic extends UIComponent {
   override update(dt: number): void {
     if (this.world.paused) return;
     const list = this.list;
-    if (!list || !list.moves?.length) return;
+    if (!list || list !== this._list_ref) {
+      if (this.lists.length) this.enter_list(this._list_index);
+      return;
+    }
+    if (!list.moves?.length) return;
     if (!this._actor || this._actor.hp <= 0) {
       this.start_move(this._move_index);
       return;
@@ -137,7 +155,7 @@ export class MoveTableLogic extends UIComponent {
     const len = lists.length;
     this._list_index = ((index % len) + len) % len;
     const list = lists[this._list_index];
-    const data = this.lfw.datas.find(list.oid ?? list.oid);
+    const data = this.lfw.datas.find(list.oid);
     this._char_label?.set_text(list.name ?? data?.base.name ?? list.oid);
     this._face?.set_src(data?.base.head ?? Defines.BuiltIn_Imgs.RFACE);
     this.start_move(0);
@@ -145,27 +163,30 @@ export class MoveTableLogic extends UIComponent {
 
   private start_move(index: number): void {
     const list = this.list;
-    if (!list || !list.moves?.length) return;
-    const len = list.moves.length;
-    this._move_index = ((index % len) + len) % len;
-    const move = list.moves[this._move_index];
+    if (!list) return;
+    this._list_ref = list;
+    const moves = list.moves ?? NO_MOVES;
+    const len = moves.length;
+    this._move_index = len ? ((index % len) + len) % len : 0;
+    const move = moves[this._move_index];
     this.rebuild_scene(list, move);
-    if (move.frame) this.enter_move_frame(move.frame);
+    if (move?.frame) this.enter_move_frame(move.frame);
     this.build_steps(move);
     this._step_index = 0;
-    this._move_time = 0;
+    this._move_time = -START_DELAY;
     this._phase = 0;
     this.update_move_labels(list, move);
   }
 
-  private rebuild_scene(list: IMoveListData, move: IMoveInfo): void {
+  private rebuild_scene(list: IMoveListData, move: IMoveInfo | undefined): void {
     this.world.clear();
     this.lfw.change_bg(list.bg ?? DEFAULT_BG);
     this.world.camera.undest();
     this.world.camera.unlock();
-    this._enemies.length = 0;
+    this._entities.length = 0;
+    this._entity_specs.length = 0;
     this._actor = this.spawn_actor(list);
-    this.spawn_enemies(move.enemies ?? list.enemies ?? NO_ENEMIES);
+    this.spawn_entities(move?.entities ?? list.entities ?? NO_ENTITIES);
   }
 
   private enter_move_frame(id: string): void {
@@ -175,26 +196,35 @@ export class MoveTableLogic extends UIComponent {
     actor.enter_frame_by_id(id, true);
   }
 
+  private set_move_keys(node: UINode | null, move: IMoveInfo | undefined): void {
+    if (!node) return;
+    const key = move?.keys;
+    node.set_text(key ? this.lfw.string(key) : "");
+  }
+
   private set_move_name(node: UINode | null, move: IMoveInfo | undefined, prefix = ""): void {
     if (!node) return;
     const key = move?.name;
     node.set_text(key ? prefix + this.lfw.string(key) : "");
   }
 
-  private update_move_labels(list: IMoveListData, move: IMoveInfo): void {
+  private update_move_labels(list: IMoveListData, move: IMoveInfo | undefined): void {
     this.set_move_name(this._name_label, move);
-    this._keys_label?.set_text(move.keys ?? "");
+    this.set_move_keys(this._keys_label, move);
     this._desc_label?.set_text(
-      move.desc
+      move?.desc
         ? this.lfw.string(move.desc)
-        : move.mp
+        : move?.mp
           ? `${this.lfw.string("move_table.mp")}: ${move.mp}`
           : "",
     );
     const moves = list.moves;
-    for (let i = 0; i < this._row_names.length; i++) {
-      const row = moves?.[i];
-      const current = i === this._move_index;
+    const count = this._row_names.length;
+    const total = moves?.length ?? 0;
+    const offset = Math.min(Math.max(this._move_index - count + 1, 0), Math.max(total - count, 0));
+    for (let i = 0; i < count; i++) {
+      const row = moves?.[offset + i];
+      const current = offset + i === this._move_index;
       const name_node = this._row_names[i];
       const keys_node = this._row_keys[i];
       if (name_node) {
@@ -205,36 +235,43 @@ export class MoveTableLogic extends UIComponent {
       if (keys_node) {
         keys_node.visible = !!row;
         keys_node.opacity = current ? 1 : 0.55;
-        keys_node.set_text(row?.keys ?? "");
+        this.set_move_keys(keys_node, row);
       }
     }
   }
 
-  private build_steps(move: IMoveInfo): void {
+  private build_steps(move: IMoveInfo | undefined): void {
     this._steps.length = 0;
-    const { seq } = move;
+    this.push_steps(move?.seq);
+    for (let i = 0; i < this._entity_specs.length; i++)
+      this.push_steps(this._entity_specs[i].seq, i);
+    this._steps.sort((a, b) => a.at - b.at);
+  }
+
+  private push_steps(seq: IMoveStep[] | undefined, entity?: number): void {
     if (!seq?.length) return;
     let at = 0;
     for (const step of seq) {
       at = step.time ?? (at + DEFAULT_STEP_WAIT);
-      if (step.keyups) this._steps.push({ at, kind: StepKind.Up, keys: step.keyups });
-      if (step.keydowns) this._steps.push({ at, kind: StepKind.Down, keys: step.keydowns });
-      if (step.clicks) this._steps.push({ at, kind: StepKind.Click, keys: step.clicks });
+      if (step.keyups) this._steps.push({ at, kind: StepKind.Up, keys: step.keyups, entity });
+      if (step.keydowns) this._steps.push({ at, kind: StepKind.Down, keys: step.keydowns, entity });
+      if (step.clicks) this._steps.push({ at, kind: StepKind.Click, keys: step.clicks, entity });
     }
   }
 
   private exec_step(step: IKeyStep): void {
-    const ctrl = this._actor?.ctrl;
+    const entity = step.entity === undefined ? this._actor : this._entities[step.entity];
+    const ctrl = entity?.ctrl;
     if (!ctrl) return;
-    const keys = this.parse_keys(step.keys);
+    const keys = this.parse_keys(step.keys, entity);
     if (!keys.length) return;
     if (step.kind === StepKind.Click) ctrl.click(...keys);
     else if (step.kind === StepKind.Down) ctrl.key_down(...keys);
     else ctrl.key_up(...keys);
   }
 
-  private parse_keys(str: string): LGK[] {
-    const facing = (this._actor?.facing ?? FacingFlag.R) > 0 ? 1 : -1;
+  private parse_keys(str: string, entity: Entity | null | undefined): LGK[] {
+    const facing = (entity?.facing ?? FacingFlag.R) > 0 ? 1 : -1;
     const ret: LGK[] = [];
     for (const c of str) {
       switch (c) {
@@ -253,9 +290,9 @@ export class MoveTableLogic extends UIComponent {
   }
 
   private spawn_actor(list: IMoveListData): Entity | null {
-    const data = this.lfw.datas.find(list.oid ?? list.oid);
+    const data = this.lfw.datas.find(list.oid);
     if (!data) {
-      this.warn(`[MoveTableLogic] fighter data not found: ${list.oid ?? list.oid}`);
+      this.warn(`[MoveTableLogic] fighter data not found: ${list.oid}`);
       return null;
     }
     const entity = this.lfw.factory.create_entity(this.world, data);
@@ -268,11 +305,12 @@ export class MoveTableLogic extends UIComponent {
     entity.key_role = false;
     entity.name_visible = false;
     entity.attach();
+    if (list.team !== undefined) entity.team = list.team;
     entity.mp = DEMO_MP;
     return entity;
   }
 
-  private spawn_enemies(spec: IMoveDemoEnemy[]): void {
+  private spawn_entities(spec: IMoveDemoEntity[]): void {
     const actor = this._actor;
     if (!actor) return;
     const facing = actor.facing > 0 ? 1 : -1;
@@ -280,26 +318,32 @@ export class MoveTableLogic extends UIComponent {
     for (const s of spec) {
       const data = this.lfw.datas.find_object(s.oid);
       if (!data) {
-        this.warn(`[MoveTableLogic] enemy data not found: ${s.oid}`);
+        this.warn(`[MoveTableLogic] demo entity data not found: ${s.oid}`);
         continue;
       }
       const entity = this.lfw.factory.create_entity(this.world, data);
       if (!entity) continue;
-      const x = s.x ?? ax + (s.dx ?? DEFAULT_ENEMY_DX) * facing;
+      const x = s.x ?? ax + (s.dx ?? DEFAULT_ENTITY_DX) * facing;
       const z = s.z ?? az + (s.dz ?? 0);
       entity.set_position(x, s.y ?? 0, z);
       entity.facing = s.facing ?? (x >= ax ? FacingFlag.L : FacingFlag.R);
       entity.key_role = false;
       entity.name_visible = false;
       entity.attach();
-      const hp = s.hp ?? DEFAULT_ENEMY_HP;
+      if (s.team !== undefined) entity.team = s.team;
+      const hp = s.hp ?? DEFAULT_ENTITY_HP;
       entity.hp_max = hp;
       entity.hp = hp;
+      if (s.frame) {
+        entity.mp = DEMO_MP;
+        entity.enter_frame_by_id(s.frame, true);
+      }
       if (s.tired) {
         const tired = Object.values(data.frames).find((f) => f.state === StateEnum.Tired);
         if (tired) entity.enter_frame_by_id(tired.id, true);
       }
-      this._enemies.push(entity);
+      this._entities.push(entity);
+      this._entity_specs.push(s);
     }
   }
 }

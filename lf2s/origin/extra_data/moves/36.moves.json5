@@ -1,7 +1,6 @@
 {
-  id: "36",
-  fighter: "36",
-  enemies: [
+  oid: "36",
+  entities: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },
     { oid: "30", dx: 260, dz: -45 },

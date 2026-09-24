@@ -1,6 +1,6 @@
 {
   oid: "52",
-  enemies: [
+  entities: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },
     { oid: "30", dx: 260, dz: -45 },
@@ -9,7 +9,7 @@
     { name: "moves.soul_punch", keys: "Run + A", frame: "85", mp: 0 },
     { name: "moves.uppercut", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 0 },
     { name: "moves.skull_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 2 },
-    { name: "moves.mirror_image", keys: "D + J + A", seq: [{ time: 0, clicks: "dja" }], mp: 5, enemies: [] },
+    { name: "moves.mirror_image", keys: "D + J + A", seq: [{ time: 0, clicks: "dja" }], mp: 5, entities: [] },
     { name: "moves.big_bang", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 20 },
     { name: "moves.soul_bomb", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 25 },
   ],

@@ -1,6 +1,6 @@
 {
   oid: "11",
-  enemies: [
+  entities: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },
     { oid: "30", dx: 260, dz: -45 },
@@ -14,7 +14,7 @@
       keys: "D + ^ + A",
       seq: [{ time: 0, clicks: "dUa" }],
       mp: 45,
-      enemies: [{ oid: "30", dx: 110 }],
+      entities: [{ oid: "30", dx: 110 }],
     },
   ],
 }
