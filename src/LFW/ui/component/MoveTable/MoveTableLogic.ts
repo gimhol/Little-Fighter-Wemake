@@ -1,9 +1,10 @@
-import { CheatEnum, Defines, EntityGroup, FacingFlag, GK, StatBarType, StateEnum, TeamEnum, type IMoveDemoEntity, type IMoveInfo, type IMoveListData, type IMoveStep, type LGK } from "../../../defines";
+import { CheatEnum, Defines, EntityGroup, FacingFlag, GK, StateEnum, TeamEnum, type IMoveDemoEntity, type IMoveInfo, type IMoveListData, type IMoveStep, type LGK } from "../../../defines";
 import { LFW } from "../../../LFW";
-import type { Entity } from "../../../entity";
+import { StatBarType, type Entity } from "../../../entity";
 import type { IUIKeyEvent } from "../../IUIKeyEvent";
 import type { UINode } from "../../UINode";
 import { Picture } from "../Picture";
+import { ScrollView } from "../ScrollView";
 import { UIComponent } from "../UIComponent";
 
 const DEFAULT_BG = "bg_move_table";
@@ -12,6 +13,7 @@ const DEFAULT_ENTITY_HP = 9999;
 const DEFAULT_STEP_WAIT = 100;
 const DEFAULT_LOOP_GAP = 150;
 const START_DELAY = 1000;
+const DEFAULT_END_DELAY = 2000;
 const MIN_INPUT_TIME = 200;
 const MAX_INPUT_TIME = 4000;
 const DEMO_MP = 1000000;
@@ -19,7 +21,7 @@ const DEMO_RECT_LEFT = 399;
 const DEMO_RECT_RIGHT = 780;
 const DEMO_PAD = 45;
 const ACTOR_X = (DEMO_RECT_LEFT + DEMO_RECT_RIGHT) / 2;
-const ROW_COUNT = 8;
+const ROW_H = 24;
 const ROW_CURSOR = "▶ ";
 const ROW_INDENT = "   ";
 const NO_ENTITIES: IMoveDemoEntity[] = [];
@@ -48,6 +50,7 @@ export class MoveTableLogic extends UIComponent {
   private _steps: IKeyStep[] = [];
   private _step_index = 0;
   private _move_time = 0;
+  private _end_wait = 0;
   private _phase = 0;
   private _loading = false;
   private _char_label: UINode | null = null;
@@ -55,6 +58,9 @@ export class MoveTableLogic extends UIComponent {
   private _keys_label: UINode | null = null;
   private _desc_label: UINode | null = null;
   private _face: Picture | null = null;
+  private _scroll: ScrollView | null = null;
+  private _rows_bound = false;
+  private _rows: UINode[] = [];
   private _row_names: UINode[] = [];
   private _row_keys: UINode[] = [];
 
@@ -80,13 +86,21 @@ export class MoveTableLogic extends UIComponent {
     this._keys_label = this.node.search_node("move_table_keys") ?? null;
     this._desc_label = this.node.search_node("move_table_desc") ?? null;
     this._face = this.node.search_node("move_table_face")?.find_component(Picture) ?? null;
+    this._scroll = this.node.search_node("move_list_scroll")?.find_component(ScrollView) ?? null;
+    this._rows.length = 0;
     this._row_names.length = 0;
     this._row_keys.length = 0;
-    for (let i = 0; i < ROW_COUNT; i++) {
-      const name_node = this.node.search_node(`move_row_${i}`);
-      const keys_node = this.node.search_node(`move_row_keys_${i}`);
-      if (name_node) this._row_names.push(name_node);
-      if (keys_node) this._row_keys.push(keys_node);
+    const content = this.node.search_node("move_list_content");
+    if (content) {
+      for (let i = 0; i < content.children.length; i++) {
+        const row = content.children[i];
+        row.move_to(0, i * ROW_H, 0);
+        if (!this._rows_bound) row.callbacks.add({ on_click: () => this.click_row(i) });
+        this._rows.push(row);
+        this._row_names.push(row.children[0]);
+        this._row_keys.push(row.children[1]);
+      }
+      this._rows_bound = true;
     }
     if (this.lists.length) this.enter_list(0);
     else this.load_lists();
@@ -154,7 +168,13 @@ export class MoveTableLogic extends UIComponent {
         this._actor.state === StateEnum.Walking;
       if (idle || this._move_time >= MAX_INPUT_TIME) {
         this._phase = 2;
+        this._end_wait = 0;
       }
+    } else {
+      this._end_wait += dt;
+      const move = list.moves?.[this._move_index];
+      if (this._end_wait >= (move?.end_delay ?? list.end_delay ?? DEFAULT_END_DELAY))
+        this.start_move(this._move_index);
     }
   }
 
@@ -182,7 +202,8 @@ export class MoveTableLogic extends UIComponent {
     if (move?.frame) this.enter_move_frame(move.frame);
     this.build_steps(move);
     this._step_index = 0;
-    this._move_time = -START_DELAY;
+    this._move_time = -(move?.start_delay ?? list.start_delay ?? START_DELAY);
+    this._end_wait = 0;
     this._phase = 0;
     this.update_move_labels(list, move);
   }
@@ -228,25 +249,30 @@ export class MoveTableLogic extends UIComponent {
           : "",
     );
     const moves = list.moves;
-    const count = this._row_names.length;
-    const total = moves?.length ?? 0;
-    const offset = Math.min(Math.max(this._move_index - count + 1, 0), Math.max(total - count, 0));
-    for (let i = 0; i < count; i++) {
-      const row = moves?.[offset + i];
-      const current = offset + i === this._move_index;
+    for (let i = 0; i < this._rows.length; i++) {
+      const row = moves?.[i];
+      const current = i === this._move_index;
+      const row_node = this._rows[i];
+      row_node.visible = !!row;
       const name_node = this._row_names[i];
       const keys_node = this._row_keys[i];
       if (name_node) {
-        name_node.visible = !!row;
         name_node.opacity = current ? 1 : 0.55;
         this.set_move_name(name_node, row, current ? ROW_CURSOR : ROW_INDENT);
       }
       if (keys_node) {
-        keys_node.visible = !!row;
         keys_node.opacity = current ? 1 : 0.55;
         this.set_move_keys(keys_node, row);
       }
     }
+    const current_row = this._rows[this._move_index];
+    if (current_row) current_row.focused = true;
+  }
+
+  private click_row(index: number): void {
+    if (this._scroll?.dragging) return;
+    if (index >= (this.list?.moves?.length ?? 0)) return;
+    this.start_move(index);
   }
 
   private build_steps(move: IMoveInfo | undefined): void {
@@ -332,7 +358,10 @@ export class MoveTableLogic extends UIComponent {
     entity.mp_max = DEMO_MP;
     entity.mp = DEMO_MP;
     entity.ctrl_visible = true;
-    if (move?.stat_bar) entity.stat_bar_type = StatBarType.Float;
+    if (move?.stat_bar) {
+      entity.key_role = true;
+      entity.stat_bar_type = StatBarType.Float;
+    }
     if (move?.hp !== undefined) entity.hp = move.hp;
     return entity;
   }
@@ -390,7 +419,10 @@ export class MoveTableLogic extends UIComponent {
     entity.team = s.team ?? TeamEnum.Team_2;
     if (s.hp === undefined) entity.hp_max = entity.hp = DEFAULT_ENTITY_HP;
     else entity.hp = s.hp;
-    if (s.stat_bar) entity.stat_bar_type = StatBarType.Float;
+    if (s.stat_bar) {
+      entity.key_role = true;
+      entity.stat_bar_type = StatBarType.Float;
+    }
     if (s.frame) {
       entity.mp = DEMO_MP;
       entity.enter_frame_by_id(s.frame, true);

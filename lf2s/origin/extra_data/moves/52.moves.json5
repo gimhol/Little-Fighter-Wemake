@@ -1,16 +1,13 @@
 {
   oid: "52",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.soul_punch", keys: "> > + A", frame: "85", mp: 0 },
-    { name: "moves.uppercut", keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 0 },
-    { name: "moves.skull_blast", keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], mp: 2 },
-    { name: "moves.mirror_image", keys: "D + J + A + J…", seq: [{ time: 0, keydowns: "dja" }, { time: 100, keyups: "dja" }, { time: 400, keydowns: "j", loop: 12, gap: 150 }, { time: 500, keyups: "j", loop: 12, gap: 150 }], mp: 5, entities: [] },
-    { name: "moves.soul_bomb", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 20 },
-    { name: "moves.big_bang", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 50 },
+    { name: "moves.soul_punch", keys: "> > + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 320, keydowns: "a" }, { time: 420, keyups: "a" }], mp: 0, dx: -68, entities: [{ oid: "30", dx: 150 }, { oid: "30", dx: 200 }, { oid: "30", dx: 250 }] },
+    { name: "moves.uppercut", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 90 }, { oid: "30", dx: 130 }], keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 0, dx: -85 },
+    { name: "moves.skull_blast", keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], mp: 2, dx: 0, entities: [{ oid: "30", dx: 40 }, { oid: "30", dx: 80 }, { oid: "30", dx: 120 }, { oid: "30", dx: 160 }] },
+    { name: "moves.mirror_image", keys: "D + J + A + J…", seq: [{ time: 0, keydowns: "dja" }, { time: 100, keyups: "dja" }, { time: 400, keydowns: "j", loop: 12, gap: 150 }, { time: 500, keyups: "j", loop: 12, gap: 150 }], mp: 5, entities: [], dx: -145 },
+    { name: "moves.soul_bomb", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 20, dx: -130 },
+    { name: "moves.big_bang", entities: [{ oid: "30", dx: 60 }, { oid: "30", dx: -60 }, { oid: "30", dx: 35, dz: 55 }, { oid: "30", dx: -35, dz: 55 }, { oid: "30", dx: 35, dz: -55 }, { oid: "30", dx: -35, dz: -55 }], keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 50 },
   ],
 }

@@ -1,14 +1,11 @@
 {
   oid: "8",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.ice_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 20, dx: -130 },
-    { name: "moves.summon_sword", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 30 },
-    { name: "moves.icicle", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 30, dx: -130 },
-    { name: "moves.whirlwind", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60, dx: -130 },
+    { name: "moves.ice_blast", entities: [{ oid: "30", dx: 240 }], keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 20, dx: -100 },
+    { name: "moves.summon_sword", entities: [{ oid: "30", dx: 45 }, { oid: "30", dx: 80 }, { oid: "30", dx: 115 }], keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }, { time: 600, keydowns: "a", loop: 3, gap: 400 }, { time: 700, keyups: "a", loop: 3, gap: 400 }], mp: 30 },
+    { name: "moves.icicle", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 30, dx: -100 },
+    { name: "moves.whirlwind", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 90 }, { oid: "30", dx: 130 }], keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60, dx: -100 },
   ],
 }

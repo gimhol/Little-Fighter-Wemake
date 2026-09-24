@@ -1,13 +1,11 @@
 {
   oid: "38",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.speed_punch", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 10 },
-    { name: "moves.eye_laser", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 25 },
-    { name: "moves.summon_bats", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 40 },
+    { name: "moves.speed_punch", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 10, dx: -115 },
+    { name: "moves.speed_punch_catch", keys: "Catch + D + v + A", seq: [{ time: 0, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 800, keydowns: "dDa" }, { time: 900, keyups: "dDa" }, { time: 1150, keydowns: "dDa" }, { time: 1250, keyups: "dDa" }, { time: 1550, keydowns: "dDa" }, { time: 1650, keyups: "dDa" }], mp: 0, dx: -25, entities: [{ oid: "30", dx: 90, tired: true, time: -200 }] },
+    { name: "moves.eye_laser", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 25, dx: -130 },
+    { name: "moves.summon_bats", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 40, dx: 0, hp: 100, stat_bar: true, entities: [{ oid: "30", dx: 100 }, { oid: "30", dx: 71, dz: 71 }, { oid: "30", dx: 0, dz: 100 }, { oid: "30", dx: -71, dz: 71 }, { oid: "30", dx: -100 }, { oid: "30", dx: -71, dz: -71 }, { oid: "30", dx: 0, dz: -100 }, { oid: "30", dx: 71, dz: -71 }] },
   ],
 }

@@ -1,12 +1,9 @@
 {
   oid: "36",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.devils_judgement", keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 150 },
-    { name: "moves.angels_blessing", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 200 },
+    { name: "moves.devils_judgement", entities: [{ oid: "30", dx: 70 }, { oid: "30", dx: -70 }, { oid: "30", dx: 45, dz: 70 }, { oid: "30", dx: -45, dz: 70 }, { oid: "30", dx: 45, dz: -70 }, { oid: "30", dx: -45, dz: -70 }], keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 150 },
+    { name: "moves.angels_blessing", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 200, dx: 0, entities: [{ oid: "30", dx: 110, team: "1", hp: 100, stat_bar: true }, { oid: "30", dx: -110, team: "1", hp: 100, stat_bar: true }, { oid: "30", dz: 100, team: "1", hp: 100, stat_bar: true }, { oid: "30", dz: -100, team: "1", hp: 100, stat_bar: true }] },
   ],
 }

@@ -182,6 +182,7 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
     const [lo, hi] = this.range();
     return max(0, hi - lo);
   }
+  get dragging() { return this._dragging || this._sb_dragging; }
   /** 当前滚动像素 */
   get offset() { return this._offset; }
   set offset(v: number) { this.scroll_to(v); }

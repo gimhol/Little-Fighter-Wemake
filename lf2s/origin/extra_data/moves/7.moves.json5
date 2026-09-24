@@ -1,14 +1,11 @@
 {
   oid: "7",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.fire_ball", keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], mp: 15, dx: -130 },
-    { name: "moves.blaze", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 15, dx: -145 },
-    { name: "moves.inferno", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 30, dx: -130 },
-    { name: "moves.explosion", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60, entities: [], desc: "moves.explosion.desc" },
+    { name: "moves.fire_ball", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], mp: 15, dx: -100 },
+    { name: "moves.blaze", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 15, dx: -145 },
+    { name: "moves.inferno", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 30, dx: -100 },
+    { name: "moves.explosion", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60, desc: "moves.explosion.desc", entities: [{ oid: "30", dx: 60 }, { oid: "30", dx: -60 }, { oid: "30", dx: 35, dz: 55 }, { oid: "30", dx: -35, dz: 55 }, { oid: "30", dx: 35, dz: -55 }, { oid: "30", dx: -35, dz: -55 }] },
   ],
 }

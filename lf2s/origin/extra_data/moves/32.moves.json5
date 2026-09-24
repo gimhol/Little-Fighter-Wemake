@@ -1,12 +1,9 @@
 {
   oid: "32",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.crash_punch", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 0 },
-    { name: "moves.body_attack", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 0 },
+    { name: "moves.crash_punch", entities: [{ oid: "30", dx: 40 }, { oid: "30", dx: 60 }, { oid: "30", dx: 80 }], keys: "D + > + A + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a" }, { time: 500, keyups: "a" }], mp: 0, dx: -63 },
+    { name: "moves.body_attack", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 0, dx: -145 },
   ],
 }

@@ -1,15 +1,12 @@
 {
   oid: "6",
-  entities: [
-    { oid: "30", dx: 60 },
-    { oid: "30", dx: 105 },
-    { oid: "30", dx: 150 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.thunder_punch", keys: "> > + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 320, keydowns: "a" }, { time: 420, keyups: "a" }], mp: 10, dx: -135 },
-    { name: "moves.thunder_punch_2", keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 400, keydowns: "j" }, { time: 500, keyups: "j" }, { time: 500, keydowns: "a" }, { time: 600, keyups: "a" }], mp: 15, dx: -145 },
-    { name: "moves.thunder_kick", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 10, dx: -145 },
+    { name: "moves.thunder_punch", keys: "> > + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 320, keydowns: "a" }, { time: 420, keyups: "a" }], mp: 10, dx: -135, entities: [{ oid: "30", dx: 150 }, { oid: "30", dx: 200 }, { oid: "30", dx: 250 }] },
+    { name: "moves.thunder_punch_2", keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 400, keydowns: "j" }, { time: 500, keyups: "j" }, { time: 500, keydowns: "a" }, { time: 600, keyups: "a" }], mp: 15, dx: -145, entities: [{ oid: "30", dx: 150 }, { oid: "30", dx: 200 }, { oid: "30", dx: 250 }] },
+    { name: "moves.thunder_kick", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 10, dx: -145 },
     { name: "moves.whirlwind_throw", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 15, entities: [{ oid: "30", dx: 45 }, { oid: "30", dx: 95 }, { oid: "30", dx: 140 }] },
-    { name: "moves.phoenix_palm", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 30 },
+    { name: "moves.phoenix_palm", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 30 },
   ],
 }

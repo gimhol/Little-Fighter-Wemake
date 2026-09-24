@@ -69,6 +69,7 @@
 | Deep                       | 鬼哭斬1          | Dashing Strafe 1      | D→J          | 30      |
 | Deep                       | 鬼哭斬2          | Dashing Strafe 2      | Catch + D→J  | 15      |
 | Bat                        | 速拳             | Speed Punch           | D→J          | 10      |
+| Bat                        | 速拳（抓人）     | Speed Punch (Catch)   | Catch + D↓A  | 0       |
 | Bat                        | 激光眼           | Eye Laser             | D→A          | 25      |
 | Bat                        | 吸血蝙蝠         | Summon Bats           | D↑J          | 40      |
 | LouisEX                    | 衝光拳           | Thunder Punch         | →A           | 6       |
@@ -103,4 +104,4 @@
 
 ---
 
-主笔：Gim / 润色：DeepSeek V4 Flash
+记录：DeepSeek V4 Flash

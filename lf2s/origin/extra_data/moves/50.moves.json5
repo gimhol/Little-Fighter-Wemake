@@ -1,14 +1,11 @@
 {
   oid: "50",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.thunder_punch", keys: "> > + A", frame: "75", mp: 6 },
-    { name: "moves.thunder_punch_2", keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 700, keydowns: "j" }, { time: 800, keyups: "j" }, { time: 950, keydowns: "a" }, { time: 1050, keyups: "a" }, { time: 1100, keyups: "R" }], mp: 8 },
-    { name: "moves.phoenix_dance", keys: "D + v + A", seq: [{ time: 0, keydowns: "dDa" }, { time: 100, keyups: "dDa" }], mp: 0 },
-    { name: "moves.phoenix_palm", keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 600, keydowns: "a", loop: 12, gap: 150 }, { time: 700, keyups: "a", loop: 12, gap: 150 }], mp: 20 },
+    { name: "moves.thunder_punch", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "> > + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 320, keydowns: "a" }, { time: 420, keyups: "a" }], mp: 6, dx: -145 },
+    { name: "moves.thunder_punch_2", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 80, keyups: "R" }, { time: 120, keydowns: "R" }, { time: 200, keyups: "R" }, { time: 400, keydowns: "j" }, { time: 500, keyups: "j" }, { time: 500, keydowns: "a" }, { time: 600, keyups: "a" }], mp: 8, dx: -145 },
+    { name: "moves.phoenix_dance", entities: [{ oid: "30", dx: 40 }, { oid: "30", dx: 60 }, { oid: "30", dx: 80 }], keys: "D + v + A", seq: [{ time: 0, keydowns: "dDa" }, { time: 100, keyups: "dDa" }], mp: 0 },
+    { name: "moves.phoenix_palm", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }], keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 300, keydowns: "a", loop: 24, gap: 110 }, { time: 400, keyups: "a", loop: 24, gap: 110 }], mp: 20, dx: -130 },
   ],
 }

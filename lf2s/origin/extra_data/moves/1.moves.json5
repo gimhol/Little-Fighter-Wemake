@@ -1,14 +1,11 @@
 {
   oid: "1",
-  entities: [
-    { oid: "30", dx: 50 },
-    { oid: "30", dx: 100 },
-    { oid: "30", dx: 150 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.energy_blast_deep",
+    { name: "moves.energy_blast_deep", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }],
       keys: "D + > + A…",
-      mp: 15, dx: -130,
+      mp: 15, dx: -100,
       seq: [
         { time: 0, keydowns: "dRa" },
         { time: 100, keyups: "dRa" },
@@ -16,7 +13,7 @@
         { time: 500, keyups: "a", loop: 8, gap: 150 }
       ]
     },
-    { name: "moves.strike",
+    { name: "moves.strike", entities: [{ oid: "30", dx: 40 }, { oid: "30", dx: 60 }, { oid: "30", dx: 80 }],
       keys: "D + v + A",
       mp: 15, dx: -50,
       seq: [
@@ -25,7 +22,7 @@
       ],
     },
     {
-      name: "moves.leap_attack",
+      name: "moves.leap_attack", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }],
       keys: "D + ^ + J + A",
       mp: 15, dx: -90,
       seq: [
@@ -40,7 +37,7 @@
       ],
     },
     {
-      name: "moves.dashing_strafe",
+      name: "moves.dashing_strafe", entities: [{ oid: "30", dx: 50 }, { oid: "30", dx: 100 }, { oid: "30", dx: 150 }],
       keys: "D + > + J",
       mp: 30, dx: -145,
       seq: [

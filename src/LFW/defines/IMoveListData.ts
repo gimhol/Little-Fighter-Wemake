@@ -34,6 +34,8 @@ export interface IMoveInfo {
   dx?: number;
   hp?: number;
   stat_bar?: boolean;
+  start_delay?: number;
+  end_delay?: number;
   entities?: IMoveDemoEntity[];
 }
 
@@ -45,6 +47,8 @@ export interface IMoveListData {
   x?: number;
   z?: number;
   facing?: 1 | -1;
+  start_delay?: number;
+  end_delay?: number;
   entities?: IMoveDemoEntity[];
   moves?: IMoveInfo[];
 }

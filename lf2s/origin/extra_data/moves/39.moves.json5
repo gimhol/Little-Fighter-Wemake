@@ -1,12 +1,9 @@
 {
   oid: "39",
-  entities: [
-    { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
-  ],
+  start_delay: 500,
+  end_delay: 2000,
   moves: [
-    { name: "moves.wolf_punch", keys: "D + v + A", seq: [{ time: 0, keydowns: "dDa" }, { time: 100, keyups: "dDa" }], mp: 15 },
-    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 15 },
+    { name: "moves.wolf_punch", entities: [{ oid: "30", dx: 40 }, { oid: "30", dx: 60 }, { oid: "30", dx: 80 }], keys: "D + v + A…", seq: [{ time: 0, keydowns: "dDa" }, { time: 100, keyups: "dDa" }, { time: 400, keydowns: "a", loop: 6, gap: 150 }, { time: 500, keyups: "a", loop: 6, gap: 150 }], mp: 15, dx: -63 },
+    { name: "moves.energy_blast", entities: [{ oid: "30", dx: 240 }], keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 15, dx: -120 },
   ],
 }
