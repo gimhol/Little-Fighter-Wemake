@@ -645,7 +645,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     if (r) this._i18n.add(r)
 
     check()
-    const i18n_files = zip.file(/\.i18n\.json5?$/)
+    const i18n_files = zip.file(/\.(i18n|strings)\.json5?$/)
     for (const file of i18n_files) {
       const i18n_words = await file.json().catch(() => null);
       check()

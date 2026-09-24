@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "bg_move_table",
+      type: "bg",
+      file: "bg/move_table/move_table.bg.xml",
+    }
+  ],
+}

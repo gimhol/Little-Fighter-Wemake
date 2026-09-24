@@ -1,0 +1,4 @@
+<background id="bg_move_table"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd">
+  <base name="MoveTable" group="Dev" bound="0,794,-468,-216"/>
+</background>

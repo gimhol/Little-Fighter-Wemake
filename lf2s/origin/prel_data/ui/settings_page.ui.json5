@@ -100,7 +100,10 @@
       pos: "5, 445",
       component: ["OpacityHover(0,1)"],
       actions: {
-        click: ["sound(ok)", "link_to(https://lf2.net/control.html)"],
+        click: [
+          "sound(ok)",
+          "push_ui(move_table_page, 1)",
+        ],
       },
     },
     {

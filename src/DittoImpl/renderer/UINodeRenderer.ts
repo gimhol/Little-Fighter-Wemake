@@ -54,6 +54,7 @@ export class UINodeRenderer implements IUINodeRenderer {
   protected _s1 = new T.Vector3(1, 1, 1);
   protected _old_alpha: number | null = null;
   protected _last_sync_lifetime = -1;
+  protected _bg_layer_proxy: T.Object3D | undefined;
   protected _frame_rect: IUIClipRect | null = null;
   protected readonly _v_tmp = new T.Vector3();
 
@@ -117,14 +118,7 @@ export class UINodeRenderer implements IUINodeRenderer {
     this.mesh.removeFromParent();
   }
   on_resume(): void {
-    const world_renderer = this.lf2.world.renderer as WorldRenderer;
-    if (this.ui.root === this.ui) {
-      // 按根节点 z 分层：z<0 → 背景层（世界后），z>=0 → 前景层（世界前）
-      const container = (this.ui.z ?? 0) < 0
-        ? world_renderer.ui_bg_container
-        : world_renderer.ui_fg_container;
-      container.add(this.mesh);
-    }
+    if (this.ui.root === this.ui) this.attach_ui_layer();
     const text_input = this.ui.find_component(TextInput)
     if (text_input) {
       const ele_input = this._input = document.createElement('input');
@@ -143,11 +137,39 @@ export class UINodeRenderer implements IUINodeRenderer {
   }
 
   on_pause(): void {
+    if (this.ui.root === this.ui) this.detach_ui_layer();
     const text_input = this.ui.find_component(TextInput)
-    if (this.ui.root === this.ui) 
-      this.mesh.parent?.remove(this.mesh);
     if (text_input) this.release_dom()
   }
+
+  protected attach_ui_layer(): void {
+    const wr = this.lf2.world.renderer as WorldRenderer;
+    if ((this.ui.z ?? 0) < 0) {
+      wr.ui_bg_container.add(this.mesh);
+      return;
+    }
+    wr.ui_fg_container.add(this.mesh);
+    const bg = this._bg_layer_proxy ?? (this._bg_layer_proxy = new T.Object3D());
+    let has_bg_child = false;
+    for (const child of this.ui.children) {
+      const r = child.renderer;
+      if (!(r instanceof UINodeRenderer)) continue;
+      if ((child.z ?? 0) >= 0) continue;
+      bg.add(r.mesh);
+      has_bg_child = true;
+    }
+    if (!has_bg_child) return;
+    bg.position.copy(this.mesh.position);
+    bg.scale.copy(this.mesh.scale);
+    bg.quaternion.copy(this.mesh.quaternion);
+    wr.ui_bg_container.add(bg);
+  }
+
+  protected detach_ui_layer(): void {
+    this.mesh.removeFromParent();
+    this._bg_layer_proxy?.removeFromParent();
+  }
+
   on_show(): void { }
   on_hide(): void { }
   on_start() {

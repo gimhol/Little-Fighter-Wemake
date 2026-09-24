@@ -1,0 +1,15 @@
+{
+  id: "dennis",
+  fighter: "9",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 8 },
+    { name: "moves.shrafe_dennis", keys: "D + v + A", seq: [{ time: 0, clicks: "dDa" }], mp: 15 },
+    { name: "moves.whirlwind_kick", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 15 },
+    { name: "moves.chasing_blast", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 20 },
+  ],
+}

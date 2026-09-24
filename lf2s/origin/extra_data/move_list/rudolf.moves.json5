@@ -1,0 +1,16 @@
+{
+  id: "rudolf",
+  fighter: "5",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.leap_attack", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 0 },
+    { name: "moves.multiple_ninja_star", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 20 },
+    { name: "moves.transform", keys: "抓 + D + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 900, clicks: "dja" }, { time: 1200, keyups: "R" }], mp: 30, enemies: [{ oid: "30", dx: 150, tired: true }] },
+    { name: "moves.hide", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 70 },
+    { name: "moves.double", keys: "D + v + J", seq: [{ time: 0, clicks: "dDj" }], mp: 70 },
+  ],
+}

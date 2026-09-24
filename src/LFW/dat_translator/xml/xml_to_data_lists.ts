@@ -9,5 +9,6 @@ export function xml_2_data_lists(el: IXMLElement): IDataLists {
     backgrounds: el.children_by_tag("background").map(xml_2_dat_index),
     stages: el.children_by_tag("stages").map(xml_2_dat_index),
     bots: el.children_by_tag("bot").map(xml_2_dat_index),
+    moves: el.children_by_tag("move_list").map(xml_2_dat_index),
   };
 }

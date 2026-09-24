@@ -1,0 +1,14 @@
+{
+  id: "bat",
+  fighter: "38",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.speed_punch", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 10 },
+    { name: "moves.eye_laser", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 25 },
+    { name: "moves.summon_bats", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 40 },
+  ],
+}

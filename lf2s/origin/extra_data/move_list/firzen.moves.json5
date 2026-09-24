@@ -1,0 +1,14 @@
+{
+  id: "firzen",
+  fighter: "51",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.firzen_cannon", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 5 },
+    { name: "moves.overwhelming_disaster", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 20 },
+    { name: "moves.arctic_volcano", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 50 },
+  ],
+}

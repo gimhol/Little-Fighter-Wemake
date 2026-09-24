@@ -6,7 +6,7 @@ import { xml_2_data_lists } from "../dat_translator/xml/xml_to_data_lists";
 import { xml_2_bg_data, xml_x_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_2_entity_data, xml_x_entity_data } from "../dat_translator/xml/xml_x_entity_data";
 import { xml_to_stage_info_list } from "../dat_translator/xml/xml_x_stage_info";
-import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IStageInfo } from "../defines";
+import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IMoveListData, type IStageInfo } from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
 import { Defines } from "../defines/defines";
 import { Ditto } from "../ditto";
@@ -30,6 +30,7 @@ type Data = IEntityData | IBgData;
 interface IDataListMap {
   background: IBgData[];
   bots: IBotData[];
+  moves: IMoveListData[];
   objects: IEntityData[];
   [EntityEnum.Entity]: IEntityData[];
   [EntityEnum.Fighter]: IEntityData[];
@@ -41,6 +42,7 @@ const create_data_list_map = (): IDataListMap => ({
   background: [Defines.VOID_BG],
   objects: [],
   bots: [],
+  moves: [],
   [EntityEnum.Entity]: [],
   [EntityEnum.Fighter]: [],
   [EntityEnum.Weapon]: [],
@@ -59,6 +61,7 @@ class Inner {
   alias_map = new Map<string, IEntityData>();
   stages: IStageInfo[] = [Defines.VOID_STAGE];
   bot_map = new Map<string, IBotData>();
+  move_list_map = new Map<string, IMoveListData>();
   randomings = new Map<string, Randoming<IEntityData>>();
   bg_randomings = new Map<string, Randoming<IBgData>>();
 
@@ -161,7 +164,7 @@ class Inner {
   }
   private async solve_index_files(index_files: string[]): Promise<IDataLists> {
     this.check_cancelled();
-    const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [] }
+    const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [], moves: [] }
     for (const file of index_files) {
       this.check_cancelled();
 
@@ -179,11 +182,12 @@ class Inner {
         continue;
       }
       this.check_cancelled();
-      const { objects = [], backgrounds = [], stages = [], bots = [] } = partial;
+      const { objects = [], backgrounds = [], stages = [], bots = [], moves = [] } = partial;
       data.objects.push(...objects)
       data.backgrounds.push(...backgrounds)
       data.stages.push(...stages)
       data.bots.push(...bots)
+      data.moves!.push(...moves)
     }
     return data;
   }
@@ -224,6 +228,23 @@ class Inner {
       if (id != file) this.bot_map.set(file, bot_data);
       if (id != bot_data.id) this.bot_map.set(bot_data.id, bot_data);
       this.datas.bots.push(bot_data)
+    }
+
+    for (const { id, file, skipped } of data.moves ?? []) {
+      if (skipped) continue;
+      this.lfw.emit_progress(`${file}`, 0);
+      const raw = await this.lfw.resources.import_json<IMoveListData>(file, true)
+        .then(r => r.data)
+        .catch(() => {
+          Ditto.warn(`FAILED TO LOAD MOVE LIST DATA: ${file}`);
+          return undefined
+        });
+      if (this.cancelled) throw new Error("cancelled");
+      if (!raw) continue;
+      this.move_list_map.set(id, raw);
+      if (id != file) this.move_list_map.set(file, raw);
+      if (raw.id && raw.id != id) this.move_list_map.set(raw.id, raw);
+      this.datas.moves.push(raw)
     }
 
     for (const { id, file, alias, skipped } of data.objects) {
@@ -312,6 +333,9 @@ export class DatMgr {
   get bots(): IBotData[] {
     return this._inner.datas.bots
   }
+  get moves(): IMoveListData[] {
+    return this._inner.datas.moves
+  }
   get objects(): IEntityData[] {
     return this._inner.datas.objects;
   }
@@ -339,6 +363,9 @@ export class DatMgr {
   }
   find_bot(id: string): IBotData | undefined {
     return this._inner.bot_map.get(id)
+  }
+  find_move_list(id: string): IMoveListData | undefined {
+    return this._inner.move_list_map.get(id)
   }
   get_randoming_by_group(group: string) {
     let ret = this._inner.randomings.get(group);

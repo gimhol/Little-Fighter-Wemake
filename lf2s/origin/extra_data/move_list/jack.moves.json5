@@ -1,0 +1,13 @@
+{
+  id: "jack",
+  fighter: "33",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 10 },
+    { name: "moves.flash_kick", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 25 },
+  ],
+}

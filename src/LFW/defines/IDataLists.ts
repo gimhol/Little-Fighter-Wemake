@@ -5,6 +5,7 @@ export interface IDataLists {
   backgrounds: IDatIndex[];
   stages: IDatIndex[];
   bots: IDatIndex[];
+  moves?: IDatIndex[];
 }
 
 export interface ITempDataLists {
@@ -12,4 +13,5 @@ export interface ITempDataLists {
   backgrounds: ITempDatIndex[];
   stages: ITempDatIndex[];
   bots: ITempDatIndex[];
+  moves?: ITempDatIndex[];
 }

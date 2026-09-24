@@ -56,6 +56,7 @@ export * from "./IHitKeyMap";
 export * from "./IItrInfo";
 export * from "./ILegacyPictureInfo";
 export * from "./IModelInfo";
+export * from "./IMoveListData";
 export * from "./INextFrame";
 export * from "./INextFrameResult";
 export * from "./IOpointInfo";

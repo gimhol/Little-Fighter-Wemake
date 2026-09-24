@@ -1,0 +1,15 @@
+{
+  id: "louisex",
+  fighter: "50",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.phoenix_dance", keys: "D + v + A", seq: [{ time: 0, clicks: "dDa" }], mp: 0 },
+    { name: "moves.thunder_punch", keys: "Run + A", frame: "75", mp: 6 },
+    { name: "moves.thunder_punch", keys: "Run + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 700, clicks: "j" }, { time: 950, clicks: "a" }, { time: 1100, keyups: "R" }], mp: 8 },
+    { name: "moves.phoenix_palm", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 20 },
+  ],
+}

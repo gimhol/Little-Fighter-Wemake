@@ -32,6 +32,7 @@
   "ui/jalousie_ns.ui.json5",
   "ui/loading_page.ui.json5",
   "ui/main_page.ui.json5",
+  "ui/move_table_page.ui.json5",
   "ui/network_loading_page.ui.json5",
   "ui/nine_patch_test.ui.json5",
   "ui/player_keys_hints.ui.json5",

@@ -44,6 +44,7 @@ export const regist_components = () => {
     _.LoadingContentText,
     _.MainMenuLogic,
     _.MiscSettingsLogic,
+    _.MoveTableLogic,
     _.OpacityAnimation,
     _.OpacityFlash,
     _.OpacityHover,

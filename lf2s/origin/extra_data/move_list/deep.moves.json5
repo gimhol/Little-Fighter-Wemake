@@ -1,0 +1,16 @@
+{
+  id: "deep",
+  fighter: "1",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 15 },
+    { name: "moves.strike", keys: "D + v + A", seq: [{ time: 0, clicks: "dDa" }], mp: 15 },
+    { name: "moves.leap_attack", keys: "D + ^ + J + A", seq: [{ time: 0, clicks: "dUj" }, { time: 300, keydowns: "a" }, { time: 400, keyups: "a" }], mp: 15 },
+    { name: "moves.leap_attack_2", keys: "打击 + J + A", seq: [{ time: 0, clicks: "dDa" }, { time: 300, clicks: "j" }, { time: 600, clicks: "a" }], mp: 15 },
+    { name: "moves.dashing_strafe", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 30 },
+  ],
+}

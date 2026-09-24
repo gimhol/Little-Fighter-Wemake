@@ -44,6 +44,7 @@ export * from "./LaunchPageLogic";
 export * from "./LittleFunnyAutoGame";
 export * from "./MainMenuLogic";
 export * from "./MiscSettingsLogic";
+export * from "./MoveTable";
 export * from "./OpacityAnimation";
 export * from "./OpacityFlash";
 export * from "./OpacityHover";

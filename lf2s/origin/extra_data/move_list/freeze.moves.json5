@@ -1,0 +1,15 @@
+{
+  id: "freeze",
+  fighter: "8",
+  enemies: [
+    { oid: "30", dx: 150 },
+    { oid: "30", dx: 260, dz: 45 },
+    { oid: "30", dx: 260, dz: -45 },
+  ],
+  moves: [
+    { name: "moves.ice_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 20 },
+    { name: "moves.summon_sword", keys: "D + v + J", seq: [{ time: 0, clicks: "dDj" }], mp: 30 },
+    { name: "moves.icicle", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 30 },
+    { name: "moves.whirlwind", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 60 },
+  ],
+}
