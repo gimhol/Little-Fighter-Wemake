@@ -1,15 +1,64 @@
 {
   oid: "1",
   entities: [
+    { oid: "30", dx: 50 },
+    { oid: "30", dx: 100 },
     { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.energy_blast_deep", keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], mp: 15 },
-    { name: "moves.strike", keys: "D + v + A", seq: [{ time: 0, keydowns: "dDa" }, { time: 100, keyups: "dDa" }], mp: 15 },
-    { name: "moves.leap_attack", keys: "D + ^ + J + A", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }, { time: 300, keydowns: "a" }, { time: 400, keyups: "a" }], mp: 15 },
-    { name: "moves.dashing_strafe", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 30 },
-    { name: "moves.dashing_strafe_2", keys: "Catch + D + > + J", seq: [{ time: 0, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 800, keydowns: "dRj" }, { time: 900, keyups: "dRj" }], entities: [{ oid: "30", dx: 90, tired: true, time: -200 }], mp: 15 },
+    { name: "moves.energy_blast_deep",
+      keys: "D + > + A…",
+      mp: 15, dx: -130,
+      seq: [
+        { time: 0, keydowns: "dRa" },
+        { time: 100, keyups: "dRa" },
+        { time: 400, keydowns: "a", loop: 8, gap: 150 },
+        { time: 500, keyups: "a", loop: 8, gap: 150 }
+      ]
+    },
+    { name: "moves.strike",
+      keys: "D + v + A",
+      mp: 15, dx: -50,
+      seq: [
+        { time: 0, keydowns: "dDa" },
+        { time: 100, keyups: "dDa" }
+      ],
+    },
+    {
+      name: "moves.leap_attack",
+      keys: "D + ^ + J + A",
+      mp: 15, dx: -90,
+      seq: [
+        { time: 0, keydowns: "dUj" },
+        { time: 100, keyups: "dUj" },
+        { time: 300, keydowns: "a" },
+        { time: 400, keyups: "a" }
+      ],
+      entities: [
+        { oid: "30", dx: 125 },
+        { oid: "30", dx: 175 },
+      ],
+    },
+    {
+      name: "moves.dashing_strafe",
+      keys: "D + > + J",
+      mp: 30, dx: -145,
+      seq: [
+        { time: 0, keydowns: "dRj" },
+        { time: 100, keyups: "dRj" }
+      ]
+    },
+    { name: "moves.dashing_strafe_2",
+      keys: "Catch + D + > + J",
+      mp: 15, dx: -25,
+      seq: [
+        { time: 0, keydowns: "R" },
+        { time: 250, keyups: "R" },
+        { time: 800, keydowns: "dRj" },
+        { time: 900, keyups: "dRj" }
+      ],
+      entities: [
+        { oid: "30", dx: 90, tired: true, time: -200 }
+      ] },
   ],
 }

@@ -6,9 +6,9 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.ice_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 20 },
+    { name: "moves.ice_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 20, dx: -130 },
     { name: "moves.summon_sword", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 30 },
-    { name: "moves.icicle", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 30 },
-    { name: "moves.whirlwind", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60 },
+    { name: "moves.icicle", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 30, dx: -130 },
+    { name: "moves.whirlwind", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60, dx: -130 },
   ],
 }

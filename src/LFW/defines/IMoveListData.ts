@@ -10,6 +10,7 @@ export interface IMoveDemoEntity {
   dz?: number;
   facing?: 1 | -1;
   hp?: number;
+  stat_bar?: boolean;
   tired?: boolean;
   seq?: IMoveStep[];
 }
@@ -30,6 +31,9 @@ export interface IMoveInfo {
   keys?: string;
   desc?: string;
   mp?: number;
+  dx?: number;
+  hp?: number;
+  stat_bar?: boolean;
   entities?: IMoveDemoEntity[];
 }
 

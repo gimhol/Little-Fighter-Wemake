@@ -2,14 +2,54 @@
   oid: "2",
   entities: [
     { oid: "30", dx: 150 },
-    { oid: "30", dx: 260, dz: 45 },
-    { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 15 },
-    { name: "moves.energy_shield", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 20 },
-    { name: "moves.energy_disk", keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 50 },
-    { name: "moves.heal_others", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 70 },
-    { name: "moves.heal_myself", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 70 },
+    {
+      name: "moves.energy_blast",
+      keys: "D + > + A", mp: 15, dx: -100,
+      seq: [
+        { time: 0, keydowns: "dRa" },
+        { time: 100, keyups: "dRa" }
+      ]
+    },
+    {
+      name: "moves.energy_shield",
+      keys: "D + > + J", mp: 20,
+      seq: [
+        { time: 0, keydowns: "dRj" },
+        { time: 100, keyups: "dRj" }
+      ]
+    },
+    {
+      name: "moves.energy_disk",
+      keys: "D + ^ + A", mp: 50, dx: -130,
+      seq: [
+        { time: 0, keydowns: "dUa" },
+        { time: 100, keyups: "dUa" }
+      ],
+      entities: [
+        { oid: "30", dx: 150 },
+        { oid: "30", dx: 200 },
+      ],
+    },
+    {
+      name: "moves.heal_others",
+      keys: "D + ^ + J", mp: 70, dx: -100,
+      seq: [
+        { time: 0, keydowns: "dUj" },
+        { time: 100, keyups: "dUj" }
+      ],
+      entities: [
+        { oid: "30", dx: 95, team: "1", hp: 100, stat_bar: true },
+      ],
+    },
+    {
+      name: "moves.heal_myself",
+      keys: "D + v + J", mp: 70, dx: -100, hp: 100, stat_bar: true,
+      seq: [ 
+        { time: 0, keydowns: "dDj" }, 
+        { time: 100, keyups: "dDj" } 
+      ]
+    },
   ],
 }

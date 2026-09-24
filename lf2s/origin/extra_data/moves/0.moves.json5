@@ -1,14 +1,14 @@
 {
   oid: "0",
   moves: [
-    { name: "moves.walk", keys: "< / > / ^ / v", seq: [{ time: 0, keydowns: "R" }, { time: 800, keyups: "R" }, { time: 900, keydowns: "U" }, { time: 1700, keyups: "U" }, { time: 1800, keydowns: "D" }, { time: 2600, keyups: "D" }, { time: 2700, keydowns: "L" }, { time: 3500, keyups: "L" }] },
+    { name: "moves.walk", keys: "< / > / ^ / v", seq: [{ time: 0, keydowns: "R" }, { time: 800, keyups: "R" }, { time: 900, keydowns: "U" }, { time: 1700, keyups: "U" }, { time: 1800, keydowns: "D" }, { time: 2600, keyups: "D" }, { time: 2700, keydowns: "L" }, { time: 3500, keyups: "L" }], dx: -50 },
     { name: "moves.defend", keys: "D", seq: [{ time: 0, keydowns: "d" }, { time: 1500, keyups: "d" }] },
-    { name: "moves.dodge", keys: "> > + D", seq: [{ time: 0, keydowns: "R" }, { time: 100, keyups: "R" }, { time: 150, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 450, keydowns: "d" }, { time: 550, keyups: "d" }] },
+    { name: "moves.dodge", keys: "> > + D", seq: [{ time: 0, keydowns: "R" }, { time: 100, keyups: "R" }, { time: 150, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 450, keydowns: "d" }, { time: 550, keyups: "d" }], dx: -95 },
     { name: "moves.punch", keys: "A…", seq: [{ time: 0, keydowns: "a" }, { time: 100, keyups: "a" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], entities: [{ oid: "30", dx: 55 }] },
-    { name: "moves.run_attack", keys: "> > + A", seq: [{ time: 0, keydowns: "R" }, { time: 100, keyups: "R" }, { time: 150, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 400, keydowns: "a" }, { time: 500, keyups: "a" }], entities: [{ oid: "30", dx: 150 }] },
+    { name: "moves.run_attack", keys: "> > + A", seq: [{ time: 0, keydowns: "R" }, { time: 100, keyups: "R" }, { time: 150, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 400, keydowns: "a" }, { time: 500, keyups: "a" }], entities: [{ oid: "30", dx: 150 }], dx: -75 },
     { name: "moves.jump_attack", keys: "J + A", seq: [{ time: 0, keydowns: "j" }, { time: 100, keyups: "j" }, { time: 300, keydowns: "a" }, { time: 400, keyups: "a" }], entities: [{ oid: "30", dx: 60 }] },
     { name: "moves.dodge_landing", keys: "J + D", seq: [{ time: 0, keydowns: "j" }, { time: 100, keyups: "j" }, { time: 400, keydowns: "d" }, { time: 500, keyups: "d" }] },
-    { name: "moves.dash_attack", keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 100, keyups: "R" }, { time: 150, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 450, keydowns: "j" }, { time: 550, keyups: "j" }, { time: 550, keydowns: "a" }, { time: 650, keyups: "a" }], entities: [{ oid: "30", dx: 220 }] },
+    { name: "moves.dash_attack", keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 100, keyups: "R" }, { time: 150, keydowns: "R" }, { time: 250, keyups: "R" }, { time: 450, keydowns: "j" }, { time: 550, keyups: "j" }, { time: 550, keydowns: "a" }, { time: 650, keyups: "a" }], entities: [{ oid: "30", dx: 220 }], dx: -145 },
     { name: "moves.breakfall", keys: "J", desc: "moves.breakfall.desc" },
   ],
 }

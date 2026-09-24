@@ -1,4 +1,4 @@
-import { CheatEnum, Defines, EntityGroup, FacingFlag, GK, StateEnum, type IMoveDemoEntity, type IMoveInfo, type IMoveListData, type IMoveStep, type LGK } from "../../../defines";
+import { CheatEnum, Defines, EntityGroup, FacingFlag, GK, StatBarType, StateEnum, TeamEnum, type IMoveDemoEntity, type IMoveInfo, type IMoveListData, type IMoveStep, type LGK } from "../../../defines";
 import { LFW } from "../../../LFW";
 import type { Entity } from "../../../entity";
 import type { IUIKeyEvent } from "../../IUIKeyEvent";
@@ -15,7 +15,10 @@ const START_DELAY = 1000;
 const MIN_INPUT_TIME = 200;
 const MAX_INPUT_TIME = 4000;
 const DEMO_MP = 1000000;
-const ACTOR_DX = 60;
+const DEMO_RECT_LEFT = 399;
+const DEMO_RECT_RIGHT = 780;
+const DEMO_PAD = 45;
+const ACTOR_X = (DEMO_RECT_LEFT + DEMO_RECT_RIGHT) / 2;
 const ROW_COUNT = 8;
 const ROW_CURSOR = "▶ ";
 const ROW_INDENT = "   ";
@@ -41,6 +44,7 @@ export class MoveTableLogic extends UIComponent {
   private _actor: Entity | null = null;
   private _entities: Entity[] = [];
   private _entity_specs: IMoveDemoEntity[] = [];
+  private _entity_fit = 1;
   private _steps: IKeyStep[] = [];
   private _step_index = 0;
   private _move_time = 0;
@@ -131,6 +135,9 @@ export class MoveTableLogic extends UIComponent {
       this.start_move(this._move_index);
       return;
     }
+    this._actor.position.x = this.clamp_x(this._actor.position.x);
+    for (const e of this._entities)
+      if (e) e.position.x = this.clamp_x(e.position.x);
     this._move_time += dt;
     if (this._phase === 0) {
       while (
@@ -187,7 +194,7 @@ export class MoveTableLogic extends UIComponent {
     this.world.camera.unlock();
     this._entities.length = 0;
     this._entity_specs.length = 0;
-    this._actor = this.spawn_actor(list);
+    this._actor = this.spawn_actor(list, move);
     this.spawn_entities(move?.entities ?? list.entities ?? NO_ENTITIES);
   }
 
@@ -305,7 +312,7 @@ export class MoveTableLogic extends UIComponent {
     return ret;
   }
 
-  private spawn_actor(list: IMoveListData): Entity | null {
+  private spawn_actor(list: IMoveListData, move?: IMoveInfo): Entity | null {
     const data = this.lfw.datas.find(list.oid);
     if (!data) {
       this.warn(`[MoveTableLogic] fighter data not found: ${list.oid}`);
@@ -314,24 +321,50 @@ export class MoveTableLogic extends UIComponent {
     const entity = this.lfw.factory.create_entity(this.world, data);
     if (!entity) return null;
     const { bg } = this.world;
-    const x = list.x ?? (bg.left + bg.right) / 2 + ACTOR_DX;
+    const x = list.x ?? ACTOR_X + (move?.dx ?? 0);
     const z = list.z ?? (bg.near + bg.far) / 2;
     entity.set_position(x, 0, z);
     entity.facing = list.facing ?? FacingFlag.R;
     entity.key_role = false;
     entity.name_visible = false;
     entity.attach();
-    if (list.team !== undefined) entity.team = list.team;
+    entity.team = list.team ?? TeamEnum.Team_1;
     entity.mp_max = DEMO_MP;
     entity.mp = DEMO_MP;
     entity.ctrl_visible = true;
+    if (move?.stat_bar) entity.stat_bar_type = StatBarType.Float;
+    if (move?.hp !== undefined) entity.hp = move.hp;
     return entity;
   }
 
   private spawn_entities(spec: IMoveDemoEntity[]): void {
     this._entity_specs.push(...spec);
+    this._entity_fit = this.calc_entity_fit(spec);
     for (let i = 0; i < spec.length; i++)
       if (spec[i].time === undefined) this.spawn_entity(spec[i], i);
+  }
+
+  private clamp_x(x: number): number {
+    return Math.min(Math.max(x, DEMO_RECT_LEFT + DEMO_PAD), DEMO_RECT_RIGHT - DEMO_PAD);
+  }
+
+  private calc_entity_fit(spec: IMoveDemoEntity[]): number {
+    const actor = this._actor;
+    if (!actor || !spec.length) return 1;
+    const facing = actor.facing > 0 ? 1 : -1;
+    const ax = actor.position.x;
+    const left_room = Math.max(ax - (DEMO_RECT_LEFT + DEMO_PAD), 0);
+    const right_room = Math.max(DEMO_RECT_RIGHT - DEMO_PAD - ax, 0);
+    let far_l = 0;
+    let far_r = 0;
+    for (const s of spec) {
+      const dx = (s.x ?? ax + (s.dx ?? DEFAULT_ENTITY_DX) * facing) - ax;
+      if (dx > far_r) far_r = dx;
+      if (-dx > far_l) far_l = -dx;
+    }
+    const fit_l = far_l > left_room ? left_room / far_l : 1;
+    const fit_r = far_r > right_room ? right_room / far_r : 1;
+    return Math.min(fit_l, fit_r);
   }
 
   private spawn_entity(s: IMoveDemoEntity, index: number): void {
@@ -346,17 +379,18 @@ export class MoveTableLogic extends UIComponent {
     }
     const entity = this.lfw.factory.create_entity(this.world, data);
     if (!entity) return;
-    const x = s.x ?? ax + (s.dx ?? DEFAULT_ENTITY_DX) * facing;
+    const raw_x = s.x ?? ax + (s.dx ?? DEFAULT_ENTITY_DX) * facing;
+    const x = this.clamp_x(ax + (raw_x - ax) * this._entity_fit);
     const z = s.z ?? az + (s.dz ?? 0);
     entity.set_position(x, s.y ?? 0, z);
     entity.facing = s.facing ?? (x >= ax ? FacingFlag.L : FacingFlag.R);
     entity.key_role = false;
     entity.name_visible = false;
     entity.attach();
-    if (s.team !== undefined) entity.team = s.team;
-    const hp = s.hp ?? DEFAULT_ENTITY_HP;
-    entity.hp_max = hp;
-    entity.hp = hp;
+    entity.team = s.team ?? TeamEnum.Team_2;
+    if (s.hp === undefined) entity.hp_max = entity.hp = DEFAULT_ENTITY_HP;
+    else entity.hp = s.hp;
+    if (s.stat_bar) entity.stat_bar_type = StatBarType.Float;
     if (s.frame) {
       entity.mp = DEMO_MP;
       entity.enter_frame_by_id(s.frame, true);
