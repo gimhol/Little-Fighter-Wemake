@@ -144,7 +144,7 @@ npm run build:playable
 #    以及同名解包目录 release/Little Fighter Wemake_<version>\（里面的 start.exe 可直接运行）
 ```
 
-- 包名格式 = 项目名_版本号（脚本自动取 `package.json` 的版本号，如 `Little Fighter Wemake_0.1.55.zip`）；根目录直接铺文件、入口 `start.exe`、文件全 ASCII 名、<500MB（B站“程序文件”上传要求；因为 B站要求入口必须叫 `start.exe`，桌面客户端的可执行文件也是这个名字）
+- 包名格式 = 项目名_版本号（脚本自动取 `package.json` 的版本号，如 `Little Fighter Wemake_0.1.56.zip`）；根目录直接铺文件、入口 `start.exe`、文件全 ASCII 名、<500MB（B站“程序文件”上传要求；因为 B站要求入口必须叫 `start.exe`，桌面客户端的可执行文件也是这个名字）
 - `start.exe` 是一个 **Electron 应用**（源码 `desktop/app/`：`main.mjs` 主进程 + `preload.cjs` 向页面暴露 Wails 兼容的 `window.runtime`），负责：
   - 起本地静态服务放游戏页面（默认 8067）
   - 在主进程里以开平模式跑弹幕桥（默认 8066，源即 `index.mjs`，构建时用 esbuild 打成 `bridge.bundle.mjs`）；只在配好弹幕来源（danmu.json5 / `code=` / `--room`）时启动，单机模式不会监听 8066

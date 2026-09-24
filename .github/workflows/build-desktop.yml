@@ -1,7 +1,7 @@
 name: Build Desktop & Release
 
 on:
-  # 打 v* tag（如 v0.1.55-preview-1）时自动构建桌面端并发布 Release
+  # 打 v* tag（如 v0.1.56-preview-1）时自动构建桌面端并发布 Release
   push:
     tags:
       - "v*"
