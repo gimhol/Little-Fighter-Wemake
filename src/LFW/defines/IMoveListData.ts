@@ -28,13 +28,12 @@ export interface IMoveInfo {
 }
 
 export interface IMoveListData {
-  id: string;
-  fighter?: string;
+  oid: string;
   name?: string;
   bg?: string;
   x?: number;
   z?: number;
   facing?: 1 | -1;
   enemies?: IMoveDemoEnemy[];
-  moves: IMoveInfo[];
+  moves?: IMoveInfo[];
 }

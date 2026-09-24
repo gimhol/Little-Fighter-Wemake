@@ -1,6 +1,5 @@
 {
-  id: "jack",
-  fighter: "33",
+  oid: "33",
   enemies: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },

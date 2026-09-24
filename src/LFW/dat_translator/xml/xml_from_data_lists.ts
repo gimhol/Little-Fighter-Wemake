@@ -41,7 +41,7 @@ export function xml_from_data_lists(xml: IXML, lists: IDataLists): IXMLElement {
     ["background", lists.backgrounds],
     ["stages", lists.stages],
     ["bot", lists.bots],
-    ["move_list", lists.moves],
+    ["moves", lists.moves],
   ];
 
   for (const [tag, items] of groups) {

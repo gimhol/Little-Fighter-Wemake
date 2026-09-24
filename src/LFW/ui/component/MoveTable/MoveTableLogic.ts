@@ -10,7 +10,6 @@ const DEFAULT_BG = "bg_move_table";
 const DEFAULT_ENEMY_DX = 150;
 const DEFAULT_ENEMY_HP = 9999;
 const DEFAULT_STEP_WAIT = 100;
-const DEFAULT_MOVE_GAP = 400;
 const MIN_INPUT_TIME = 200;
 const MAX_INPUT_TIME = 4000;
 const DEMO_MP = 1000000;
@@ -38,7 +37,6 @@ export class MoveTableLogic extends UIComponent {
   private _steps: IKeyStep[] = [];
   private _step_index = 0;
   private _move_time = 0;
-  private _next_at = 0;
   private _phase = 0;
   private _loading = false;
   private _char_label: UINode | null = null;
@@ -108,7 +106,7 @@ export class MoveTableLogic extends UIComponent {
   override update(dt: number): void {
     if (this.world.paused) return;
     const list = this.list;
-    if (!list || !list.moves.length) return;
+    if (!list || !list.moves?.length) return;
     if (!this._actor || this._actor.hp <= 0) {
       this.start_move(this._move_index);
       return;
@@ -129,10 +127,7 @@ export class MoveTableLogic extends UIComponent {
         this._actor.state === StateEnum.Walking;
       if (idle || this._move_time >= MAX_INPUT_TIME) {
         this._phase = 2;
-        this._next_at = this._move_time + DEFAULT_MOVE_GAP;
       }
-    } else if (this._move_time >= this._next_at) {
-      this.start_move(this._move_index + 1);
     }
   }
 
@@ -142,15 +137,15 @@ export class MoveTableLogic extends UIComponent {
     const len = lists.length;
     this._list_index = ((index % len) + len) % len;
     const list = lists[this._list_index];
-    const data = this.lfw.datas.find(list.fighter ?? list.id);
-    this._char_label?.set_text(list.name ?? data?.base.name ?? list.id);
+    const data = this.lfw.datas.find(list.oid ?? list.oid);
+    this._char_label?.set_text(list.name ?? data?.base.name ?? list.oid);
     this._face?.set_src(data?.base.head ?? Defines.BuiltIn_Imgs.RFACE);
     this.start_move(0);
   }
 
   private start_move(index: number): void {
     const list = this.list;
-    if (!list || !list.moves.length) return;
+    if (!list || !list.moves?.length) return;
     const len = list.moves.length;
     this._move_index = ((index % len) + len) % len;
     const move = list.moves[this._move_index];
@@ -159,7 +154,6 @@ export class MoveTableLogic extends UIComponent {
     this.build_steps(move);
     this._step_index = 0;
     this._move_time = 0;
-    this._next_at = 0;
     this._phase = 0;
     this.update_move_labels(list, move);
   }
@@ -199,7 +193,7 @@ export class MoveTableLogic extends UIComponent {
     );
     const moves = list.moves;
     for (let i = 0; i < this._row_names.length; i++) {
-      const row = moves[i];
+      const row = moves?.[i];
       const current = i === this._move_index;
       const name_node = this._row_names[i];
       const keys_node = this._row_keys[i];
@@ -259,9 +253,9 @@ export class MoveTableLogic extends UIComponent {
   }
 
   private spawn_actor(list: IMoveListData): Entity | null {
-    const data = this.lfw.datas.find(list.fighter ?? list.id);
+    const data = this.lfw.datas.find(list.oid ?? list.oid);
     if (!data) {
-      this.warn(`[MoveTableLogic] fighter data not found: ${list.fighter ?? list.id}`);
+      this.warn(`[MoveTableLogic] fighter data not found: ${list.oid ?? list.oid}`);
       return null;
     }
     const entity = this.lfw.factory.create_entity(this.world, data);

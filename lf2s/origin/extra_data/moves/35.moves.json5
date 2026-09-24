@@ -1,5 +1,5 @@
 {
-  id: "monk",
+  id: "35",
   fighter: "35",
   enemies: [
     { oid: "30", dx: 150 },

@@ -1,6 +1,5 @@
 {
-  id: "firzen",
-  fighter: "51",
+  oid: "51",
   enemies: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },

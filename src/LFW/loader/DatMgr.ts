@@ -61,7 +61,7 @@ class Inner {
   alias_map = new Map<string, IEntityData>();
   stages: IStageInfo[] = [Defines.VOID_STAGE];
   bot_map = new Map<string, IBotData>();
-  move_list_map = new Map<string, IMoveListData>();
+  moves_map = new Map<string, IMoveListData>();
   randomings = new Map<string, Randoming<IEntityData>>();
   bg_randomings = new Map<string, Randoming<IBgData>>();
 
@@ -241,9 +241,9 @@ class Inner {
         });
       if (this.cancelled) throw new Error("cancelled");
       if (!raw) continue;
-      this.move_list_map.set(id, raw);
-      if (id != file) this.move_list_map.set(file, raw);
-      if (raw.id && raw.id != id) this.move_list_map.set(raw.id, raw);
+      this.moves_map.set(id, raw);
+      if (id != file) this.moves_map.set(file, raw);
+      if (raw.oid && raw.oid != id) this.moves_map.set(raw.oid, raw);
       this.datas.moves.push(raw)
     }
 
@@ -364,8 +364,8 @@ export class DatMgr {
   find_bot(id: string): IBotData | undefined {
     return this._inner.bot_map.get(id)
   }
-  find_move_list(id: string): IMoveListData | undefined {
-    return this._inner.move_list_map.get(id)
+  find_moves(id: string): IMoveListData | undefined {
+    return this._inner.moves_map.get(id)
   }
   get_randoming_by_group(group: string) {
     let ret = this._inner.randomings.get(group);
