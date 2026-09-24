@@ -199,6 +199,24 @@ export async function make_data() {
 
   for (const src_path of ress.get_files(...COPYS_SUFFIX.split(','))) {
     const dst_path = src_path.replace(IN_LF2_DIR, TMP_DAT_DIR);
+    const pic_list = /\.png$/i.test(src_path)
+      ? pic_list_map.get(dst_path.replace(TMP_DAT_DIR + "/", ""))
+      : void 0;
+    if (pic_list?.length) {
+      for (const pic of pic_list) {
+        const grid_dst_path = convert_grid_image.get_dst_path(TMP_DAT_DIR, pic);
+        track_output(grid_dst_path);
+        const cache_info = await cache_infos.get_info(src_path, [grid_dst_path]);
+        const is_changed = await cache_info.changed();
+        if (!is_changed) {
+          log("Not changed:", src_path, "=>\n    " + grid_dst_path);
+          continue;
+        }
+        await convert_grid_image(grid_dst_path, src_path, pic);
+        await cache_info.update();
+      }
+      continue;
+    }
     track_output(dst_path);
     const cache_info = await cache_infos.get_info(src_path, [dst_path]);
     const is_changed = await cache_info.changed();

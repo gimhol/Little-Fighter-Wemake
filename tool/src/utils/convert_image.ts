@@ -105,19 +105,26 @@ export async function convert_grid_image(
     const y = (cell_h + 1) * (row_idx + 1) - 1;
     remove_lines.push("-draw", `line 0,${y} ${w},${y}`);
   }
+  const mask_args = w > 0 && h > 0
+    ? [
+      "(",
+      "-size", `${w}x${h}`,
+      "xc:none",
+      "+antialias",
+      "-stroke", "black",
+      "-strokewidth", "1",
+      ...remove_lines,
+      ")",
+      "-compose", "Dst_Out",
+      "-composite",
+    ]
+    : [];
   const args = [
     src_path,
-    "-stroke",
-    "rgba(0,0,0,0)",
-    "-strokewidth",
-    "1",
-    ...remove_lines,
-    "-alpha",
-    "on",
-    "-fill",
-    "rgba(0,0,0,0)",
-    "-opaque",
-    "rgb(0,0,0)",
+    ...(/\.bmp$/i.test(src_path)
+      ? ["-alpha", "on", "-fill", "rgba(0,0,0,0)", "-opaque", "rgb(0,0,0)"]
+      : []),
+    ...mask_args,
     "-strip",
     "-define",
     "png:compression-level=9",

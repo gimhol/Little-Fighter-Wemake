@@ -4,7 +4,7 @@ import { find_real_cmd } from "./find_real_cmd";
 
 const md5_cache = new Map<string, Promise<string>>();
 
-const CONVERT_VERSION = 3;
+const CONVERT_VERSION = 4;
 
 export function tool_md5(path: string): Promise<string> {
   let ret = md5_cache.get(path);
