@@ -6,7 +6,7 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.crash_punch", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 0 },
-    { name: "moves.body_attack", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 0 },
+    { name: "moves.crash_punch", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 0 },
+    { name: "moves.body_attack", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 0 },
   ],
 }

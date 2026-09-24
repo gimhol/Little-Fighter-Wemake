@@ -21,6 +21,7 @@ export class EntityRenderer implements IEntityRenderer {
   ctrl: EntityCtrlRender | null = null;
   readonly owner: WorldRenderer;
   protected _indicators: number = 0;
+  protected _ctrl_shown: boolean | null = null;
   readonly p0 = new Vector3()
   readonly p1 = new Vector3()
   readonly position = new Vector3();
@@ -54,9 +55,14 @@ export class EntityRenderer implements IEntityRenderer {
     this.name = new EntityNameRender(this);
   }
   ensure_ctrl() {
-    if (!this.ctrl && this._indicators & ENTITY_INDICATINGS.ctrl) {
-      this.ctrl = new EntityCtrlRender(this)
-      this.ctrl.on_mount();
+    const visible = !!(this.entity.ctrl_visible ?? (this._indicators & ENTITY_INDICATINGS.ctrl));
+    if (visible === this._ctrl_shown && !!this.ctrl === visible) return;
+    this._ctrl_shown = visible;
+    if (visible) {
+      if (!this.ctrl) {
+        this.ctrl = new EntityCtrlRender(this)
+        this.ctrl.on_mount();
+      }
     } else if (this.ctrl) {
       this.ctrl.on_unmount();
       this.ctrl = null;
@@ -112,8 +118,8 @@ export class EntityRenderer implements IEntityRenderer {
     if (this._indicators !== this.owner.indicators) {
       this._indicators = this.owner.indicators
       this.ensure_indi()
-      this.ensure_ctrl()
     }
+    this.ensure_ctrl()
     if (this.owner.dirty)
       this.update_position()
     const { entity, holder } = this

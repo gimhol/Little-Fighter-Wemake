@@ -6,10 +6,10 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.thunder_punch", keys: "Run + A", frame: "75", mp: 10 },
-    { name: "moves.thunder_punch", keys: "Run + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 700, clicks: "j" }, { time: 950, clicks: "a" }, { time: 1100, keyups: "R" }], mp: 15 },
-    { name: "moves.thunder_kick", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 10 },
-    { name: "moves.whirlwind_throw", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 15 },
-    { name: "moves.phoenix_palm", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 30 },
+    { name: "moves.thunder_punch", keys: "> > + A", frame: "75", mp: 10 },
+    { name: "moves.thunder_punch_2", keys: "> > + J + A", seq: [{ time: 0, keydowns: "R" }, { time: 700, keydowns: "j" }, { time: 800, keyups: "j" }, { time: 950, keydowns: "a" }, { time: 1050, keyups: "a" }, { time: 1100, keyups: "R" }], mp: 15 },
+    { name: "moves.thunder_kick", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 10 },
+    { name: "moves.whirlwind_throw", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 15 },
+    { name: "moves.phoenix_palm", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 30 },
   ],
 }

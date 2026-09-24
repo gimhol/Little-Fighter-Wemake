@@ -6,7 +6,7 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 10 },
-    { name: "moves.flash_kick", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 25 },
+    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 10 },
+    { name: "moves.flash_kick", keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 25 },
   ],
 }

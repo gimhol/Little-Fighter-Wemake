@@ -1,15 +1,17 @@
 {
   oid: "10",
+  team: "1",
   entities: [
     { oid: "30", dx: 150 },
     { oid: "30", dx: 260, dz: 45 },
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.flip_kick", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 0 },
-    { name: "moves.turning_kick", keys: "D + v + A", seq: [{ time: 0, clicks: "dDa" }], mp: 10 },
-    { name: "moves.teleport", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 10, desc: "moves.teleport.desc" },
-    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 25 },
-    { name: "moves.tiger_dash", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 40 },
+    { name: "moves.flip_kick", keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 0 },
+    { name: "moves.turning_kick", keys: "D + v + A", seq: [{ time: 0, keydowns: "dDa" }, { time: 100, keyups: "dDa" }], mp: 10 },
+    { name: "moves.teleport_friend", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 10, desc: "moves.teleport.desc", entities: [{ oid: "30", dx: -220, team: "1" }] },
+    { name: "moves.teleport", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 10 },
+    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 25 },
+    { name: "moves.tiger_dash", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 40 },
   ],
 }

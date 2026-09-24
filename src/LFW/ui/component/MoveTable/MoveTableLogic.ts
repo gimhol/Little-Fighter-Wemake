@@ -10,6 +10,7 @@ const DEFAULT_BG = "bg_move_table";
 const DEFAULT_ENTITY_DX = 150;
 const DEFAULT_ENTITY_HP = 9999;
 const DEFAULT_STEP_WAIT = 100;
+const DEFAULT_LOOP_GAP = 150;
 const START_DELAY = 1000;
 const MIN_INPUT_TIME = 200;
 const MAX_INPUT_TIME = 4000;
@@ -21,13 +22,14 @@ const ROW_INDENT = "   ";
 const NO_ENTITIES: IMoveDemoEntity[] = [];
 const NO_MOVES: IMoveInfo[] = [];
 
-enum StepKind { Click, Down, Up }
+enum StepKind { Click, Down, Up, Spawn }
 
 interface IKeyStep {
   at: number;
   kind: StepKind;
   keys: string;
   entity?: number;
+  spec?: IMoveDemoEntity;
 }
 
 export class MoveTableLogic extends UIComponent {
@@ -243,8 +245,12 @@ export class MoveTableLogic extends UIComponent {
   private build_steps(move: IMoveInfo | undefined): void {
     this._steps.length = 0;
     this.push_steps(move?.seq);
-    for (let i = 0; i < this._entity_specs.length; i++)
-      this.push_steps(this._entity_specs[i].seq, i);
+    for (let i = 0; i < this._entity_specs.length; i++) {
+      const spec = this._entity_specs[i];
+      if (spec.time !== undefined)
+        this._steps.push({ at: spec.time, kind: StepKind.Spawn, keys: "", entity: i, spec });
+      this.push_steps(spec.seq, i);
+    }
     this._steps.sort((a, b) => a.at - b.at);
   }
 
@@ -253,13 +259,23 @@ export class MoveTableLogic extends UIComponent {
     let at = 0;
     for (const step of seq) {
       at = step.time ?? (at + DEFAULT_STEP_WAIT);
-      if (step.keyups) this._steps.push({ at, kind: StepKind.Up, keys: step.keyups, entity });
-      if (step.keydowns) this._steps.push({ at, kind: StepKind.Down, keys: step.keydowns, entity });
-      if (step.clicks) this._steps.push({ at, kind: StepKind.Click, keys: step.clicks, entity });
+      const loop = Math.max(1, Math.round(step.loop ?? 1));
+      const gap = step.gap ?? DEFAULT_LOOP_GAP;
+      for (let i = 0; i < loop; i++) {
+        const t = at + i * gap;
+        if (step.keyups) this._steps.push({ at: t, kind: StepKind.Up, keys: step.keyups, entity });
+        if (step.keydowns) this._steps.push({ at: t, kind: StepKind.Down, keys: step.keydowns, entity });
+        if (step.clicks) this._steps.push({ at: t, kind: StepKind.Click, keys: step.clicks, entity });
+      }
+      at += (loop - 1) * gap;
     }
   }
 
   private exec_step(step: IKeyStep): void {
+    if (step.kind === StepKind.Spawn) {
+      if (step.spec) this.spawn_entity(step.spec, step.entity ?? this._entities.length);
+      return;
+    }
     const entity = step.entity === undefined ? this._actor : this._entities[step.entity];
     const ctrl = entity?.ctrl;
     if (!ctrl) return;
@@ -306,44 +322,49 @@ export class MoveTableLogic extends UIComponent {
     entity.name_visible = false;
     entity.attach();
     if (list.team !== undefined) entity.team = list.team;
+    entity.mp_max = DEMO_MP;
     entity.mp = DEMO_MP;
+    entity.ctrl_visible = true;
     return entity;
   }
 
   private spawn_entities(spec: IMoveDemoEntity[]): void {
+    this._entity_specs.push(...spec);
+    for (let i = 0; i < spec.length; i++)
+      if (spec[i].time === undefined) this.spawn_entity(spec[i], i);
+  }
+
+  private spawn_entity(s: IMoveDemoEntity, index: number): void {
     const actor = this._actor;
     if (!actor) return;
     const facing = actor.facing > 0 ? 1 : -1;
     const { x: ax, z: az } = actor.position;
-    for (const s of spec) {
-      const data = this.lfw.datas.find_object(s.oid);
-      if (!data) {
-        this.warn(`[MoveTableLogic] demo entity data not found: ${s.oid}`);
-        continue;
-      }
-      const entity = this.lfw.factory.create_entity(this.world, data);
-      if (!entity) continue;
-      const x = s.x ?? ax + (s.dx ?? DEFAULT_ENTITY_DX) * facing;
-      const z = s.z ?? az + (s.dz ?? 0);
-      entity.set_position(x, s.y ?? 0, z);
-      entity.facing = s.facing ?? (x >= ax ? FacingFlag.L : FacingFlag.R);
-      entity.key_role = false;
-      entity.name_visible = false;
-      entity.attach();
-      if (s.team !== undefined) entity.team = s.team;
-      const hp = s.hp ?? DEFAULT_ENTITY_HP;
-      entity.hp_max = hp;
-      entity.hp = hp;
-      if (s.frame) {
-        entity.mp = DEMO_MP;
-        entity.enter_frame_by_id(s.frame, true);
-      }
-      if (s.tired) {
-        const tired = Object.values(data.frames).find((f) => f.state === StateEnum.Tired);
-        if (tired) entity.enter_frame_by_id(tired.id, true);
-      }
-      this._entities.push(entity);
-      this._entity_specs.push(s);
+    const data = this.lfw.datas.find_object(s.oid);
+    if (!data) {
+      this.warn(`[MoveTableLogic] demo entity data not found: ${s.oid}`);
+      return;
     }
+    const entity = this.lfw.factory.create_entity(this.world, data);
+    if (!entity) return;
+    const x = s.x ?? ax + (s.dx ?? DEFAULT_ENTITY_DX) * facing;
+    const z = s.z ?? az + (s.dz ?? 0);
+    entity.set_position(x, s.y ?? 0, z);
+    entity.facing = s.facing ?? (x >= ax ? FacingFlag.L : FacingFlag.R);
+    entity.key_role = false;
+    entity.name_visible = false;
+    entity.attach();
+    if (s.team !== undefined) entity.team = s.team;
+    const hp = s.hp ?? DEFAULT_ENTITY_HP;
+    entity.hp_max = hp;
+    entity.hp = hp;
+    if (s.frame) {
+      entity.mp = DEMO_MP;
+      entity.enter_frame_by_id(s.frame, true);
+    }
+    if (s.tired) {
+      const tired = Object.values(data.frames).find((f) => f.state === StateEnum.Tired);
+      if (tired) entity.enter_frame_by_id(tired.id, true);
+    }
+    this._entities[index] = entity;
   }
 }

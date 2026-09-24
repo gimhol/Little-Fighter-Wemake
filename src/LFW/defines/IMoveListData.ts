@@ -1,6 +1,7 @@
 export interface IMoveDemoEntity {
   oid: string;
   team?: string;
+  time?: number;
   frame?: string;
   x?: number;
   dx?: number;
@@ -18,6 +19,8 @@ export interface IMoveStep {
   keydowns?: string;
   keyups?: string;
   clicks?: string;
+  loop?: number;
+  gap?: number;
 }
 
 export interface IMoveInfo {

@@ -6,10 +6,10 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 15 },
-    { name: "moves.heal_others", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 70 },
-    { name: "moves.energy_shield", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 20 },
-    { name: "moves.energy_disk", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 50 },
-    { name: "moves.heal_myself", keys: "D + v + J", seq: [{ time: 0, clicks: "dDj" }], mp: 70 },
+    { name: "moves.energy_blast", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 15 },
+    { name: "moves.energy_shield", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 20 },
+    { name: "moves.energy_disk", keys: "D + ^ + A", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }], mp: 50 },
+    { name: "moves.heal_others", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 70 },
+    { name: "moves.heal_myself", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 70 },
   ],
 }

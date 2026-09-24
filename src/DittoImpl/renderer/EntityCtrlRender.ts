@@ -72,10 +72,10 @@ export class EntityCtrlRender {
 
     const { x, z, y } = this.owner.position;
     const {
-      lfw: lf2, world, ctrl_visible, frame: { centery }
+      lfw: lf2, world, frame: { centery }
     } = this.entity;
 
-    const _ctrl_visible = ctrl_visible || world.dataset.entity_flags & ENTITY_INDICATINGS.ctrl;
+    const _ctrl_visible = this.entity.ctrl_visible ?? !!(world.dataset.entity_flags & ENTITY_INDICATINGS.ctrl);
     if (!_ctrl_visible) {
       this.clear();
       return;
@@ -88,7 +88,7 @@ export class EntityCtrlRender {
     const min_x = this.world_renderer.camera.position.x + hw;
     const max_x = min_x + (world.dataset.screen_w / world.transform.scale_x) - 2 * hw;
     const _x = clamp(x, min_x, max_x);
-    let _y = round(25 + y - z / 2 + centery);
+    let _y = round(25 + y + centery);
     const _z = round(z);
 
     this.ctrl_node.position.set(_x, _y, _z);
@@ -98,19 +98,14 @@ export class EntityCtrlRender {
     const bot = this.ctrls.get('bot');
     const keys = this.ctrls.get('keys');
 
-    if (!is_bot_ctrl(ctrl)) {
-      if (keys) keys.visible = false
-      if (bot) bot.visible = false
-      return;
-    }
     if (keys) {
-      keys.visible = true
-      keys.set_text(lf2, this.entity.ctrl.key_list)
+      keys.visible = true;
+      keys.set_text(lf2, ctrl.key_list);
     }
     if (bot) {
-      bot.visible = true;
-      const text = ctrl.fsm.state?.key ?? 'ERROR';
-      bot.set_text(lf2, text);
+      const is_bot = is_bot_ctrl(ctrl);
+      bot.visible = is_bot;
+      if (is_bot) bot.set_text(lf2, ctrl.fsm.state?.key ?? 'ERROR');
     }
   }
 }

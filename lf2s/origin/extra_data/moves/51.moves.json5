@@ -6,8 +6,8 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.firzen_cannon", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 5 },
-    { name: "moves.overwhelming_disaster", keys: "D + ^ + A", seq: [{ time: 0, clicks: "dUa" }], mp: 20 },
-    { name: "moves.arctic_volcano", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 50 },
+    { name: "moves.firzen_cannon", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 5 },
+    { name: "moves.overwhelming_disaster", keys: "D + ^ + A…", seq: [{ time: 0, keydowns: "dUa" }, { time: 100, keyups: "dUa" }, { time: 600, keydowns: "a", loop: 12, gap: 150 }, { time: 700, keyups: "a", loop: 12, gap: 150 }], mp: 20 },
+    { name: "moves.arctic_volcano", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 50 },
   ],
 }

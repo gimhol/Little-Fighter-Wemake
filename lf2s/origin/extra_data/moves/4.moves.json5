@@ -6,18 +6,20 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.dragon_palm", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 30 },
+    { name: "moves.shot", keys: "A", seq: [{ time: 0, keydowns: "a" }, { time: 100, keyups: "a" }], mp: 4 },
+    { name: "moves.dragon_palm", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 30 },
     {
       name: "moves.multiple_shot",
-      keys: "D + J + A",
+      keys: "D + J + A…",
       mp: 30,
       seq: [
-        { time: 0, clicks: "dja" },
-        { time: 620, clicks: "a" },
-        { time: 1180, clicks: "a" },
+        { time: 0, keydowns: "dja" },
+        { time: 100, keyups: "dja" },
+        { time: 620, keydowns: "a", loop: 12, gap: 150 },
+        { time: 720, keyups: "a", loop: 12, gap: 150 },
       ],
     },
-    { name: "moves.critical_shot", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 40 },
-    { name: "moves.sonata_of_the_death", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 70 },
+    { name: "moves.critical_shot", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 40 },
+    { name: "moves.sonata_of_the_death", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 70 },
   ],
 }

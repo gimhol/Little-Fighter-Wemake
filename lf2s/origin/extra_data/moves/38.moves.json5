@@ -6,8 +6,8 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.speed_punch", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 10 },
-    { name: "moves.eye_laser", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 25 },
-    { name: "moves.summon_bats", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 40 },
+    { name: "moves.speed_punch", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 10 },
+    { name: "moves.eye_laser", keys: "D + > + A", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }], mp: 25 },
+    { name: "moves.summon_bats", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 40 },
   ],
 }

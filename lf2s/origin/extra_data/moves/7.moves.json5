@@ -6,9 +6,9 @@
     { oid: "30", dx: 260, dz: -45 },
   ],
   moves: [
-    { name: "moves.fire_ball", keys: "D + > + A", seq: [{ time: 0, clicks: "dRa" }], mp: 15 },
-    { name: "moves.blaze", keys: "D + > + J", seq: [{ time: 0, clicks: "dRj" }], mp: 15 },
-    { name: "moves.inferno", keys: "D + v + J", seq: [{ time: 0, clicks: "dDj" }], mp: 30 },
-    { name: "moves.explosion", keys: "D + ^ + J", seq: [{ time: 0, clicks: "dUj" }], mp: 60, entities: [], desc: "moves.explosion.desc" },
+    { name: "moves.fire_ball", keys: "D + > + A…", seq: [{ time: 0, keydowns: "dRa" }, { time: 100, keyups: "dRa" }, { time: 400, keydowns: "a", loop: 12, gap: 150 }, { time: 500, keyups: "a", loop: 12, gap: 150 }], mp: 15 },
+    { name: "moves.blaze", keys: "D + > + J", seq: [{ time: 0, keydowns: "dRj" }, { time: 100, keyups: "dRj" }], mp: 15 },
+    { name: "moves.inferno", keys: "D + v + J", seq: [{ time: 0, keydowns: "dDj" }, { time: 100, keyups: "dDj" }], mp: 30 },
+    { name: "moves.explosion", keys: "D + ^ + J", seq: [{ time: 0, keydowns: "dUj" }, { time: 100, keyups: "dUj" }], mp: 60, entities: [], desc: "moves.explosion.desc" },
   ],
 }
