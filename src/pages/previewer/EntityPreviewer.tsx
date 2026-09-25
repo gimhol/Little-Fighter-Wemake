@@ -160,27 +160,40 @@ export function EntityPreviewer() {
     focus(e);
   }, [lfw, focus]);
 
+  /** 新建实体并归中；返回新实体 */
+  const spawn_entity = useCallback((data: IEntityData): Entity | undefined => {
+    if (!lfw) return;
+    const e = lfw.factory.create_entity(lfw.world, data);
+    if (!e) return;
+    e.team = TeamEnum.Team_1;
+    e.key_role = false;
+    e.name_visible = false;
+    e.ctrl_visible = false;
+    e.hp_max = e.hp = DEMO_HP;
+    e.mp_max = e.mp = DEMO_MP;
+    recenter(e);
+    e.attach();
+    set_entity(e);
+    return e;
+  }, [lfw, recenter]);
+
+  /** 取当前可用的实体：有些动作会让实体消失（gone 帧 / 已被世界移除），这时重建一个再演 */
+  const ensure_entity = useCallback((): Entity | undefined => {
+    if (!lfw || !data) return;
+    if (entity && entity.frame.id !== FrameId.Gone && entity.mounted)
+      return entity;
+    return spawn_entity(data);
+  }, [lfw, data, entity, spawn_entity]);
+
   // 切换数据：重建场景，交给游戏自己演
   useEffect(() => {
     if (!lfw || !data) return;
-    const world = lfw.world;
-    world.clear();
+    lfw.world.clear();
     if (lfw.datas.find_background(DEMO_BG)) lfw.change_bg(DEMO_BG);
-    const e = lfw.factory.create_entity(world, data);
-    if (e) {
-      e.team = TeamEnum.Team_1;
-      e.key_role = false;
-      e.name_visible = false;
-      e.ctrl_visible = false;
-      e.hp_max = e.hp = DEMO_HP;
-      e.mp_max = e.mp = DEMO_MP;
-      recenter(e);
-      e.attach();
-    }
-    set_entity(e);
+    const e = spawn_entity(data);
     set_motion_i(-1);
     set_cur_frame_id(e?.frame.id ?? "");
-  }, [lfw, data, recenter]);
+  }, [lfw, data, spawn_entity]);
 
   useEffect(() => {
     if (!lfw || !canvas) return;
@@ -223,15 +236,17 @@ export function EntityPreviewer() {
   const play_motion = (i: number) => {
     set_motion_i(i);
     const m = motions[i];
-    if (!entity || !m) return;
-    recenter(entity);
-    entity.enter_frame_by_id(m.frames[0].id, true);
+    const e = ensure_entity();
+    if (!e || !m) return;
+    recenter(e);
+    e.enter_frame_by_id(m.frames[0].id, true);
   };
 
   const play_frame = (f: IFrameInfo) => {
-    if (!entity) return;
-    recenter(entity);
-    entity.enter_frame_by_id(f.id, true);
+    const e = ensure_entity();
+    if (!e) return;
+    recenter(e);
+    e.enter_frame_by_id(f.id, true);
   };
 
   const replay = () => {
@@ -256,6 +271,9 @@ export function EntityPreviewer() {
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
           />
           {!entity && <div className={csses.center_text}>未选择数据</div>}
+          {entity && entity.frame.id === FrameId.Gone && (
+            <div className={csses.center_text}>实体已消失（点动作或帧可重建）</div>
+          )}
         </div>
         <div className={csses.toolbar}>
           <button className={csses.btn} onClick={() => set_running((v) => !v)} disabled={!entity}>
