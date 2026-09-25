@@ -55,6 +55,10 @@ game_data_txt
 tsconfig.app.tsbuildinfo
 temp
 
+# 桌面客户端 dev 运行时产物
+desktop/app/mods
+desktop/app/logs.txt
+
 release
 wailsjs
 package.json.md5

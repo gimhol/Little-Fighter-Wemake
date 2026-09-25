@@ -23,6 +23,7 @@ import Titled from "./Component/Titled";
 import { VerticalSlider } from "./Component/VerticalSlider";
 import { DanmuPanel } from "./DanmuPanel";
 import { install_danmu_bridge_if_requested } from "./danmu_bridge";
+import { load_desktop_mods } from "./desktop_mods";
 import { DevStatsView } from "./DevStatsView";
 import { __Pointings, md5 } from "./DittoImpl";
 import { BG_INDICATINGS, ENTITY_INDICATINGS } from "./DittoImpl/renderer/INDICATINGS";
@@ -224,6 +225,16 @@ function App() {
   const show_volume_popup = can_hover_volume_popup && !is_mobile_container && !toy_mobile;
   const { entity_flags, bg_flags } = world_dataset;
 
+  // 桌面客户端的模组目录：必须在 LFW 实例（下面的 useLFW）创建前读完，所以先拦一下启动
+  const [mods_ready, set_mods_ready] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    load_desktop_mods().catch(e => console.warn(e)).finally(() => {
+      if (alive) set_mods_ready(true);
+    });
+    return () => { alive = false };
+  }, []);
+
   useEffect(() => {
     if (!lfw) return;
     lfw.world.dataset.entity_flags = entity_flags;
@@ -374,7 +385,7 @@ function App() {
   })
 
   useLFW({
-    enabled: app_state_ready && world_dataset_ready,
+    enabled: app_state_ready && world_dataset_ready && mods_ready,
     recreate_key: params,
     debug: params.dev == '1',
     zips: [LFW.ZIPS[0]],

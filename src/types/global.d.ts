@@ -9,6 +9,15 @@ interface Window {
     WindowIsFullscreen?(): Promise<boolean>;
     SetLang?(lang: string): void;
   }
+  /** 桌面客户端（Electron）的模组目录，见 desktop/app/main.mjs 与 src/desktop_mods.ts */
+  lfwm_mods?: {
+    list(): Promise<{
+      /** 实际扫描到的目录 */
+      dirs: string[];
+      items: { /** 文件绝对路径，同时用作读取用的 id */ id: string; name: string; dir: string; size: number }[];
+    }>;
+    read(id: string): Promise<ArrayBuffer | null>;
+  }
   /** B站 Toy JS SDK（入口页引入 toy-sdk.js 后由平台注入，见 docs/dev/Toy JS SDK.md） */
   toy?: ToySDK
 }

@@ -40,14 +40,16 @@ const README_TEXT = `Little Fighter Wemake 桌面客户端
 配置
 - danmu.json5 里的 app_id / access_key / access_key_secret 是该玩法的开平应用密钥
 - 游戏文件、弹幕桥、联机服务器存档（ranks/）、战绩存档（scores.json）、运行日志（logs.txt）都在本目录
+- 模组：本目录 mods\\ 下的 *.zip 每次启动自动加载；想控制顺序/禁用可在 mods\\mods.json5 里写 order / disabled
 - 完整命令行、danmu.json5 字段说明与常见问题见 help.md
 - 命令行参数（均可用环境变量或 danmu.json5 代替）
-  code / --room / --port / --game-port / --host / --lang / --server / --server-port / --server-lan / --tool / --user-data / --debug / --devtools / --help
+  code / --room / --port / --game-port / --host / --lang / --server / --server-port / --server-lan / --mods / --no-mods / --tool / --user-data / --debug / --devtools / --help
 
 托盘（任务栏右下角图标）
 - 开启/关闭联机服务器：默认只监听本机 127.0.0.1:8080（被占用时自动向后找空闲端口）
 - 勾选「允许局域网连接」后，同一网络下的其他人可以用「复制联机地址」得到的地址连你
 - 菜单语言：启动用系统语言，游戏内切换时跟随；想固定用 --lang 指定；自定义文案放 langs\\ 目录（见 langs\\README.txt）
+- 打开模组目录：把模组包（*.zip）放进 mods\\ 目录，下次启动自动加载（见 mods\\README.txt）
 - 打开数据工具（命令行）：在本目录开一个控制台窗口（tools\\lfwm-console.cmd），里面会直接列出全部命令，
   光标已经停在本目录，直接敲  start.exe --tool make-data-zip -c conf.json5  就可以跑（无需另装 Node）
 - 自动更新（仅安装版）：启动后自动检查，新版本会在后台下载，完成后按提示重启即可
@@ -57,8 +59,32 @@ const README_TEXT = `Little Fighter Wemake 桌面客户端
 - 想用自己那一份：在数据工具的配置里改 FFMPEG_CMD / MAGICK_CMD，或把 tools\\ 删掉改用 PATH 里的
 `;
 
-let PREFIX = "[desktop]";
+const MODS_README_TEXT = `Little Fighter Wemake 模组目录
 
+把模组包（*.zip）放到本目录，下一次启动游戏就会自动加载，不需要在游戏里手动选文件。
+游戏入口页的「额外数据」里会列出本次加载的模组。
+
+两种 zip 都支持
+- 普通数据包 zip：等同于入口页「添加模组」手动选的文件，会和本体数据合并（同名资源以模组为准）
+- 自定义游戏包 zip（内含 index.json、里面指向 prel.zip / data.zip 等）：会当作「自定义游戏包」，
+  整个游戏被它替换（本目录有多个时只认第一个，按文件名排序）
+
+控制顺序 / 禁用（可选）：在本目录新建 mods.json5
+{
+  // 加载顺序：先列出的先加载，后面的覆盖前面的；没列出的按文件名排在最后
+  order: ["基础模组.zip", "覆盖补丁.zip"],
+  // 不加载
+  disabled: ["先别用的模组.zip"],
+}
+（也可以命名为 mods.json，写法相同；改完重启游戏生效）
+
+另一个模组目录
+- 用户数据目录（%APPDATA%\\lfw-desktop\\mods，具体名字看安装方式）里也可以放模组，优先级比本目录高
+- 想临时换个目录测试：start.exe --mods D:\\my_mods
+- 想完全不加载模组：start.exe --no-mods
+`;
+
+let PREFIX = "[desktop]";
 export function set_prefix(prefix) {
   PREFIX = prefix;
 }
@@ -207,4 +233,6 @@ export function stage_extra(extra_dir, { converters = true } = {}) {
   copyFileSync(join(BRIDGE, "help.md"), join(extra_dir, "help.md"));
   mkdirSync(join(extra_dir, "langs"), { recursive: true });
   copyFileSync(join(BRIDGE, "langs", "README.txt"), join(extra_dir, "langs", "README.txt"));
+  mkdirSync(join(extra_dir, "mods"), { recursive: true });
+  writeFileSync(join(extra_dir, "mods", "README.txt"), MODS_README_TEXT);
 }

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, Menu, Tray, clipboard, dialog, ipcMain, nativeImage, shell } from "electron";
 import { spawn } from "node:child_process";
-import { appendFileSync, createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer as create_http_server } from "node:http";
 import { createServer as create_net_server } from "node:net";
 import { networkInterfaces } from "node:os";
@@ -20,6 +20,8 @@ const WIDTH = 1191;
 const HEIGHT = 675;
 const MIN_WIDTH = 794;
 const MIN_HEIGHT = 450;
+const MODS_DIR_NAME = "mods";
+const MODS_CONFIG_NAMES = ["mods.json5", "mods.json"];
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -74,6 +76,8 @@ const HELP_TEXT = `用法: start.exe [选项]
   --server-port <port>         联机服务器起始端口（默认 8080，被占用时自动向后找）
   --server-lan                 联机服务器监听局域网
   --lang <code>                界面语言：默认用系统语言（游戏内切换时跟随），可固定为 zh-hans / zh-hant / en 等（语言文件放 langs/）
+  --mods <目录>                额外模组目录（可再指向一个放 *.zip 的目录，比默认目录后加载 = 优先级更高）
+  --no-mods                    不自动加载模组目录（排查问题时用）
   --tool <命令...>             参数原样交给数据工具，如 --tool help、--tool make-data-zip -c conf.json5
   --user-data <目录>           指定用户数据目录（多实例调试用）
   --debug                      打印弹幕事件日志
@@ -85,6 +89,11 @@ const HELP_TEXT = `用法: start.exe [选项]
   --mode <web|open>  --app-id <id>  --access-key <key>  --access-key-secret <sk>
   --sessdata <value>  --uid <id>
   --join <kw1,kw2>  --pick <kw=角色,...>  --cheer <kw1,kw2>  --leave <kw1,kw2>  --join-cooldown <ms>
+
+模组:
+  程序目录 mods/ 与 用户数据目录 mods/ 下的 *.zip 启动时自动加载（等同入口页「添加模组」）
+  内含 index.json 的「自定义游戏包」zip 会当作自定义游戏包，整个游戏被替换
+  目录里可放 mods.json5 控制顺序/禁用：{ order: ["a.zip"], disabled: ["b.zip"] }
 
 更完整的说明见程序目录 help.md
 `;
@@ -184,6 +193,73 @@ function load_config(...paths) {
     }
   }
   return {};
+}
+
+/** 模组目录：目录下的 *.zip 启动时自动加载（在数据包之后加载，所以模组会覆盖本体数据） */
+const MODS = { dirs: [], items: [] };
+
+function to_name_list(v) {
+  if (typeof v === "string") return [v];
+  if (!Array.isArray(v)) return [];
+  return v.filter((x) => typeof x === "string");
+}
+
+/**
+ * 扫描一个模组目录，返回要加载的 zip（按加载顺序）
+ *
+ * 目录里可放 mods.json5 / mods.json：
+ * - `order`: 列出的按该顺序先加载（越靠后优先级越高），未列出的按文件名排在最后
+ * - `disabled`: 不加载
+ */
+function scan_mods_dir(dir) {
+  let names = [];
+  try {
+    names = readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isFile() && /\.zip$/i.test(e.name))
+      .map((e) => e.name);
+  } catch {
+    return [];
+  }
+  if (!names.length) return [];
+  const conf = load_config(...MODS_CONFIG_NAMES.map((n) => join(dir, n)));
+  const disabled = new Set(to_name_list(conf.disabled).map((v) => v.toLowerCase()));
+  const order = new Map(to_name_list(conf.order).map((v, i) => [v.toLowerCase(), i]));
+  names = names.filter((v) => !disabled.has(v.toLowerCase()));
+  const rank = (name) => order.get(name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+  names.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+  return names.map((name) => {
+    const path = join(dir, name);
+    let size = 0;
+    try {
+      size = statSync(path).size;
+    } catch {
+      void 0;
+    }
+    return { id: path, name, dir, size };
+  });
+}
+
+/** 收集模组目录：程序目录 > 用户数据目录 > `--mods` 指定的目录（越后面加载优先级越高） */
+function setup_mods() {
+  const dirs = [];
+  if (ARGS["no-mods"] !== true) {
+    dirs.push(join(data_dir, MODS_DIR_NAME));
+    const user_dir = join(app.getPath("userData"), MODS_DIR_NAME);
+    if (user_dir !== dirs[0]) dirs.push(user_dir);
+    if (typeof ARGS.mods === "string") dirs.push(resolve(ARGS.mods));
+  }
+  MODS.dirs = dirs;
+  for (const dir of dirs) {
+    try {
+      mkdirSync(dir, { recursive: true });
+    } catch {
+      void 0;
+    }
+  }
+  MODS.items = dirs.flatMap((dir) => scan_mods_dir(dir));
+  if (!dirs.length) log("模组: 已用 --no-mods 关闭自动加载");
+  else if (!MODS.items.length) log(`模组: 未找到 zip（把模组包放进 ${dirs[0]} 即可自动加载）`);
+  else log(`模组: 已加载 ${MODS.items.length} 个（${MODS.items.map((v) => v.name).join(", ")}）`);
 }
 
 function not_found(res) {
@@ -556,6 +632,7 @@ function refresh_tray() {
     { label: t("open_tool"), click: () => open_tool_console() },
     { label: t("copy_tool_cmd"), click: () => clipboard.writeText(`"${process.execPath}" --tool `) },
     { label: t("open_data_dir"), click: () => void shell.openPath(data_dir) },
+    { label: t("open_mods_dir", MODS.items.length), enabled: MODS.dirs.length > 0, click: () => void shell.openPath(MODS.dirs[0]) },
     { type: "separator" },
     { label: t("show_window"), click: () => { win?.show(); win?.focus(); } },
     { label: t("quit"), click: () => void shutdown("托盘退出") },
@@ -612,6 +689,7 @@ async function main() {
   setup_log(data_dir);
   SERVER_STATE.base_port = Number(args["server-port"] ?? DEFAULT_SERVER_PORT);
   SERVER_STATE.port = SERVER_STATE.base_port;
+  setup_mods();
 
   const game_dir = app.isPackaged ? join(process.resourcesPath, "game") : resolve(app_dir, "..", "..", "dist");
   if (!existsSync(join(game_dir, "index.html"))) {
@@ -772,6 +850,23 @@ ipcMain.on("lfj:toggle-maximize", (e) => {
 });
 ipcMain.handle("lfj:is-maximized", (e) => win_of(e)?.isMaximized() ?? false);
 ipcMain.handle("lfj:is-fullscreen", (e) => win_of(e)?.isFullScreen() ?? false);
+
+/** 模组目录里待加载的 zip（游戏页面启动时来取；见 src/desktop_mods.ts） */
+ipcMain.handle("lfwm:mods", () => ({
+  dirs: MODS.dirs,
+  items: MODS.items.map(({ id, name, dir, size }) => ({ id, name, dir, size })),
+}));
+ipcMain.handle("lfwm:mod", (_e, id) => {
+  const item = MODS.items.find((v) => v.id === id);
+  if (!item) return null;
+  try {
+    const data = readFileSync(item.id);
+    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  } catch (e) {
+    console.warn(LOG_TAG, `模组读取失败: ${item.id}`, e);
+    return null;
+  }
+});
 ipcMain.on("lfj:fullscreen", (e, on) => win_of(e)?.setFullScreen(!!on));
 ipcMain.on("lfj:quit", () => void shutdown("点击关闭按钮"));
 ipcMain.on("lfj:lang", (_e, lang) => {

@@ -10,3 +10,9 @@ contextBridge.exposeInMainWorld("runtime", {
   Quit: () => ipcRenderer.send("lfj:quit"),
   SetLang: (lang) => ipcRenderer.send("lfj:lang", String(lang ?? "")),
 });
+
+// 模组目录：游戏页面启动时把 mods/ 里的 zip 自动读进来（语义见 src/desktop_mods.ts）
+contextBridge.exposeInMainWorld("lfwm_mods", {
+  list: () => ipcRenderer.invoke("lfwm:mods"),
+  read: (id) => ipcRenderer.invoke("lfwm:mod", String(id ?? "")),
+});
