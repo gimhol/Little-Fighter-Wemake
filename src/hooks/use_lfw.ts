@@ -1,5 +1,6 @@
 import { LFW } from "@/LFW";
 import type { IZip } from "@/LFW/ditto";
+import { useCallbacks } from "@/pages/network_test/useCallbacks";
 import { useEffect, useRef, useState } from "react";
 
 export interface IUseLfwOptions {
@@ -31,11 +32,11 @@ export interface IUseLfwResult {
 /**
  * 创建并持有 LFW 实例：挂到 window、加载数据包、卸载时销毁。
  *
- * `debug`/`zips`/`muted`/`hide_ui`/`setup` 只在（重）建实例时读一次，
- * 但 `on_progress` 每次都取最新的，可以放心传内联箭头函数。
+ * `debug`/`zips`/`setup` 只在建实例时读一次；
+ * `muted`/`hide_ui`/`on_progress` 每次取最新，可以放心传内联箭头函数。
  */
 export function use_lfw(options: IUseLfwOptions = {}): IUseLfwResult {
-  const { enabled = true, recreate_key } = options;
+  const { enabled = true, recreate_key, hide_ui } = options;
   const opts = useRef(options);
   opts.current = options;
 
@@ -44,48 +45,45 @@ export function use_lfw(options: IUseLfwOptions = {}): IUseLfwResult {
   const [ready, set_ready] = useState(false);
   const ready_ref = useRef(false);
 
+  // 建实例 / 销毁
   useEffect(() => {
     if (!enabled) return;
-    const o = opts.current;
-    const lf2 = new LFW(o.debug);
+    const lf2 = new LFW(opts.current.debug);
     Object.assign(window, { LFW, lf2, world: lf2.world });
     set_lfw(lf2);
-    const del_progress = o.on_progress
-      ? lf2.callbacks.add({
-        on_progress: (content, value) => opts.current.on_progress?.(content, value),
-      })
-      : void 0;
-    const del_ui = o.hide_ui
-      ? lf2.callbacks.add({
-        on_ui_changed: (curr) => { if (!ready_ref.current && curr) lf2.set_ui({}); },
-      })
-      : void 0;
-    const unsetup = o.setup?.(lf2);
+    return () => {
+      ready_ref.current = false;
+      set_ready(false);
+      lf2.dispose();
+    };
+  }, [enabled, recreate_key]);
 
+  // 进度 / UI
+  useCallbacks(lfw?.callbacks, () => ({
+    on_progress: (content, value) => opts.current.on_progress?.(content, value),
+    on_ui_changed: (curr) => { if (hide_ui && !ready_ref.current && curr) lfw?.set_ui({}) },
+  }), [hide_ui]);
+
+  // 接线 + 加载
+  useEffect(() => {
+    if (!lfw) return;
     let disposed = false;
+    const unsetup = opts.current.setup?.(lfw);
     (async () => {
       try {
-        await lf2.load(...(o.zips ?? LFW.ZIPS));
+        await lfw.load(...(opts.current.zips ?? LFW.ZIPS));
       } catch (e) {
         if (!disposed) set_error(`${e}`);
         return;
       }
       if (disposed) return;
-      if (o.hide_ui) lf2.set_ui({});
-      if (o.muted) lf2.sounds.set_muted(true);
+      if (opts.current.hide_ui) lfw.set_ui({});
+      if (opts.current.muted) lfw.sounds.set_muted(true);
       ready_ref.current = true;
       set_ready(true);
     })();
-
-    return () => {
-      disposed = true;
-      ready_ref.current = false;
-      del_progress?.();
-      del_ui?.();
-      unsetup?.();
-      lf2.dispose();
-    };
-  }, [enabled, recreate_key]);
+    return () => { disposed = true; unsetup?.(); };
+  }, [lfw]);
 
   return { lfw, ready, error };
 }
