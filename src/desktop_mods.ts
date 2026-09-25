@@ -25,14 +25,19 @@ async function run(): Promise<void> {
       if (!buf) continue;
       const zip = await Ditto.Zip.read_file(new File([buf], item.name));
       // 根级 index.json/json5 指向包内其它 zip = 自定义游戏包；解析失败说明是普通数据包（数据包的 index 是 { type: "DATA" }）
-      if (!full && (zip.file("index.json") || zip.file("index.json5"))) {
+      if (zip.file("index.json") || zip.file("index.json5")) {
+        let pkg: [IGameZipInfo, IZip[]] | undefined;
         try {
           // 用到时才加载（里面带 json5 解析，平时不需要）
           const { read_as_full_game_zip } = await import("@/pages/custom_game/read_as_full_game_zip");
-          full = await read_as_full_game_zip(zip);
-          continue;
+          pkg = await read_as_full_game_zip(zip);
         } catch (e) {
           Ditto.warn(`[mods] ${item.name} 不是自定义游戏包，按数据包加载\n${e}`);
+        }
+        if (pkg) {
+          if (full) Ditto.warn(`[mods] 只用一个自定义游戏包，忽略: ${item.name}`);
+          else full = pkg;
+          continue;
         }
       }
       zips.push(zip);
@@ -41,14 +46,13 @@ async function run(): Promise<void> {
     }
   }
 
-  const names = items.map((v) => v.name).join(", ");
   if (full) {
     LFW.INFO = full[0];
     LFW.ZIPS = [...full[1], ...zips];
-    Ditto.Log(`[mods] 自定义游戏包: ${full[0].title}；其余模组: ${names}`);
+    Ditto.Log(`[mods] 自定义游戏包: ${full[0].title}${zips.length ? `；附加数据包: ${zips.map((v) => v.name).join(", ")}` : ""}`);
   } else if (zips.length) {
     LFW.ZIPS = [...LFW.ZIPS, ...zips];
-    Ditto.Log(`[mods] 已加载: ${names}`);
+    Ditto.Log(`[mods] 已加载: ${zips.map((v) => v.name).join(", ")}`);
   }
 }
 
