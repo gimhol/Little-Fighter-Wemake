@@ -1,6 +1,6 @@
 <background id="football_field"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd">
-  <base name="Football Field" shadow="bg/ash_forest/s.png" group="hidden" bound="0,4400,-2720,-90" height="4400" shadowsize="37,9" zoom="0.5,0.5,0.5"/>
+  <base name="Football Field" shadow="bg/ash_forest/s.png" group="regular" bound="0,4400,-2720,-90" height="4400" shadowsize="37,9" zoom="0.5,0.5,0.5"/>
   <layer file="!bg/football_field/sky.png" width="4400" x="0" y="1130" dw="2200" dh="264" z="-9"/>
   <layer file="!bg/football_field/stand.png" width="4400" x="0" y="866" dw="2200" dh="90" z="-8"/>
   <layer file="!bg/football_field/crowd.png" width="4400" x="0" y="776" dw="2200" dh="56" uv_loop="1" z="-7"/>
