@@ -73,6 +73,20 @@ export function owner_key(v: { uid?: string; name: string; group?: string }): st
   return group ? `uid:${v.uid}:${group}` : `uid:${v.uid}`;
 }
 
+/**
+ * 从 extra 推出「角色」分组：单人榜 = 角色名，双人榜 = 两个角色名（排序后拼接，与客户端提交的 group 一致）。
+ * B站旁路记录（type 含 bili）按昵称回查角色，不分角色。
+ */
+export function group_of(type: string, extra: unknown): string | undefined {
+  if (type.includes('bili')) return void 0;
+  const fighter = extra_fighter(extra);
+  if (!fighter) return void 0;
+  if (!type.includes('2p')) return fighter;
+  const fighter2 = extra_fighter2(extra);
+  if (!fighter2 || fighter2 === fighter) return fighter;
+  return [fighter, fighter2].sort().join('+');
+}
+
 export function family_of(type: string): string[] {
   for (const suffix of PERIOD_SUFFIXES) {
     if (!type.endsWith(suffix)) continue;

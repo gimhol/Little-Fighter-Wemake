@@ -132,12 +132,19 @@ function set_submitted_max(key: string, score: number) {
   }
 }
 
+/** 分组键：单人榜 = 角色名，双人榜 = 两个角色名排序拼接；同一客户端的不同角色各占一行 */
+function score_group(two: boolean, fighter: string, fighter2: string): string {
+  if (!two) return fighter;
+  if (!fighter || !fighter2 || fighter === fighter2) return fighter || fighter2;
+  return [fighter, fighter2].sort().join('+');
+}
+
 export async function submit_rank_score(score: number, name: string, fighter: string, two: boolean = false, fighter2: string = '', player2: string = ''): Promise<void> {
-  const group = two ? '' : fighter;
-  const key = two ? `${SUBMITTED_KEY}_2p` : group ? `${SUBMITTED_KEY}_${group}` : SUBMITTED_KEY;
+  const group = score_group(two, fighter, fighter2);
+  const key = two ? `${SUBMITTED_KEY}_2p${group ? `_${group}` : ''}` : group ? `${SUBMITTED_KEY}_${group}` : SUBMITTED_KEY;
   if (score <= submitted_max(key)) return;
-  set_submitted_max(key, score);
   await post_score(rank_api_type('all', two), name, score, fighter, name, fighter2, player2, '', '', group);
+  set_submitted_max(key, score);
 }
 
 export async function get_rank_list(period: SurvivalRankPeriod, two: boolean = false): Promise<SurvivalRankItem[]> {
@@ -171,8 +178,8 @@ export async function submit_bili_record(score: number, name: string, fighter: s
   const key = BILI_SUBMITTED_KEY + (two ? '_2p' : '');
   if (!rank_api_available() || !name) return;
   if (score <= submitted_max(key)) return;
-  set_submitted_max(key, score);
   await post_score(rank_api_bili_type('all', two), name, score, fighter, player, fighter2, player2, open_id, bili_owner_uid(open_id));
+  set_submitted_max(key, score);
 }
 
 export interface IRankCharInfo {

@@ -6,6 +6,7 @@ import {
   extra_fighter2,
   extra_player,
   extra_player2,
+  group_of,
   max_of,
   owner_key,
   RANK_FILE_EXT,
@@ -204,7 +205,13 @@ export class RankMgr implements IRankStore {
     const parsed: IRankScore[] = [];
     for (const v of list) {
       const score = v as IRankScore;
-      if (score && typeof score.name === 'string' && Number.isFinite(score.score)) parsed.push(score);
+      if (!score || typeof score.name !== 'string' || !Number.isFinite(score.score)) continue;
+      // 老数据没有 group：按 extra 里的角色补上，避免同一客户端多角色被并成一行
+      if (!score.group) {
+        const group = group_of(type, score.extra);
+        if (group) score.group = group;
+      }
+      parsed.push(score);
     }
     sort_scores(parsed);
     const kept = new Set<string>();

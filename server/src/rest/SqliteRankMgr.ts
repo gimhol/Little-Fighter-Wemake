@@ -6,6 +6,7 @@ import {
   extra_fighter2,
   extra_player,
   extra_player2,
+  group_of,
   max_of,
   owner_key,
   submit_to_family,
@@ -132,9 +133,29 @@ export class SqliteRankMgr implements IRankStore {
     if (!num_of(this._db.prepare(SQL_GROUP_COLUMN).get(), 'total'))
       this._db.exec(`ALTER TABLE scores ADD COLUMN owner_group TEXT`);
     this._db.exec(SQL_CREATE_INDEX);
+    this.migrate_groups();
     process.on('exit', () => {
       try { this._db.close(); } catch { }
     });
+  }
+
+  /** 老记录的 owner 只有 uid：按 extra 里的角色补上分组，避免同一客户端多角色仍被并成一行 */
+  protected migrate_groups(): void {
+    try {
+      const rows = this._db.prepare(`SELECT rowid AS id, type, uid, name, extra FROM scores WHERE owner_group IS NULL OR owner_group = ''`).all();
+      if (!rows.length) return;
+      const update = this._db.prepare(`UPDATE scores SET owner = ?, owner_group = ? WHERE rowid = ?`);
+      let count = 0;
+      for (const row of rows) {
+        const group = group_of(`${row.type ?? ''}`, parse_json(row.extra));
+        if (!group) continue;
+        update.run(owner_key({ uid: row.uid ? `${row.uid}` : void 0, name: `${row.name ?? ''}`, group }), group, row.id);
+        ++count;
+      }
+      if (count) console.log(`[${SqliteRankMgr.TAG}] 已按角色补全 ${count} 条记录的分组`);
+    } catch (error) {
+      console.error(`[${SqliteRankMgr.TAG}] 按角色补全分组失败`, error);
+    }
   }
 
   allows(type: string): boolean {
