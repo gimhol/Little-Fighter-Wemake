@@ -166,7 +166,6 @@ function App() {
   }, [l])
 
   const [fullscreen] = useState(() => new Ditto.FullScreen());
-  const ref_lfw = useRef<LFW | undefined>(void 0)
   const [lfw, set_lfw] = useState<LFW | undefined>()
   const [ele_game_canvas, set_ele_game_canvas] = useState<HTMLCanvasElement | null>(null)
   // const [ele_game_overlay, set_ele_game_overlay] = useState<HTMLElement | null>(null)
@@ -380,7 +379,6 @@ function App() {
     debug: params.dev == '1',
     zips: [LFW.ZIPS[0]],
     setup: (lf2) => {
-      ref_lfw.current = lf2;
       let lang = params.lang;
       if (typeof lang !== 'string') lang = navigator.language.toLowerCase()
       else lang = lang.toLowerCase()
