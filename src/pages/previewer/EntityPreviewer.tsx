@@ -14,6 +14,9 @@ const DEMO_MP = 1000000;
 /** 滞空时抬到的高度 */
 const HOVER_Y = 200;
 
+/** 本 tab 上次用的预览实体 id：切 tab 不清场，回来能接着演同一个 */
+let last_preview_id = "";
+
 type TDatas = NonNullable<ReturnType<typeof usePreviewer>["lfw"]>["datas"];
 
 const TYPES: ReadonlyArray<{ id: string; label: string; pick: (d: TDatas) => readonly IEntityData[] }> = [
@@ -161,11 +164,15 @@ export function EntityPreviewer() {
     focus(e);
   }, [lfw, focus]);
 
-  /** 新建实体并归中；返回新实体 */
+  /** 新建实体并归中；返回新实体。只退休自己上次那个，不动别人的实体/背景 */
   const spawn_entity = useCallback((data: IEntityData): Entity | undefined => {
     if (!lfw) return;
-    const e = lfw.factory.create_entity(lfw.world, data);
+    const { world } = lfw;
+    const old = last_preview_id ? world.entity_map.get(last_preview_id) : void 0;
+    if (old) world.del_entity(old);
+    const e = lfw.factory.create_entity(world, data);
     if (!e) return;
+    last_preview_id = e.id;
     e.team = TeamEnum.Team_1;
     e.key_role = false;
     e.name_visible = false;
@@ -185,16 +192,6 @@ export function EntityPreviewer() {
       return entity;
     return spawn_entity(data);
   }, [lfw, data, entity, spawn_entity]);
-
-  // 切换数据：重建场景，交给游戏自己演
-  useEffect(() => {
-    if (!lfw || !data) return;
-    lfw.world.clear();
-    if (lfw.datas.find_background(DEMO_BG)) lfw.change_bg(DEMO_BG);
-    const e = spawn_entity(data);
-    set_motion_i(-1);
-    set_cur_frame_id(e?.frame.id ?? "");
-  }, [lfw, data, spawn_entity]);
 
   useEffect(() => {
     if (!lfw || !canvas) return;
@@ -248,16 +245,32 @@ export function EntityPreviewer() {
     return () => window.cancelAnimationFrame(raf);
   }, [lfw, locked, entity, focus]);
 
+  /** 换数据：只换自己的预览实体，背景/别人的实体都不碰 */
   const select_data = useCallback((id: string) => {
     set_data_id(id);
     set_motion_i(-1);
-  }, []);
+    const d = lfw?.datas.find(id);
+    if (d) set_cur_frame_id(spawn_entity(d)?.frame.id ?? "");
+  }, [lfw, spawn_entity]);
 
+  // 进入本 tab：上次那个预览实体还在就接着演它（切 tab 不清场），否则选列表第一个
   useEffect(() => {
     if (!lfw || data_id) return;
+    const kept = last_preview_id ? lfw.world.entity_map.get(last_preview_id) : void 0;
+    if (kept && kept.mounted && kept.frame.id !== FrameId.Gone) {
+      set_entity(kept);
+      set_motion_i(-1);
+      set_data_id(kept.data.id);
+      set_cur_frame_id(kept.frame.id);
+      focus(kept);
+      return;
+    }
+    // 背景归用户管：只有还没背景时才给一张空背景当底
+    if (lfw.world.bg.id === Defines.VOID_BG.id && lfw.datas.find_background(DEMO_BG))
+      lfw.change_bg(DEMO_BG);
     const first = list[0] ?? lfw.datas.objects[0];
     if (first) select_data(first.id);
-  }, [lfw, list, data_id, select_data]);
+  }, [lfw, list, data_id, select_data, focus]);
 
   const play_motion = (i: number) => {
     set_motion_i(i);
