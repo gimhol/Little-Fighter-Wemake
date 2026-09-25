@@ -1,11 +1,11 @@
-import { __Pointings } from "@/DittoImpl";
 import { BG_INDICATINGS } from "@/DittoImpl/renderer/INDICATINGS";
-import type { WorldRenderer } from "@/DittoImpl/renderer/WorldRenderer";
 import { InvalidController } from "@/LFW/controller/InvalidController";
 import { Defines, type IBgData, type IBgLayerInfo } from "@/LFW/defines";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePreviewer } from "./ctx";
+import { PreviewCanvas } from "./PreviewCanvas";
 import csses from "./styles.module.scss";
+import { useWorldView } from "./useWorldView";
 
 const clamp = (v: number, l: number, h: number) => Math.max(l, Math.min(h, v));
 
@@ -20,27 +20,32 @@ export function BackgroundPreviewer() {
   const [bg_flags, set_bg_flags] = useState(0);
   const [overrides, set_overrides] = useState<Record<number, number>>({});
   const [ver, set_ver] = useState(0);
-  const [canvas, set_canvas] = useState<HTMLCanvasElement | null>(null);
-  const [dragging, set_dragging] = useState(false);
   const originals = useRef(new WeakMap<IBgLayerInfo, number | undefined>());
   const last_opacity = useRef(new Map<number, number>());
-  const drag_ref = useRef<{ px: number; py: number; cam_x: number; cam_y: number } | null>(null);
+
+  // 相机限制：只能看舞台范围内（可见尺寸含相机 zoom，滚轮缩放后范围跟着变）
+  const limits_of = useCallback((view_w: number, view_h: number) => {
+    const bg = lfw?.world.bg;
+    const stage = lfw?.world.stage;
+    if (!bg || !stage) return void 0;
+    const x_min = stage.left;
+    const x_max = Math.max(x_min, stage.right - view_w);
+    const y_max = bg.height <= view_h
+      ? 0
+      : Math.max(0, Math.min(-0.5 * stage.far, bg.height - view_h));
+    return { x: [x_min, x_max], y: [0, y_max] } as const;
+  }, [lfw]);
+
+  const view = useWorldView(lfw, { limits: limits_of });
+  const { center_on, lock_camera, limits, zoom } = view;
+  const bg = lfw?.world.bg;
 
   const focus_center = useCallback((lf2: NonNullable<typeof lfw>) => {
-    const bg = lf2.world.bg;
-    const stage = lf2.world.stage;
-    const sw = lf2.world.dataset.screen_w;
-    const sh = Defines.MODERN_SCREEN_HEIGHT;
-    const zx = bg.zoom_x || 1;
-    const zy = bg.zoom_y || 1;
-    const x_min = stage.left;
-    const x_max = Math.max(x_min, stage.right - sw / zx);
-    const y_max = bg.height <= sh ? 0 : Math.max(0, Math.min(-0.5 * stage.far, bg.height - sh / zy));
-    const x = clamp(lf2.world.middle.x - sw / 2 / zx, x_min, x_max);
-    const y = clamp(-lf2.world.middle.z / 2 - sh / 2 / zy, 0, y_max);
-    lf2.world.camera.lock(x, y);
-    set_cam({ x, y });
-  }, []);
+    // 把舞台中线放到画面正中（center_on 自己会减去半个视口）
+    center_on(lf2.world.middle.x, -lf2.world.middle.z / 2);
+    const p = lf2.world.camera.position;
+    set_cam({ x: p.x, y: p.y });
+  }, [center_on]);
 
   useEffect(() => {
     if (!lfw) return;
@@ -48,12 +53,6 @@ export function BackgroundPreviewer() {
     set_bg_id(lfw.world.bg.id);
     focus_center(lfw);
   }, [lfw, focus_center]);
-
-  useEffect(() => {
-    if (!lfw || !canvas) return;
-    (lfw.pointings as __Pointings).set_element(canvas);
-    (lfw.world.renderer as WorldRenderer).set_canvas(canvas);
-  }, [lfw, canvas]);
 
   useEffect(() => {
     if (!lfw) return;
@@ -107,27 +106,19 @@ export function BackgroundPreviewer() {
   }, [lfw]);
 
   const bounds = useMemo(() => {
-    const bg = lfw?.world.bg;
-    if (!lfw || !bg) return undefined;
-    const { left, right, far } = lfw.world.stage;
-    const sw = lfw.world.dataset.screen_w;
-    const zx = bg.zoom_x || 1;
-    const zy = bg.zoom_y || 1;
-    const x_min = left;
-    const x_max = Math.max(x_min, right - sw / zx);
-    const y_max = bg.height <= Defines.MODERN_SCREEN_HEIGHT
-      ? 0
-      : Math.max(0, Math.min(-0.5 * far, bg.height - Defines.MODERN_SCREEN_HEIGHT / zy));
-    return { x_min, x_max, y_max, zx, zy };
-  }, [lfw, ver]);
+    const lim = limits();
+    if (!bg || !lim) return undefined;
+    return { x_min: lim.x[0], x_max: lim.x[1], y_max: lim.y[1] };
+    // zoom 也影响可见尺寸（limits 内部用 view_size），缩放后范围跟着变
+  }, [bg, limits, zoom]);
 
+  // 滑杆给的是相机坐标（和 bounds 同一空间），直接铺到相机上
   const move_cam = useCallback((x: number, y: number) => {
-    if (!lfw || !bounds) return;
-    const nx = clamp(x, bounds.x_min, bounds.x_max);
-    const ny = clamp(y, 0, bounds.y_max);
-    lfw.world.camera.lock(nx, ny);
-    set_cam({ x: nx, y: ny });
-  }, [lfw, bounds]);
+    if (!lfw) return;
+    lock_camera(x, y);
+    const p = lfw.world.camera.position;
+    set_cam({ x: p.x, y: p.y });
+  }, [lfw, lock_camera]);
 
   const select_bg = (id: string) => {
     if (!lfw || id === bg_id) return;
@@ -187,36 +178,6 @@ export function BackgroundPreviewer() {
     set_ver((v) => v + 1);
   };
 
-  const on_pointer_down = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!lfw) return;
-    drag_ref.current = {
-      px: e.clientX,
-      py: e.clientY,
-      cam_x: lfw.world.camera.position.x,
-      cam_y: lfw.world.camera.position.y,
-    };
-    e.currentTarget.setPointerCapture(e.pointerId);
-    set_dragging(true);
-  };
-
-  const on_pointer_move = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const drag = drag_ref.current;
-    if (!lfw || !bounds || !drag) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const content_w = Math.max(1, Math.min(rect.width, rect.height * (lfw.world.dataset.screen_w / Defines.MODERN_SCREEN_HEIGHT)));
-    const scale = lfw.world.dataset.screen_w / content_w;
-    const dx = (e.clientX - drag.px) * scale / bounds.zx;
-    const dy = (e.clientY - drag.py) * scale / bounds.zy;
-    move_cam(drag.cam_x - dx, drag.cam_y + dy);
-  };
-
-  const on_pointer_up = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    drag_ref.current = null;
-    set_dragging(false);
-    if (e.currentTarget.hasPointerCapture(e.pointerId))
-      e.currentTarget.releasePointerCapture(e.pointerId);
-  };
-
   const shown_bgs = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     if (!kw) return bgs;
@@ -224,7 +185,6 @@ export function BackgroundPreviewer() {
   }, [bgs, keyword]);
 
   const rows = useMemo(() => {
-    const bg = lfw?.world.bg;
     if (!bg) return [];
     const map = new Map<number, { info: IBgLayerInfo; copies: number }>();
     for (const layer of bg.layers) {
@@ -235,29 +195,14 @@ export function BackgroundPreviewer() {
     return [...map.entries()]
       .map(([index, v]) => ({ index, info: v.info, copies: v.copies }))
       .sort((a, b) => a.info.z - b.info.z);
-  }, [lfw, ver]);
+  }, [bg]);
 
-  const bg = lfw?.world.bg;
   const stage = lfw?.world.stage;
 
   return (
     <>
       <div className={csses.stage}>
-        <div className={csses.canvas_box}>
-          <canvas
-            ref={set_canvas}
-            width={794}
-            height={450}
-            draggable={false}
-            className={`${csses.canvas}${dragging ? " " + csses.canvas_dragging : ""}`}
-            onPointerDown={on_pointer_down}
-            onPointerMove={on_pointer_move}
-            onPointerUp={on_pointer_up}
-            onPointerCancel={on_pointer_up}
-            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          />
-          <div className={csses.hint}>拖动画面可平移相机</div>
-        </div>
+        <PreviewCanvas view={view} />
         <div className={csses.cam_row}>
           <span className={csses.label}>相机 X</span>
           <input
