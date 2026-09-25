@@ -43,6 +43,21 @@ interface IMotion {
   frames: readonly IFrameInfo[];
 }
 
+interface IDrag {
+  px: number;
+  py: number;
+  cam_x: number;
+  cam_y: number;
+}
+
+/** 画布像素 → 世界单位（含 letterbox 换算与当前缩放） */
+function canvas_scale(cv: HTMLCanvasElement, sw: number, sh: number, sx: number, sy: number): [number, number] {
+  const rect = cv.getBoundingClientRect();
+  const content_w = Math.max(1, Math.min(rect.width, rect.height * (sw / sh)));
+  const k = sw / content_w;
+  return [k / (sx || 1), k / (sy || 1)];
+}
+
 function get_next_id(frame: IFrameInfo | undefined): string | undefined {
   const next = frame?.next;
   if (!next) return;
@@ -120,7 +135,10 @@ export function EntityPreviewer() {
   const [flags, set_flags] = useState(ENTITY_INDICATINGS.ft | ENTITY_INDICATINGS.frame);
   const [canvas, set_canvas] = useState<HTMLCanvasElement | null>(null);
   const [cur_frame_id, set_cur_frame_id] = useState("");
+  const [zoom, set_zoom] = useState(1);
+  const [dragging, set_dragging] = useState(false);
   const [, set_ver] = useState(0);
+  const drag_ref = useRef<IDrag | null>(null);
   // 滞空开关：recenter 里按这个 ref 决定贴地还是抬到 HOVER_Y（用 ref 免于让 recenter 换身份）
   const hover_ref = useRef(hover);
   useEffect(() => { hover_ref.current = hover });
@@ -144,12 +162,13 @@ export function EntityPreviewer() {
   const next_text = !frame ? "-" : next_id === void 0 || next_id === "" ? "无" : next_id;
 
   const focus = useCallback((e: Entity | undefined) => {
-    if (!lfw || !e) return;    const { world } = lfw;
-    const { bg } = world;
+    if (!lfw || !e) return;
+    const { world } = lfw;
     const sw = world.dataset.screen_w;
     const sh = Defines.MODERN_SCREEN_HEIGHT;
-    const zx = bg.zoom_x || 1;
-    const zy = bg.zoom_y || 1;
+    // 世界 transform 的当前 scale = bg 自带的 zoom × 用户滚轮缩放
+    const zx = world.transform.scale_x || 1;
+    const zy = world.transform.scale_y || 1;
     // 实体的渲染 y = position.y - position.z / 2（见 EntityRenderer.update_position）
     const render_y = e.position.y - e.position.z / 2;
     world.camera.lock(e.position.x - sw / 2 / zx, render_y - sh / 2 / zy);
@@ -297,6 +316,69 @@ export function EntityPreviewer() {
     if (entity) entity.facing = entity.facing > 0 ? -1 : 1;
   };
 
+  // 滚轮缩放：改世界 transform 的 scale（= bg 自带 zoom × zoom），退出 tab 还原
+  useEffect(() => {
+    if (!lfw) return;
+    const t = lfw.world.transform;
+    const bg = lfw.world.bg;
+    const bx = bg.zoom_x || 1, by = bg.zoom_y || 1, bz = bg.zoom_z || 1;
+    t.set_scale(bx * zoom, by * zoom, bz * zoom);
+    return () => { t.set_scale(bx, by, bz) };
+  }, [lfw, zoom]);
+
+  const on_pointer_down = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!lfw) return;
+    if (locked) set_locked(false); // 手动拖拽 = 自己看，先解除「锁定在中间」
+    const cam = lfw.world.camera.position;
+    drag_ref.current = { px: e.clientX, py: e.clientY, cam_x: cam.x, cam_y: cam.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    set_dragging(true);
+  };
+
+  const on_pointer_move = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const drag = drag_ref.current;
+    if (!lfw || !drag) return;
+    const { world } = lfw;
+    const [kx, ky] = canvas_scale(
+      e.currentTarget,
+      world.dataset.screen_w,
+      Defines.MODERN_SCREEN_HEIGHT,
+      world.transform.scale_x || 1,
+      world.transform.scale_y || 1,
+    );
+    world.camera.lock(
+      drag.cam_x - (e.clientX - drag.px) * kx,
+      drag.cam_y + (e.clientY - drag.py) * ky,
+    );
+  };
+
+  const on_pointer_up = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    drag_ref.current = null;
+    set_dragging(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId))
+      e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const on_wheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    if (!lfw) return;
+    const next = Math.max(0.25, Math.min(8, zoom * (e.deltaY > 0 ? 1 / 1.1 : 1.1)));
+    if (next === zoom) return;
+    const { world } = lfw;
+    const { bg } = world;
+    const sw = world.dataset.screen_w;
+    const sh = Defines.MODERN_SCREEN_HEIGHT;
+    const t = world.transform;
+    const sx0 = t.scale_x || 1, sy0 = t.scale_y || 1;
+    const sx1 = (bg.zoom_x || 1) * next, sy1 = (bg.zoom_y || 1) * next;
+    // 以画面中心为锚点：缩放前后同一个世界点仍在正中
+    const cam = world.camera.position;
+    world.camera.lock(
+      cam.x + sw / 2 / sx0 - sw / 2 / sx1,
+      cam.y + sh / 2 / sy0 - sh / 2 / sy1,
+    );
+    set_zoom(next);
+  };
+
   return (
     <>
       <div className={csses.stage}>
@@ -306,9 +388,15 @@ export function EntityPreviewer() {
             width={794}
             height={450}
             draggable={false}
-            className={csses.canvas}
+            className={`${csses.canvas}${dragging ? " " + csses.canvas_dragging : ""}`}
+            onPointerDown={on_pointer_down}
+            onPointerMove={on_pointer_move}
+            onPointerUp={on_pointer_up}
+            onPointerCancel={on_pointer_up}
+            onWheel={on_wheel}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
           />
+          <div className={csses.hint}>拖动平移 · 滚轮缩放 {zoom.toFixed(2)}x</div>
           {!entity && <div className={csses.center_text}>未选择数据</div>}
           {entity && entity.frame.id === FrameId.Gone && (
             <div className={csses.center_text}>实体已消失（点动作或帧可重建）</div>
