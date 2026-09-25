@@ -1,7 +1,11 @@
 <background id="football_field"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/gimhol/litter-fighter-2-WEMAKE/main/.vscode/schema/bg.xsd">
   <base name="Football Field" shadow="bg/ash_forest/s.png" group="hidden" bound="0,4400,-2720,-90" height="4400" shadowsize="37,9" zoom="0.5,0.5,0.5"/>
-  <layer width="794" height="1360" x="0" y="1360" z="-4" absolute="1" color="#1e5e00"/>
-  <layer width="4400" height="1360" x="0" y="1360" w="172" loop="344" color="#308300"/>
-  <layer height="5" x="20" y="20" w="4360" color="white"/>
+  <layer file="!bg/football_field/sky.png" width="4400" x="0" y="1130" dw="2200" dh="264" z="-9"/>
+  <layer file="!bg/football_field/stand.png" width="4400" x="0" y="866" dw="2200" dh="90" z="-8"/>
+  <layer file="!bg/football_field/crowd.png" width="4400" x="0" y="776" dw="2200" dh="56" uv_loop="1" z="-7"/>
+  <layer file="!bg/football_field/board.png" width="4400" x="0" y="725" dw="2200" dh="45" uv_loop="1" z="-6"/>
+  <layer file="!bg/football_field/grass.png" width="4400" x="0" y="680.5" dw="2200" dh="700" uv_loop="1" z="-5"/>
+  <layer file="!bg/football_field/stripes.png" width="4400" x="0" y="680.5" dw="2200" dh="658" uv_loop="1" z="-4"/>
+  <layer file="!bg/football_field/lines.png" width="4400" x="0" y="680.5" dw="2200" dh="658" z="-3"/>
 </background>
