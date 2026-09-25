@@ -658,7 +658,11 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.callbacks.call("on_zips_changed", this.zips.zips);
 
     const index_files = zip.file(/\.index\.(json5|xml)$/).map(v => v.name)
-    await this.datas.load(index_files);
+    const is_base_index = (v: string) => /(^|\/)data\/data\.index\./i.test(v)
+    await this.datas.load([
+      ...index_files.filter(is_base_index),
+      ...index_files.filter((v) => !is_base_index(v)),
+    ]);
 
     check()
     const regist = (helper: any, d: D.IEntityData) => {
