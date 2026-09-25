@@ -20,17 +20,25 @@
       el_msg_row.innerHTML = msg;
       el_container.append(el_msg_row);
     }
-    const url = `https://gim.ink/api/lfwm/find?id=1`
+    const LATEST_URL = 'https://lf.gim.ink/latest.json';
+    // 带上 commit（无 commit 时退回 stamp），避免复用旧版本的缓存页面
+    function to_version_url(info) {
+      const cache_key = info.commit
+        ? `${info.commit}${info.dirty ? '-dirty' : ''}`
+        : (info.stamp || Date.now());
+      return `https://lf.gim.ink/${info.version}?commit=${cache_key}`;
+    }
+    const url = `${LATEST_URL}?time=${Date.now()}`
     append_msg(`loading: ${url}`)
-    fetch(url)
+    fetch(url, { cache: 'no-store' })
       .then(r => r.json())
       .then(r => {
-        const url = `https://lfwm.gim.ink/${r.data.oss_name}?time=${Date.now()}`
-        append_msg(`loading: ${url}`)
-        return fetch(url)
+        if (!r || !r.version) throw new Error(`latest.json 缺少 version: ${JSON.stringify(r)}`)
+        const target = to_version_url(r)
+        append_msg(`redirecting: ${target}`)
+        location.replace(target)
       })
-      .then(r => r.json())
-      .then(r => location.replace(r.url))
+      .catch(e => append_msg(`failed: ${e}`))
   </script>
 </body>
 </html>

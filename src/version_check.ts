@@ -62,8 +62,6 @@ async function check_version() {
 const LATEST_IGNORED_KEY = 'lfj_latest_ignored';
 const NOTICE_ID = 'lfj_latest_notice';
 const LATEST_CHECK_HOST = 'lf.gim.ink';
-const LATEST_API_URL = 'https://gim.ink/api/lfwm/find?id=1';
-const LATEST_DOC_BASE = 'https://lfwm.gim.ink/';
 
 function current_version(): string {
   return VERSION_NAME.replace(/^v/, '').split('-')[0];
@@ -114,53 +112,32 @@ function version_page_url(version: string): string {
   return new URL(`../${version}/`, location.href).href;
 }
 
+/** 缓存键：优先 commit（dirty 构建带后缀），没有 commit 就用 stamp */
+function cache_key(info: { commit?: unknown; dirty?: unknown; stamp?: unknown }): string {
+  if (typeof info.commit === 'string' && info.commit)
+    return `${info.commit}${info.dirty ? '-dirty' : ''}`;
+  return typeof info.stamp === 'number' || typeof info.stamp === 'string' ? `${info.stamp}` : '';
+}
+
 interface ILatestVersionInfo {
   version: string;
   url?: string;
 }
 
-function version_from_url(url: string): string | undefined {
-  const m = `${url}`.match(/\/(\d+\.\d+\.\d+)\/?$/);
-  return m ? m[1] : void 0;
-}
-
-function with_slash(url: string): string {
-  return url.endsWith('/') ? url : `${url}/`;
-}
-
-async function fetch_signed_latest(): Promise<ILatestVersionInfo | undefined> {
-  const found = await fetch(`${LATEST_API_URL}&time=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()) as { data?: { oss_name?: unknown } };
-  const oss_name = found?.data?.oss_name;
-  if (typeof oss_name !== 'string' || !oss_name) return void 0;
-  const doc = await fetch(`${LATEST_DOC_BASE}${oss_name}?time=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()) as { url?: unknown };
-  if (typeof doc?.url !== 'string' || !doc.url) return void 0;
-  const version = version_from_url(doc.url);
-  if (!version) return void 0;
-  return { version, url: with_slash(doc.url) };
-}
-
-async function fetch_file_latest(): Promise<ILatestVersionInfo | undefined> {
+/**
+ * 读取 `latest.json`（`deploy:latest` 上传）得到最新版本。
+ *
+ * 跳转链接带上 commit 以避免旧页面缓存，与 `auto-latest.html` 保持同一套规则。
+ */
+async function fetch_latest(): Promise<ILatestVersionInfo | undefined> {
   const resp = await fetch(latest_url(), { cache: 'no-store' });
   if (!resp.ok) return void 0;
-  const data = await resp.json() as { version?: unknown };
+  const data = await resp.json() as { version?: unknown; commit?: unknown; dirty?: unknown; stamp?: unknown };
   if (typeof data?.version !== 'string' || !data.version) return void 0;
-  return { version: data.version };
-}
-
-async function fetch_latest(): Promise<ILatestVersionInfo | undefined> {
-  const list = await Promise.all([
-    fetch_signed_latest().catch((e) => {
-      warn('获取签名记录的最新版本失败', e);
-      return void 0;
-    }),
-    fetch_file_latest().catch((e) => {
-      warn('读取 latest.json 失败', e);
-      return void 0;
-    }),
-  ]);
-  const found = list.filter((v): v is ILatestVersionInfo => !!v);
-  if (!found.length) return void 0;
-  return found.reduce((a, b) => (is_newer_version(b.version, a.version) ? b : a));
+  const url = new URL(version_page_url(data.version));
+  const key = cache_key(data);
+  if (key) url.searchParams.set('commit', key);
+  return { version: data.version, url: url.href };
 }
 
 function notice_button(label: string, primary: boolean): HTMLButtonElement {
