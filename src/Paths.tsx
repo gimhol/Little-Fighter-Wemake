@@ -29,6 +29,7 @@ export namespace Paths {
     component_demos_Titled = "/component_demos/Titled",
     dat_viewer = "/dat_viewer",
     custom_game = "/custom_game",
+    bg_preview = "/bg_preview",
 
     EntityInfoFormDemo = '/EntityInfoFormDemo',
     ArmorInfoFormDemo = '/ArmorInfoFormDemo',
@@ -70,6 +71,7 @@ export namespace Paths {
     [All.frame_editor]: React.lazy(() => import("./EditorView/FrameEditorView")),
     [All.dat_viewer]: React.lazy(() => import("./pages/dat_viewer")),
     [All.custom_game]: React.lazy(() => import("./pages/custom_game")),
+    [All.bg_preview]: React.lazy(() => import("./pages/bg_preview")),
     [All.EntityInfoFormDemo]: React.lazy(() => import("./EditorView/EntityInfoForm/demo")),
     [All.ArmorInfoFormDemo]: React.lazy(() => import("./EditorView/EntityInfoForm/ArmorInfoForm/demo")),
     [All.DrinkInfoFormDemo]: React.lazy(() => import("./EditorView/EntityInfoForm/DrinkInfoForm/demo")),
@@ -94,6 +96,7 @@ export namespace Paths {
       All.frame_editor,
       All.dat_viewer,
       All.custom_game,
+      All.bg_preview,
       All.EntityInfoFormDemo,
       All.ArmorInfoFormDemo,
       All.DrinkInfoFormDemo,
