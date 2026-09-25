@@ -3,7 +3,7 @@ import type { IZip } from "@/LFW/ditto";
 import { useCallbacks } from "@/pages/network_test/useCallbacks";
 import { useEffect, useRef, useState } from "react";
 
-export interface IUseLfwOptions {
+export interface IUseLFWOptions {
   /** 为 false 时不创建实例（App 里要等本地设置就绪） */
   enabled?: boolean;
   /** 重建键：值变化时销毁旧实例再建一个；不传则只在 enabled 变 true 时建一次 */
@@ -22,7 +22,7 @@ export interface IUseLfwOptions {
   on_progress?(content: string, value: number): void;
 }
 
-export interface IUseLfwResult {
+export interface IUseLFWResult {
   lfw?: LFW;
   /** 数据包加载完成 */
   ready: boolean;
@@ -35,7 +35,7 @@ export interface IUseLfwResult {
  * `debug`/`zips`/`setup` 只在建实例时读一次；
  * `muted`/`hide_ui`/`on_progress` 每次取最新，可以放心传内联箭头函数。
  */
-export function useLfw(options: IUseLfwOptions = {}): IUseLfwResult {
+export function useLFW(options: IUseLFWOptions = {}): IUseLFWResult {
   const { enabled = true, recreate_key, hide_ui } = options;
   const opts = useRef(options);
   useEffect(() => { opts.current = options });

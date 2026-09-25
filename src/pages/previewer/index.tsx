@@ -1,4 +1,4 @@
-import { useLfw } from "@/hooks/useLfw";
+import { useLFW } from "@/hooks/useLFW";
 import { Paths } from "@/Paths";
 import { useState, type ComponentType } from "react";
 import { useNavigate } from "react-router";
@@ -24,7 +24,7 @@ const TABS: readonly ITab[] = [
 export default function PreviewerPage() {
   const nav = useNavigate();
   const [progress, set_progress] = useState("");
-  const { lfw, ready, error } = useLfw({
+  const { lfw, ready, error } = useLFW({
     muted: true,
     hide_ui: true,
     on_progress: (content, value) => set_progress(`${content} ${Math.round(value)}%`),
