@@ -47,8 +47,8 @@ export class BgLayerRender {
     this.src_h = src_h
     this.uv_loop = !!uv_loop
     // 有图：目标尺寸 dw/dh（缺省 = 源图尺寸）；纯色/无图沿用 w/h/width/height
-    const dst_w = has_pic ? (dw ?? src_w) : (info.w ?? info.width)
-    const dst_h = has_pic ? (dh ?? src_h) : (info.h ?? info.height)
+    const dst_w = has_pic ? (dw ?? src_w) : (info.w || info.width || 0)
+    const dst_h = has_pic ? (dh ?? src_h) : (info.h || info.height || 0)
     this.width = dst_w;
     this.height = dst_h;
     this.src_texture = file ? (lf2.images.find(file)?.pic?.texture ?? null) : null;
