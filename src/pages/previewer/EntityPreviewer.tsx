@@ -38,8 +38,6 @@ interface IMotion {
   frames: readonly IFrameInfo[];
 }
 
-const clamp = (v: number, l: number, h: number) => Math.max(l, Math.min(h, v));
-
 function get_next_id(frame: IFrameInfo | undefined): string | undefined {
   const next = frame?.next;
   if (!next) return;
@@ -111,6 +109,7 @@ export function EntityPreviewer() {
   /** -1 = 全部帧，否则是动作下标 */
   const [motion_i, set_motion_i] = useState(-1);
   const [running, set_running] = useState(true);
+  const [locked, set_locked] = useState(false);
   const [flags, set_flags] = useState(ENTITY_INDICATINGS.ft | ENTITY_INDICATINGS.frame);
   const [canvas, set_canvas] = useState<HTMLCanvasElement | null>(null);
   const [cur_frame_id, set_cur_frame_id] = useState("");
@@ -137,18 +136,14 @@ export function EntityPreviewer() {
   const focus = useCallback((e: Entity | undefined) => {
     if (!lfw || !e) return;
     const { world } = lfw;
-    const { bg, stage } = world;
+    const { bg } = world;
     const sw = world.dataset.screen_w;
     const sh = Defines.MODERN_SCREEN_HEIGHT;
     const zx = bg.zoom_x || 1;
     const zy = bg.zoom_y || 1;
     // 实体的渲染 y = position.y - position.z / 2（见 EntityRenderer.update_position）
     const render_y = e.position.y - e.position.z / 2;
-    const x_max = Math.max(stage.left, stage.right - sw / zx);
-    world.camera.lock(
-      clamp(e.position.x - sw / 2 / zx, stage.left, x_max),
-      render_y - sh / 2 / zy,
-    );
+    world.camera.lock(e.position.x - sw / 2 / zx, render_y - sh / 2 / zy);
   }, [lfw]);
 
   /** 归中：实体放回舞台中线并贴地，相机重新对准（动作开演前 / 刚生成时） */
@@ -222,6 +217,18 @@ export function EntityPreviewer() {
     return () => window.clearInterval(timer);
   }, [lfw, entity]);
 
+  // 锁定在中间：每帧把相机重新对准实体，动作跑起来角色也停在画面正中
+  useEffect(() => {
+    if (!lfw || !locked || !entity) return;
+    let raf = 0;
+    const tick = () => {
+      raf = window.requestAnimationFrame(tick);
+      focus(entity);
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [lfw, locked, entity, focus]);
+
   const select_data = useCallback((id: string) => {
     set_data_id(id);
     set_motion_i(-1);
@@ -282,6 +289,14 @@ export function EntityPreviewer() {
           <button className={csses.btn} onClick={() => lfw?.world.step()} disabled={!entity}>单步</button>
           <button className={csses.btn} onClick={replay} disabled={!entity}>重播</button>
           <button className={csses.btn} onClick={mirror} disabled={!entity}>镜像</button>
+          <label className={csses.check}>
+            <input
+              type="checkbox"
+              checked={locked}
+              onChange={(e) => set_locked(e.target.checked)}
+            />
+            锁定在中间
+          </label>
           <div className={csses.spacer} />
           {INDICATORS.map((v) => (
             <label className={csses.check} key={v.key}>
