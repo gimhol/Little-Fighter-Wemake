@@ -1,6 +1,7 @@
 import { __Pointings } from "@/DittoImpl";
 import { ENTITY_INDICATINGS } from "@/DittoImpl/renderer/INDICATINGS";
 import type { WorldRenderer } from "@/DittoImpl/renderer/WorldRenderer";
+import type { OrthographicCamera } from "@/DittoImpl/_t";
 import type { Entity, IEntityData, IFrameInfo } from "@/LFW";
 import { Defines, FrameId, TeamEnum } from "@/LFW/defines";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -50,12 +51,12 @@ interface IDrag {
   cam_y: number;
 }
 
-/** 画布像素 → 世界单位（含 letterbox 换算与当前缩放） */
-function canvas_scale(cv: HTMLCanvasElement, sw: number, sh: number, sx: number, sy: number): [number, number] {
+/** 画布像素 → 世界单位（含 letterbox 换算、世界 scale 与相机 zoom） */
+function canvas_scale(cv: HTMLCanvasElement, sw: number, sh: number, sx: number, sy: number, zoom: number): [number, number] {
   const rect = cv.getBoundingClientRect();
   const content_w = Math.max(1, Math.min(rect.width, rect.height * (sw / sh)));
   const k = sw / content_w;
-  return [k / (sx || 1), k / (sy || 1)];
+  return [k / (sx * zoom || 1), k / (sy * zoom || 1)];
 }
 
 function get_next_id(frame: IFrameInfo | undefined): string | undefined {
@@ -316,14 +317,21 @@ export function EntityPreviewer() {
     if (entity) entity.facing = entity.facing > 0 ? -1 : 1;
   };
 
-  // 滚轮缩放：改世界 transform 的 scale（= bg 自带 zoom × zoom），退出 tab 还原
+  // 滚轮缩放：直接改渲染相机的 zoom（背景/实体/前景共用同一套相机，一起缩放不会错位），退出 tab 还原
   useEffect(() => {
     if (!lfw) return;
-    const t = lfw.world.transform;
-    const bg = lfw.world.bg;
-    const bx = bg.zoom_x || 1, by = bg.zoom_y || 1, bz = bg.zoom_z || 1;
-    t.set_scale(bx * zoom, by * zoom, bz * zoom);
-    return () => { t.set_scale(bx, by, bz) };
+    const r = lfw.world.renderer as WorldRenderer;
+    const cams = [r.camera as OrthographicCamera, r.bg_camera, r.fg_camera];
+    for (const c of cams) {
+      c.zoom = zoom;
+      c.updateProjectionMatrix();
+    }
+    return () => {
+      for (const c of cams) {
+        c.zoom = 1;
+        c.updateProjectionMatrix();
+      }
+    };
   }, [lfw, zoom]);
 
   const on_pointer_down = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -345,6 +353,7 @@ export function EntityPreviewer() {
       Defines.MODERN_SCREEN_HEIGHT,
       world.transform.scale_x || 1,
       world.transform.scale_y || 1,
+      ((world.renderer as WorldRenderer).camera as OrthographicCamera).zoom || 1,
     );
     world.camera.lock(
       drag.cam_x - (e.clientX - drag.px) * kx,
@@ -360,23 +369,9 @@ export function EntityPreviewer() {
   };
 
   const on_wheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    if (!lfw) return;
+    // three 的 ortho zoom 以画面中心为锚点，所以改倍率即可，不用动相机
     const next = Math.max(0.25, Math.min(8, zoom * (e.deltaY > 0 ? 1 / 1.1 : 1.1)));
-    if (next === zoom) return;
-    const { world } = lfw;
-    const { bg } = world;
-    const sw = world.dataset.screen_w;
-    const sh = Defines.MODERN_SCREEN_HEIGHT;
-    const t = world.transform;
-    const sx0 = t.scale_x || 1, sy0 = t.scale_y || 1;
-    const sx1 = (bg.zoom_x || 1) * next, sy1 = (bg.zoom_y || 1) * next;
-    // 以画面中心为锚点：缩放前后同一个世界点仍在正中
-    const cam = world.camera.position;
-    world.camera.lock(
-      cam.x + sw / 2 / sx0 - sw / 2 / sx1,
-      cam.y + sh / 2 / sy0 - sh / 2 / sy1,
-    );
-    set_zoom(next);
+    if (next !== zoom) set_zoom(next);
   };
 
   return (
