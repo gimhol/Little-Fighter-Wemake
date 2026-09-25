@@ -1,4 +1,5 @@
 import { useShortcut } from "@/hooks/useShortcut";
+import { use_lfw } from "@/hooks/use_lfw";
 import classNames from "classnames";
 import device from "current-device";
 import qs from "qs";
@@ -373,106 +374,104 @@ function App() {
     on_sound_volume_changed: v => set_app_state(d => { d.sound_volume = v }),
   })
 
-  useEffect(() => {
-    if (!app_state_ready) return
-    if (!world_dataset_ready) return
+  use_lfw({
+    enabled: app_state_ready && world_dataset_ready,
+    recreate_key: params,
+    debug: params.dev == '1',
+    zips: [LFW.ZIPS[0]],
+    setup: (lf2) => {
+      ref_lfw.current = lf2;
+      let lang = params.lang;
+      if (typeof lang !== 'string') lang = navigator.language.toLowerCase()
+      else lang = lang.toLowerCase()
 
-    let { lang, dev } = params;
-    if (typeof lang !== 'string') lang = navigator.language.toLowerCase()
-    else lang = lang.toLowerCase()
-    const lf2 = ref_lfw.current = new LFW(dev == '1');
-    ;(window as any).lfw = lf2
-    lf2.toy_env = is_toy_env()
-    init_survival_rank(lf2)
-    if (
-      location.pathname.endsWith('demo') ||
-      location.pathname.endsWith('demo/') ||
-      location.search.indexOf('demo=0') > 0 ||
-      location.hash.indexOf('demo=0') > 0
-    ) {
-      lf2.first_ui = 'init_demo'
-    }
-    lf2.lang = lang;
-    Object.assign(window, {
-      LFW, lf2, world: lf2.world
-    })
+      lf2.toy_env = is_toy_env()
+      init_survival_rank(lf2)
+      if (
+        location.pathname.endsWith('demo') ||
+        location.pathname.endsWith('demo/') ||
+        location.search.indexOf('demo=0') > 0 ||
+        location.hash.indexOf('demo=0') > 0
+      ) {
+        lf2.first_ui = 'init_demo'
+      }
+      lf2.lang = lang;
 
-    function print_ui_tree(node = LFW.ui) {
-      console.group('id: ' + node?.id + ', name: ' + node?.name);
-      console.log("node:      ", node);
-      if (node?.components.length)
-        console.log("components:", Array.from(node?.components));
-      if (node?.children.length)
-        for (const child of node?.children)
-          print_ui_tree(child)
-      console.groupEnd();
-    };
+      function print_ui_tree(node = LFW.ui) {
+        console.group('id: ' + node?.id + ', name: ' + node?.name);
+        console.log("node:      ", node);
+        if (node?.components.length)
+          console.log("components:", Array.from(node?.components));
+        if (node?.children.length)
+          for (const child of node?.children)
+            print_ui_tree(child)
+        console.groupEnd();
+      };
 
-    Object.defineProperty(window, 'ui_tree', {
-      get() { print_ui_tree() },
-      configurable: true
-    })
-
-    lf2.load(LFW.ZIPS[0]).catch(LFW.IgnoreDisposed);
-    set_lfw(lf2)
-    lf2.sounds.set_volume(app_state.volume);
-    lf2.sounds.set_bgm_muted(app_state.bgm_muted);
-    lf2.sounds.set_bgm_volume(app_state.bgm_volume);
-    lf2.sounds.set_sound_muted(app_state.sound_muted);
-    lf2.sounds.set_sound_volume(app_state.sound_volume);
-    Object.assign(lf2.world.dataset, world_dataset);
-    _set_bg_id(lf2.world.stage.bg.id);
-    const on_touchstart = () => set_app_state(d => {
-      d.touchpad_enabled = true;
-      d.touchpad = d.touchpad || Array.from(lf2.players.keys())[0]
-    })
-    window.addEventListener("touchstart", on_touchstart);
-    const del_lf2_callback = lf2.callbacks.add({
-      controller_detected: ({ id }) => set_app_state(draft => {
-        if (draft.touchpad === id)
-          draft.touchpad_enabled = false
-      }),
-      keyboard_detected: ({ id }) => set_app_state(draft => {
-        if (draft.touchpad === id)
-          draft.touchpad_enabled = false
-      }),
-    })
-    for (const [id, player] of lf2.players) {
-      player.callbacks.add({
-        on_ctrl_changed(value, prev) {
-          set_app_state(draft => {
-            if (value === CtrlDevice.TouchScreen && draft.touchpad !== id) {
-              draft.touchpad_enabled = true
-              draft.touchpad = id
-            } else if (value !== CtrlDevice.TouchScreen && draft.touchpad === id) {
-              draft.touchpad_enabled = false
-              draft.touchpad = ''
-            }
-
-          })
-        },
+      Object.defineProperty(window, 'ui_tree', {
+        get() { print_ui_tree() },
+        configurable: true
       })
-    }
-    _set_is_fullscreen(!!fullscreen.target);
-    _set_paused(lf2.world.paused);
 
-    const visibilitychange = () => lf2.sounds.set_muted(document.hidden)
-    const blur = () => lf2.sounds.set_muted(true)
-    const focus = () => lf2.sounds.set_muted(false)
-    document.addEventListener('visibilitychange', visibilitychange);
-    window.addEventListener('blur', blur);
-    window.addEventListener('focus', focus);
-    lf2.sounds.set_muted(!document.hasFocus() || document.hidden);
+      set_lfw(lf2)
+      lf2.sounds.set_volume(app_state.volume);
+      lf2.sounds.set_bgm_muted(app_state.bgm_muted);
+      lf2.sounds.set_bgm_volume(app_state.bgm_volume);
+      lf2.sounds.set_sound_muted(app_state.sound_muted);
+      lf2.sounds.set_sound_volume(app_state.sound_volume);
+      Object.assign(lf2.world.dataset, world_dataset);
+      _set_bg_id(lf2.world.stage.bg.id);
+      const on_touchstart = () => set_app_state(d => {
+        d.touchpad_enabled = true;
+        d.touchpad = d.touchpad || Array.from(lf2.players.keys())[0]
+      })
+      window.addEventListener("touchstart", on_touchstart);
+      const del_lf2_callback = lf2.callbacks.add({
+        controller_detected: ({ id }) => set_app_state(draft => {
+          if (draft.touchpad === id)
+            draft.touchpad_enabled = false
+        }),
+        keyboard_detected: ({ id }) => set_app_state(draft => {
+          if (draft.touchpad === id)
+            draft.touchpad_enabled = false
+        }),
+      })
+      for (const [id, player] of lf2.players) {
+        player.callbacks.add({
+          on_ctrl_changed(value, prev) {
+            set_app_state(draft => {
+              if (value === CtrlDevice.TouchScreen && draft.touchpad !== id) {
+                draft.touchpad_enabled = true
+                draft.touchpad = id
+              } else if (value !== CtrlDevice.TouchScreen && draft.touchpad === id) {
+                draft.touchpad_enabled = false
+                draft.touchpad = ''
+              }
 
-    return () => {
-      window.removeEventListener("touchstart", on_touchstart)
-      document.removeEventListener('visibilitychange', visibilitychange);
-      window.removeEventListener('blur', blur);
-      window.removeEventListener('focus', focus);
-      del_lf2_callback();
-      lf2.dispose()
-    };
-  }, [LFW, params, app_state_ready, world_dataset_ready]);
+            })
+          },
+        })
+      }
+      _set_is_fullscreen(!!fullscreen.target);
+      _set_paused(lf2.world.paused);
+
+      const visibilitychange = () => lf2.sounds.set_muted(document.hidden)
+      const blur = () => lf2.sounds.set_muted(true)
+      const focus = () => lf2.sounds.set_muted(false)
+      document.addEventListener('visibilitychange', visibilitychange);
+      window.addEventListener('blur', blur);
+      window.addEventListener('focus', focus);
+      lf2.sounds.set_muted(!document.hasFocus() || document.hidden);
+
+      return () => {
+        window.removeEventListener("touchstart", on_touchstart)
+        document.removeEventListener('visibilitychange', visibilitychange);
+        window.removeEventListener('blur', blur);
+        window.removeEventListener('focus', focus);
+        del_lf2_callback();
+      };
+    },
+  })
 
   const on_click_load_local_zip = () => {
     if (!lfw) return;

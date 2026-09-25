@@ -1,3 +1,4 @@
+import { use_lfw } from "@/hooks/use_lfw";
 import { Paths } from "@/Paths";
 import { useState, type ComponentType } from "react";
 import { useNavigate } from "react-router";
@@ -6,7 +7,6 @@ import { PreviewerContext } from "./ctx";
 import { EntityPreviewer } from "./EntityPreviewer";
 import { ImagePreviewer } from "./ImagePreviewer";
 import csses from "./styles.module.scss";
-import { use_lfw } from "./use_lfw";
 
 interface ITab {
   id: string;
@@ -23,7 +23,12 @@ const TABS: readonly ITab[] = [
 
 export default function PreviewerPage() {
   const nav = useNavigate();
-  const { lfw, ready, error, progress } = use_lfw();
+  const [progress, set_progress] = useState("");
+  const { lfw, ready, error } = use_lfw({
+    muted: true,
+    hide_ui: true,
+    on_progress: (content, value) => set_progress(`${content} ${Math.round(value)}%`),
+  });
   const [tab_id, set_tab_id] = useState(TABS[0].id);
   const tab = TABS.find((v) => v.id === tab_id) ?? TABS[0];
 
