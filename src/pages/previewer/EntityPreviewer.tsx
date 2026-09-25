@@ -151,6 +151,15 @@ export function EntityPreviewer() {
     );
   }, [lfw]);
 
+  /** 归中：实体放回舞台中线并贴地，相机重新对准（动作开演前 / 刚生成时） */
+  const recenter = useCallback((e: Entity | undefined) => {
+    if (!lfw || !e) return;
+    const { world } = lfw;
+    e.set_position(world.middle.x, 0, world.middle.z);
+    e.set_position(null, e.ground_y, null);
+    focus(e);
+  }, [lfw, focus]);
+
   // 切换数据：重建场景，交给游戏自己演
   useEffect(() => {
     if (!lfw || !data) return;
@@ -165,15 +174,13 @@ export function EntityPreviewer() {
       e.ctrl_visible = false;
       e.hp_max = e.hp = DEMO_HP;
       e.mp_max = e.mp = DEMO_MP;
-      e.set_position(world.middle.x, 0, world.middle.z);
-      e.set_position(null, e.ground_y, null);
+      recenter(e);
       e.attach();
     }
     set_entity(e);
     set_motion_i(-1);
     set_cur_frame_id(e?.frame.id ?? "");
-    focus(e);
-  }, [lfw, data, focus]);
+  }, [lfw, data, recenter]);
 
   useEffect(() => {
     if (!lfw || !canvas) return;
@@ -216,11 +223,15 @@ export function EntityPreviewer() {
   const play_motion = (i: number) => {
     set_motion_i(i);
     const m = motions[i];
-    if (entity && m) entity.enter_frame_by_id(m.frames[0].id, true);
+    if (!entity || !m) return;
+    recenter(entity);
+    entity.enter_frame_by_id(m.frames[0].id, true);
   };
 
   const play_frame = (f: IFrameInfo) => {
-    if (entity) entity.enter_frame_by_id(f.id, true);
+    if (!entity) return;
+    recenter(entity);
+    entity.enter_frame_by_id(f.id, true);
   };
 
   const replay = () => {
