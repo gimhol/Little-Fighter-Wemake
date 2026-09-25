@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { BackgroundPreviewer } from "./BackgroundPreviewer";
 import { PreviewerContext } from "./ctx";
 import { EntityPreviewer } from "./EntityPreviewer";
+import { ImagePreviewer } from "./ImagePreviewer";
 import csses from "./styles.module.scss";
 import { use_lfw } from "./use_lfw";
 
@@ -17,6 +18,7 @@ interface ITab {
 const TABS: readonly ITab[] = [
   { id: "bg", label: "背景", Component: BackgroundPreviewer },
   { id: "entity", label: "角色/物件", Component: EntityPreviewer },
+  { id: "image", label: "图片", Component: ImagePreviewer },
 ];
 
 export default function PreviewerPage() {
