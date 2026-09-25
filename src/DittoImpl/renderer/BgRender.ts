@@ -79,12 +79,19 @@ export class BgRender {
 
   render(dt: number): void {
     const cam_x = this.world_renderer.camera.position.x;
+    const zoom_x = this.world.bg?.zoom_x ?? 1;
     const { root_node, fg_root_node, layers, cam_node, fg_cam_node } = this;
     const { bg } = this.world
     if (this.bg !== bg) this.set_bg(bg)
     this.world_renderer.camera.getWorldQuaternion(this.quaternion);
-    root_node?.setRotationFromQuaternion(this.quaternion);
-    fg_root_node?.setRotationFromQuaternion(this.quaternion);
+    if (root_node) {
+      root_node.setRotationFromQuaternion(this.quaternion);
+      root_node.position.x = cam_x * (1 - zoom_x);
+    }
+    if (fg_root_node) {
+      fg_root_node.setRotationFromQuaternion(this.quaternion);
+      fg_root_node.position.x = cam_x * (1 - zoom_x);
+    }
     if (cam_node) {
       cam_node.setRotationFromQuaternion(this.quaternion);
       cam_node.position.x = cam_x;

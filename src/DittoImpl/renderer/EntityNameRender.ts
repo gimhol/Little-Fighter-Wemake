@@ -55,10 +55,11 @@ export class EntityNameRender {
     const max_x = min_x + (world.dataset.screen_w / world.transform.scale_x) - 2 * hw;
     const x = clamp(position.x, min_x, max_x);
     const z = position.z + 0.2;
+    const world_h = screen_h / (world.transform.scale_y ?? 1);
     const y = clamp(
       ground_y - z / 2 - mesh.scale.y,
       cam_y + 10,
-      cam_y + screen_h - 10
+      cam_y + world_h - 10
     );
     mesh.position.set(round(x), round(y), round(z));
   }

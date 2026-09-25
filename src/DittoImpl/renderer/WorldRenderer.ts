@@ -208,8 +208,8 @@ export class WorldRenderer implements IWorldRenderer {
     const { dataset: { entity_flags }, transform } = this.world;
     const { x, y, z, scale_x, scale_y, scale_z } = transform
     this.world_node.position.set(
-      x + this.world_offset.x,
-      y + this.world_offset.y,
+      x + this.world_offset.x + this.camera.position.x * (1 - scale_x),
+      y + this.world_offset.y + this.camera.position.y * (1 - scale_y),
       z + this.world_offset.z
     );
     this.world_node.scale.set(scale_x, scale_y, scale_z);

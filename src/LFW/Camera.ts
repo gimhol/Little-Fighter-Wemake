@@ -97,7 +97,7 @@ export class Camera {
       let max_vy_ratio = 50;
       let acc_y_ratio = 1;
       const cam_y = this._dested?.y ?? this.destination.y;
-      const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT);
+      const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT / (bg.zoom_y ?? 1));
       this.destination.y = clamp(cam_y, 0, cam_max_y);
       const acc_y = min(
         atom_time * acc_y_ratio,
