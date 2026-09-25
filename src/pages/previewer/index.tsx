@@ -3,6 +3,7 @@ import { useState, type ComponentType } from "react";
 import { useNavigate } from "react-router";
 import { BackgroundPreviewer } from "./BackgroundPreviewer";
 import { PreviewerContext } from "./ctx";
+import { EntityPreviewer } from "./EntityPreviewer";
 import csses from "./styles.module.scss";
 import { use_lfw } from "./use_lfw";
 
@@ -15,6 +16,7 @@ interface ITab {
 /** 新增预览类型时，写一个 `xxxPreviewer` 组件再往这里加一项即可 */
 const TABS: readonly ITab[] = [
   { id: "bg", label: "背景", Component: BackgroundPreviewer },
+  { id: "entity", label: "角色/物件", Component: EntityPreviewer },
 ];
 
 export default function PreviewerPage() {
