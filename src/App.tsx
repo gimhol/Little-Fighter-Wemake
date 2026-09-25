@@ -814,7 +814,7 @@ function App() {
         </Button>
         <Button onClick={() => set_dat_viewer_open(true)}>查看dat文件</Button>
         <Button onClick={() => set_editor_open(true)}>查看数据包</Button>
-        <Button onClick={() => nav(Paths.All.bg_preview)}>背景预览</Button>
+        <Button onClick={() => nav(Paths.All.previewer)}>预览器</Button>
         <Select
           options={["top", "bottom", "left", "right"] as const}
           parse={(v) => [v, "位置：" + v]}

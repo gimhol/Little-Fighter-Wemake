@@ -327,3 +327,118 @@
 .opacity {
   width: 100%;
 }
+
+.body_msg {
+  flex            : 1;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  text-align      : center;
+  color           : #8fb3ff;
+}
+
+.tabs {
+  display: flex;
+  gap    : 2px;
+}
+
+.tab {
+  background   : transparent;
+  border       : 1px solid transparent;
+  color        : #8fa1bd;
+  border-radius: 4px;
+  padding      : 4px 12px;
+  cursor       : pointer;
+  font-size    : 12px;
+
+  &:hover {
+    color       : #ffffff;
+    border-color: #2a3c5c;
+  }
+}
+
+.tab_active {
+  background  : #16233a;
+  border-color: #5a88e0;
+  color       : #dbe6ff;
+}
+
+.toolbar {
+  display    : flex;
+  align-items: center;
+  gap        : 8px;
+  flex-wrap  : wrap;
+}
+
+.frame_list {
+  overflow             : auto;
+  flex                 : 1;
+  min-height           : 0;
+  padding              : 0 8px 8px;
+  display              : grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap                  : 3px;
+}
+
+.motion_list {
+  overflow      : auto;
+  flex          : 1;
+  min-height    : 0;
+  padding       : 0 6px 8px;
+  display       : flex;
+  flex-direction: column;
+  gap           : 2px;
+}
+
+.frame_btn {
+  background   : #101827;
+  border       : 1px solid transparent;
+  color        : #8fa1bd;
+  border-radius: 3px;
+  padding      : 2px 4px;
+  cursor       : pointer;
+  font-size    : 11px;
+  overflow     : hidden;
+  text-overflow: ellipsis;
+  white-space  : nowrap;
+
+  &:hover {
+    border-color: #2a3c5c;
+    color       : #ffffff;
+  }
+}
+
+.frame_btn_active {
+  background  : #182742;
+  border-color: #5a88e0;
+  color       : #dbe6ff;
+}
+
+.checker {
+  background-image: linear-gradient(45deg, #12161f 25%, transparent 25%),
+    linear-gradient(-45deg, #12161f 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #12161f 75%),
+    linear-gradient(-45deg, transparent 75%, #12161f 75%);
+  background-size    : 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color   : #1a2030;
+}
+
+.img_box {
+  position     : relative;
+  flex         : 1;
+  min-height   : 0;
+  display      : flex;
+  overflow     : auto;
+  border       : 1px solid #1c2534;
+  border-radius: 4px;
+}
+
+.img_el {
+  display        : block;
+  flex           : none;
+  margin         : auto;
+  image-rendering: pixelated;
+  transform-origin: center center;
+  user-select    : none;
+}
