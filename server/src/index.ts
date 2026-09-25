@@ -13,6 +13,9 @@ import { attach_rest } from './rest/index.js';
 import arg from "../node_modules/arg"
 import info from "../package.json"
 
+/** 构建期注入的版本信息（见 rollup.config.mjs） */
+const BUILD_TAG = __GIT_COMMIT__ ? ` (${__GIT_COMMIT__.slice(0, 7)}${__GIT_DIRTY__ ? ' dirty' : ''})` : ''
+
 const args = arg({
   '--help': Boolean, '-h': '--help',
   '--host': String,
@@ -64,7 +67,7 @@ async function main() {
     handle_help();
     return;
   }
-  console.log(`Little Fighter Wemake Multiplayer Server v${info.version}`)
+  console.log(`Little Fighter Wemake Multiplayer Server v${info.version}${BUILD_TAG}`)
   const config_file = load_config(to_str(args['--config']) ?? to_str(process.env.CONFIG_FILE_PATH));
   const { config } = config_file;
   const ssl_key = await read_file(to_str(args['--ssl-key-path']) ?? to_str(process.env.SSL_KEY_FILE_PATH) ?? config.ssl_key_file_path);
@@ -96,7 +99,7 @@ async function main() {
     ranks_max_per_type: to_num(process.env.RANKS_MAX_PER_TYPE) ?? to_num(config.ranks?.max_per_type),
     log: to_bool(config.rest?.log),
     max_body_size: to_num(config.rest?.max_body_size),
-    info: { ssl: is_https, port, http_port, https_port, config_file: config_file.loaded ? config_file.path : void 0 },
+    info: { ssl: is_https, port, http_port, https_port, config_file: config_file.loaded ? config_file.path : void 0, commit: __GIT_COMMIT__, dirty: __GIT_DIRTY__, built_at: __BUILD_TIME__ },
   });
   wss.on('connection', (ws, req) => {
     const client = new Client(ctx, ws, req);

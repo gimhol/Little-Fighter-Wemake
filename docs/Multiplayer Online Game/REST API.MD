@@ -120,7 +120,7 @@ curl http://localhost/api
 ```
 
 ``` json
-{ "name": "lfj-node-server", "version": "1.0.1", "api": "/api" }
+{ "name": "lfj-node-server", "version": "1.0.1", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4", "commit_short": "a1b2c3d", "dirty": false, "built_at": "2026-09-25T12:22:29.198Z", "api": "/api" }
 ```
 
 ### GET /api
@@ -130,6 +130,10 @@ curl http://localhost/api
 ``` json
 {
   "version": "1.0.1",
+  "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4",
+  "commit_short": "a1b2c3d",
+  "dirty": false,
+  "built_at": "2026-09-25T12:22:29.198Z",
   "uptime_ms": 44397,
   "routes": [
     { "method": "GET", "path": "/api/rooms", "access": "public" },
@@ -138,11 +142,16 @@ curl http://localhost/api
 }
 ```
 
+`commit` / `commit_short` / `dirty` / `built_at` 是**构建时**注入的（打包时读取构建机上的 git 状态），部署后可以直接用它确认线上跑的是哪次提交。启动日志也会带上：`Little Fighter Wemake Multiplayer Server v1.0.1 (a1b2c3d)`（工作区有未提交改动时会多一个 `dirty`）。
+
 ### GET /api/stats
 
 | 字段 | 类型 | 说明 |
 | - | - | - |
 | `version` | string | 服务器版本 |
+| `commit` / `commit_short` | string | 构建时的 git 提交（完整 / 前 7 位） |
+| `dirty` | boolean | 构建时工作区是否有未提交改动 |
+| `built_at` | string | 构建时间（ISO） |
 | `started_at` | number | 启动时间戳（毫秒） |
 | `uptime_ms` | number | 已运行毫秒数 |
 | `clients` | number | 在线客户端总数 |
@@ -156,6 +165,10 @@ curl http://localhost/api
 ``` json
 {
   "version": "1.0.1",
+  "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4",
+  "commit_short": "a1b2c3d",
+  "dirty": false,
+  "built_at": "2026-09-25T12:22:29.198Z",
   "started_at": 1789304745001,
   "uptime_ms": 44418,
   "clients": 1,
