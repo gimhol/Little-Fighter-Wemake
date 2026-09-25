@@ -35,10 +35,10 @@ export interface IUseLfwResult {
  * `debug`/`zips`/`setup` 只在建实例时读一次；
  * `muted`/`hide_ui`/`on_progress` 每次取最新，可以放心传内联箭头函数。
  */
-export function use_lfw(options: IUseLfwOptions = {}): IUseLfwResult {
+export function useLfw(options: IUseLfwOptions = {}): IUseLfwResult {
   const { enabled = true, recreate_key, hide_ui } = options;
   const opts = useRef(options);
-  opts.current = options;
+  useEffect(() => { opts.current = options });
 
   const [lfw, set_lfw] = useState<LFW>();
   const [error, set_error] = useState<string>();

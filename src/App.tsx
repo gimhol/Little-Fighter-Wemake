@@ -1,5 +1,5 @@
 import { useShortcut } from "@/hooks/useShortcut";
-import { use_lfw } from "@/hooks/use_lfw";
+import { useLfw } from "@/hooks/useLfw";
 import classNames from "classnames";
 import device from "current-device";
 import qs from "qs";
@@ -373,7 +373,7 @@ function App() {
     on_sound_volume_changed: v => set_app_state(d => { d.sound_volume = v }),
   })
 
-  use_lfw({
+  useLfw({
     enabled: app_state_ready && world_dataset_ready,
     recreate_key: params,
     debug: params.dev == '1',
