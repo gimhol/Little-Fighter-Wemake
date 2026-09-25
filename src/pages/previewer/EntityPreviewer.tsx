@@ -3,7 +3,7 @@ import { ENTITY_INDICATINGS } from "@/DittoImpl/renderer/INDICATINGS";
 import type { WorldRenderer } from "@/DittoImpl/renderer/WorldRenderer";
 import type { Entity, IEntityData, IFrameInfo } from "@/LFW";
 import { Defines, FrameId, TeamEnum } from "@/LFW/defines";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePreviewer } from "./ctx";
 import csses from "./styles.module.scss";
 
@@ -11,6 +11,8 @@ import csses from "./styles.module.scss";
 const DEMO_BG = "bg_move_table";
 const DEMO_HP = 9999;
 const DEMO_MP = 1000000;
+/** 滞空时抬到的高度 */
+const HOVER_Y = 200;
 
 type TDatas = NonNullable<ReturnType<typeof usePreviewer>["lfw"]>["datas"];
 
@@ -110,10 +112,15 @@ export function EntityPreviewer() {
   const [motion_i, set_motion_i] = useState(-1);
   const [running, set_running] = useState(true);
   const [locked, set_locked] = useState(false);
+  const [hover, set_hover] = useState(false);
+  const [gravity, set_gravity] = useState(true);
   const [flags, set_flags] = useState(ENTITY_INDICATINGS.ft | ENTITY_INDICATINGS.frame);
   const [canvas, set_canvas] = useState<HTMLCanvasElement | null>(null);
   const [cur_frame_id, set_cur_frame_id] = useState("");
   const [, set_ver] = useState(0);
+  // 滞空开关：recenter 里按这个 ref 决定贴地还是抬到 HOVER_Y（用 ref 免于让 recenter 换身份）
+  const hover_ref = useRef(hover);
+  useEffect(() => { hover_ref.current = hover });
 
   const list = useMemo(() => {
     if (!lfw) return [];
@@ -134,8 +141,7 @@ export function EntityPreviewer() {
   const next_text = !frame ? "-" : next_id === void 0 || next_id === "" ? "无" : next_id;
 
   const focus = useCallback((e: Entity | undefined) => {
-    if (!lfw || !e) return;
-    const { world } = lfw;
+    if (!lfw || !e) return;    const { world } = lfw;
     const { bg } = world;
     const sw = world.dataset.screen_w;
     const sh = Defines.MODERN_SCREEN_HEIGHT;
@@ -146,12 +152,12 @@ export function EntityPreviewer() {
     world.camera.lock(e.position.x - sw / 2 / zx, render_y - sh / 2 / zy);
   }, [lfw]);
 
-  /** 归中：实体放回舞台中线并贴地，相机重新对准（动作开演前 / 刚生成时） */
+  /** 归中：实体放回舞台中线（滞空时抬离地面），相机重新对准（动作开演前 / 刚生成时） */
   const recenter = useCallback((e: Entity | undefined) => {
     if (!lfw || !e) return;
     const { world } = lfw;
     e.set_position(world.middle.x, 0, world.middle.z);
-    e.set_position(null, e.ground_y, null);
+    e.set_position(null, hover_ref.current ? HOVER_Y : e.ground_y, null);
     focus(e);
   }, [lfw, focus]);
 
@@ -200,6 +206,19 @@ export function EntityPreviewer() {
     if (!lfw) return;
     lfw.world.dataset.entity_flags = flags;
   }, [lfw, flags]);
+
+  // 重力开关：关掉时把世界重力系数压 0，恢复时还原（本 tab 独占这个世界）
+  useEffect(() => {
+    if (!lfw || gravity) return;
+    const d = lfw.world.dataset;
+    const { gravity: g, gravity_d: gd } = d;
+    d.gravity = 0;
+    d.gravity_d = 0;
+    return () => {
+      d.gravity = g;
+      d.gravity_d = gd;
+    };
+  }, [lfw, gravity]);
 
   useEffect(() => {
     if (!lfw || !running) return;
@@ -296,6 +315,22 @@ export function EntityPreviewer() {
               onChange={(e) => set_locked(e.target.checked)}
             />
             锁定在中间
+          </label>
+          <label className={csses.check}>
+            <input
+              type="checkbox"
+              checked={hover}
+              onChange={(e) => set_hover(e.target.checked)}
+            />
+            滞空
+          </label>
+          <label className={csses.check}>
+            <input
+              type="checkbox"
+              checked={gravity}
+              onChange={(e) => set_gravity(e.target.checked)}
+            />
+            重力
           </label>
           <div className={csses.spacer} />
           {INDICATORS.map((v) => (
