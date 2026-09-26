@@ -2,7 +2,7 @@
 
 by [**Gim**](https://gim.ink)
 
-<!-- git-range: d94a6368..e16f8500 -->
+<!-- git-range: d94a6368..2087ecaf9 -->
 
 ### What's New
 
@@ -17,15 +17,18 @@ by [**Gim**](https://gim.ink)
   - Textured grass with mowing stripes; complete soccer markings: halfway line, center circle, penalty & goal areas, penalty spots, penalty arc, corner arcs, goal nets
   - Stands, crowd, ad boards and sky around the pitch
   - Both Octagon and Football Field join the normal random background rotation
+- Desktop: automatic mod loading — data packs in the `mods/` folder (next to the program, and in the user data folder) are loaded at startup (later ones override earlier ones); `mods.json5` adjusts the order or disables packs, `--mods <dir>` adds one on the fly, `--no-mods` turns loading off
 
 ### Tweaks
 
 - Data conversion: grid separator lines are now removed from source images with a mask (some sprites could keep a trace of them)
 - Desktop: the installer now defaults to the product-name folder ("Little Fighter Wemake")
 - Desktop: pushing a version tag now builds and publishes the installer / portable build via GitHub Actions
-- Fixed: with background zoom other than 1 (Football Field 0.5, Octagon 2), fighters could drift off-screen when the camera moved
+- Fixed: with background zoom other than 1 (Football Field 0.5, Octagon 2), the auto camera and character follow were offset horizontally / vertically (fighters could drift off-screen)
 - Maps from the extra data pack now come after the built-in maps (background list and rotation order)
-- Dev panel: new "Background Preview" page (browse all backgrounds, tweak camera and layers)
+- Dev panel: the previewer was rebuilt with three tabs (background / entity / image); the canvas can be dragged to pan and scrolled to zoom
+- Survival rank: the solo board is now grouped by fighter, the 2P board by the pair of fighters, each keeping its own best score
+- Update checks now read `latest.json`, which carries the commit hash and avoids a cache making it report a stale version
 
 ### Thanks
 
