@@ -1,11 +1,9 @@
 import fs from "fs/promises";
-import { conf } from "../conf";
 import { exec_cmd, exec_cmd_capture } from "./exec_cmd";
-import { find_real_cmd } from "./find_real_cmd";
+import { resolve_magick } from "./convert_image";
 
 export async function optimize_png(src_path: string, dst_path: string): Promise<boolean> {
-  const { MAGICK_CMD } = conf();
-  const real_cmd = MAGICK_CMD ? find_real_cmd(MAGICK_CMD) : "";
+  const real_cmd = resolve_magick();
   if (real_cmd) {
     const tmp_path = dst_path + ".opt";
     try {

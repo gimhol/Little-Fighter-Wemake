@@ -17,8 +17,32 @@ function get_dst_path(out_dir: string, src_dir: string, src_path: string) {
   return src_path.replace(src_dir, out_dir).replace(/(.bmp)$/, ".png");
 }
 
+/**
+ * 解析 magick 命令，供图片相关操作共用。
+ *
+ * - `MAGICK_CMD` 为空字符串：明确不使用 magick（跳过转换，保留旧行为）
+ * - `MAGICK_CMD` 有值但找不到：直接报错中止。以前是静默 return，结果会悄悄产出一个
+ *   缺少贴图的数据包（CI 上没装 ImageMagick 7 时就是这样，最后只有一个运行时报错）
+ */
+export function resolve_magick(): string {
+  is_magick_tried = true;
+  const { MAGICK_CMD } = conf();
+  if (!MAGICK_CMD) return "";
+  const real_cmd = find_real_cmd(MAGICK_CMD);
+  if (!real_cmd) {
+    print_magick_hints();
+    throw new Error(
+      `找不到图片转换命令：MAGICK_CMD = '${MAGICK_CMD}'。\n` +
+        `继续执行只会生成缺少贴图的数据包，已中止。\n` +
+        `请安装 ImageMagick 7（需要 magick 命令），或用 --magick <路径> 指定；` +
+        `确实不需要转换时，把 MAGICK_CMD 显式设为空字符串。`,
+    );
+  }
+  return real_cmd;
+}
+
 export function print_magick_hints() {
-  const { MAGICK_CMD } = _conf ?? {}
+  const { MAGICK_CMD } = _conf ?? {};
   if (!is_magick_tried || (MAGICK_CMD && find_real_cmd(MAGICK_CMD))) return;
   const hints = `
 ====================== magick not found ======================
@@ -49,10 +73,7 @@ export async function convert_whole_image(
   src_dir: string,
   src_path: string,
 ) {
-  is_magick_tried = true;
-  const { MAGICK_CMD } = conf();
-  if (!MAGICK_CMD) return;
-  const real_cmd = find_real_cmd(MAGICK_CMD)
+  const real_cmd = resolve_magick();
   if (!real_cmd) return;
   await log_magick_once(real_cmd);
   const dst_path = get_dst_path(out_dir, src_dir, src_path);
@@ -86,10 +107,7 @@ export async function convert_grid_image(
   src_path: string,
   pic: ILegacyPictureInfo,
 ) {
-  is_magick_tried = true;
-  const { MAGICK_CMD } = conf();
-  if (!MAGICK_CMD) return;
-  const real_cmd = find_real_cmd(MAGICK_CMD)
+  const real_cmd = resolve_magick();
   if (!real_cmd) return;
   await log_magick_once(real_cmd);
   const { col: row, row: col, cell_w, cell_h } = pic;

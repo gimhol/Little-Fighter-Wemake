@@ -120,6 +120,8 @@ main().then((r) => {
   if (!dont_wait() && r != 'DONT_WAIT') waitForKeyPress();
 }).catch((e) => {
   log(e)
+  // 以前只是打印，进程仍以 0 退出，CI 会把“缺少 magick/ffmpeg 的残缺数据包”当成成功
+  process.exitCode = 1
   if (!dont_wait()) waitForKeyPress();
 })
 

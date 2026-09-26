@@ -33,7 +33,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     env:
-      BUILD_TAG: "${{ github.ref_type == 'tag' && github.ref_name || '' }}"
+      BUILD_TAG: "${{ github.ref_type == 'tag' && github.ref_name || inputs.tag || '' }}"
       ELECTRON_MIRROR: https://github.com/electron/electron/releases/download/
       ELECTRON_BUILDER_BINARIES_MIRROR: https://github.com/electron-userland/electron-builder-binaries/releases/download/
 
@@ -97,6 +97,19 @@ jobs:
 
       - name: Build app
         run: npm run build
+
+      # Pages 与 Release 复用同一次构建。之所以不再用 ubuntu：`apt install imagemagick` 装的是
+      # IM6（只有 convert），而工具默认调 IM7 的 `magick`，会让数据包整批缺贴图（见 0.1.56 那次事故）
+      - name: Prepare Pages artifact
+        run: New-Item -ItemType File -Path dist/.nojekyll -Force | Out-Null
+
+      - name: Upload Pages artifact
+        # 万一 Windows 上打 tar 出问题，也不应该连累后面的安装包与 Release
+        continue-on-error: true
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+          include-hidden-files: true
 
       - name: Build desktop installer & portable zip (NSIS)
         run: node scripts/build-installer.mjs --no-build
@@ -183,3 +196,20 @@ jobs:
       - name: Publish installer to lf.gim.ink/desktop/
         if: ${{ inputs.publish }}
         run: node scripts/deploy-installer.mjs ${{ inputs.dry_run && '--dry' || '' }}
+
+  pages:
+    name: Deploy to GitHub Pages
+    needs: build
+    # 正式版本 tag 或手动触发才发 Pages（预览 tag 跳过），与原来 deploy-pages.yml 的行为一致
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

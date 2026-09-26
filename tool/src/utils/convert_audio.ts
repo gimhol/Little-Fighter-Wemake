@@ -38,12 +38,33 @@ To download ffmpeg: https://ffmpeg.org/download.html
   console.log('\n')
   warn(hints)
 }
-export async function convert_audio(dst_path: string, src_path: string) {
+
+/**
+ * 解析 ffmpeg 命令。
+ *
+ * - `FFMPEG_CMD` 为空字符串：明确不使用 ffmpeg（跳过转换，保留旧行为）
+ * - `FFMPEG_CMD` 有值但找不到：直接报错中止（避免静默产出没有音频的数据包）
+ */
+export function resolve_ffmpeg(): string {
   is_ffmpeg_tried = true;
-  const { FFMPEG_CMD, FFMPEG_OPTS } = conf();
-  if (!FFMPEG_CMD) return;
+  const { FFMPEG_CMD } = conf();
+  if (!FFMPEG_CMD) return "";
   const real_cmd = find_real_cmd(FFMPEG_CMD);
-  if (!real_cmd) return; // ffmpeg 缺失时跳过转换（与图片转换行为一致），避免 spawn('') 崩溃
+  if (!real_cmd) {
+    print_ffmpeg_hints();
+    throw new Error(
+      `找不到音频转换命令：FFMPEG_CMD = '${FFMPEG_CMD}'。\n` +
+        `继续执行只会生成没有音频的数据包，已中止。\n` +
+        `请安装 ffmpeg，或用 --ffmpeg <路径> 指定；确实不需要转换时，把 FFMPEG_CMD 显式设为空字符串。`,
+    );
+  }
+  return real_cmd;
+}
+
+export async function convert_audio(dst_path: string, src_path: string) {
+  const real_cmd = resolve_ffmpeg();
+  if (!real_cmd) return;
+  const { FFMPEG_OPTS } = conf();
   if (!is_ffmpeg_logged) {
     is_ffmpeg_logged = true;
     info("Use ffmpeg:", real_cmd, "md5: " + await tool_md5(real_cmd));
