@@ -20,6 +20,10 @@ on:
         description: 配合 publish：只打印上传命令，不真的上传（不需要 secret）
         type: boolean
         default: false
+      skip_build:
+        description: 配 publish：复用已有构建产物（同一 tag 上一次成功的运行），不重新构建；须在 “Use workflow from” 选对应 tag
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -30,6 +34,8 @@ concurrency:
 
 jobs:
   build:
+    # 勾了 skip_build 就只走 publish（复用上次产物），这里整个跳过
+    if: ${{ !inputs.skip_build }}
     runs-on: windows-latest
     timeout-minutes: 90
     env:
@@ -173,35 +179,109 @@ jobs:
             gh release upload $tag $files --clobber
           }
 
-      # ---- 以下为 lf.gim.ink 发布：仅 workflow_dispatch 勾选 publish 时跑（本地等价：npm run deploy / deploy:latest / deploy:installer）----
+  # 只负责上传，不重新构建：默认用本次构建的产物；勾了 skip_build 则去同一 tag 上一次成功的运行里取产物
+  publish:
+    name: Publish to lf.gim.ink
+    needs: build
+    if: ${{ !cancelled() && inputs.publish && (inputs.skip_build || needs.build.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      # deploy 脚本要用 fdeploy（@fimagine/frontend_deployer）与 ali-oss
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Find the run to reuse
+        id: src
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ inputs.skip_build }}" = "true" ]; then
+            ref="${{ inputs.tag }}"
+            if [ -z "$ref" ]; then ref="${{ github.ref_name }}"; fi
+            id=$(gh run list --workflow build.yml --branch "$ref" --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+            if [ -z "$id" ]; then
+              echo "::error::在 $ref 上找不到成功的构建运行；先跑一次构建，或取消勾选『复用已有构建产物』"
+              exit 1
+            fi
+            echo "复用运行 $id（$ref）"
+          else
+            id="${{ github.run_id }}"
+            echo "使用本次运行的产物（run $id）"
+          fi
+          echo "run_id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-win
+          path: artifacts
+          run-id: ${{ steps.src.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      # artifact 里的层级跟上传时的 glob 有关，这里按文件名找回来再摆到脚本期望的位置
+      - name: Restore dist & release/installer
+        run: |
+          set -e
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq p7zip-full
+          version=$(node -p "require('./package.json').version")
+          web7z=$(find artifacts -name "Little Fighter Wemake Web v$version.7z" | head -1)
+          latest_yml=$(find artifacts -name latest.yml | head -1)
+          if [ -z "$web7z" ] || [ -z "$latest_yml" ]; then
+            echo "::error::产物里找不到 Web 7z 或 latest.yml（run ${{ steps.src.outputs.run_id }}）"
+            exit 1
+          fi
+          mkdir -p dist release/installer
+          7z x "$web7z" -odist -y > /dev/null
+          cp "$(dirname "$latest_yml")"/* release/installer/
+          dist_ver=$(node -p "require('./dist/version.json').version")
+          if [ "$dist_ver" != "$version" ]; then
+            echo "::error::产物是 v$dist_ver，但当前检出的是 v$version —— 请把上面的 'Use workflow from' 选成对应 tag"
+            exit 1
+          fi
+          echo "产物版本 v$dist_ver，installer 文件：" && ls -1 release/installer
+
       - name: Write deploy credentials
-        if: ${{ inputs.publish && !inputs.dry_run }}
+        if: ${{ !inputs.dry_run }}
         env:
           DEPLOYER_PRIVATE_JSON5: ${{ secrets.DEPLOYER_PRIVATE_JSON5 }}
         run: |
-          if (-not $env:DEPLOYER_PRIVATE_JSON5) { throw "缺少仓库 secret DEPLOYER_PRIVATE_JSON5（内容 = deployer.private.json5 的全文）" }
-          Set-Content -Path deployer.private.json5 -Value $env:DEPLOYER_PRIVATE_JSON5 -Encoding utf8
+          if [ -z "$DEPLOYER_PRIVATE_JSON5" ]; then
+            echo "::error::缺少仓库 secret DEPLOYER_PRIVATE_JSON5（内容 = deployer.private.json5 的全文）"
+            exit 1
+          fi
+          printf '%s\n' "$DEPLOYER_PRIVATE_JSON5" > deployer.private.json5
 
       # dry_run 走环境变量：`npm run deploy -- --dry` 里的 --dry 会被 npm 吞掉
       - name: Publish web frontend to lf.gim.ink/<version>/
-        if: ${{ inputs.publish }}
         env:
           DEPLOY_DRY: ${{ inputs.dry_run && '1' || '' }}
         run: npm run deploy
 
       - name: Publish latest.json
-        if: ${{ inputs.publish }}
         run: node scripts/deploy-latest.mjs ${{ inputs.dry_run && '--dry' || '' }}
 
       - name: Publish installer to lf.gim.ink/desktop/
-        if: ${{ inputs.publish }}
         run: node scripts/deploy-installer.mjs ${{ inputs.dry_run && '--dry' || '' }}
 
   pages:
     name: Deploy to GitHub Pages
     needs: build
-    # 正式版本 tag 或手动触发才发 Pages（预览 tag 跳过），与原来 deploy-pages.yml 的行为一致
-    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
+    # 正式版本 tag 或手动触发才发 Pages（预览 tag 跳过）；构建被跳过（复用产物发布）时也不发
+    if: ${{ needs.build.result == 'success' && (github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-')) }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
