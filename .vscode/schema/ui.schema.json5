@@ -535,6 +535,9 @@
       enum: [
         "alert",
         "link_to",
+        "set_page",
+        "push_page",
+        "pop_page",
         "set_ui",
         "push_ui",
         "pop_ui",

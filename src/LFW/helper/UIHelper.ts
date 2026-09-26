@@ -18,8 +18,8 @@ export class UIHelper {
     this._all.push(...uis);
     for (const { id } of uis) {
       Object.assign(this, {
-        ['push_' + id]: (stack_idx = 0) => this.lfw.layers.push_ui({ id }, stack_idx),
-        ['switch_' + id]: (stack_idx = 0) => this.lfw.layers.set_ui({ id }, stack_idx),
+        ['push_' + id]: (stack_idx = 0) => this.lfw.layers.push_page({ id }, stack_idx),
+        ['switch_' + id]: (stack_idx = 0) => this.lfw.layers.set_page({ id }, stack_idx),
       })
     }
     return this;

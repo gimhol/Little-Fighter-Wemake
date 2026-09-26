@@ -171,7 +171,7 @@ export class StageModeLogic extends UIComponent {
             this.lfw.goto_next_stage();
             this.fsm.use(ModeState.Running)
           } else {
-            this.lfw.layers.pop_ui_safe()
+            this.node.layer?.pop({ min_pages: 1 })
           }
         }
         break;

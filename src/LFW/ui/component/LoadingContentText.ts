@@ -40,7 +40,7 @@ export class LoadingContentText extends UIComponent {
   on_loading_end() {
     this.failed_reason = null;
     const page = this.str(0)
-    if (page) this.lfw.layers.set_ui({ id: page })
+    if (page) this.node.layer?.set({ id: page })
     else this.on_progress("waiting_others_players", 0)
   }
 

@@ -1,5 +1,5 @@
-import { useShortcut } from "@/hooks/useShortcut";
 import { useLFW } from "@/hooks/useLFW";
+import { useShortcut } from "@/hooks/useShortcut";
 import classNames from "classnames";
 import device from "current-device";
 import qs from "qs";
@@ -22,8 +22,6 @@ import Show from "./Component/Show";
 import Titled from "./Component/Titled";
 import { VerticalSlider } from "./Component/VerticalSlider";
 import { DanmuPanel } from "./DanmuPanel";
-import { install_danmu_bridge_if_requested } from "./danmu_bridge";
-import { load_desktop_mods } from "./desktop_mods";
 import { DevStatsView } from "./DevStatsView";
 import { __Pointings, md5 } from "./DittoImpl";
 import { BG_INDICATINGS, ENTITY_INDICATINGS } from "./DittoImpl/renderer/INDICATINGS";
@@ -41,13 +39,11 @@ import { range } from "./LFW/utils/math/range";
 import { Loading } from "./LoadingImg";
 import { Log } from "./Log";
 import { NetSettings } from "./NetSettings";
-import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { Paths } from "./Paths";
 import { PlayerRow } from "./PlayerRow";
 import SettingsRows from "./SettingsRows";
 import { download } from "./Utils/download";
 import { open_file } from "./Utils/open_file";
-import i18n from "./i18n";
 import img_btn_0_3 from "./assets/btn_0_3.png";
 import img_btn_0_4 from "./assets/btn_0_4.png";
 import img_btn_1_0 from "./assets/btn_1_0.png";
@@ -65,14 +61,18 @@ import img_btn_3_1 from "./assets/btn_3_1.png";
 import img_btn_3_2 from "./assets/btn_3_2.png";
 import img_btn_3_3 from "./assets/btn_3_3.png";
 import img_btn_4_3 from "./assets/btn_4_3.png";
+import { install_danmu_bridge_if_requested } from "./danmu_bridge";
+import { load_desktop_mods } from "./desktop_mods";
 import { useForage } from "./hooks/useForage";
+import i18n from "./i18n";
 import "./init";
-import { is_toy_env } from "./toy_sdk";
+import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
 import { Networking } from "./pages/network_test/Networking";
-import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { useCallbacks } from "./pages/network_test/useCallbacks";
+import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
+import { is_toy_env } from "./toy_sdk";
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"
 type debug_ui_pos = "left" | "right" | "top" | "bottom"
@@ -99,7 +99,7 @@ const load_files = async (lfw: LFW, files: File[]) => {
   } else if (lfw.ui?.id?.toLowerCase().indexOf('loading') == -1) {
     LFW.ZIPS = [...LFW.ZIPS, ...zips]
     lfw.load(...zips)
-    lfw.layers.set_ui({ id: 'loading' })
+    lfw.layers.set_page({ id: 'loading' }, 0)
   }
 }
 
@@ -327,7 +327,7 @@ function App() {
     },
     on_prel_loaded: (lf2) => {
       const { page } = params
-      if (typeof page === 'string') lf2.layers.set_ui({ id: page })
+      if (typeof page === 'string') lf2.layers.set_page({ id: page }, 0)
     },
     on_lang_changed: (lang) => window.runtime?.SetLang?.(lang),
   })
@@ -402,7 +402,7 @@ function App() {
         location.search.indexOf('demo=0') > 0 ||
         location.hash.indexOf('demo=0') > 0
       ) {
-        lf2.first_ui = 'init_demo'
+        lf2.first_page = 'init_demo'
       }
       lf2.lang = lang;
 
@@ -754,7 +754,7 @@ function App() {
             onClick={() => lfw?.push_cmd(CMD.F1)}
             src={[img_btn_2_1, img_btn_2_2]} />
         </Show>
-        <Show show={bg_id !== Defines.VOID_BG.id && ui_id !== "settings" && (window as any).first_ui == 'init_demo'}>
+        <Show show={bg_id !== Defines.VOID_BG.id && ui_id !== "settings" && (window as any).first_page == 'init_demo'}>
           <ToggleImgButton
             checked={lfw?.world.dataset.playrate != 1}
             onClick={() => lfw?.push_cmd(CMD.F5)}
@@ -769,13 +769,13 @@ function App() {
             }
             lfw.push_cmd(CMD.F2)
             if (lfw.ui?.id == 'settings')
-              lfw.layers.pop_ui_safe()
+              lfw.ui.layer?.pop();
             else
-              lfw.layers.set_ui({ id: "settings" }, 1);
+              lfw.layers.set_page({ id: "settings" }, 1);
           }}
           src={[img_btn_1_1, img_btn_1_1]}
         />
-        <Show show={!is_mobile_container && !toy_mobile && (window as any).first_ui != 'init_demo'}>
+        <Show show={!is_mobile_container && !toy_mobile && (window as any).first_page != 'init_demo'}>
           <ToggleImgButton
             checked={is_fullscreen}
             onClick={() => toggle_fullscreen()}
@@ -898,7 +898,7 @@ function App() {
         <Select
           placeholder="页面"
           value={ui_id}
-          onChange={v => lfw?.layers.set_ui({ id: v })}
+          onChange={v => lfw?.layers.set_page({ id: v }, 0)}
           options={uis}
           parse={(o) => [o.id!, o.name]}
         />

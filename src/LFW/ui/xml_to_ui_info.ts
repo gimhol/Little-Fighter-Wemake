@@ -100,7 +100,7 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
       }
       case 'actions': {
         const actions: any = {};
-        // 属性形式: <actions click="sound(ok),set_ui(loading)"/>
+        // 属性形式: <actions click="sound(ok),set_page(loading)"/>
         for (const attr of child.attrs) {
           const v = attr.value;
           actions[attr.name] = v.includes(',') ? v.split(',').map(s => s.trim()) : v.trim();

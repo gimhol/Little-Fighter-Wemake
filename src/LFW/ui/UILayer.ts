@@ -15,7 +15,7 @@ export interface IUITransition {
     end: () => void,
   ): void;
 }
-export interface IPopUIOpts {
+export interface IPopPageOpts {
   /**
    * 是否包含用于判定的节点
    *
@@ -26,21 +26,32 @@ export interface IPopUIOpts {
 
 
   /**
-   * 直到该判定返回 true 时停止出栈
+   * 直到该判定返回 true 时停止弹页
    *
    * @param {UINode} ui 
    * @param {number} index 
-   * @param {UINode[]} stack 
+   * @param {UINode[]} pages 
    * @returns {boolean} 
    */
-  until?(ui: UINode, index: number, stack: UINode[]): boolean
+  until?(ui: UINode, index: number, pages: UINode[]): boolean
+
+  /**
+   * 本层至少保留的页数（0 = 允许弹空；1 = 至少留一页，避免层变空）
+   *
+   * @default 0
+   */
+  min_pages?: number
 
   transition?: string;
 }
-export interface IPushUIOpts {
+export interface IPushPageOpts {
   id?: string;
   transition?: string;
 }
+/** @deprecated 使用 IPopPageOpts */
+export type IPopUIOpts = IPopPageOpts
+/** @deprecated 使用 IPushPageOpts */
+export type IPushUIOpts = IPushPageOpts
 export class UILayer {
   readonly lfw: LFW;
   /** 本层的页面栈（末尾为当前页面） */
@@ -67,7 +78,7 @@ export class UILayer {
     });
   }
 
-  set(opts: IPushUIOpts = {}): void {
+  set(opts: IPushPageOpts = {}): void {
     const { id } = opts
     if (is_str(id) && this.ui?.id === id) return;
     const prev = this.pages.pop();
@@ -84,7 +95,7 @@ export class UILayer {
     if (curr || prev) this.callback.call('on_set', curr, prev, this)
   }
 
-  push(opts: IPushUIOpts = {}): void {
+  push(opts: IPushPageOpts = {}): void {
     const { id } = opts
     const prev = this.ui;
     prev?.on_pause();
@@ -99,11 +110,16 @@ export class UILayer {
     this.callback.call('on_push', curr, prev, this)
   }
 
-  pop(opts: IPopUIOpts = {}): void {
-    const { inclusive, until } = opts;
+  /**
+   * 弹页：默认只弹栈顶一页；带 `until` 时从栈顶往下弹到判定命中为止。
+   * `min_pages` 为本层保留下限，弹到下限即停（不会把层弹空）
+   */
+  pop(opts: IPopPageOpts = {}): void {
+    const { inclusive, until, min_pages = 0 } = opts;
     const poppeds: UINode[] = []
     const len = this.pages.length
-    for (let i = len - 1; i >= 0; --i) {
+    const max_pop = len - Math.min(Math.max(min_pages, 0), len)
+    for (let i = len - 1; i >= 0 && poppeds.length < max_pop; --i) {
       const ui = this.pages[i]
       if (!until) {
         poppeds.push(ui);
@@ -141,7 +157,11 @@ export class UILayers {
     return Array.from(this._all)
   }
   get ui(): UINode | undefined {
-    return this._all[this._all.length - 1]?.ui;
+    for (let i = this._all.length - 1; i >= 0; i--) {
+      const { ui } = this._all[i];
+      if (ui) return ui;
+    }
+    return undefined
   }
   get length(): number {
     return this._all.length
@@ -159,23 +179,14 @@ export class UILayers {
   at(index: number): UILayer | undefined {
     return this._all[index]
   }
-
-  set_ui(opts: IPushUIOpts, index: number = 0): void {
+  push_page(opts: IPushPageOpts, index: number): void {
+    this.ensure(index).push(opts)
+  }
+  set_page(opts: IPushPageOpts, index: number): void {
     this.ensure(index).set(opts)
   }
-  pop_ui(opts?: IPopUIOpts, index: number = 0): void {
+  pop_page(opts: IPopPageOpts, index: number): void {
     this.at(index)?.pop(opts)
-  }
-  pop_ui_safe(): void {
-    const layer = this.top;
-    if (!layer) return;
-    if (layer.pages.length > 1)
-      layer.pop()
-    if (!layer.ui && layer.index)
-      this._all.length = this._all.length - 1;
-  }
-  push_ui(opts: IPushUIOpts, index: number = 0): void {
-    this.ensure(index).push(opts)
   }
   dispose() {
     for (const i of this._all)

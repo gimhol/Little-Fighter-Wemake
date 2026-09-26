@@ -397,13 +397,13 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
     if (is_survival_rank) {
       this.lfw.change_stage(survival_stage?.id ?? '50');
       this.lfw.survival_rank_mode = true;
-      this.lfw.layers.push_ui({ id: "stage_mode_page" });
+      this.node.layer?.push({ id: "stage_mode_page" });
     } else if (is_stage_mode) {
       if (stage_switcher)
         this.lfw.change_stage(stage_switcher.stage.id ?? "");
-      this.lfw.layers.push_ui({ id: "stage_mode_page" });
+      this.node.layer?.push({ id: "stage_mode_page" });
     } else {
-      this.lfw.layers.push_ui({ id: "vs_mode_page" });
+      this.node.layer?.push({ id: "vs_mode_page" });
     }
     this.world.camera.jump_x(cam_x);
   }

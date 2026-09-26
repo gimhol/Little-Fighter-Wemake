@@ -7,12 +7,19 @@ import type { UINode } from "../UINode";
 interface IUIActionHandler {
   (layout: UINode, ...args: string[]): void;
 }
+/** 页面动作（旧写法 set_ui/push_ui/pop_ui 仍注册为别名） */
+const act_set_page: IUIActionHandler = ({ lfw }, layout_id, index) => lfw.layers.set_page({ id: layout_id }, Number(index) || 0)
+const act_push_page: IUIActionHandler = ({ lfw }, layout_id, index) => lfw.layers.push_page({ id: layout_id }, Number(index) || 0)
+const act_pop_page: IUIActionHandler = (n) => n.layer?.pop()
 class UIActor {
   static readonly TAG: string = "Actor";
   private _handler_map = new Map<string, IUIActionHandler>([
-    [UIActionEnum.SetUI, ({ lfw }, layout_id, index) => lfw.layers.set_ui({ id: layout_id }, Number(index) || 0)],
-    [UIActionEnum.PushUI, ({ lfw }, layout_id, index) => lfw.layers.push_ui({ id: layout_id }, Number(index) || 0)],
-    [UIActionEnum.PopUI, ({ lfw }) => lfw.layers.pop_ui_safe()],
+    [UIActionEnum.SetPage, act_set_page],
+    [UIActionEnum.PushPage, act_push_page],
+    [UIActionEnum.PopPage, act_pop_page],
+    [UIActionEnum.SetUI, act_set_page],
+    [UIActionEnum.PushUI, act_push_page],
+    [UIActionEnum.PopUI, act_pop_page],
     [UIActionEnum.LoadData, ({ lfw }, url) => {
 
       lfw.load(...(url ? [url] : LFW.ZIPS.slice(1)))

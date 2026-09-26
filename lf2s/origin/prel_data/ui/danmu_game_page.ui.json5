@@ -35,7 +35,7 @@
           },
           "component": ["Reachable(main)"],
           "actions": {
-            "click": ["push_ui(danmu_game_ffa_page)", "sound(ok)"]
+            "click": ["push_page(danmu_game_ffa_page)", "sound(ok)"]
           }
         },
         {
@@ -48,7 +48,7 @@
           },
           "component": ["Reachable(main)"],
           "actions": {
-            "click": ["push_ui(danmu_game_teams8_page)", "sound(ok)"]
+            "click": ["push_page(danmu_game_teams8_page)", "sound(ok)"]
           }
         },
         {
@@ -61,7 +61,7 @@
           },
           "component": ["Reachable(main)"],
           "actions": {
-            "click": ["push_ui(danmu_game_coop_page)", "sound(ok)"]
+            "click": ["push_page(danmu_game_coop_page)", "sound(ok)"]
           }
         },
         {
@@ -74,7 +74,7 @@
           },
           "component": ["Reachable(main)"],
           "actions": {
-            "click": ["pop_ui()", "sound(cancel)"]
+            "click": ["pop_page()", "sound(cancel)"]
           }
         }
       ]

@@ -216,7 +216,7 @@
           },
           component: ["Reachable(menu)"],
           actions: {
-            click: ["pop_ui()", "sound(cancel)"],
+            click: ["pop_page()", "sound(cancel)"],
           },
         },
       ],

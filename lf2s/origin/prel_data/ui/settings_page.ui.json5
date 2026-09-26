@@ -42,7 +42,7 @@
                 text: "exit_settings",
               },
               actions: {
-                click: ["pop_ui()", "sound(cancel)"],
+                click: ["pop_page()", "sound(cancel)"],
               },
             },
             {

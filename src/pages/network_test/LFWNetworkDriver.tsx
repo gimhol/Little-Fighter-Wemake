@@ -118,7 +118,7 @@ export abstract class LFWNetworkDriver {
     lf2.world.dataset.key_hit_duration = key_hit_duration_arr[v];
 
     lf2.load(...LFW.ZIPS);
-    lf2.layers.set_ui({ id: "network_loading" });
+    lf2.layers.set_page({ id: "network_loading" }, 0);
     lf2.pointings.enabled = false;
     lf2.keyboard.enabled = false;
     lf2.mt.reset(resp.seed ?? 0, this.debugging);
@@ -172,7 +172,7 @@ export abstract class LFWNetworkDriver {
     lf2.world.after_update = this.after_update;
     lf2.world.before_update = this.before_update;
     lf2.world.reset_game_time();
-    lf2.layers.set_ui({ id: "main_page" });
+    lf2.layers.set_page({ id: "main_page" }, 0);
     this.on_start();
   }
   protected run_tick(seq: number, resp: IRespTick | IRespKeyTick): void {
@@ -236,10 +236,10 @@ export abstract class LFWNetworkDriver {
     for (const req of reqs) {
       const { _d, _r, _p, _a, _s } = req;
       if (seq == 0) this.sync_check(this._datas, _d, resp)
-      this._events && this.sync_check(this._events, _a, resp);
-      this._randoms && this.sync_check(this._randoms, _r, resp);
-      this._objects && this.sync_check(this._objects, _p, resp);
-      this._suspicious && this.sync_check(this._suspicious, _s, resp);
+      if (this._events) this.sync_check(this._events, _a, resp);
+      if (this._randoms) this.sync_check(this._randoms, _r, resp);
+      if (this._objects) this.sync_check(this._objects, _p, resp);
+      if (this._suspicious) this.sync_check(this._suspicious, _s, resp);
       if (this._failed) break;
     }
     if (this._failed) this.dump_snapshots();

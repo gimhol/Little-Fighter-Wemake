@@ -330,7 +330,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
   }
   override on_start(): void {
     super.on_start?.();
-    if (this.lfw.first_ui !== 'init_demo')
+    if (this.lfw.first_page !== 'init_demo')
       this.node.search_node("demo_play_link")?.set_visible(false)
     this.startup();
   }

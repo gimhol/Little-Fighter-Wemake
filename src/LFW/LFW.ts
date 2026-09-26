@@ -225,7 +225,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   protected _keys_graves: Graves<Keys> = new Graves();
   protected _collision_graves: Graves<Collision> = new Graves();
 
-  first_ui: string = 'init';
+  first_page: string = 'init';
   readonly _keys: Keys[] = [];
 
   /** 是否运行在 B站 Toy 容器环境（由外部 App 注入；主菜单“生存排行”入口仅在此环境显示） */
@@ -605,8 +605,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
       await this.load_builtin_ui()
       check()
-      const ui = this.uis.all.find(v => v.id === this.first_ui)
-      this.layers.set_ui({ id: ui?.id })
+      const ui = this.uis.all.find(v => v.id === this.first_page)
+      this.layers.set_page({ id: ui?.id }, 0)
     }
 
     try {
@@ -727,7 +727,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const next = this.world.stage.data.next;
     if (!next) return;
     if (next === 'end') {
-      this.layers.set_ui({ id: "ending_page" })
+      this.layers.set_page({ id: "ending_page" }, 0)
       return;
     }
     const next_stage = this.datas.stages?.find((v) => v.id === next);

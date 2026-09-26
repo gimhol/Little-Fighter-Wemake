@@ -273,7 +273,7 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
       // auto_join：不取消加入（避免退回“按攻击加入”的未加入态），按“跳跃”直接返回上一页
       if (this.props.auto_join) {
         this.lfw.sounds.play_preset("cancel")
-        this.lfw.layers.pop_ui_safe()
+        this.node.layer?.pop({ min_pages: 1 })
         return
       }
       this.players.delete(player);

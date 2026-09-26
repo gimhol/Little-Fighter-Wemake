@@ -1,9 +1,9 @@
 export enum UIActionEnum {
   Alert = 'alert',
   LinkTo = 'link_to',
-  SetUI = 'set_ui',
-  PushUI = 'push_ui',
-  PopUI = 'pop_ui',
+  SetPage = 'set_page',
+  PushPage = 'push_page',
+  PopPage = 'pop_page',
   LoopImg = 'loop_img',
   /** 加载数据，默认加载: data.zip.json */
   LoadData = 'load_data',
@@ -12,5 +12,12 @@ export enum UIActionEnum {
   SwitchDifficulty = 'switch_difficulty',
   DestoryStage = 'destory_stage',
   RemoveAllEntities = 'remove_all_entities',
-  Exit = 'exit'
+  Exit = 'exit',
+
+  /** @deprecated 旧写法，仍兼容；改用 SetPage/PushPage/PopPage */
+  SetUI = 'set_ui',
+  /** @deprecated 旧写法，仍兼容；改用 SetPage/PushPage/PopPage */
+  PushUI = 'push_ui',
+  /** @deprecated 旧写法，仍兼容；改用 SetPage/PushPage/PopPage */
+  PopUI = 'pop_ui',
 }

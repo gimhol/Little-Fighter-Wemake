@@ -53,7 +53,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(survival_prepare_page)", "sound(ok)"],
+            click: ["push_page(survival_prepare_page)", "sound(ok)"],
           },
         },
         {
@@ -68,7 +68,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(survival_prepare_page_2p)", "sound(ok)"],
+            click: ["push_page(survival_prepare_page_2p)", "sound(ok)"],
           },
         },
         {
@@ -81,7 +81,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(vs_mode_prepare_page)", "sound(ok)"],
+            click: ["push_page(vs_mode_prepare_page)", "sound(ok)"],
           },
         },
         {
@@ -94,7 +94,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(stage_mode_prepare_page)", "sound(ok)"],
+            click: ["push_page(stage_mode_prepare_page)", "sound(ok)"],
           },
         },
         {
@@ -149,7 +149,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(demo_mode_page)", "sound(ok)"],
+            click: ["push_page(demo_mode_page)", "sound(ok)"],
           },
         },
         {
@@ -162,7 +162,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(move_table_page)", "sound(ok)"],
+            click: ["push_page(move_table_page)", "sound(ok)"],
           },
         },
         {
@@ -175,7 +175,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(danmu_game_page)", "sound(ok)"],
+            click: ["push_page(danmu_game_page)", "sound(ok)"],
           },
         },
         {
@@ -188,7 +188,7 @@
           },
           component: ["Reachable(main)"],
           actions: {
-            click: ["push_ui(test_cases_page)", "sound(ok)"],
+            click: ["push_page(test_cases_page)", "sound(ok)"],
           },
         },
         {

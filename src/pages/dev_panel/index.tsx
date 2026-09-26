@@ -139,7 +139,7 @@
 //         <Select
 //           placeholder="页面"
 //           value={ui_id}
-//           onChange={v => lf2?.set_ui(v!)}
+//           onChange={v => lf2?.layers.set_page(v!)}
 //           items={uis}
 //           parse={(o) => [o.id!, o.name]}
 //         />

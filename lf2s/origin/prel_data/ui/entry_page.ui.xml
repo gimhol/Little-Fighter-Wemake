@@ -27,7 +27,7 @@
       </values>
       <actions>
         <click action="sound" args="ok"/>
-        <click action="set_ui" args="loading"/>
+        <click action="set_page" args="loading"/>
         <click action="load_data"/>
       </actions>
     </node>
@@ -72,7 +72,7 @@
       </values>
       <actions>
         <click action="sound" args="ok"/>
-        <click action="push_ui" args="settings,1"/>
+        <click action="push_page" args="settings,1"/>
       </actions>
     </node>
   </node>
