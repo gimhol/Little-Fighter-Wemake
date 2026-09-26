@@ -706,7 +706,7 @@ function App() {
             onClick={() => set_app_state(d => { d.dev_ui_open = !d.dev_ui_open })}
             src={[img_btn_1_2, img_btn_1_3]} />
         </Show>
-        <Show show={ui_id && Number(lfw?.ui_stacks[0]?.uis?.length) > 1}>
+        <Show show={ui_id && (lfw?.layers.bottom?.pages.length ?? 0) > 1}>
           <ToggleImgButton
             onClick={() => lfw?.push_cmd(CMD.F4)}
             src={[img_btn_2_3]} />

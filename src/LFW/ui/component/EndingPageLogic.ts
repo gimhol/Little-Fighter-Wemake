@@ -60,8 +60,9 @@ export class EndingPageLogic extends UIComponent<IEndingPageLogicProps> {
       else
         this.texts_idx += 1
       if (this.texts_idx >= this.texts.length) {
-        if (this.lfw.ui_stacks[0].uis.length > 1) {
-          this.lfw.pop_ui({ until: (_, i) => i === 0 })
+        const layer = this.node.layer;
+        if ((layer?.pages.length ?? 0) > 1) {
+          layer?.pop({ until: (_, i) => i === 0 })
         } else {
           this.lfw.set_ui({ id: "main_page" })
           this.lfw.sounds.play_bgm("bgm/main.wma.mp3")

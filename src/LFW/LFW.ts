@@ -175,8 +175,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       }
       for (const child of node.children) collect(child);
     };
-    for (const stack of this._ui_stacks)
-      for (const ui of stack.uis)
+    for (const layer of this.layers.all)
+      for (const ui of layer.pages)
         collect(ui);
 
     this._i18n.lang = lang;
@@ -194,18 +194,24 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   dev: boolean = false;
   __debugging = false
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   debug(..._1: any[]): void { };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   warn(..._1: any[]): void { };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   log(..._1: any[]): void { };
 
   readonly callbacks = new Callbacks<ILFWCallback>();
   readonly factory: Factory = new Factory();
   readonly bgms: string[] = []
+  readonly layers: UI.UILayers;
+
+  /** @deprecated 使用 `layers` */
+  get ui_stacks(): UI.UILayers { return this.layers }
 
   protected __id = 100;
   protected __team = Number(D.TeamEnum.Max);
   protected _disposed: boolean = false;
-  protected _ui_stacks: UI.UIStack[] = [];
   protected _loading: boolean = false;
   protected _playable: boolean = false;
   protected _mt = new MersenneTwister(Date.now())
@@ -275,11 +281,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   get need_load(): boolean {
     return !this._playable && !this._loading;
   }
-  get ui_stacks(): UI.UIStack[] {
-    return this._ui_stacks
-  }
   get ui(): UI.UINode | undefined {
-    return this._ui_stacks[this._ui_stacks.length - 1]?.ui;
+    return this.layers.ui;
   }
   get mt(): MersenneTwister {
     return this._mt
@@ -352,22 +355,28 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.keyboard = new I.Ditto.Keyboard(this);
     this.keyboard.callback.add(this);
     this.pointings = new I.Ditto.Pointings();
-    I.Ditto.Cache.forget(LFW.DATA_TYPE, LFW.DATA_VERSION).catch(e => { })
-    I.Ditto.Cache.forget(PlayerInfo.DATA_TYPE, PlayerInfo.DATA_VERSION).catch(e => { })
-    I.Ditto.Zip.forget_stored(LFW.DATA_TYPE, LFW.DATA_VERSION).catch(e => { })
+    I.Ditto.Cache.forget(LFW.DATA_TYPE, LFW.DATA_VERSION).catch(e => {
+      I.Ditto.warn(e)
+    })
+    I.Ditto.Cache.forget(PlayerInfo.DATA_TYPE, PlayerInfo.DATA_VERSION).catch(e => {
+      I.Ditto.warn(e)
+    })
+    I.Ditto.Zip.forget_stored(LFW.DATA_TYPE, LFW.DATA_VERSION).catch(e => {
+      I.Ditto.warn(e)
+    })
     this.world = new World(this);
     this.world.start_update();
     this.world.start_render();
     LFW.instances.push(this)
     this.pointings.callback.add(new I.Ditto.UIInputHandle(this));
 
-    const ui_stack = new UI.UIStack(this, 0);
-    ui_stack.callback.add({
+    this.layers = new UI.UILayers(this);
+    this.layers.push().callback.add({
       on_set: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
       on_push: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
       on_pop: (curr, poppeds) => this.callbacks.call("on_ui_changed", curr, poppeds[0]),
     })
-    this.ui_stacks.push(ui_stack)
+
     this._i18n.add({
       '': {
         VERSION_NAME: LFW.VERSION_NAME,
@@ -597,7 +606,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       await this.load_builtin_ui()
       check()
       const ui = this.uis.all.find(v => v.id === this.first_ui)
-      this.set_ui({ id: ui?.id! })
+      this.set_ui({ id: ui?.id })
     }
 
     try {
@@ -683,8 +692,9 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
     const bgms = zip.file(/bgm\/.*?\.mp3$/)
     for (const bgm of bgms) {
-      this.bgms.some(v => v === bgm.name) ||
+      if (!this.bgms.some(v => v === bgm.name)) {
         this.bgms.push(bgm.name)
+      }
     }
     await this.load_ui(zip);
   }
@@ -699,8 +709,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.sounds.dispose();
     this.keyboard.dispose();
     this.pointings.dispose();
-    this._ui_stacks.forEach(u => u.dispose())
-    this._ui_stacks.length = 0;
+    this.layers.dispose()
     const i = LFW.instances.indexOf(this);
     if (i >= 0) LFW.instances.splice(i, 1);
   }
@@ -801,35 +810,19 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   };
 
   set_ui(opts: UI.IPushUIOpts, index: number = 0): void {
-    if (index < 0) return;
-    if (index >= this._ui_stacks.length)
-      index = this._ui_stacks.length
-    if (!this._ui_stacks[index])
-      this._ui_stacks[index] = new UI.UIStack(this, index)
-    this._ui_stacks[index].set(opts)
+    this.layers.set_ui(opts, index)
   }
 
-  pop_ui(opts?: UI.IPopUIOpts): void {
-    this._ui_stacks[0].pop(opts)
+  pop_ui(opts?: UI.IPopUIOpts, index: number = 0): void {
+    this.layers.pop_ui(opts, index)
   }
 
   pop_ui_safe(): void {
-    const stack_index = this._ui_stacks.length - 1
-    const stack = this._ui_stacks[stack_index];
-    if (!stack) return;
-    if (stack.uis.length > 1 || stack_index > 0)
-      stack.pop()
-    if (!stack.ui && stack_index > 0)
-      this._ui_stacks.splice(stack_index, 1)
+    this.layers.pop_ui_safe()
   }
 
   push_ui(opts: UI.IPushUIOpts, index: number = 0): void {
-    if (index < 0) return;
-    if (index >= this._ui_stacks.length)
-      index = this._ui_stacks.length
-    if (!this._ui_stacks[index])
-      this._ui_stacks[index] = new UI.UIStack(this, index)
-    this._ui_stacks[index].push(opts)
+    this.layers.push_ui(opts, index)
   }
 
 

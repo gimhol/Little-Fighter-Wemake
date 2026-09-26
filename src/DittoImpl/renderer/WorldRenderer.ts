@@ -221,8 +221,9 @@ export class WorldRenderer implements IWorldRenderer {
     this.bg_flags.render();
     this.bg_render.set_indicator_visible(!!(bg_flags & BG_INDICATINGS.layer));
     this.render_entities(dt, this.dfactor);
-    for (const ui_stack of this.lfw.ui_stacks)
-      ui_stack.ui?.renderer.render(dt, this.dfactor)
+    const { layers } = this.lfw;
+    for (let i = 0; i < layers.length; i++)
+      layers.at(i)?.ui?.renderer.render(dt, this.dfactor)
 
     this.render_layers();
     this.dirty = false;

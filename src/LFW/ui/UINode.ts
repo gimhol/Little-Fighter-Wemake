@@ -8,11 +8,12 @@ import { round_float } from '../utils/math/round_float';
 import { is_num } from '../utils/type_check/is_num';
 import type { ICookedUIInfo } from "./ICookedUIInfo";
 import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
-import type { IUIInfo } from "./IUIInfo.dat";
 import type { IUICallback } from "./IUICallback";
+import type { IUIInfo } from "./IUIInfo.dat";
 import type { IUIKeyEvent } from "./IUIKeyEvent";
 import { LF2PointerEvent } from "./LF2PointerEvent";
 import { Style } from "./Style";
+import type { UILayer } from './UILayer';
 import { actor } from './action/Actor';
 import type { UIComponent } from './component/UIComponent';
 
@@ -62,6 +63,8 @@ export class UINode implements IDebugging {
    * @type {UINode}
    */
   protected _root: UINode;
+  /** 所在 UI 层；仅根节点会被赋值，子节点请用 layer 读取 */
+  protected _layer?: UILayer;
   protected _focused_node?: UINode;
   protected _components: UIComponent[] = [];
   protected _state: any = {};
@@ -173,6 +176,7 @@ export class UINode implements IDebugging {
   get id(): string | undefined { return this.data.id }
   get name(): string | undefined { return this.data.name }
   get root(): UINode { return this._root; }
+  get layer(): UILayer | undefined { return this._root._layer }
 
   get depth(): number {
     return this.parent ? this.parent.depth + 1 : 0;
@@ -374,12 +378,13 @@ export class UINode implements IDebugging {
 
   renderer: IUINodeRenderer;
 
-  constructor(lfw: LFW, data: ICookedUIInfo, parent?: UINode) {
+  constructor(lfw: LFW, data: ICookedUIInfo, parent?: UINode, layer?: UILayer) {
     this.lfw = lfw;
     this.data = Object.freeze(data);
     this.raw = data.raw;
     this._parent = parent;
     this._root = parent?.root ?? this;
+    this._layer = layer;
     this._disabled = this.data.disabled == true
     this._visible = this.data.visible != false
     this._clip_children = this.data.clips == true
@@ -595,8 +600,8 @@ export class UINode implements IDebugging {
     this.renderer.on_hide?.();
   }
 
-  static create(lfw: LFW, info: ICookedUIInfo, parent?: UINode): UINode {
-    const ret = new UINode(lfw, info, parent);
+  static create(lfw: LFW, info: ICookedUIInfo, parent?: UINode, layer?: UILayer): UINode {
+    const ret = new UINode(lfw, info, parent, layer);
     const { component } = ret.data;
     if (component)
       for (const c of lfw.factory.create_components(ret, component))

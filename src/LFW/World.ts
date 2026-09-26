@@ -505,13 +505,11 @@ export class World {
   }
 
   protected update_ui() {
-    const { ui_stacks } = this.lfw;
-    const len = ui_stacks.length;
+    const { layers } = this.lfw;
     let flag = true;
     const uidt = round_float(16.66666 * this.dataset.atom_time);
-    for (let i = len - 1; i >= 0; i--) {
-      const ui_stack = ui_stacks[i];
-      const { ui } = ui_stack
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const ui = layers.at(i)?.ui;
       if (!ui || ui.disabled) continue;
       if (!flag) continue;
       for (const e of this.lfw.events) {

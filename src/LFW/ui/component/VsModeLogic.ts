@@ -62,7 +62,7 @@ export class VsModeLogic extends UIComponent {
           this.fsm.state_time > 1000
         ) {
           e.stop_immediate_propagation();
-          this.lfw.pop_ui()
+          this.lfw.pop_ui_safe()
         }
         break;
       }
