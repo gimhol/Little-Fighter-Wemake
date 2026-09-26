@@ -1,10 +1,10 @@
 name: Deploy to GitHub Pages
 
 on:
-  # 打新 tag 时才触发构建（如 v0.1.46）
+  # 打正式版本 tag（如 v0.1.56）时自动跑；预览 tag（v0.1.56-preview-1）会跳过，见 jobs.build.if
   push:
     tags:
-      - '*'
+      - 'v*'
   workflow_dispatch:
 
 # 允许 deploy-pages 写 Pages 环境
@@ -19,6 +19,8 @@ concurrency:
 
 jobs:
   build:
+    # 预览 tag 名字里带 '-'（v0.1.56-preview-1）只发 GitHub Release，不再跟着发 Pages；手动触发总是跑
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (full history + tags)
