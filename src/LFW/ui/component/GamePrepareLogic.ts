@@ -1,18 +1,16 @@
 import { LocalController } from "../../controller/LocalController";
 import { Defines, FacingFlag, SurvivalRankOids, TeamEnum } from "../../defines";
-import type { IEntityData } from "../../defines";
 import type { IPropsMeta } from "../../defines/ISchema";
 import { Ditto } from "../../ditto";
 import { StatBarType } from "../../entity/StatBarType";
 import type { ILFWCallback } from "../../ILFWCallback";
 import type { SurvivalRankItem, SurvivalRankMy } from "../../LFW";
 import { WorldDataset } from "../../WorldDataset";
-import type { UINode } from "../UINode";
 import { BackgroundSwitcher } from "./BackgroundSwitcher";
 import { CharMenuLogic } from "./CharMenu/CharMenuLogic";
 import { Picture } from "./Picture";
-import { StageSwitcher } from "./StageSwitcher";
 import { ScrollView } from "./ScrollView";
+import { StageSwitcher } from "./StageSwitcher";
 import { UIComponent } from "./UIComponent";
 export interface IGamePrepareLogicProps {
   stage_switcher: StageSwitcher | null,
