@@ -55,8 +55,14 @@ export class CameraCtrl extends UIComponent {
       this.focus_lr(1)
 
     if (this.auto && this.staring) {
-      const cam_x = this.staring.position.x - this.world.dataset.screen_w / 2
-      this.lfw.push_cmd(CMD.DIST_CAM, `${cam_x}`)
+      const { screen_w, screen_h } = this.world.dataset
+      const { zoom_x, zoom_y } = this.world.bg
+      // 可见尺寸 = screen / zoom（见 Camera.update 的 max_cam_x / cam_max_y）
+      const zx = zoom_x || 1
+      const zy = zoom_y || 1
+      const cam_x = this.staring.position.x - screen_w / (2 * zx)
+      const cam_y = -0.5 * round(this.staring.position.z) - screen_h / (2 * zy)
+      this.lfw.push_cmd(CMD.DIST_CAM, `${cam_x},${cam_y}`)
     }
   }
   override on_stop(): void {
