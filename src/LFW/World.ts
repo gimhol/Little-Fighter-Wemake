@@ -630,6 +630,10 @@ export class World {
     let local_count = 0;
     let human_count = 0;
     let fighter_count = 0;
+    // 可见宽度 = screen / zoom（bg 的 zoom 会缩放世界）；镜头记录的是视口左边缘
+    const view_w = this.dataset.screen_w / (this.bg.zoom_x || 1)
+    // 前瞻量：固定世界距离（不随 zoom 缩放，zoom 越大屏幕上前瞻越明显）
+    const lead = this.dataset.screen_w / 6
     for (let i = 0; i < this.entities.length; i++) {
       const a = this.entities[i];
       if (offset) this.entities[i - offset] = a;
@@ -652,7 +656,7 @@ export class World {
           const count = this.team_alive_counts.get(team) ?? 0;
           this.team_alive_counts.set(team, count + 1);
         }
-        const x = a.position.x - this.dataset.screen_w / 2 + (a.facing * this.dataset.screen_w) / 6;
+        const x = a.position.x - view_w / 2 + a.facing * lead;
         const z = a.position.z;
         fighter_x_sum += x;
         fighter_z_sum += z;
@@ -709,18 +713,20 @@ export class World {
       }
     }
 
+    // y 的偏移在写入时补（z 的采样不含半屏）；可见高度 = screen / zoom
+    const half_h = this.dataset.screen_h / (2 * (this.bg.zoom_y || 1))
     if (local_count) {
       this.camera.destination.x = round(local_x_sum / local_count);
-      this.camera.destination.y = -0.5 * round(local_z_sum / local_count) - this.dataset.screen_h / 2;
+      this.camera.destination.y = -0.5 * round(local_z_sum / local_count) - half_h;
     } else if (human_count) {
       this.camera.destination.x = round(human_x_sum / human_count);
-      this.camera.destination.y = -0.5 * round(human_z_sum / human_count) - this.dataset.screen_h / 2;
+      this.camera.destination.y = -0.5 * round(human_z_sum / human_count) - half_h;
     } else if (puppet_count) {
       this.camera.destination.x = round(puppet_x_sum / puppet_count);
-      this.camera.destination.y = -0.5 * round(puppet_z_sum / puppet_count) - this.dataset.screen_h / 2;
+      this.camera.destination.y = -0.5 * round(puppet_z_sum / puppet_count) - half_h;
     } else if (fighter_count) {
       this.camera.destination.x = round(fighter_x_sum / fighter_count);
-      this.camera.destination.y = -0.5 * round(fighter_z_sum / fighter_count) - this.dataset.screen_h / 2;
+      this.camera.destination.y = -0.5 * round(fighter_z_sum / fighter_count) - half_h;
     }
 
     this.collisions.forEach(c => collisions_keeper.handle(c));

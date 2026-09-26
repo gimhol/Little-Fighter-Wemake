@@ -171,11 +171,12 @@ export class DanmuGameLogic extends SummaryLogic {
     const staring = this._cam_ctrl?.staring;
     if (staring && this._cam_ctrl?.auto != false) {
       const { left, right } = this.world.stage;
-      let cam_x = staring.position.x - this.world.dataset.screen_w / 2
+      const view_w = this.world.dataset.screen_w / (this.world.bg.zoom_x || 1)
+      let cam_x = staring.position.x - view_w / 2
       const max_cam_left = left;
       const max_cam_right = right;
       if (cam_x < max_cam_left) cam_x = max_cam_left;
-      if (cam_x > max_cam_right - this.world.dataset.screen_w) cam_x = max_cam_right - this.world.dataset.screen_w;
+      if (cam_x > max_cam_right - view_w) cam_x = max_cam_right - view_w;
       this.lfw.push_cmd(CMD.DIST_CAM, `${cam_x}`)
       this.world.camera.jump_x(cam_x);
     }
@@ -501,7 +502,8 @@ export class DanmuGameLogic extends SummaryLogic {
 
     const staring = this._cam_ctrl?.staring;
     if (staring && this._cam_ctrl?.auto != false) {
-      this.lfw.push_cmd(CMD.DIST_CAM, `${staring.position.x - this.world.dataset.screen_w / 2}`)
+      const view_w = this.world.dataset.screen_w / (this.world.bg.zoom_x || 1)
+      this.lfw.push_cmd(CMD.DIST_CAM, `${staring.position.x - view_w / 2}`)
     }
     else if (!staring)
       this.update_staring()

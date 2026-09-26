@@ -1,5 +1,5 @@
 import { FSM } from "../../base/FSM";
-import { Defines, EntityGroup, GameKey, OID, type IEntityData } from "../../defines";
+import { EntityGroup, GameKey, OID, type IEntityData } from "../../defines";
 import { FacingFlag } from "../../defines/FacingFlag";
 import type { IPropsMeta } from "../../defines/ISchema";
 import type { IStageInfo } from "../../defines/IStageInfo";
@@ -251,9 +251,11 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     else fighters_datas.push(...boss_datas)
 
     this.lfw.mt.mark = 'demo_startup_cam_x'
-    let cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - Defines.MODERN_SCREEN_WIDTH)
-    const min_x = is_stage_mode ? (cam_x + 40) : (cam_x + 1 * Defines.MODERN_SCREEN_WIDTH / 3)
-    const max_x = is_stage_mode ? (80) : (cam_x + 2 * Defines.MODERN_SCREEN_WIDTH / 3)
+    // 可见宽度 = screen / zoom（bg 的 zoom 会缩放世界，zoom>1 时视口更窄）
+    const view_w = this.lfw.world.dataset.screen_w / (this.lfw.world.bg.zoom_x || 1)
+    const cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - view_w)
+    const min_x = is_stage_mode ? (cam_x + 40) : (cam_x + 1 * view_w / 3)
+    const max_x = is_stage_mode ? (80) : (cam_x + 2 * view_w / 3)
 
     const situation = DemoModeLogic.get_situation(this.lfw);
     this.props.situation_name?.set_text(situation.title)
