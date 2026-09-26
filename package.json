@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",
-    "@fimagine/frontend_deployer": "^1.1.3",
+    "@fimagine/frontend_deployer": "^1.2.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.13",
     "@types/qs": "^6.14.0",
