@@ -120,7 +120,7 @@ export class LaunchPage extends UIComponent<ILaunchPageProps> {
       },
       update: (dt) => {
         if (this.props.long_text.find_component(OpacityAnimation)!.done) {
-          this.lfw.set_ui({ id: this.props.entry });
+          this.lfw.layers.set_ui({ id: this.props.entry });
           return Status.End
         }
       }

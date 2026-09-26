@@ -118,7 +118,7 @@ export abstract class LFWNetworkDriver {
     lf2.world.dataset.key_hit_duration = key_hit_duration_arr[v];
 
     lf2.load(...LFW.ZIPS);
-    lf2.set_ui({ id: "network_loading" });
+    lf2.layers.set_ui({ id: "network_loading" });
     lf2.pointings.enabled = false;
     lf2.keyboard.enabled = false;
     lf2.mt.reset(resp.seed ?? 0, this.debugging);
@@ -172,7 +172,7 @@ export abstract class LFWNetworkDriver {
     lf2.world.after_update = this.after_update;
     lf2.world.before_update = this.before_update;
     lf2.world.reset_game_time();
-    lf2.set_ui({ id: "main_page" });
+    lf2.layers.set_ui({ id: "main_page" });
     this.on_start();
   }
   protected run_tick(seq: number, resp: IRespTick | IRespKeyTick): void {

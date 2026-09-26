@@ -10,9 +10,9 @@ interface IUIActionHandler {
 class UIActor {
   static readonly TAG: string = "Actor";
   private _handler_map = new Map<string, IUIActionHandler>([
-    [UIActionEnum.SetUI, ({ lfw }, layout_id, index) => lfw.set_ui({ id: layout_id }, Number(index) || 0)],
-    [UIActionEnum.PushUI, ({ lfw }, layout_id, index) => lfw.push_ui({ id: layout_id }, Number(index) || 0)],
-    [UIActionEnum.PopUI, ({ lfw }) => lfw.pop_ui_safe()],
+    [UIActionEnum.SetUI, ({ lfw }, layout_id, index) => lfw.layers.set_ui({ id: layout_id }, Number(index) || 0)],
+    [UIActionEnum.PushUI, ({ lfw }, layout_id, index) => lfw.layers.push_ui({ id: layout_id }, Number(index) || 0)],
+    [UIActionEnum.PopUI, ({ lfw }) => lfw.layers.pop_ui_safe()],
     [UIActionEnum.LoadData, ({ lfw }, url) => {
 
       lfw.load(...(url ? [url] : LFW.ZIPS.slice(1)))

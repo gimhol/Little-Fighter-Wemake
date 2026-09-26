@@ -61,7 +61,7 @@ export function useLFW(options: IUseLFWOptions = {}): IUseLFWResult {
   // 进度 / UI
   useCallbacks(lfw?.callbacks, () => ({
     on_progress: (content, value) => opts.current.on_progress?.(content, value),
-    on_ui_changed: (curr) => { if (hide_ui && !ready_ref.current && curr) lfw?.set_ui({}) },
+    on_ui_changed: (curr) => { if (hide_ui && !ready_ref.current && curr) lfw?.layers.set_ui({}) },
   }), [hide_ui]);
 
   // 接线 + 加载
@@ -77,7 +77,7 @@ export function useLFW(options: IUseLFWOptions = {}): IUseLFWResult {
         return;
       }
       if (disposed) return;
-      if (opts.current.hide_ui) lfw.set_ui({});
+      if (opts.current.hide_ui) lfw.layers.set_ui({});
       if (opts.current.muted) lfw.sounds.set_muted(true);
       ready_ref.current = true;
       set_ready(true);

@@ -606,7 +606,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       await this.load_builtin_ui()
       check()
       const ui = this.uis.all.find(v => v.id === this.first_ui)
-      this.set_ui({ id: ui?.id })
+      this.layers.set_ui({ id: ui?.id })
     }
 
     try {
@@ -727,7 +727,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const next = this.world.stage.data.next;
     if (!next) return;
     if (next === 'end') {
-      this.set_ui({ id: "ending_page" })
+      this.layers.set_ui({ id: "ending_page" })
       return;
     }
     const next_stage = this.datas.stages?.find((v) => v.id === next);
@@ -808,23 +808,6 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     if (word === "paused") return this.world.paused ? 1 : 0;
     return word;
   };
-
-  set_ui(opts: UI.IPushUIOpts, index: number = 0): void {
-    this.layers.set_ui(opts, index)
-  }
-
-  pop_ui(opts?: UI.IPopUIOpts, index: number = 0): void {
-    this.layers.pop_ui(opts, index)
-  }
-
-  pop_ui_safe(): void {
-    this.layers.pop_ui_safe()
-  }
-
-  push_ui(opts: UI.IPushUIOpts, index: number = 0): void {
-    this.layers.push_ui(opts, index)
-  }
-
 
   /**
    * 触发进度回调

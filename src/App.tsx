@@ -99,7 +99,7 @@ const load_files = async (lfw: LFW, files: File[]) => {
   } else if (lfw.ui?.id?.toLowerCase().indexOf('loading') == -1) {
     LFW.ZIPS = [...LFW.ZIPS, ...zips]
     lfw.load(...zips)
-    lfw.set_ui({ id: 'loading' })
+    lfw.layers.set_ui({ id: 'loading' })
   }
 }
 
@@ -327,7 +327,7 @@ function App() {
     },
     on_prel_loaded: (lf2) => {
       const { page } = params
-      if (typeof page === 'string') lf2.set_ui({ id: page })
+      if (typeof page === 'string') lf2.layers.set_ui({ id: page })
     },
     on_lang_changed: (lang) => window.runtime?.SetLang?.(lang),
   })
@@ -769,9 +769,9 @@ function App() {
             }
             lfw.push_cmd(CMD.F2)
             if (lfw.ui?.id == 'settings')
-              lfw.pop_ui_safe()
+              lfw.layers.pop_ui_safe()
             else
-              lfw.set_ui({ id: "settings" }, 1);
+              lfw.layers.set_ui({ id: "settings" }, 1);
           }}
           src={[img_btn_1_1, img_btn_1_1]}
         />
@@ -898,7 +898,7 @@ function App() {
         <Select
           placeholder="页面"
           value={ui_id}
-          onChange={v => lfw?.set_ui({ id: v })}
+          onChange={v => lfw?.layers.set_ui({ id: v })}
           options={uis}
           parse={(o) => [o.id!, o.name]}
         />
