@@ -1,22 +1,31 @@
-name: Build Desktop & Release
+name: Build
 
 on:
-  # 打 v* tag（如 v0.1.56-preview-1）时自动构建桌面端并发布 Release
+  # 打 v* tag（如 v0.1.56-preview-1）时自动构建并发布 GitHub Release
   push:
     tags:
       - "v*"
+  # 手动触发：可指定 tag，并勾选是否同时发布到 lf.gim.ink
   workflow_dispatch:
     inputs:
       tag:
         description: 发布用的 tag（留空 = v<package.json 版本>；不存在时基于当前分支创建）
         required: false
         default: ""
+      publish:
+        description: 同时发布到 lf.gim.ink（前端 <version>/ + latest.json + desktop/ 安装包）
+        type: boolean
+        default: false
+      dry_run:
+        description: 配合 publish：只打印上传命令，不真的上传（不需要 secret）
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: build-desktop-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -150,3 +159,27 @@ jobs:
           } else {
             gh release upload $tag $files --clobber
           }
+
+      # ---- 以下为 lf.gim.ink 发布：仅 workflow_dispatch 勾选 publish 时跑（本地等价：npm run deploy / deploy:latest / deploy:installer）----
+      - name: Write deploy credentials
+        if: ${{ inputs.publish && !inputs.dry_run }}
+        env:
+          DEPLOYER_PRIVATE_JSON5: ${{ secrets.DEPLOYER_PRIVATE_JSON5 }}
+        run: |
+          if (-not $env:DEPLOYER_PRIVATE_JSON5) { throw "缺少仓库 secret DEPLOYER_PRIVATE_JSON5（内容 = deployer.private.json5 的全文）" }
+          Set-Content -Path deployer.private.json5 -Value $env:DEPLOYER_PRIVATE_JSON5 -Encoding utf8
+
+      # dry_run 走环境变量：`npm run deploy -- --dry` 里的 --dry 会被 npm 吞掉
+      - name: Publish web frontend to lf.gim.ink/<version>/
+        if: ${{ inputs.publish }}
+        env:
+          DEPLOY_DRY: ${{ inputs.dry_run && '1' || '' }}
+        run: npm run deploy
+
+      - name: Publish latest.json
+        if: ${{ inputs.publish }}
+        run: node scripts/deploy-latest.mjs ${{ inputs.dry_run && '--dry' || '' }}
+
+      - name: Publish installer to lf.gim.ink/desktop/
+        if: ${{ inputs.publish }}
+        run: node scripts/deploy-installer.mjs ${{ inputs.dry_run && '--dry' || '' }}
