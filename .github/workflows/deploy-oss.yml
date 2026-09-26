@@ -1,0 +1,187 @@
+name: Deploy to lf.gim.ink (OSS)
+
+# 手动触发：Actions -> 「Deploy to lf.gim.ink (OSS)」-> Run workflow
+# 需要仓库 secret：DEPLOYER_PRIVATE_JSON5（内容 = 本地 deployer.private.json5 的全文）
+#
+# 本地等价操作：
+#   网页前端   npm run deploy && npm run deploy:latest
+#   桌面安装包 npm run build:installer && npm run deploy:installer
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 要部署的 tag / 分支（留空 = 当前选择的分支）
+        required: false
+        default: ""
+      web:
+        description: 部署网页前端（dist -> <version>/ 并刷新 latest.json）
+        type: boolean
+        default: true
+      installer:
+        description: 构建并部署桌面安装包（-> desktop/ + latest.yml）
+        type: boolean
+        default: true
+      dry_run:
+        description: 只构建不上传（网页前端上传会跳过；latest.json / 安装包走 --dry）
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# 同一时间只跑一个发布，避免两处交叉上传同一目录
+concurrency:
+  group: deploy-oss
+  cancel-in-progress: false
+
+jobs:
+  web:
+    name: 网页前端
+    if: ${{ inputs.web }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          lfs: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      # 数据转换需要 ffmpeg（音频转 MP3）与 imagemagick（BMP 转 PNG）
+      - name: Install ffmpeg & imagemagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build tool / game data / prel data
+        run: |
+          npm run build:tool
+          npm run build:data
+          npm run build:prel
+
+      # tsc -b && vite build -> dist/（BUILD_TAG 会写进 dist/version.json）
+      - name: Build app
+        env:
+          BUILD_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.ref }}
+        run: npm run build
+
+      - name: Write deploy credentials
+        env:
+          DEPLOYER_PRIVATE_JSON5: ${{ secrets.DEPLOYER_PRIVATE_JSON5 }}
+        run: |
+          if [ -z "$DEPLOYER_PRIVATE_JSON5" ]; then
+            echo "::error::缺少仓库 secret DEPLOYER_PRIVATE_JSON5（内容 = deployer.private.json5 的全文）"
+            exit 1
+          fi
+          printf '%s\n' "$DEPLOYER_PRIVATE_JSON5" > deployer.private.json5
+
+      # 本地是 npm run deploy（scripts/deploy-web.mjs 按 package.json 版本算远端目录）；
+      # dry_run 走环境变量：`npm run deploy -- --dry` 里的 --dry 会被 npm 吞掉，不能这么传
+      - name: Upload web frontend to lf.gim.ink/<version>/
+        env:
+          DEPLOY_DRY: ${{ inputs.dry_run && '1' || '' }}
+        run: npm run deploy
+
+      - name: Update latest.json
+        run: node scripts/deploy-latest.mjs ${{ inputs.dry_run && '--dry' || '' }}
+
+  installer:
+    name: 桌面安装包
+    if: ${{ inputs.installer }}
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      ELECTRON_MIRROR: https://github.com/electron/electron/releases/download/
+      ELECTRON_BUILDER_BINARIES_MIRROR: https://github.com/electron-userland/electron-builder-binaries/releases/download/
+    steps:
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          lfs: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 安装包内置的联机服务器 / 数据工具会直接 bundle server 源码，需要它的依赖
+      - name: Install server dependencies
+        run: npm ci --prefix server
+
+      - name: Ensure electron binary
+        run: |
+          if (-not (Test-Path "node_modules/electron/dist/electron.exe")) {
+            node node_modules/electron/install.js
+          }
+
+      # Windows runner 没预装 ffmpeg / imagemagick（数据转换与包内转换器都要用）
+      - name: Install ffmpeg & imagemagick
+        run: |
+          choco install ffmpeg imagemagick -y --no-progress
+          $has_ff = [bool](Get-Command ffmpeg -ErrorAction SilentlyContinue)
+          $has_magick = [bool](Get-Command magick -ErrorAction SilentlyContinue)
+          if (-not $has_ff) {
+            $f = Get-ChildItem "C:\ProgramData\chocolatey\lib\ffmpeg" -Recurse -Filter ffmpeg.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($f) { "FFMPEG_PATH=$($f.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append; $has_ff = $true }
+          }
+          if (-not $has_magick) {
+            $m = Get-ChildItem "C:\Program Files\ImageMagick-*\magick.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($m) { "MAGICK_PATH=$($m.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append; $has_magick = $true }
+          }
+          if (-not ($has_ff -and $has_magick)) { throw "ffmpeg / magick 未就绪" }
+          Write-Host "ffmpeg / magick OK"
+
+      - name: Build tool / game data / prel data
+        run: |
+          npm run build:tool
+          npm run build:data
+          npm run build:prel
+
+      - name: Build app
+        env:
+          BUILD_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.ref }}
+        run: npm run build
+
+      # NSIS 安装包 + 免安装版（--no-build 复用上一步的 dist）
+      - name: Build desktop installer & portable zip
+        run: node scripts/build-installer.mjs --no-build
+
+      - name: Write deploy credentials
+        env:
+          DEPLOYER_PRIVATE_JSON5: ${{ secrets.DEPLOYER_PRIVATE_JSON5 }}
+        run: |
+          if (-not $env:DEPLOYER_PRIVATE_JSON5) { throw "缺少仓库 secret DEPLOYER_PRIVATE_JSON5（内容 = deployer.private.json5 的全文）" }
+          Set-Content -Path deployer.private.json5 -Value $env:DEPLOYER_PRIVATE_JSON5 -Encoding utf8
+
+      # 校验 release/installer 里的 latest.yml 与安装包 sha512 一致后，上传 exe + blockmap + latest.yml
+      - name: Upload installer to lf.gim.ink/desktop/
+        run: node scripts/deploy-installer.mjs ${{ inputs.dry_run && '--dry' || '' }}
+
+      - name: Upload artifacts (仅留档)
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-win
+          path: release/installer/*
+          retention-days: 14
