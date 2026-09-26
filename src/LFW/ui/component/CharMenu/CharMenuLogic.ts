@@ -268,12 +268,12 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
   get is_player_sel(): boolean { return this.fsm.state?.key === CharMenuState.PlayerSel }
   press_j(player: PlayerInfo) {
     const state = this.players.get(player)
-    if (!state) { if (this.is_player_sel) this.node.layer?.pop(); }
+    if (!state) { if (this.is_player_sel) this.node.pop_page({ min_pages: 1 }); }
     else if (state.step <= SlotStep.FighterSel) {
       // auto_join：不取消加入（避免退回“按攻击加入”的未加入态），按“跳跃”直接返回上一页
       if (this.props.auto_join) {
         this.lfw.sounds.play_preset("cancel")
-        this.node.layer?.pop({ min_pages: 1 })
+        this.node.pop_page({ min_pages: 1 })
         return
       }
       this.players.delete(player);

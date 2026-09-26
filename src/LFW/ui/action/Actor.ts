@@ -10,7 +10,7 @@ interface IUIActionHandler {
 /** 页面动作（旧写法 set_ui/push_ui/pop_ui 仍注册为别名） */
 const act_set_page: IUIActionHandler = ({ lfw }, layout_id, index) => lfw.layers.set_page({ id: layout_id }, Number(index) || 0)
 const act_push_page: IUIActionHandler = ({ lfw }, layout_id, index) => lfw.layers.push_page({ id: layout_id }, Number(index) || 0)
-const act_pop_page: IUIActionHandler = (n) => n.layer?.pop()
+const act_pop_page: IUIActionHandler = (n) => n.pop_page()
 class UIActor {
   static readonly TAG: string = "Actor";
   private _handler_map = new Map<string, IUIActionHandler>([

@@ -62,7 +62,7 @@ export class VsModeLogic extends UIComponent {
           this.fsm.state_time > 1000
         ) {
           e.stop_immediate_propagation();
-          this.node.layer?.pop({ min_pages: 1 })
+          this.node.pop_page({ min_pages: 1 })
         }
         break;
       }

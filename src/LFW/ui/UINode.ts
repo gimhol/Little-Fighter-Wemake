@@ -13,7 +13,7 @@ import type { IUIInfo } from "./IUIInfo.dat";
 import type { IUIKeyEvent } from "./IUIKeyEvent";
 import { LF2PointerEvent } from "./LF2PointerEvent";
 import { Style } from "./Style";
-import type { UILayer } from './UILayer';
+import type { IPopPageOpts, UILayer } from './UILayer';
 import { actor } from './action/Actor';
 import type { UIComponent } from './component/UIComponent';
 
@@ -177,6 +177,25 @@ export class UINode implements IDebugging {
   get name(): string | undefined { return this.data.name }
   get root(): UINode { return this._root; }
   get layer(): UILayer | undefined { return this._root._layer }
+
+  /**
+   * 弹掉本页：仅当自己仍然是所在层的栈顶时生效，否则什么都不做。
+   *
+   * 页面自己响应输入后「返回上一页」时用它代替 `layer.pop()`：
+   * 同一次输入可能触发多次（典型例子：两个玩家的「跳跃」键位设成同一个按键，
+   * 每个玩家各自的处理器都会跑一遍），直接 pop 的话第二次会连下面那一页一起弹掉。
+   *
+   * 注意与 `UILayers.pop_page(opts, index)` 区分：那个是按层号弹，这里是弹自己这一页。
+   *
+   * @returns 是否真的弹了
+   */
+  pop_page(opts?: IPopPageOpts): boolean {
+    const root = this._root;
+    const layer = root._layer;
+    if (!layer || layer.ui !== root) return false;
+    layer.pop(opts);
+    return true;
+  }
 
   get depth(): number {
     return this.parent ? this.parent.depth + 1 : 0;
