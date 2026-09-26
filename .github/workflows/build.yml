@@ -33,6 +33,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 手动触发先校验输入：勾了 skip_build 却没勾 publish 时，三个 job 会全部跳过（白跑一次）
+  guard:
+    name: Check inputs
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate inputs
+        run: |
+          if [ "${{ inputs.skip_build }}" = "true" ] && [ "${{ inputs.publish }}" != "true" ]; then
+            echo "::error::勾了『复用已有构建产物』却没勾 publish —— 三个 job 都会被跳过。要发布 lf.gim.ink 就勾上 publish；要重新构建就取消 skip_build。"
+            exit 1
+          fi
+          if [ "${{ inputs.publish }}" != "true" ]; then
+            echo "::warning::没勾 publish：本次只构建并发 GitHub Release / Pages，不会传到 lf.gim.ink"
+          fi
+
   build:
     # 勾了 skip_build 就只走 publish（复用上次产物），这里整个跳过
     if: ${{ !inputs.skip_build }}
@@ -208,12 +224,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # 默认按 package.json 的版本找对应的 tag（而不是当前分支，否则可能取到旧版本的产物）
+          version=$(node -p "require('./package.json').version")
           if [ "${{ inputs.skip_build }}" = "true" ]; then
             ref="${{ inputs.tag }}"
-            if [ -z "$ref" ]; then ref="${{ github.ref_name }}"; fi
+            if [ -z "$ref" ]; then ref="v$version"; fi
             id=$(gh run list --workflow build.yml --branch "$ref" --status success --limit 1 --json databaseId --jq '.[0].databaseId')
             if [ -z "$id" ]; then
-              echo "::error::在 $ref 上找不到成功的构建运行；先跑一次构建，或取消勾选『复用已有构建产物』"
+              echo "::error::在 $ref 上找不到成功的构建运行；先推一次 v$version 的 tag，或取消勾选『复用已有构建产物』"
               exit 1
             fi
             echo "复用运行 $id（$ref）"
