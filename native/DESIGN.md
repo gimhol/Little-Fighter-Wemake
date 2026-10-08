@@ -9097,3 +9097,31 @@ rlinfo/rlui/rlz/rlfind/rlfocus/rlfn/rltree/rlact/rldisp`）、`unpatch`（TS 侧
 **测试**：用例 `cases/lfw/uinode_life.txt` **59 行** / `uilayer.txt` **70 行**；变异 `lfw_uinode_life.mjs`
 **38/38 全杀**；全量差分 **221/221**、lint 全清。
 
+## 104. 切片 4AQ：UI 缝换真实现（接线第一段）
+
+`ILfwHost` 删除六条 UI 缝（`ui_cook_path` / `ui_cook_value` / `ui_xml_to_info` / `ui_add` /
+`ui_clear` / `ui_all`）与 `create_layers` 缝；`LFW` 构造函数自建真 `ui::UILayers`
+（`_layers_own`，`_layers` 指过去），只给 **ctor 里第一次 push 的那层**接
+`on_set/on_push/on_pop` → `ui_changed`（照 TS 的只接一层）。`load_ui` / `load_builtin_ui` /
+首屏查找改走真 `ui::xml_to_ui_info` / `ui::cook_ui_info(lfw, v|path, parent=nullptr, …)` /
+`ui_helper().add·clear·all`；`iuilayer.h`/`cook_ui_info.h`/`xml_to_ui_info.h` 进 lfw.cpp。
+
+台面：删 `FakeLayers` 与七条缝假实现（连带 `_ui_list`）；TS 侧同步移除 `uis.add/clear/all`
+与 `layers.set_page` 四条补丁（`unpatch` 保留为占位 op）；`listen` 新增 `on_ui_changed`
+归一（`cb|on_ui_changed|?|u` 风格，替代直接 render 节点导致的环境循环）；新增
+`flset`/`flpush`（驱动 `lfw.layers` 第 0 层）以覆盖栈回调接线。用例 `uinode_life.txt` 增至 **63 行**
+（多了 `uipg pgX` + set_page 早退/push_page/flset/flpush 流程，声效两遍 + `on_ui_changed` 两条）。
+
+照抄怪癖（编号接 144 → 145）：145. 栈回调只接一层：ctor 里 `layers.push()` 返回的底层的
+`callback.add({on_set,on_push,on_pop})` 才接 `ui_changed`；后续 `ensure(i)` 新建层的回调为空 ——
+所以第 2 层的页 set/push **不**派 `on_ui_changed`（照抄 TS）。146. `load_ui` 的 xml 分支：
+`text` 假值跳过、`root` 空跳过、`ui_info` 假值或空对象（`Object.keys` 空）跳过；
+`_disposed` 时 `uis.clear()` 并把 `uis.all` 当返回值（**不**置 `_ui_loaded`）。147. `load_builtin_ui`
+按 `_index.json` 顺序 `ret.unshift(...)`（**倒序**堆），最后一次性 `uis.add(...ret)`。
+
+偏差记录：`IUiLayers` 抽象类保留（作 `UILayers` 基类）；`UILayers` 成员所有权在 `LFW`
+（`unique_ptr`），`dispose()` 只清层不注销对象；台面侧的补丁/假实现/`listen` 归一不属于端口行为。
+
+**测试**：全 lfw 用例 **15/15**（load 行数 144 → 137，与台面补丁移除同步）；变异
+`lfw_uinode_life.mjs` 新增两条（`on_set`/`on_push` 接线）共 **40/40 全杀**；全量差分 **221/221**。
+

@@ -382,5 +382,21 @@ export default {
   if (_all[i] == nullptr) _all[i] = std::make_unique<UILayer>(*_lfw, index);
   return *_all[i];`,
     },
+    {
+      note: "LFW：on_set 接线丢了",
+      file: "native/lfw/lfw.cpp",
+      from: `    bottom.callbacks.on_set = [this](ui::UINode* curr, ui::UINode* prev, ui::UILayer&) {
+      ui_changed(curr, prev);
+    };`,
+      to: `    bottom.callbacks.on_set = nullptr;`,
+    },
+    {
+      note: "LFW：on_push 接线丢了",
+      file: "native/lfw/lfw.cpp",
+      from: `    bottom.callbacks.on_push = [this](ui::UINode* curr, ui::UINode* prev, ui::UILayer&) {
+      ui_changed(curr, prev);
+    };`,
+      to: `    bottom.callbacks.on_push = nullptr;`,
+    },
   ],
 };

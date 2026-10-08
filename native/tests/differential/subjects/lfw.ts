@@ -425,6 +425,11 @@ function listen(): void {
   for (const name of CB_KEYS) {
     (lfw.callbacks as unknown as Rec).on(name, (...args: unknown[]) => {
       const parts: string[] = [`cb|${name}`];
+      if (name === "on_ui_changed") {
+        for (const a of args) parts.push(a == null ? "u" : "?");
+        push(parts.join("|"));
+        return;
+      }
       for (const a of args) {
         if (a === lfw) parts.push("self");
         else if (name === "on_ui_loaded") parts.push(String((a as unknown[]).length));
@@ -521,36 +526,6 @@ function main(): void {
 }
 
 async function run_ops(): Promise<void> {
-  const lfw_rec = lfw as unknown as Rec;
-  const uis = lfw_rec["uis"] as Rec;
-  const orig_add = (uis["add"] as (...a: unknown[]) => void).bind(uis);
-  uis["add"] = (...a: unknown[]) => {
-    push("ui:add|" + a.length);
-    return orig_add(...a);
-  };
-  const orig_clear = (uis["clear"] as () => void).bind(uis);
-  uis["clear"] = () => {
-    push("ui:clear");
-    return orig_clear();
-  };
-  const desc = Object.getOwnPropertyDescriptor(uis, "all");
-  const proto_desc =
-    desc ?? Object.getOwnPropertyDescriptor(Object.getPrototypeOf(uis) as object, "all");
-  if (proto_desc?.get) {
-    Object.defineProperty(uis, "all", {
-      configurable: true,
-      get() {
-        push("ui:all");
-        return proto_desc.get!.call(uis);
-      },
-    });
-  }
-  const layers = lfw_rec["layers"] as Rec;
-  const orig_set_page = (layers["set_page"] as (...a: unknown[]) => unknown).bind(layers);
-  layers["set_page"] = (opts: Rec, idx: number) => {
-    push(`layers:set_page|${String(opts?.id)}`);
-    return orig_set_page(opts, idx);
-  };
   for (const line of readCaseLines(process.argv[2]!)) {
     const t = splitWs(line);
     if (t.length === 0) continue;
@@ -1033,6 +1008,10 @@ async function run_ops(): Promise<void> {
       actor.act(n, parseValue(t, i) as never);
     } else if (op === "rlnew") {
       real_layers.v = new UILayers(lfw);
+    } else if (op === "flset" || op === "flpush") {
+      const id = keyOf(next());
+      if (op === "flset") lfw.layers.set_page({ id }, 0);
+      else lfw.layers.push_page({ id }, 0);
     } else if (op === "rlpush") {
       real_layers.v!.push();
     } else if (op === "rlset" || op === "rlpushp") {
@@ -1090,10 +1069,7 @@ async function run_ops(): Promise<void> {
       const u = real_layers.v!.at(idx)?.ui;
       push(`rltree|${num(idx)}|${u ? tree_str(u) : "u"}`);
     } else if (op === "unpatch") {
-      uis["add"] = orig_add;
-      uis["clear"] = orig_clear;
-      delete (uis as Rec)["all"];
-      layers["set_page"] = orig_set_page;
+      // 4AQ：两侧都不再有 uis/layers 补丁（真实现）；占位兼容旧用例。
     } else if (op === "uipg") {
       const id = keyOf(next());
       const v = parseValue(t, i) as Rec;

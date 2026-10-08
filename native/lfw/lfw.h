@@ -37,6 +37,7 @@ namespace lfw {
 namespace ui {
 class UINode;
 class UIComponent;
+class UILayers;
 }  // namespace ui
 
 namespace stage {
@@ -108,8 +109,6 @@ class ILfwHost {
   virtual void zip_forget_stored(const std::u16string& type, double version) = 0;
   // `regist_components()`（`ui/component/_`，未移植）
   virtual void regist_components() = 0;
-  // `this.layers = new UI.UILayers(this)`
-  virtual IUiLayers* create_layers(LFW& lfw) = 0;
   // `new Ditto.WorldRender(world)`（`World` 的渲染宿主；TS 里由 `World` 自己 new）
   virtual IWorldRenderer* create_world_renderer(LFW& lfw) = 0;
   // `await lfw.images.load_img(path, path)`（D DatMgr 的 `images.load_img`）
@@ -193,18 +192,6 @@ class ILfwHost {
   virtual Value zip_cache_get(const std::u16string& name) = 0;
   virtual void zip_cache_del(const std::u16string& name, const std::u16string& version) = 0;
   virtual void zip_cache_put(const Value& entry) = 0;
-
-  // ---- UI 未移植 ⇒ `UI.cook_ui_info` / `UI.xml_to_ui_info` / `this.uis` 的缝 ----
-  // `await UI.cook_ui_info(lfw, path)` / `cook_ui_info(lfw, json)`；失败 ⇒ `false` + `error`。
-  virtual bool ui_cook_path(LFW& lfw, const std::u16string& path, Value& out,
-                            std::u16string& error) = 0;
-  virtual bool ui_cook_value(LFW& lfw, const Value& v, Value& out, std::u16string& error) = 0;
-  // `UI.xml_to_ui_info(root)`（`root` 为 null 时 TS 侧根本不会走到这里）。
-  virtual bool ui_xml_to_info(LFW& lfw, const std::shared_ptr<IXMLElement>& root, Value& out) = 0;
-  // `this.uis.add(...ret)` / `uis.clear()` / `uis.all`。
-  virtual void ui_add(LFW& lfw, const std::vector<Value>& cooked) = 0;
-  virtual void ui_clear(LFW& lfw) = 0;
-  virtual std::vector<Value> ui_all(LFW& lfw) = 0;
 };
 
 // TS `src/LFW/LFW.ts`（门面）。
@@ -475,6 +462,8 @@ class LFW : public IWorldLfw,
 
   ILfwHost* host_ = nullptr;
   IUiLayers* _layers = nullptr;
+  // `this.layers = new UI.UILayers(this)`（4AQ：不再经宿主缝；本对象持有）。
+  std::unique_ptr<ui::UILayers> _layers_own;
   I18N _i18n;
   MersenneTwister _mt;
   std::unique_ptr<state::States> _states;

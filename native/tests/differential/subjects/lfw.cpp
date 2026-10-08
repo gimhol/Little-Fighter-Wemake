@@ -101,28 +101,6 @@ class EntHost : public lfw::IEntityHost {
 
 EntHost g_ent_host;
 
-class FakeLayers : public lfw::IUiLayers {
- public:
-  explicit FakeLayers(lfw::LFW& lfw) : _lfw(&lfw) {}
-  void push() override {
-    // TS 的 `layers.push()` 会触发 `on_push` → `lfw.callbacks.call("on_ui_changed", curr, prev)`
-    // （空 uis ⇒ 两个 undefined）⇒ 端口同款回调一次。
-    _lfw->ui_changed(nullptr, nullptr);
-  }
-  void set_page(const lfw::Value& opts, double) override {
-    ::push("layers:set_page|" + to_ascii(lfw::to_string(lfw::field_or(opts, u"id"))));
-    // TS 的 `UILayers.set_page` 会在 `uis.all` 里找页 ⇒ 台面把这次读也记出来。
-    (void)_lfw->host().ui_all(*_lfw);
-  }
-  void push_page(const lfw::Value&, double) override {}
-  void dispose() override {}
-  lfw::ui::UINode* ui() override { return nullptr; }
-  std::vector<lfw::IWorldUi*> layer_uis() override { return {}; }
-
- private:
-  lfw::LFW* _lfw;
-};
-
 // ---- 4AC：加载流程的脚本化假 zip ----
 // kind 迷你语言：`-`=undefined / `o`={} / `a`=[] / `k:<name>`={"<name>":"1"} / `str:<v>` / `e`=失败("boom")。
 struct LoadScript {
@@ -361,10 +339,6 @@ class FakeHost : public lfw::ILfwHost {
     push("zip:forget|" + to_ascii(type) + "|" + num(version));
   }
   void regist_components() override {}
-  lfw::IUiLayers* create_layers(lfw::LFW& lfw) override {
-    _layers = std::make_unique<FakeLayers>(lfw);
-    return _layers.get();
-  }
   lfw::IWorldRenderer* create_world_renderer(lfw::LFW&) override {
     push("wr_init");
     return &_renderer;
@@ -548,33 +522,6 @@ class FakeHost : public lfw::ILfwHost {
   void zip_cache_put(const lfw::Value& entry) override {
     push("cache:put|" + to_ascii(lfw::to_string(lfw::field_or(entry, u"name"))));
   }
-  bool ui_cook_path(lfw::LFW&, const std::u16string& path, lfw::Value& out,
-                    std::u16string& error) override {
-    push("ui:cook_path|" + to_ascii(path));
-    out = lfw::Value();
-    error = u"unscripted ui path";
-    return false;
-  }
-  bool ui_cook_value(lfw::LFW&, const lfw::Value&, lfw::Value& out,
-                     std::u16string& error) override {
-    push("ui:cook_value");
-    out = lfw::Value();
-    error = u"unscripted ui value";
-    return false;
-  }
-  bool ui_xml_to_info(lfw::LFW&, const std::shared_ptr<lfw::IXMLElement>&, lfw::Value& out) override {
-    push("ui:xml_to_info");
-    out = lfw::Value();
-    return true;
-  }
-  void ui_add(lfw::LFW&, const std::vector<lfw::Value>& cooked) override {
-    push("ui:add|" + to_ascii(lfw::number_to_string(static_cast<double>(cooked.size()))));
-  }
-  void ui_clear(lfw::LFW&) override { push("ui:clear"); }
-  std::vector<lfw::Value> ui_all(lfw::LFW&) override {
-    push("ui:all");
-    return _ui_list;
-  }
 
  private:
   static std::string join(const std::string& prefix, const std::vector<lfw::Value>& args) {
@@ -598,8 +545,6 @@ class FakeHost : public lfw::ILfwHost {
   }
 
   lfw::LFW** _slot = nullptr;
-  std::unique_ptr<FakeLayers> _layers;
-  std::vector<lfw::Value> _ui_list;
   class Renderer : public lfw::IWorldRenderer {
    public:
     void add_entity(lfw::Entity&) override {}
@@ -1441,6 +1386,11 @@ int main(int argc, char** argv) {
       lfw::ui::actor().act(*g_nodes.at(nid), action);
     } else if (op == "rlnew") {
       g_real_layers = std::make_unique<lfw::ui::UILayers>(lfw);
+    } else if (op == "flset" || op == "flpush") {
+      const std::u16string id = key_of(t[i++]);
+      const lfw::Value opts = id_opts_value(id);
+      if (op == "flset") lfw.set_page(opts, 0.0);
+      else lfw.push_page(opts, 0.0);
     } else if (op == "rlpush") {
       g_real_layers->push_layer();
     } else if (op == "rlset" || op == "rlpushp") {

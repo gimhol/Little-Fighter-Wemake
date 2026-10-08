@@ -4761,3 +4761,15 @@ harness op：
   a/j 键位映射 / actor：广播、数组、假值、参数缺省、NaN→undefined、未知 handler warn、
   set_page 经假缝 / create 计数（非法 count 落 1、嵌套）/ `pop_page` 非栈顶不弹 /
   层栈：同 id 早退、z 叠层号、min_pages、until、inclusive（只有首个 on_pause）、弹空层、dispose。
+
+### 6.9.148 UI 缝换真实现：接线第一段（`uinode_life.txt` 63 行；变异档升至 40/40）
+
+- 宿主缝删除：`create_layers` 与 `ui_cook_path`/`ui_cook_value`/`ui_xml_to_info`/`ui_add`/
+  `ui_clear`/`ui_all` 全部移除；LFW 直建真 `UILayers`（含栈回调→`ui_changed`）、
+  `load_ui`/`load_builtin_ui`/首屏查找走真 `cook_ui_info`/`xml_to_ui_info`/`ui_helper`。
+- 台面同步：删 `FakeLayers` 与缝假实现；TS 侧移除 `uis.add/clear/all` 与 `layers.set_page` 补丁
+  （`ui:add`/`ui:all`/`layers:set_page` 日志两侧同时消失，`load` 用例行数 144 → 137）；
+  `unpatch` 变占位；`listen` 对 `on_ui_changed` 记 `?`/`u`（不再 render 节点）；
+  新增 `flset <id>` / `flpush <id>`（驱动 `lfw.layers` 第 0 层，打声效与 `on_ui_changed` 行）。
+- 用例新增：`uipg pgX` + 第 2 层 set_page（建页）/同 id 早退/push_page/再早退；
+  `flset/flset/flpush/flset` 覆盖第 0 层（接线层）的建页、早退与 on_push。

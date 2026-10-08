@@ -55,7 +55,17 @@ nact l1 a 2 o 2 name s "sound" args a 1 s "a1" o 2 name s "sound" args a 1 s "a2
 nact l1 o 2 name s "nope" args a 2 s "1" s "2"
 nact l1 o 1 name s "broadcast"
 nact l1 o 1 name s "pop_page"
+# set_page/push_page 动作落在 lfw.layers 上（真 UILayers）：首次建页 / 同 id 早退 / 重复 push
+uipg pgX o 5 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 1 start o 2 name s "sound" args a 1 s "px1"
 nact l1 o 2 name s "set_page" args a 2 s "pgX" s "2"
+nact l1 o 2 name s "set_page" args a 2 s "pgX" s "2"
+nact l1 o 2 name s "push_page" args a 2 s "pgX" s "2"
+nact l1 o 2 name s "set_page" args a 2 s "pgX" s "2"
+# 直接驱动 lfw.layers 的第 0 层（含栈回调接线）
+flset pgX
+flset pgX
+flpush pgX
+flset pgX
 # create：items 计数（小数进位 / 非法 count 落 1 / 嵌套）
 nmk m1 - o 6 id s "m1" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 items a 2 o 6 id s "i1" count n 3 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 o 6 id s "i2" count n 2 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
 nrd m1 kids

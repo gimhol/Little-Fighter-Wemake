@@ -22,6 +22,9 @@
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/loader/stage_val_getters.h"
 #include "lfw/stage/entity_item.h"
+#include "lfw/ui/cook_ui_info.h"
+#include "lfw/ui/uilayer.h"
+#include "lfw/ui/xml_to_ui_info.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/container_help/loop_offset.h"
 
@@ -243,8 +246,22 @@ LFW::LFW(ILfwHost& host, bool dev) : host_(&host), zips_(), _mt(host.now()) {
   world_->start_render();
   instances_ref().push_back(this);
   host_->pointings_add_ui_input(*this);
-  _layers = host_->create_layers(*this);
-  _layers->push();
+  // `this.layers = new UI.UILayers(this); this.layers.push().callback.add({...})`
+  _layers_own = std::make_unique<ui::UILayers>(*this);
+  _layers = _layers_own.get();
+  {
+    ui::UILayer& bottom = _layers_own->push_layer();
+    bottom.callbacks.on_set = [this](ui::UINode* curr, ui::UINode* prev, ui::UILayer&) {
+      ui_changed(curr, prev);
+    };
+    bottom.callbacks.on_push = [this](ui::UINode* curr, ui::UINode* prev, ui::UILayer&) {
+      ui_changed(curr, prev);
+    };
+    bottom.callbacks.on_pop = [this](ui::UINode* curr, const std::vector<ui::UINode*>& poppeds,
+                                     ui::UILayer&) {
+      ui_changed(curr, poppeds.empty() ? nullptr : poppeds[0]);
+    };
+  }
 
   {
     // `this._i18n.add({'': {VERSION_NAME, DATA_LIST: ''}})`
@@ -1318,12 +1335,11 @@ bool LFW::load_ui(IZip& zip, std::vector<Value>& out, std::u16string& error) {
       std::shared_ptr<IXMLElement> root;
       host_->xml_parse(text, marker, root, ignored);
       if (root == nullptr) continue;
-      Value ui_info;
-      host_->ui_xml_to_info(*this, root, ui_info);
+      const Value ui_info = ui::xml_to_ui_info(*root);
       if (!truthy(ui_info)) continue;
       if (const Object* const o = as_object(ui_info); o != nullptr && o->empty()) continue;
       Value cooked;
-      if (!host_->ui_cook_value(*this, ui_info, cooked, error)) return false;
+      if (!ui::cook_ui_info(*this, ui_info, nullptr, cooked, error)) return false;
       if (!check()) return false;
       ret.push_back(cooked);
     } else {
@@ -1333,19 +1349,19 @@ bool LFW::load_ui(IZip& zip, std::vector<Value>& out, std::u16string& error) {
       if (!check()) return false;
       if (!truthy(json) || is_array(json)) continue;
       Value cooked;
-      if (!host_->ui_cook_value(*this, json, cooked, error)) return false;
+      if (!ui::cook_ui_info(*this, json, nullptr, cooked, error)) return false;
       if (!check()) return false;
       ret.push_back(cooked);
     }
   }
 
   if (_disposed) {
-    host_->ui_clear(*this);
-    out = host_->ui_all(*this);
+    ui_helper().clear();
+    out = ui_helper().all();
     return true;
   }
   _ui_loaded = true;
-  host_->ui_add(*this, ret);
+  ui_helper().add(ret);
   {
     LfwCallbackArgs args;
     args.lfw = this;
@@ -1367,12 +1383,12 @@ bool LFW::load_builtin_ui(std::vector<Value>& out, std::u16string& error) {
       const std::u16string* const path = as_str(paths->at(i));
       if (path == nullptr) continue;
       Value cooked;
-      if (!host_->ui_cook_path(*this, *path, cooked, error)) return false;
+      if (!ui::cook_ui_info(*this, Value(*path), nullptr, cooked, error)) return false;
       if (!check()) return false;
       ret.insert(ret.begin(), cooked);  // `ret.unshift(cooked_ui_info)`
     }
   }
-  host_->ui_add(*this, ret);
+  ui_helper().add(ret);
   out = ret;
   return true;
 }
@@ -1464,7 +1480,7 @@ bool LFW::load(const std::vector<ZipItem>& arg1, std::u16string& error) {
     if (!check()) return false;
     bool found = false;
     Value id;
-    for (const Value& v : host_->ui_all(*this)) {
+    for (const Value& v : ui_helper().all()) {
       const Value& vid = field_or(v, u"id");
       const std::u16string* const s = as_str(vid);
       if (s != nullptr && *s == first_page) {
