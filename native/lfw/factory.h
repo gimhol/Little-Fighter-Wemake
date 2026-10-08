@@ -47,6 +47,19 @@ class IBuffCreator {
   virtual buff::Buff* create(LFW* lfw, const std::u16string& id, const Value& kind) const = 0;
 };
 
+namespace ui {
+class UIComponent;
+class UINode;
+}
+
+// TS `Factory.components` 里的一格：`class X extends UIComponent` 的构造器化身。
+class IComponentCreator {
+ public:
+  virtual ~IComponentCreator() = default;
+  virtual ui::UIComponent* create(ui::UINode& layout, const std::u16string& f_name,
+                                  const Value& info) const = 0;
+};
+
 // `Ditto.warn`（`register_*` 的重复告警用）。TS 是全局 `Ditto.warn` ⇒ 端口给一个进程级 sink。
 using FactoryWarn = std::function<void(const std::u16string&)>;
 
@@ -66,10 +79,13 @@ class Factory {
   static std::vector<std::pair<FactoryKey, const ICtrlCreator*>>& ctrl_creators();
   static std::vector<std::pair<FactoryKey, const IBuffCreator*>>& buff_creators();
   static std::vector<std::pair<Value, std::vector<FactoryKey>>>& buff_groups();
+  static std::vector<std::pair<std::u16string, const IComponentCreator*>>& components();
 
   static void register_entity(const FactoryKey& type, const IEntityCreators& creator);
   static void register_ctrl(const FactoryKey& oid, const ICtrlCreator* creator);
   static void register_buff(const IBuffCreator* creator);
+  // TS `register_component(Cls)`：按 `Cls.TAGS` 逐个登记，重名只 warn。
+  static void register_component(const std::u16string& name, const IComponentCreator* creator);
 
   // TS 的三个 `readonly` 池表。
   std::vector<std::pair<FactoryKey, Graves<Entity*>>> graves_maps;
@@ -91,6 +107,9 @@ class Factory {
   // TS `create_entity_with_player`：造实体后挂 `LocalController`（`acquire_ctrl`）。
   Entity* create_entity_with_player(const std::u16string& player_id, World* world,
                                     const Value& data, state::States* states);
+  // TS `create_components(layout, components)`：按 `cls` 查组件表建实例（返回所有权）。
+  std::vector<std::unique_ptr<ui::UIComponent>> create_components(ui::UINode& layout,
+                                                                  const Value& components);
 };
 
 }

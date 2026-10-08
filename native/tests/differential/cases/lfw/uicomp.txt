@@ -1,0 +1,61 @@
+# 4AS：UIProps + UIComponent 基类 + UINode 组件循环
+# 1) create 走 factory.create_components：init → 子先 add → 父 add（含 props dump）
+nmk n1 - o 7 id s "n1" pos a 3 n 0 n 0 n 0 size a 3 n 4 n 4 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FakeComp" id s "c1" properties o 9 n n 3 s s "o,k" pick s "b" ok b 1 arr a 2 n 1 n 2 strs a 2 s "x" s "y" sub s "kid" other s "c1" b0 s "0" items a 1 o 5 id s "kid" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+lcomp n1
+ncb n1 comp_add
+ncb n1 comp_del
+cadd n1 c2 o 6 n n 5 s s "hello" pick s "c" ok n 0 stop_click b 1 del_at n 2
+lcomp n1
+cdel n1 c2
+lcomp n1
+nlife n1 start
+nlife n1 stop
+nlife n1 resume
+nlife n1 pause
+# 2) 输入/生命周期转发次序（down：组件先；up：子先）
+nmk t1 - o 7 id s "t1" pos a 3 n 0 n 0 n 0 size a 3 n 4 n 4 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FakeComp" id s "tc" properties o 3 n n 1 s s "t" stop_key s "j" items a 1 o 6 id s "tk" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FakeComp" id s "kc" properties o 2 n n 1 s s "k"
+nkey t1 down j j
+nkey t1 down a a
+nkey t1 up a a
+nclick t1 0
+npd t1
+npm t1
+npu t1
+npc t1
+npe t1
+npl t1
+nlife t1 start
+nlife t1 pause
+nlife t1 resume
+cset t1 tc 0
+cupd t1 16
+cset t1 tc 1
+cupd t1 16
+# 3) update 转发 + update 中的 del_components 延迟到循环后
+nmk u1 - o 6 id s "u1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FakeComp" id s "uc" properties o 3 n n 1 s s "u" del_at n 2
+cupd u1 16
+cupd u1 16
+cupd u1 16
+lcomp u1
+# 4) props 校验失败：err 分支
+nmk e1 - o 6 id s "e1" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FakeComp" id s "ec" properties o 2 n n 1 s n 5
+lcomp e1
+# 5) $val: 解析（命中 / 落空保留原值）
+nmk f1 - o 7 id s "f1" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 values o 1 k n 7 component a 1 o 3 cls s "FakeComp" id s "fc1" properties o 2 n s "$val:k" s s "$val:missing"
+# 6) find_node 迷你语言
+nmk g1 - o 5 id s "g1" pos a 3 n 0 n 0 n 0 size a 3 n 4 n 4 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nmk ga g1 o 6 id s "ga" name s "GA" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nmk gb g1 o 6 id s "gb" name s "GB" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nadd g1 ga
+nadd g1 gb
+cadd g1 gc1 o 2 n n 1 s s "g"
+cfind g1 gc1 parent
+cfind g1 gc1 self
+cfind g1 gc1 parent:1
+cfind g1 gc1 id:gb
+cfind g1 gc1 name:GB
+cadd ga ga1 o 2 n n 1 s s "h"
+cfind ga ga1 bro:next
+cfind ga ga1 bro:prev
+cfind ga ga1 bro:1
+cfind ga ga1 bro:-1

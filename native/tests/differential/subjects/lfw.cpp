@@ -19,6 +19,10 @@
 #include "lfw/player_info.h"
 #include "lfw/ui/cook_ui_info.h"
 #include "lfw/ui/action/actor.h"
+#include "lfw/ui/component/ui_component.h"
+#include "lfw/ui/component/ui_props.h"
+#include "lfw/ui/instance_ref.h"
+#include "lfw/ui/register_class.h"
 #include "lfw/ui/ui_event.h"
 #include "lfw/ui/ui_img_loader.h"
 #include "lfw/ui/ui_load_img.h"
@@ -306,6 +310,221 @@ std::string tree_str(const lfw::ui::UINode& n) {
   }
   return s;
 }
+
+// 4AS：台面假组件（与 TS 侧 FakeComponent 逐字同日志）。
+namespace bench {
+
+const lfw::ClazzTag* fake_comp_tag() {
+  static const lfw::ClazzTag tag{lfw::ui::UIComponent::class_tag()};
+  return &tag;
+}
+
+lfw::Value sobj(std::initializer_list<std::pair<const char16_t*, lfw::Value>> kv) {
+  lfw::Value o(std::make_shared<lfw::Object>());
+  lfw::Object* const p = const_cast<lfw::Object*>(lfw::as_object(o));
+  for (const std::pair<const char16_t*, lfw::Value>& item : kv) p->set(item.first, item.second);
+  return o;
+}
+
+lfw::Value str_schema(const char16_t* type) {
+  return sobj({{u"type", lfw::Value(std::u16string(type))}});
+}
+
+lfw::Value opt_schema(const char16_t* type) {
+  return sobj({{u"type", lfw::Value(std::u16string(type))}, {u"nullable", lfw::Value(true)}});
+}
+
+lfw::Value arr_schema(const char16_t* item_type) {
+  return sobj({{u"type", lfw::Value(std::u16string(u"array"))},
+               {u"nullable", lfw::Value(true)},
+               {u"items", str_schema(item_type)}});
+}
+
+lfw::Value make_fake_props_meta() {
+  return sobj({
+      {u"n", str_schema(u"number")},
+      {u"s", str_schema(u"string")},
+      {u"pick", opt_schema(u"string")},
+      {u"ok", opt_schema(u"boolean")},
+      {u"arr", arr_schema(u"number")},
+      {u"strs", arr_schema(u"string")},
+      {u"b0", opt_schema(u"string")},
+      {u"sub", str_schema(u"$cls:UINode")},
+      {u"other", str_schema(u"$cls:UIComponent")},
+      {u"stop_click", opt_schema(u"boolean")},
+      {u"stop_key", opt_schema(u"string")},
+      {u"del_at", opt_schema(u"number")},
+  });
+}
+
+std::string iref_value(const lfw::Value& v) {
+  if (lfw::ui::UINode* const n = lfw::ui::ref_to_node(v)) {
+    return "node:" + to_ascii(lfw::to_string(n->id()));
+  }
+  if (lfw::ui::UIComponent* const c = lfw::ui::ref_to_comp(v)) {
+    return "comp:" + to_ascii(c->f_name) + "#" + to_ascii(c->id);
+  }
+  return to_ascii(render_value(v));
+}
+
+class FakeComp : public lfw::ui::UIComponent {
+ public:
+  FakeComp(lfw::ui::UINode& layout, const std::u16string& f_name, const lfw::Value& info)
+      : UIComponent(layout, f_name, info) {}
+
+  const lfw::ClazzTag* clazz() const override { return fake_comp_tag(); }
+  const std::u16string& props_tag() const override {
+    static const std::u16string t = u"FakeComp";
+    return t;
+  }
+  const lfw::Value& props_meta() const override {
+    static const lfw::Value m = make_fake_props_meta();
+    return m;
+  }
+
+  std::string tag() const { return "fc|" + to_ascii(f_name); }
+
+  std::string opt_num(const std::u16string& k) {
+    const std::optional<double> v = props_holder.num(k);
+    return v.has_value() ? to_ascii(render_value(lfw::Value(*v))) : "z";
+  }
+  std::string opt_str(const std::u16string& k) {
+    const std::optional<std::u16string> v = props_holder.str(k);
+    return v.has_value() ? to_ascii(render_value(lfw::Value(*v))) : "z";
+  }
+  std::string opt_str_one(const std::u16string& k, std::initializer_list<std::u16string> one_of) {
+    const std::vector<std::u16string> list(one_of);
+    const std::optional<std::u16string> v = props_holder.str(k, list);
+    return v.has_value() ? to_ascii(render_value(lfw::Value(*v))) : "z";
+  }
+  std::string opt_bool(const std::u16string& k) {
+    const std::optional<bool> v = props_holder.bool_(k);
+    return v.has_value() ? to_ascii(render_value(lfw::Value(*v))) : "z";
+  }
+  std::string opt_arr(const std::u16string& k, double len) {
+    const std::optional<std::vector<lfw::Value>> v = props_holder.nums(k, len);
+    if (!v.has_value()) return "err";
+    std::string out;
+    for (size_t j = 0; j < v->size(); ++j) {
+      if (j != 0) out += ",";
+      out += to_ascii(lfw::to_string((*v)[j]));
+    }
+    return out;
+  }
+  std::string opt_strs(const std::u16string& k) {
+    const std::optional<std::vector<std::u16string>> v = props_holder.strs(k);
+    if (!v.has_value()) return "z";
+    std::string out;
+    for (size_t j = 0; j < v->size(); ++j) {
+      if (j != 0) out += "+";
+      out += to_ascii((*v)[j]);
+    }
+    return out;
+  }
+  std::string iref_key(const std::u16string& k) {
+    lfw::schema::SchemaValidator& v = props_holder.validator();
+    const std::vector<lfw::schema::SchemaValidator::DefinedInstance>& list = v.defined_instances();
+    for (size_t j = 0; j < list.size(); ++j) {
+      if (list[j].key != k) continue;
+      const lfw::schema::SchemaValidator::InstanceAccess a = v.get_instance(j);
+      if (a.ok) return iref_value(a.value);
+      return "err:" + to_ascii(a.error);
+    }
+    const lfw::Object* const o = lfw::as_object(props_holder.raw());
+    const lfw::Value* const p = o != nullptr ? o->get(k) : nullptr;
+    return to_ascii(render_value(p != nullptr ? *p : lfw::Value()));
+  }
+
+  void dump() {
+    const std::string f = tag() + "|props";
+    if (props() == nullptr) {
+      std::string errs;
+      for (size_t k = 0; k < props_errors().size(); ++k) {
+        if (k != 0) errs += "|";
+        errs += to_ascii(props_errors()[k]);
+      }
+      push(f + "|err|" + errs);
+      return;
+    }
+    std::string line = f;
+    line += "|n=" + opt_num(u"n");
+    line += "|s=" + opt_str(u"s");
+    line += "|pick=" + opt_str_one(u"pick", {u"a", u"b"});
+    line += "|ok=" + opt_bool(u"ok");
+    line += "|arr=" + opt_arr(u"arr", 2.0);
+    line += "|strs=" + opt_strs(u"strs");
+    line += "|lstrs=" + opt_strs(u"s");
+    line += "|b0=" + opt_bool(u"b0");
+    line += "|sub=" + iref_key(u"sub");
+    line += "|other=" + iref_key(u"other");
+    push(line);
+  }
+
+  void init() override { push(tag() + "|init|" + to_ascii(id)); }
+  void on_add() override {
+    push(tag() + "|add|" + to_ascii(id));
+    dump();
+  }
+  void on_del() override { push(tag() + "|del|" + to_ascii(id)); }
+  void on_start() override {
+    push(tag() + "|start");
+    push(tag() + "|lrud|" + to_ascii(lfw::to_string(lfw::Value(LR()))) + "," +
+         to_ascii(lfw::to_string(lfw::Value(UD()))));
+  }
+  void on_stop() override { push(tag() + "|stop"); }
+  void on_resume() override {
+    push(tag() + "|resume");
+    push(tag() + "|lrud|" + to_ascii(lfw::to_string(lfw::Value(LR()))) + "," +
+         to_ascii(lfw::to_string(lfw::Value(UD()))));
+  }
+  void on_pause() override { push(tag() + "|pause"); }
+  void on_show() override { push(tag() + "|show"); }
+  void on_hide() override { push(tag() + "|hide"); }
+  void on_foucs() override { push(tag() + "|foucs"); }
+  void on_blur() override { push(tag() + "|blur"); }
+  void on_click(lfw::ui::LFWPointerEvent& e) override {
+    push(tag() + "|click|" + to_ascii(render_value(lfw::Value(e.button))));
+    if (props_holder.bool_(u"stop_click").value_or(false)) e.stop_immediate_propagation();
+  }
+  void on_key_down(lfw::ui::LFWKeyEvent& e) override {
+    push(tag() + "|kdown|" + to_ascii(render_value(lfw::Value(e.game_key))));
+    const std::optional<std::u16string> stop = props_holder.str(u"stop_key");
+    if (stop.has_value() && *stop == e.game_key) e.stop_immediate_propagation();
+  }
+  void on_key_up(lfw::ui::LFWKeyEvent& e) override {
+    push(tag() + "|kup|" + to_ascii(render_value(lfw::Value(e.game_key))));
+  }
+  void on_pointer_down(lfw::ui::LFWPointerEvent&) override { push(tag() + "|pdown"); }
+  void on_pointer_move(lfw::ui::LFWPointerEvent&) override { push(tag() + "|pmove"); }
+  void on_pointer_up(lfw::ui::LFWPointerEvent&) override { push(tag() + "|pup"); }
+  void on_pointer_cancel(lfw::ui::LFWPointerEvent&) override { push(tag() + "|pcancel"); }
+  void on_pointer_leave() override { push(tag() + "|pleave"); }
+  void on_pointer_enter() override { push(tag() + "|penter"); }
+  void update(double) override {
+    _updates += 1.0;
+    push(tag() + "|update|" + to_ascii(render_value(lfw::Value(_updates))));
+    const std::optional<double> at = props_holder.num(u"del_at");
+    if (at.has_value() && *at == _updates) {
+      push(tag() + "|delreq");
+      node.del_components(*this);
+    }
+  }
+
+ private:
+  double _updates = 0.0;
+};
+
+class FakeCompCreator : public lfw::IComponentCreator {
+ public:
+  lfw::ui::UIComponent* create(lfw::ui::UINode& layout, const std::u16string& f_name,
+                               const lfw::Value& info) const override {
+    return new FakeComp(layout, f_name, info);
+  }
+};
+
+}
+
+std::map<std::string, std::unique_ptr<bench::FakeComp>> g_components;
 
 // 4AD：URL 流程脚本。
 std::map<std::string, std::string> g_stored;       // `zip_url|md5` → blob token
@@ -634,6 +853,9 @@ int main(int argc, char** argv) {
         push("entadd:create|" + s_of(lfw::field_or(data, u"id")));
         return new lfw::Entity(g_ent_host, data);
       });
+  lfw::ui::regist_ui_class(bench::fake_comp_tag(), u"FakeComp");
+  static const bench::FakeCompCreator s_fake_comp_creator;
+  lfw::Factory::register_component(u"FakeComp", &s_fake_comp_creator);
 
   lfw::LFW* slot = nullptr;
   FakeHost host(&slot);
@@ -844,7 +1066,6 @@ int main(int argc, char** argv) {
       lfw::Keys* const k = lfw.create_keys();
       const std::string before = to_ascii(lfw::number_to_string(
           static_cast<double>(lfw.mounted_keys.size())));
-      lfw.regist_keys(*k);
       lfw.regist_keys(*k);
       lfw.recycle_keys(*k);
       lfw.regist_keys(*k);
@@ -1380,6 +1601,76 @@ int main(int argc, char** argv) {
       if (lt != "-" && g_real_layers) layer = g_real_layers->at(to_double(lt));
       const lfw::Value data = parse_value(t, i);
       g_nodes[nid] = lfw::ui::UINode::create(lfw, data, nullptr, layer);
+    } else if (op == "cadd" || op == "cdel" || op == "lcomp" || op == "cupd" || op == "cfind" ||
+               op == "cset") {
+      const std::string nid = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (op == "cadd") {
+        const std::string cid = t[i++];
+        const lfw::Value props = parse_value(t, i);
+        lfw::Value info(std::make_shared<lfw::Object>());
+        lfw::Object* const o = const_cast<lfw::Object*>(lfw::as_object(info));
+        o->set(u"id", lfw::Value(key_of(cid)));
+        o->set(u"name", lfw::Value(key_of(cid)));
+        o->set(u"cls", lfw::Value(std::u16string(u"FakeComp")));
+        o->set(u"args", lfw::Value(std::make_shared<lfw::Array>()));
+        o->set(u"enabled", lfw::Value(true));
+        o->set(u"properties", props);
+        o->set(u"props", lfw::Value(std::make_shared<lfw::Object>()));
+        o->set(u"weight", lfw::Value(0.0));
+        std::unique_ptr<bench::FakeComp> c =
+            std::make_unique<bench::FakeComp>(n, key_of(cid), info);
+        n.add_components(*c);
+        g_components[cid] = std::move(c);
+        push("cadd|" + nid + "|" + cid + "|" + std::to_string(n.components().size()));
+      } else if (op == "cdel") {
+        const std::string cid = t[i++];
+        const auto it = g_components.find(cid);
+        lfw::ui::UIComponent* const c = it != g_components.end() ? it->second.get() : nullptr;
+        if (c != nullptr) {
+          n.del_components(*c);
+          g_components.erase(it);
+        }
+        push("cdel|" + nid + "|" + cid + "|" + std::to_string(n.components().size()));
+      } else if (op == "lcomp") {
+        push("lcomp|" + nid + "|" + std::to_string(n.components().size()));
+        size_t k = 0;
+        for (lfw::ui::UIComponent* const c : n.components()) {
+          push("fc|list|" + std::to_string(k) + "|" + to_ascii(c->props_tag()) + "|" +
+               to_ascii(c->f_name) + "|" + to_ascii(c->id) + "|" + to_ascii(c->name) + "|" +
+               (c->enabled() ? "b1" : "b0"));
+          ++k;
+        }
+      } else if (op == "cupd") {
+        n.update(to_double(t[i++]));
+        push("cupd|" + nid);
+      } else if (op == "cset") {
+        const std::string cid = t[i++];
+        const bool on = t[i++] == "1";
+        lfw::ui::UIComponent* found = nullptr;
+        for (lfw::ui::UIComponent* const c : n.components()) {
+          if (c->id == key_of(cid)) {
+            found = c;
+            break;
+          }
+        }
+        if (found != nullptr) found->set_enabled(on);
+        push("cset|" + nid + "|" + cid + "|" +
+             (found != nullptr && found->enabled() ? "b1" : "b0"));
+      } else {
+        const std::string cid = t[i++];
+        const std::u16string which = key_of(t[i++]);
+        lfw::ui::UIComponent* found = nullptr;
+        for (lfw::ui::UIComponent* const c : n.components()) {
+          if (c->id == key_of(cid)) {
+            found = c;
+            break;
+          }
+        }
+        lfw::ui::UINode* const r = found != nullptr ? found->find_node(lfw::Value(which)) : nullptr;
+        push("cfind|" + nid + "|" + cid + "|" + to_ascii(which) + "|" +
+             (r != nullptr ? node_ref(r) : std::string("u")));
+      }
     } else if (op == "nact") {
       const std::string nid = t[i++];
       const lfw::Value action = parse_value(t, i);
@@ -1515,6 +1806,16 @@ int main(int argc, char** argv) {
         cb.on_pointer_leave = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|pleave|" + node_ref(&node)); };
       } else if (ev == "penter") {
         cb.on_pointer_enter = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|penter|" + node_ref(&node)); };
+      } else if (ev == "comp_add") {
+        cb.on_component_add = [nid](lfw::ui::UIComponent& c, lfw::ui::UINode& node) {
+          push("cb|" + nid + "|comp_add|" + to_ascii(c.f_name) + "#" + to_ascii(c.id) + "|" +
+               node_ref(&node));
+        };
+      } else if (ev == "comp_del") {
+        cb.on_component_del = [nid](lfw::ui::UIComponent& c, lfw::ui::UINode& node) {
+          push("cb|" + nid + "|comp_del|" + to_ascii(c.f_name) + "#" + to_ascii(c.id) + "|" +
+               node_ref(&node));
+        };
       } else {
         std::fprintf(stderr, "unknown ncb '%s'\n", ev.c_str());
         return 2;

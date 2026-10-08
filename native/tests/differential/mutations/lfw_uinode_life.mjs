@@ -15,13 +15,11 @@ export default {
     {
       note: "on_start：actions 抢在子节点前面",
       file: "native/lfw/ui/uinode.cpp",
-      from: `  _state_focused_node = nullptr;
-  for (UINode* const c : _children) c->on_start();
+      from: `  for (UINode* const c : _children) c->on_start();
   const Value* const actions = field_of(_data, u"actions");
   const Value* const start = actions != nullptr ? field_of(*actions, u"start") : nullptr;
   if (start != nullptr && truthy(*start)) actor().act(*this, *start);`,
-      to: `  _state_focused_node = nullptr;
-  const Value* const actions = field_of(_data, u"actions");
+      to: `  const Value* const actions = field_of(_data, u"actions");
   const Value* const start = actions != nullptr ? field_of(*actions, u"start") : nullptr;
   if (start != nullptr && truthy(*start)) actor().act(*this, *start);
   for (UINode* const c : _children) c->on_start();`,
@@ -41,9 +39,19 @@ export default {
     set_focused_node(_state_focused_node);
     if (_visible) invoke_all_visible();
   }
+  for (UIComponent* const c : _components) {
+    c->paused = false;
+    c->mounted = true;
+    c->on_resume();
+  }
   for (UINode* const c : _children) c->on_resume();`,
       to: `  if (_parent == nullptr) {
     if (_visible) invoke_all_visible();
+  }
+  for (UIComponent* const c : _components) {
+    c->paused = false;
+    c->mounted = true;
+    c->on_resume();
   }
   for (UINode* const c : _children) c->on_resume();`,
     },
@@ -144,9 +152,9 @@ export default {
       file: "native/lfw/ui/uinode.cpp",
       from: `void UINode::on_key_down(LFWKeyEvent& e) {
   if (e.stopped() != 0) return;
-  // components 空转。`,
+  for (UIComponent* const c : _components) {`,
       to: `void UINode::on_key_down(LFWKeyEvent& e) {
-  // components 空转。`,
+  for (UIComponent* const c : _components) {`,
     },
     {
       note: "on_key_down：不看焦点就派发",

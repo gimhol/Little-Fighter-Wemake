@@ -4792,3 +4792,19 @@ harness op：
   delete 后重定义（`nullable` 与未命中报错）、嵌套对象里的类属性（内层键被删）、
   无惰性属性时 `gn/sn` 普通读写；make_schema 的类简写（含裸 `$cls:` 标记）、
   对象 items 展开（items 自己的 key 盖 meta key）、原始属性跳过、根无 key、path 拼接。
+
+### 6.9.150 UIProps + UIComponent 基类 + UINode 组件循环（`cases/lfw/uicomp.txt` 119 行；变异 18/18 全杀）
+
+- 台面假组件 `FakeComponent`/`bench::FakeComp`（`TAGS=["FakeComp"]`，PROPS：n/s 必填，pick/ok/arr/strs/b0/
+  stop_click/stop_key/del_at 可空，sub/other 是类类型）注册进 `Factory.components`；全程打
+  `fc|<f_name>|<evt>|…`（`init/add/del/start|lrud/stop/resume|lrud/pause/show/hide/foucs/blur/click/kdown/kup/
+  pdown·pmove·pup·pcancel·pleave·penter/update/|delreq`），`props` dump 一行（校验失败打 `err|<errors用|拼>`）。
+- 组件 op：`cadd <nid> <cid> <props>`（直造实例 + `add_components`）、`cdel <nid> <cid>`、`lcomp <nid>`
+  （数量 + 每行 `fc|list|<i>|<TAG>|<f_name>|<id>|<name>|<b1|b0>`）、`cupd <nid> <dt>`（`node.update`）、
+  `cset <nid> <cid> <0|1>`（`set_enabled`）、`cfind <nid> <cid> <which>`（`find_node` 迷你语言）；
+  `ncb` 新增 `comp_add`/`comp_del`（打 `cb|<nid>|comp_add|<f_name>#<id>|<节点>`）。
+- 用例钉住：create 装配次序（init→子先 add→父 add）、props 全字段 dump（含惰性 `sub=node:<id>` /
+  `other=comp:…`）、`$val:` 命中/落空、校验失败 err、生命周期与显隐/焦点转发次序（组件 vs 子节点）、
+  key down/up 两侧次序与 `stop_key` 短路、指针转发、`update` 与 `del_at` 延迟删除、`enabled` 跳过 update、
+  add/del 回调、find_node 迷你语言（parent/parent:N/self/id:/name:/bro:*）；`recycle_keys` 的
+  `keys already registered` warn 钉住 `array_del` 怪癖。

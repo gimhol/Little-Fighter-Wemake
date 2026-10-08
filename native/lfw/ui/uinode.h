@@ -10,6 +10,7 @@
 #include "lfw/defines/i_vector3.h"
 #include "lfw/ui/style.h"
 #include "lfw/ui/ui_event.h"
+#include "lfw/utils/is_class.h"
 #include "lfw/utils/times.h"
 
 namespace lfw {
@@ -36,19 +37,25 @@ struct UINodeCallbacks {
   std::function<void(LFWPointerEvent&, UINode&)> on_pointer_cancel;
   std::function<void(UINode&)> on_pointer_leave;
   std::function<void(UINode&)> on_pointer_enter;
-  // `on_component_add` / `on_component_del` 随 UIComponent 刀补。
+  std::function<void(UIComponent&, UINode&)> on_component_add;
+  std::function<void(UIComponent&, UINode&)> on_component_del;
 };
+
+// `find_components` 的条件返回值（TS `true | false | 'abort' | 'end'`）。
+enum class UIFind { No, Yes, Abort, End };
 
 // TS `ui/UINode.ts`。**第一二段**（4AN：几何/状态/树/焦点/指针；4AO：文本/图像/i18n 自动尺寸）。
 //
-// 本刀不建形（后续刀补）：`renderer` 缝、`components` 行为（find/search/lookup_component、
-// add/del_components、on_start/stop/resume/pause）、`on_click`/`on_key_*`（要 actor/actions）、
-// `pop_page`/`layer` 行为（要 UILayer）、`static create`（要 factory）。
+// 本刀不建形（后续刀补）：`renderer` 缝。
 class UINode {
  public:
   static constexpr const char* TAG = "UINode";
+  static const ClazzTag* class_tag();
+  virtual const ClazzTag* clazz() const { return class_tag(); }
 
   UINode(LFW& lfw, const Value& data, UINode* parent = nullptr, UILayer* layer = nullptr);
+  // 定义在 .cpp：`_owned_components` 里的 `unique_ptr<UIComponent>` 需要完整类型才能析构。
+  ~UINode();
 
   LFW& lfw() { return *_lfw; }
   const Value& data() const { return _data; }
@@ -196,6 +203,28 @@ class UINode {
                       const std::function<void(UINode&, const std::vector<UINode*>&)>& handler = {});
   Value get_value(const std::u16string& name, bool lookup = true) const;
 
+  // ---- 组件（4AS）----
+  const std::vector<UIComponent*>& components() const { return _components; }
+  UINode& add_components(const std::vector<UIComponent*>& components);
+  UINode& add_components(UIComponent& component) { return add_components({&component}); }
+  UINode& del_components(const std::vector<UIComponent*>& components);
+  UINode& del_components(UIComponent& component) { return del_components({&component}); }
+  UIComponent* find_component(const ClazzTag* type,
+                              const std::function<bool(UIComponent&)>& condition = {});
+  UIComponent* find_component_by_id(const ClazzTag* type, const std::u16string& id);
+  std::vector<UIComponent*> find_components(
+      const ClazzTag* type, const std::function<UIFind(UIComponent&)>& condition = {});
+  std::vector<UIComponent*> find_components_by_id(const ClazzTag* type, const std::u16string& id);
+  UIComponent* search_component(const ClazzTag* type,
+                                const std::function<bool(UIComponent&)>& condition = {});
+  UIComponent* search_component_by_id(const ClazzTag* type, const std::u16string& id);
+  std::vector<UIComponent*> search_components(
+      const ClazzTag* type, const std::function<UIFind(UIComponent&)>& condition = {});
+  UIComponent* lookup_component(const ClazzTag* type,
+                                const std::function<bool(UIComponent&)>& condition = {});
+  UIComponent* lookup_component_by_id(const ClazzTag* type, const std::u16string& id);
+  bool traversal_components(const std::function<bool(UIComponent&, int)>& fn, int depth = 0);
+
   // ---- 指针/焦点回调 ----
   int pointer_over() const { return _pointer_over; }
   int pointer_down() const { return _pointer_down; }
@@ -273,6 +302,12 @@ class UINode {
   std::vector<UINode*> _children;
   // `create` 建的子树由父节点持有（TS 靠 GC）。
   std::vector<std::unique_ptr<UINode>> _owned_children;
+  // 组件（4AS）：`_components` 是活表（可能含外部持有者）；`_owned_components` 持有
+  // `factory.create_components` 造的实例。
+  std::vector<UIComponent*> _components;
+  std::vector<std::unique_ptr<UIComponent>> _owned_components;
+  bool _components_updating = false;
+  std::vector<UIComponent*> _del_components;
   Vector3 _prev_size;
   Vector3 _prev_center;
   Vector3 _prev_pos;

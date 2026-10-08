@@ -9155,3 +9155,42 @@ remains = meta 去 `properties/items/key/type` 后的剩余键（插入序照抄
 **测试**：用例 `cases/schema/inst.txt` **58 行**；变异 `schema_inst.mjs` **29/29 全杀**、
 既有 `schema.mjs` **47/47** 复跑全杀；全量差分 **222/222**。
 
+## 106. 切片 4AS：UIProps + UIComponent 基类 + UINode 组件循环
+
+新 `ui/component/ui_props.{h,cpp}`（UIProps）、`ui/component/ui_component.{h,cpp}`（UIComponent 基类 +
+`find_node` 迷你语言 + `keys`/LR/UD + 废弃的 args 访问器）、`ui/register_class.h`（类名 ↔ `ClazzTag` 登记表，
+IS 无 RTTI 的 `isUIComponentClass`/`isUINodeClass` 替代）、`ui/instance_ref.{h,cpp}`（惰性实例的「引用值」）。
+`UINode`：`components()`/`add_components`/`del_components`/`find·search·lookup_component`/`traversal_components`
++ 回调 `on_component_add/del` + 指针/显隐/焦点/update/输入转发 + `create` 的组件段。
+`Factory`：`components()` 表 + `register_component` + `create_components`。
+
+台面：`cadd <nid> <cid> <props>`（真组件实例）/`cdel`/`lcomp`（列表）/`cupd`（update）/`cset`（enabled）/
+`cfind`（find_node）；`ncb` 加 `comp_add`/`comp_del`；FakeComp 在 `init/on_add/on_del/on_start(含 lrud)/…`
+全程打 `fc|<f_name>|…`，`props` dump 一行出全部字段（num/str(one_of)/bool/nums/strs/惰性节点/组件引用）
+或 `err|<校验错误…>`。
+
+照抄怪癖（编号接 151 → 152）：152. TS `array_del` **不删命中元素**（`i -= 1` 被循环自增抵消，末尾
+`length = i + 1` 只截断/补齐）⇒ `recycle_keys` 后 keys 仍在 `mounted_keys`，重挂会 warn
+`[W][LFW::regist_keys] keys already registered`；`UIComponent.recycle_keys` **保留引用**（不置空）。
+153. `create` 装配顺序 = 先建组件（ctor + `init`）→ 再建 items 子树 → 最后父组件 `on_add`（子组件 `on_add`
+在子建完时先打）；工厂组件直接进 `_components`（不过 `on_component_add`）。154. 生命周期/输入次序：
+`on_start/on_stop/on_resume/on_pause` 组件先于子节点；`on_key_down` 组件先（`stopped==2` 短路，子节点看不到）、
+`on_key_up` 子节点先组件后；指针/`on_show/hide`/`on_foucs/blur` 只走组件循环（不下探子节点）；`on_pause`
+组件 `paused=true; mounted=false; on_pause(); recycle_keys()`。155. `update`：组件循环期间 `del_components`
+入延迟表、循环后统一删（删自身安全）；`enabled` 假跳过 update（子节点 `disabled` 不 update 照旧）。
+156. `UIProps` getter 按 `$cls:` 名→标签链分支：组件走 `search_component`→父链 `lookup_component`、节点走
+`find_node`→`search_node`→父链 `lookup_node`；命中给引用值，未命中/nullable 走 schema 的 null 语义；
+`strs` 宽松（数组递归 / 字符串按逗号切 / 数字布尔转串）、`bool` = 非 `'false'`/`'0'`；`validate` 的 schema =
+`make_schema({key: TAG+'Props', type:'object', properties: PROPS})`。157. `num/str/bool/nums/vec3` 的 args 口径
+（`Number(v)`+`is_num`、`''+v`、小写后 `false|0`、字符串按逗号切且长度/数字错缓存 null、vec3=前 3 个）；
+`find_node` 的 `parent:N` 从 `node.parent` 起爬 N 级（distance 1 已到祖父级——照抄）、`bro:prev/-1|next/+1|下标`
+（找不到 null，命中自身也 null）。
+
+偏差记录：`props` 失败不抛（`props()` 给 nullptr + `props_errors()`，TS 抛 `[UIComponent.props] failed`）；
+惰性实例用引用值表达（台面归一 `node:<id>` / `comp:<f_name>#<id>`）；`debug/warn/log` 空转；组件子类靠
+`regist_ui_class` 自注册（UINode/UIComponent 构造前静态登记，台面假类手工登记）；Factory 的 `Ditto.warn`
+第二参（info）不落地。
+
+**测试**：用例 `cases/lfw/uicomp.txt` **119 行**；变异 `lfw_uicomp.mjs` **18/18 全杀**
+（`lfw_uinode_life.mjs` 锚点随本刀修字后 **40/40** 复跑）；全量差分 **223/223**。
+

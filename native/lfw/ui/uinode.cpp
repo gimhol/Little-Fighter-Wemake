@@ -1,5 +1,6 @@
 #include "lfw/ui/uinode.h"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <utility>
@@ -8,6 +9,8 @@
 #include "lfw/core/json.h"
 #include "lfw/lfw.h"
 #include "lfw/ui/action/actor.h"
+#include "lfw/ui/component/ui_component.h"
+#include "lfw/ui/register_class.h"
 #include "lfw/ui/uilayer.h"
 #include "lfw/ui/value_spread.h"
 #include "lfw/utils/math/base.h"
@@ -16,6 +19,12 @@
 namespace lfw::ui {
 
 namespace {
+
+// 静态初始化即注册（`$cls:UINode` 标记复原用）。
+const bool s_registered = []() {
+  regist_ui_class(UINode::class_tag(), u"UINode");
+  return true;
+}();
 
 bool nullish(const Value& v) {
   return std::holds_alternative<std::monostate>(v) || std::holds_alternative<NullTag>(v);
@@ -47,6 +56,8 @@ bool loose_str_equals(const Value& v, const std::u16string& text) {
 }
 
 }
+
+UINode::~UINode() = default;
 
 UINode::UINode(LFW& lfw, const Value& data, UINode* parent, UILayer* layer)
     : _lfw(&lfw), _data(data), _raw(field_of(data, u"raw") != nullptr ? *field_of(data, u"raw")
@@ -501,36 +512,42 @@ Value UINode::get_value(const std::u16string& name, bool lookup) const {
 void UINode::on_pointer_down(LFWPointerEvent& e) {
   _pointer_down = 1;
   _click_flag = 1;
-  // 4AN：components 恒空（UIComponent 刀再补循环）。
+  for (UIComponent* const c : _components) c->on_pointer_down(e);
   if (callbacks.on_pointer_down) callbacks.on_pointer_down(e, *this);
 }
 
 void UINode::on_pointer_move(LFWPointerEvent& e) {
+  for (UIComponent* const c : _components) c->on_pointer_move(e);
   if (callbacks.on_pointer_move) callbacks.on_pointer_move(e, *this);
 }
 
 void UINode::on_pointer_up(LFWPointerEvent& e) {
   _pointer_down = 0;
+  for (UIComponent* const c : _components) c->on_pointer_up(e);
   if (callbacks.on_pointer_up) callbacks.on_pointer_up(e, *this);
 }
 
 void UINode::on_pointer_cancel(LFWPointerEvent& e) {
   _pointer_down = 0;
+  for (UIComponent* const c : _components) c->on_pointer_cancel(e);
   if (callbacks.on_pointer_cancel) callbacks.on_pointer_cancel(e, *this);
 }
 
 void UINode::on_pointer_leave() {
   _pointer_over = 0;
   _click_flag = 0;
+  for (UIComponent* const c : _components) c->on_pointer_leave();
   if (callbacks.on_pointer_leave) callbacks.on_pointer_leave(*this);
 }
 
 void UINode::on_pointer_enter() {
   _pointer_over = 1;
+  for (UIComponent* const c : _components) c->on_pointer_enter();
   if (callbacks.on_pointer_enter) callbacks.on_pointer_enter(*this);
 }
 
 void UINode::on_show() {
+  for (UIComponent* const c : _components) c->on_show();
   if (callbacks.on_show) callbacks.on_show(*this);
   const Value* const auto_focus = field_of(_data, u"auto_focus");
   if (auto_focus != nullptr && truthy(*auto_focus) && !disabled() && focused_node() == nullptr) {
@@ -540,15 +557,16 @@ void UINode::on_show() {
 
 void UINode::on_hide() {
   if (focused_node() == this) set_focused_node(nullptr);
+  for (UIComponent* const c : _components) c->on_hide();
   if (callbacks.on_hide) callbacks.on_hide(*this);
 }
 
 void UINode::on_foucs() {
-  // components / renderer 面随后续刀补（本刀为空转发）。
+  for (UIComponent* const c : _components) c->on_foucs();
 }
 
 void UINode::on_blur() {
-  // components / renderer 面随后续刀补（本刀为空转发）。
+  for (UIComponent* const c : _components) c->on_blur();
 }
 
 void UINode::invoke_all_on_show() {
@@ -588,7 +606,16 @@ void UINode::update(double dt) {
   }
 
   _update_times.add();
-  // 4AN：components 恒空（UIComponent 刀再补）。
+  _components_updating = true;
+  for (UIComponent* const c : _components) {
+    if (c->enabled()) c->update(dt);
+  }
+  _components_updating = false;
+  if (!_del_components.empty()) {
+    del_components(_del_components);
+    _del_components.clear();
+  }
+
   for (UINode* const child : _children) {
     if (!child->disabled()) child->update(dt);
   }
@@ -597,7 +624,14 @@ void UINode::update(double dt) {
 std::unique_ptr<UINode> UINode::create(LFW& lfw, const Value& info, UINode* parent,
                                        UILayer* layer) {
   std::unique_ptr<UINode> ret = std::make_unique<UINode>(lfw, info, parent, layer);
-  // `lfw.factory.create_components` / `component.on_add`：UIComponent 刀再补。
+  const Value* const component = field_of(info, u"component");
+  if (component != nullptr && truthy(*component)) {
+    std::vector<std::unique_ptr<UIComponent>> components = lfw.factory.create_components(*ret, *component);
+    for (std::unique_ptr<UIComponent>& c : components) {
+      ret->_components.push_back(c.get());
+      ret->_owned_components.push_back(std::move(c));
+    }
+  }
   const Value* const items = field_of(info, u"items");
   const Array* const arr = items != nullptr ? as_array(*items) : nullptr;
   if (arr != nullptr) {
@@ -619,6 +653,7 @@ std::unique_ptr<UINode> UINode::create(LFW& lfw, const Value& info, UINode* pare
       }
     }
   }
+  for (UIComponent* const c : ret->_components) c->on_add();
   return ret;
 }
 
@@ -627,6 +662,10 @@ void UINode::on_start() {
   _state = Value(std::make_shared<Object>());
   // TS 把焦点存在 `_state` 上（on_start 直接换新对象），端口同步复位。
   _state_focused_node = nullptr;
+  for (UIComponent* const c : _components) {
+    c->stopped = false;
+    c->on_start();
+  }
   for (UINode* const c : _children) c->on_start();
   const Value* const actions = field_of(_data, u"actions");
   const Value* const start = actions != nullptr ? field_of(*actions, u"start") : nullptr;
@@ -634,6 +673,10 @@ void UINode::on_start() {
 }
 
 void UINode::on_stop() {
+  for (UIComponent* const c : _components) {
+    c->stopped = true;
+    c->on_stop();
+  }
   for (UINode* const c : _children) c->on_stop();
   const Value* const actions = field_of(_data, u"actions");
   const Value* const stop = actions != nullptr ? field_of(*actions, u"stop") : nullptr;
@@ -644,6 +687,11 @@ void UINode::on_resume() {
   if (_parent == nullptr) {
     set_focused_node(_state_focused_node);
     if (_visible) invoke_all_visible();
+  }
+  for (UIComponent* const c : _components) {
+    c->paused = false;
+    c->mounted = true;
+    c->on_resume();
   }
   for (UINode* const c : _children) c->on_resume();
   const Value* const actions = field_of(_data, u"actions");
@@ -660,6 +708,12 @@ void UINode::on_pause() {
   const Value* const actions = field_of(_data, u"actions");
   const Value* const pause = actions != nullptr ? field_of(*actions, u"pause") : nullptr;
   if (pause != nullptr && truthy(*pause)) actor().act(*this, *pause);
+  for (UIComponent* const c : _components) {
+    c->paused = true;
+    c->mounted = false;
+    c->on_pause();
+    c->recycle_keys();
+  }
   for (UINode* const c : _children) c->on_pause();
 }
 
@@ -680,13 +734,19 @@ void UINode::on_click(LFWPointerEvent& e) {
     actor().act(*this, *rclick);
     e.stop_propagation();
   }
-  // components 空转（UIComponent 刀再补 `if (e.stopped === 2) break;`）。
+  for (UIComponent* const c : _components) {
+    c->on_click(e);
+    if (e.stopped() == 2) break;
+  }
   if (callbacks.on_click) callbacks.on_click(e);
 }
 
 void UINode::on_key_down(LFWKeyEvent& e) {
   if (e.stopped() != 0) return;
-  // components 空转。
+  for (UIComponent* const c : _components) {
+    c->on_key_down(e);
+    if (e.stopped() == 2) return;
+  }
   for (UINode* const c : _children) {
     c->on_key_down(e);
     if (e.stopped() == 2) return;
@@ -715,7 +775,140 @@ void UINode::on_key_up(LFWKeyEvent& e) {
     c->on_key_up(e);
     if (e.stopped() == 2) return;
   }
-  // components 空转。
+  for (UIComponent* const c : _components) {
+    c->on_key_up(e);
+    if (e.stopped() == 2) return;
+  }
+}
+
+const ClazzTag* UINode::class_tag() {
+  static const ClazzTag tag;
+  return &tag;
+}
+
+UINode& UINode::add_components(const std::vector<UIComponent*>& components) {
+  for (UIComponent* const component : components) {
+    bool exists = false;
+    for (UIComponent* const c : _components) {
+      if (c == component) {
+        exists = true;
+        break;
+      }
+    }
+    if (exists) continue;
+    _components.push_back(component);
+    component->on_add();
+    if (callbacks.on_component_add) callbacks.on_component_add(*component, *this);
+  }
+  return *this;
+}
+
+UINode& UINode::del_components(const std::vector<UIComponent*>& components) {
+  if (_components_updating) {
+    _del_components.insert(_del_components.end(), components.begin(), components.end());
+    return *this;
+  }
+  for (UIComponent* const component : components) {
+    const auto it = std::find(_components.begin(), _components.end(), component);
+    if (it == _components.end()) continue;
+    _components.erase(it);
+    component->on_del();
+    if (callbacks.on_component_del) callbacks.on_component_del(*component, *this);
+  }
+  return *this;
+}
+
+UIComponent* UINode::find_component(const ClazzTag* type,
+                                    const std::function<bool(UIComponent&)>& condition) {
+  for (UIComponent* const v : _components) {
+    if (!is_class(v->clazz(), type)) continue;
+    if (!condition) return v;
+    if (condition(*v)) return v;
+  }
+  return nullptr;
+}
+
+UIComponent* UINode::find_component_by_id(const ClazzTag* type, const std::u16string& id) {
+  for (UIComponent* const v : _components) {
+    if (!is_class(v->clazz(), type)) continue;
+    if (v->id == id) return v;
+  }
+  return nullptr;
+}
+
+std::vector<UIComponent*> UINode::find_components(
+    const ClazzTag* type, const std::function<UIFind(UIComponent&)>& condition) {
+  std::vector<UIComponent*> ret;
+  for (UIComponent* const v : _components) {
+    if (!is_class(v->clazz(), type)) continue;
+    if (!condition) {
+      ret.push_back(v);
+      continue;
+    }
+    const UIFind r = condition(*v);
+    if (r == UIFind::Abort) break;
+    if (r == UIFind::Yes) ret.push_back(v);
+    if (r == UIFind::End) break;
+  }
+  return ret;
+}
+
+std::vector<UIComponent*> UINode::find_components_by_id(const ClazzTag* type,
+                                                        const std::u16string& id) {
+  std::vector<UIComponent*> ret;
+  for (UIComponent* const v : _components) {
+    if (!is_class(v->clazz(), type)) continue;
+    if (v->id == id) ret.push_back(v);
+  }
+  return ret;
+}
+
+UIComponent* UINode::search_component(const ClazzTag* type,
+                                      const std::function<bool(UIComponent&)>& condition) {
+  UIComponent* const ret = find_component(type, condition);
+  if (ret != nullptr) return ret;
+  for (UINode* const child : _children) {
+    UIComponent* const found = child->search_component(type, condition);
+    if (found != nullptr) return found;
+  }
+  return nullptr;
+}
+
+UIComponent* UINode::search_component_by_id(const ClazzTag* type, const std::u16string& id) {
+  const auto cond = [&id](UIComponent& v) { return v.id == id; };
+  return search_component(type, cond);
+}
+
+std::vector<UIComponent*> UINode::search_components(
+    const ClazzTag* type, const std::function<UIFind(UIComponent&)>& condition) {
+  std::vector<UIComponent*> ret = find_components(type, condition);
+  for (UINode* const child : _children) {
+    std::vector<UIComponent*> sub = child->search_components(type, condition);
+    ret.insert(ret.end(), sub.begin(), sub.end());
+  }
+  return ret;
+}
+
+UIComponent* UINode::lookup_component(const ClazzTag* type,
+                                      const std::function<bool(UIComponent&)>& condition) {
+  UIComponent* const ret = find_component(type, condition);
+  if (ret != nullptr) return ret;
+  return _parent != nullptr ? _parent->lookup_component(type, condition) : nullptr;
+}
+
+UIComponent* UINode::lookup_component_by_id(const ClazzTag* type, const std::u16string& id) {
+  const auto cond = [&id](UIComponent& v) { return v.id == id; };
+  return lookup_component(type, cond);
+}
+
+bool UINode::traversal_components(const std::function<bool(UIComponent&, int)>& fn, int depth) {
+  for (UIComponent* const c : _components) {
+    if (fn(*c, depth)) return true;
+  }
+  for (UINode* const child : _children) {
+    if (child->traversal_components(fn, depth + 1)) return true;
+  }
+  return false;
 }
 
 bool UINode::pop_page(const UIPopPageOpts& opts) {

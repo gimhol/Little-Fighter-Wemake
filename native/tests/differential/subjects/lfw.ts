@@ -15,6 +15,7 @@ import { UIImgLoader } from "../../../../src/LFW/ui/UIImgLoader";
 import { Style } from "../../../../src/LFW/ui/Style";
 import { UILayers, type IPopPageOpts, type UILayer } from "../../../../src/LFW/ui/UILayer";
 import { actor } from "../../../../src/LFW/ui/action/Actor";
+import { UIComponent } from "../../../../src/LFW/ui/component/UIComponent";
 import { UINode } from "../../../../src/LFW/ui/UINode";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
@@ -89,6 +90,136 @@ function tree_str(n: UINode): string {
 function nref(p: UINode | undefined | null): string {
   return p ? renderValue(p.id) : "u";
 }
+
+// 4AS：台面假组件（与 C++ 侧 `bench::FakeComp` 逐字同日志）。
+function iref(v: unknown): string {
+  if (v instanceof UINode) return "node:" + String(v.id);
+  if (v instanceof UIComponent) return "comp:" + (v as Rec).f_name + "#" + (v as Rec).id;
+  return renderValue(v);
+}
+
+class FakeComponent extends UIComponent<any> {
+  static readonly TAGS = ["FakeComp"];
+  static readonly PROPS = {
+    n: { key: "n", type: "number" },
+    s: { key: "s", type: "string" },
+    pick: { key: "pick", type: "string", nullable: true },
+    ok: { key: "ok", type: "boolean", nullable: true },
+    arr: { key: "arr", type: "array", nullable: true, items: { key: "arr", type: "number" } },
+    strs: { key: "strs", type: "array", nullable: true, items: { key: "strs", type: "string" } },
+    b0: { key: "b0", type: "string", nullable: true },
+    sub: { key: "sub", type: UINode },
+    other: { key: "other", type: UIComponent },
+    stop_click: { key: "stop_click", type: "boolean", nullable: true },
+    stop_key: { key: "stop_key", type: "string", nullable: true },
+    del_at: { key: "del_at", type: "number", nullable: true },
+  };
+  private _updates = 0;
+  private tag(): string {
+    return `fc|${this.f_name}`;
+  }
+  dump(): void {
+    const f = `${this.tag()}|props`;
+    try {
+      void this.props;
+    } catch (e) {
+      push(`${f}|err|${((e as Rec).errors ?? []).join("|")}`);
+      return;
+    }
+    const h = this.props_holder;
+    let line = `${f}|n=${renderValue(h.num("n"))}|s=${renderValue(h.str("s"))}|pick=${renderValue(
+      h.str("pick", ["a", "b"])
+    )}|ok=${renderValue(h.bool("ok"))}`;
+    try {
+      const a = h.nums("arr", 2);
+      line += `|arr=${a ? a.join(",") : "z"}`;
+    } catch {
+      line += "|arr=err";
+    }
+    const ss = h.strs("strs");
+    line += `|strs=${ss ? ss.join("+") : "z"}`;
+    const ls = h.strs("s");
+    line += `|lstrs=${ls ? ls.join("+") : "z"}`;
+    line += `|b0=${renderValue(h.bool("b0"))}`;
+    line += `|sub=${iref((this.props as Rec).sub)}|other=${iref((this.props as Rec).other)}`;
+    push(line);
+  }
+  override init(): void {
+    push(`${this.tag()}|init|${this.id}`);
+  }
+  override on_add(): void {
+    push(`${this.tag()}|add|${this.id}`);
+    this.dump();
+  }
+  override on_del(): void {
+    push(`${this.tag()}|del|${this.id}`);
+  }
+  override on_start(): void {
+    push(`${this.tag()}|start`);
+    push(`${this.tag()}|lrud|${this.LR},${this.UD}`);
+  }
+  override on_stop(): void {
+    push(`${this.tag()}|stop`);
+  }
+  override on_resume(): void {
+    push(`${this.tag()}|resume`);
+    push(`${this.tag()}|lrud|${this.LR},${this.UD}`);
+  }
+  override on_pause(): void {
+    push(`${this.tag()}|pause`);
+  }
+  override on_show(): void {
+    push(`${this.tag()}|show`);
+  }
+  override on_hide(): void {
+    push(`${this.tag()}|hide`);
+  }
+  override on_foucs(): void {
+    push(`${this.tag()}|foucs`);
+  }
+  override on_blur(): void {
+    push(`${this.tag()}|blur`);
+  }
+  override on_click(e: LFWPointerEvent): void {
+    push(`${this.tag()}|click|${num(e.button)}`);
+    if (this.props_holder.bool("stop_click")) e.stop_immediate_propagation();
+  }
+  override on_key_down(e: LFWKeyEvent): void {
+    push(`${this.tag()}|kdown|${renderValue(e.game_key)}`);
+    if (this.props_holder.str("stop_key") === e.game_key) e.stop_immediate_propagation();
+  }
+  override on_key_up(e: LFWKeyEvent): void {
+    push(`${this.tag()}|kup|${renderValue(e.game_key)}`);
+  }
+  override on_pointer_down(): void {
+    push(`${this.tag()}|pdown`);
+  }
+  override on_pointer_move(): void {
+    push(`${this.tag()}|pmove`);
+  }
+  override on_pointer_up(): void {
+    push(`${this.tag()}|pup`);
+  }
+  override on_pointer_cancel(): void {
+    push(`${this.tag()}|pcancel`);
+  }
+  override on_pointer_leave(): void {
+    push(`${this.tag()}|pleave`);
+  }
+  override on_pointer_enter(): void {
+    push(`${this.tag()}|penter`);
+  }
+  override update(): void {
+    this._updates += 1;
+    push(`${this.tag()}|update|${num(this._updates)}`);
+    if (this.props_holder.num("del_at") === this._updates) {
+      push(`${this.tag()}|delreq`);
+      this.node.del_components(this);
+    }
+  }
+}
+
+Factory.register_component(FakeComponent as never);
 
 function make_img_node(lfw_: LFW): Rec {
   const node: Rec = {
@@ -965,6 +1096,8 @@ async function run_ops(): Promise<void> {
         n.callbacks.on(key, (e) => push(`cb|${nid}|${ev}|${num((e as LFWPointerEvent).button)}`));
       } else if (ev === "pleave") n.callbacks.on("on_pointer_leave", (node) => push(`cb|${nid}|pleave|${nref(node as never as UINode)}`));
       else if (ev === "penter") n.callbacks.on("on_pointer_enter", (node) => push(`cb|${nid}|penter|${nref(node as never as UINode)}`));
+      else if (ev === "comp_add") n.callbacks.on("on_component_add", (c, node) => push(`cb|${nid}|comp_add|${(c as Rec).f_name}#${(c as Rec).id}|${nref(node as never as UINode)}`));
+      else if (ev === "comp_del") n.callbacks.on("on_component_del", (c, node) => push(`cb|${nid}|comp_del|${(c as Rec).f_name}#${(c as Rec).id}|${nref(node as never as UINode)}`));
       else fail(`unknown ncb '${ev}'`);
     } else if (op === "nmk") {
       const nid = next();
@@ -1003,6 +1136,43 @@ async function run_ops(): Promise<void> {
       const lt = next();
       const layer = lt !== "-" ? real_layers.v?.at(Number(lt)) : undefined;
       tnodes.set(nid, UINode.create(lfw, parseValue(t, i) as never, undefined, layer));
+    } else if (op === "cadd" || op === "cdel" || op === "lcomp" || op === "cupd" || op === "cfind" || op === "cset") {
+      const nid = next();
+      const n = tnodes.get(nid)!;
+      if (op === "cadd") {
+        const cid = next();
+        const props = parseValue(t, i) as Rec;
+        const info = { id: cid, name: cid, cls: "FakeComp", args: [], enabled: true, properties: props, props: {}, weight: 0 };
+        const c = new FakeComponent(n, cid, info as never);
+        n.add_components(c);
+        push(`cadd|${nid}|${cid}|${n.components.length}`);
+      } else if (op === "cdel") {
+        const cid = next();
+        const c = n.components.find((v: Rec) => v.id === cid) as FakeComponent | undefined;
+        if (c) n.del_components(c);
+        push(`cdel|${nid}|${cid}|${n.components.length}`);
+      } else if (op === "lcomp") {
+        push(`lcomp|${nid}|${n.components.length}`);
+        let k = 0;
+        for (const c of n.components as FakeComponent[]) {
+          push(`fc|list|${k}|${(c.constructor as Rec).TAG}|${c.f_name}|${c.id}|${c.name}|${c.enabled ? "b1" : "b0"}`);
+          k += 1;
+        }
+      } else if (op === "cupd") {
+        n.update(Number(next()));
+        push(`cupd|${nid}`);
+      } else if (op === "cset") {
+        const cid = next();
+        const on = next() === "1";
+        const c = n.components.find((v: Rec) => v.id === cid) as FakeComponent | undefined;
+        c?.set_enabled(on);
+        push(`cset|${nid}|${cid}|${c?.enabled ? "b1" : "b0"}`);
+      } else {
+        const cid = next();
+        const which = keyOf(next());
+        const c = n.components.find((v: Rec) => v.id === cid) as FakeComponent | undefined;
+        push(`cfind|${nid}|${cid}|${which}|${c ? nref(c.find_node(which) as UINode) : "u"}`);
+      }
     } else if (op === "nact") {
       const n = tnodes.get(next())!;
       actor.act(n, parseValue(t, i) as never);

@@ -745,14 +745,24 @@ void LFW::regist_keys(Keys& keys) {
 }
 
 void LFW::recycle_keys(Keys& keys) {
+  // TS 用 `array_del(mounted_keys, keys)`；它其实**不删命中元素**（`i -= 1` 配合循环自增抵消，
+  // 结束后 `length = i + 1` 只是截断/补齐）⇒ 照抄：重挂同一把 keys 时 `regist_keys` 会 warn。
   bool ok = false;
-  for (size_t i = 0; i < mounted_keys.size();) {
-    if (mounted_keys[i] == &keys) {
-      mounted_keys.erase(mounted_keys.begin() + static_cast<std::ptrdiff_t>(i));
-      ok = true;
-    } else {
-      ++i;
+  {
+    std::vector<Keys*>& array = mounted_keys;
+    const long n = static_cast<long>(array.size());
+    long i = 0;
+    long j = 0;
+    for (; j < n; i++, j++) {
+      if (array[static_cast<size_t>(j)] == &keys) {
+        i -= 1;
+      } else {
+        array[static_cast<size_t>(i)] = array[static_cast<size_t>(j)];
+      }
     }
+    const long new_len = i + 1;
+    if (new_len > 0) array.resize(static_cast<size_t>(new_len), nullptr);
+    ok = i != j;
   }
   if (!ok) {
     lfw_warn(u"recycle_keys", {Value(u"keys not found!")});

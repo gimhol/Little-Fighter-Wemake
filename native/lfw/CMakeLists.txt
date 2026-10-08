@@ -196,6 +196,9 @@ add_library(lfw_core STATIC
   utils/read_nums.cpp
   utils/schema/make_schema.cpp
   utils/schema/validate_schema.cpp
+  ui/component/ui_component.cpp
+  ui/component/ui_props.cpp
+  ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp
   state/state_base.cpp
