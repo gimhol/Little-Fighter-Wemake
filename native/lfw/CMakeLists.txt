@@ -198,6 +198,12 @@ add_library(lfw_core STATIC
   utils/schema/validate_schema.cpp
   ui/component/ui_component.cpp
   ui/component/ui_props.cpp
+  ui/component/component_registry.cpp
+  ui/component/focus_behavior.cpp
+  ui/component/hover_behavior.cpp
+  ui/component/opacity_hover.cpp
+  ui/component/sine_opacity.cpp
+  ui/component/fade_in_opacity.cpp
   ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp

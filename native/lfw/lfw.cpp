@@ -22,6 +22,7 @@
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/loader/stage_val_getters.h"
 #include "lfw/stage/entity_item.h"
+#include "lfw/ui/component/component_registry.h"
 #include "lfw/ui/cook_ui_info.h"
 #include "lfw/ui/uilayer.h"
 #include "lfw/ui/xml_to_ui_info.h"
@@ -213,7 +214,7 @@ void LFW::IgnoreDisposed(const Value& e) {
 LFW::LFW(ILfwHost& host, bool dev) : host_(&host), zips_(), _mt(host.now()) {
   dev_mode = dev;
   // `regist_components()` / `regist_buffs()`
-  host_->regist_components();
+  ui::regist_components();
   buff::regist_buffs();
   lfw_debug(u"constructor", {});
 

@@ -1075,6 +1075,8 @@ async function run_ops(): Promise<void> {
         push(`nrd|${nid}|image|${renderValue(n.image)}`);
       } else if (what === "color") {
         push(`nrd|${nid}|color|${renderValue(n.color)}`);
+      } else if (what === "opacity") {
+        push(`nrd|${nid}|opacity|${num(n.opacity)}`);
       } else if (what === "kids") {
         let line = `nrd|${nid}|kids|${n.children.length}`;
         for (const c of n.children) line += `|${nref(c as UINode)}`;

@@ -1,0 +1,111 @@
+# 4AU：组件族第一批（FocusBehavior / HoverBehavior / OpacityHover / SineOpacity / FadeInOpacity）
+# FocusBehavior：默认行为聚焦/失焦换底色（大小写/空白归一）；未知行为无动作；空串回 default
+nmk fb1 - o 6 id s "fb1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FocusBehavior" id s "fb" properties o 1 behavior s "DEFAULT "
+lcomp fb1
+nrd fb1 color
+nset fb1 focused 1
+nrd fb1 color
+nset fb1 focused 0
+nrd fb1 color
+nmk fb2 - o 6 id s "fb2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FocusBehavior" id s "fb2c" properties o 1 behavior s " other "
+nset fb2 focused 1
+nrd fb2 color
+nmk fb3 - o 6 id s "fb3" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "FocusBehavior" id s "fb3c" properties o 1 behavior s ""
+nset fb3 focused 1
+nrd fb3 color
+# HoverBehavior：behavior=focus 进入指针时聚焦
+nmk hb1 - o 6 id s "hb1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "HoverBehavior" id s "hb" properties o 1 behavior s " FOCUS "
+npe hb1
+nrd hb1 foc
+npl hb1
+nrd hb1 foc
+nmk hb2 - o 6 id s "hb2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "HoverBehavior" id s "hb2c" properties o 1 behavior s "nope"
+npe hb2
+nrd hb2 foc
+# OpacityHover：观察父节点（args = 0,1,150,1）
+nmk ohp - o 5 id s "ohp" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nmk oh1 ohp o 6 id s "oh1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "OpacityHover" id s "oh" args a 4 n 0 n 1 n 150 n 1
+nadd ohp oh1
+nlife oh1 start
+nrd oh1 opacity
+cupd oh1 75
+nrd oh1 opacity
+npe ohp
+cupd oh1 75
+nrd oh1 opacity
+npl ohp
+nset ohp focused 1
+cupd oh1 150
+nrd oh1 opacity
+nset ohp focused 0
+cupd oh1 150
+nrd oh1 opacity
+npe ohp
+npd ohp
+cupd oh1 150
+nrd oh1 opacity
+npu ohp
+npl ohp
+# OpacityHover：直接看自己（args = 0,0.2,100，无第 4 参）
+nmk oh2 - o 6 id s "oh2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "OpacityHover" id s "oh2c" args a 3 n 0 n 0.2 n 100
+nlife oh2 start
+nrd oh2 opacity
+cupd oh2 50
+nrd oh2 opacity
+cupd oh2 100
+nrd oh2 opacity
+# OpacityHover：全默认（0,1,150）
+nmk oh3 - o 6 id s "oh3" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "OpacityHover" id s "oh3c" args a 0
+nlife oh3 start
+nrd oh3 opacity
+npe oh3
+cupd oh3 75
+nrd oh3 opacity
+cupd oh3 75
+nrd oh3 opacity
+npl oh3
+cupd oh3 75
+nrd oh3 opacity
+# OpacityHover：首帧就是"已悬停"（初向 + 缺省 duration 一起钉）
+nmk oh4 - o 6 id s "oh4" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "OpacityHover" id s "oh4c" args a 3 n 0.3 n 0.9 n 100
+nlife oh4 start
+npe oh4
+cupd oh4 50
+nrd oh4 opacity
+cupd oh4 50
+nrd oh4 opacity
+# SineOpacity：默认参数，dt 250 步进
+nmk so1 - o 6 id s "so1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "SineOpacity" id s "so" args a 0
+nlife so1 start
+nrd so1 opacity
+cupd so1 250
+nrd so1 opacity
+cupd so1 250
+nrd so1 opacity
+cupd so1 250
+nrd so1 opacity
+# SineOpacity：显式参数（min=0.25,max=1,scale=1,duration=1000,offset=0）
+nmk so2 - o 6 id s "so2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "SineOpacity" id s "so2c" args a 5 n 0.25 n 1 n 1 n 1000 n 0
+nlife so2 start
+nrd so2 opacity
+cupd so2 250
+nrd so2 opacity
+cupd so2 750
+nrd so2 opacity
+cupd so2 1
+nrd so2 opacity
+# FadeInOpacity：起始透明度走节点数据（0.5 → 1，duration=1000）
+nmk fo1 - o 7 id s "fo1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 opacity n 0.5 component a 1 o 3 cls s "FadeInOpacity" id s "fo" args a 1 n 1000
+nrd fo1 opacity
+nlife fo1 start
+nrd fo1 opacity
+cupd fo1 500
+nrd fo1 opacity
+cupd fo1 500
+nrd fo1 opacity
+# FadeInOpacity：duration 缺省 0（一次 update 即到位）
+nmk fo2 - o 7 id s "fo2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 opacity n 0.5 component a 1 o 3 cls s "FadeInOpacity" id s "fo2c" args a 0
+nlife fo2 start
+nrd fo2 opacity
+cupd fo2 250
+nrd fo2 opacity

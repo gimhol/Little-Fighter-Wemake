@@ -108,8 +108,6 @@ class ILfwHost {
   // `I.Ditto.Cache.forget(type, version)` / `I.Ditto.Zip.forget_stored(type, version)`
   virtual void cache_forget(const std::u16string& type, double version) = 0;
   virtual void zip_forget_stored(const std::u16string& type, double version) = 0;
-  // `regist_components()`（`ui/component/_`，未移植）
-  virtual void regist_components() = 0;
   // `new Ditto.WorldRender(world)`（`World` 的渲染宿主；TS 里由 `World` 自己 new）
   virtual IWorldRenderer* create_world_renderer(LFW& lfw) = 0;
   // `new Ditto.UINodeRenderer(node)`（每个 UINode 一个；渲染未移植 ⇒ 可给假实现或 nullptr）。

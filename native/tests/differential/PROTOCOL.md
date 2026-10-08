@@ -4819,3 +4819,16 @@ harness op：
   `uinode_life` 111）——两边同源，不需改用例。
 - ⚠ 台面坑：`items` 里建的子节点**不在** `g_nodes`（只有 `nmk`/`nml` 登记的才能被 `nlife`/`cadd` 等引用），
   直接 `nlife tk …` 会 `map::at` 失败 ‐– 要测子节点就用 `nmk <新 id> <父 id>` 另建一个。
+
+### 6.9.152 组件族第一批（`cases/lfw/components.txt` 97 行；变异 16/16 全杀）
+
+- 新主题用例 `components.txt`：覆盖 `FocusBehavior`（id/name/空 三种 behavior 串，钉 `trim + toLowerCase` 与
+  `default` 兜底）、`HoverBehavior`（`focus` 与非 `focus`）、`OpacityHover`（父观察步骤、自观察显式参、
+  缺省参首帧悬停、起始即悬停）、`SineOpacity`（缺省 + 显式五参）、`FadeInOpacity`（带透明度数据 + 无参）；
+  `nrd opacity` 读节点透明度观测量。
+- 组件注册两边同源：C++ 是 `ui::regist_components()` 在 `LFW` 构造器里调（幂等），
+  TS 是 `LFW.ts` 构造器调 `regist_components()` —— 不再有宿主缝。
+- ⚠ 变异坑：`OpacityHover` 的 `set_reverse(false)` 初值会被 `auto_trip` 首拍归一化，改它是**等效变异**
+  （必然存活）；改 `_p = num(3)` 为 `_p = std::nullopt` 能从父观察步骤杀掉。
+- ⚠ TS 成员初始化器（`new Easing(0,1).set_duration(150)`）在 C++ 要显式构造器落参；漏了只在
+  「缺省 duration + 悬停首帧」才能暴露（drift `n0 vs n0.4999…`）。

@@ -578,7 +578,6 @@ class FakeHost : public lfw::ILfwHost {
   void zip_forget_stored(const std::u16string& type, double version) override {
     push("zip:forget|" + to_ascii(type) + "|" + num(version));
   }
-  void regist_components() override {}
   lfw::IWorldRenderer* create_world_renderer(lfw::LFW&) override {
     push("wr_init");
     return &_renderer;
@@ -1554,6 +1553,8 @@ int main(int argc, char** argv) {
         push("nrd|" + nid + "|image|" + to_ascii(render_value(n.image())));
       } else if (what == "color") {
         push("nrd|" + nid + "|color|" + to_ascii(render_value(lfw::Value(n.color))));
+      } else if (what == "opacity") {
+        push("nrd|" + nid + "|opacity|" + num(n.opacity()));
       } else if (what == "kids") {
         std::string line = "nrd|" + nid + "|kids|" +
                            std::to_string(n.children().size());

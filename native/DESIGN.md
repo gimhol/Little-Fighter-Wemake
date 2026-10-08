@@ -9213,3 +9213,29 @@ actions 之前；子节点 pause 不碰 renderer。`on_show` 的 renderer 转发
 **测试**：用例 `cases/lfw/uicomp.txt` **149 行**（其余 lfw 用例行数同步增长：`uilayer` 199、`uinode` 165、
 `uinode_life` 111…）；变异 `lfw_uicomp.mjs` **23/23 全杀**；全量差分 **223/223**。
 
+## 108. 切片 4AU：组件族第一批（FocusBehavior/HoverBehavior/OpacityHover/SineOpacity/FadeInOpacity + 注册表）
+
+新 `ui/component/component_registry.{h,cpp}`（`ComponentCreatorT<T>` 模板 + `regist_components()`；
+`regist_one<T>(name)` = `regist_ui_class(tag, name)` + 静态 creator + `Factory::register_component`，
+幂等与 TS `_registed` 同源）；五个新组件：`focus_behavior`（`foucs`→`#FFFFFF11`、
+`blur`→`#FFFFFF00`，仅 `behavior=="default"` 时变色）、`hover_behavior`（`pointer_enter` 且
+`behavior()=="focus"` ⇒ `set_focused(true)`；`leave` 空）、`opacity_hover`（缓动 150ms、`_p` 可观察父节点、
+reverse 公式 `(!over && !focused) || down`）、`sine_opacity`（五参 min/max/scale/duration/offset，
+缺省 duration=MAX_SAFE_INTEGER，`done()` ⇒ `set_enabled(false)`）、`fade_in_opacity`（起始值 = 当前
+`opacity()`，缺省 duration 0）；`LFW` 构造期改调 `ui::regist_components()`（原宿主缝 `regist_components` 删除）。
+
+照拄怪癖（编号接 158 → 159）：159. `regist_one` 幂等 —— 重复构造 LFW 不重注册（TS `_registed` once-flag）。
+160. `behavior: String` 简写 ⇒ `props_meta` 落 `{type:"string", nullable:true}`（简写隐含可空）。
+161. FocusBehavior/HoverBehavior 的 `behavior()` 归一：`trim().toLowerCase() || 'default'`（空串→`default`）。
+162. OpacityHover 的 150ms 是 TS **成员初始化器**（`new Easing(0,1).set_duration(150)`）⇒ C++ 需显式构造器；
+漏了就缺省 duration=0，首帧悬停无缓动（曾以 drift `n0 vs n0.4999…` 暴露）。
+163. OpacityHover 的 `num(3)` 为真值 ⇒ `update` 观察 `*node.parent()`（父悬停驱动子透明度）；
+`set_reverse(false)` 初值其实被 `auto_trip` 首拍归一化，改它等于等效变异（不要拿来做变异）。
+164. SineOpacity 参数下标：0=min、1=max、2=scale、3=duration、4=offset；`set(min,max,scale)` 在
+`set_offset`/`set_duration` 之前调用；`done()` 时自动 `set_enabled(false)`。
+165. FadeInOpacity 起始值 = **当前** `node.opacity()`；`set_val_1` 在 C++ 返回 void ⇒ 拆两句（TS 可链）。
+
+偏差记录：`Easing::set_val_1` 返回 void（TS 可链式）；渲染未移植照旧。
+
+**测试**：用例 `cases/lfw/components.txt` **97 行**；变异 `lfw_components.mjs` **16/16 全杀**；全量差分 **224/224**。
+
