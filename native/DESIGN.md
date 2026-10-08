@@ -9297,3 +9297,20 @@ C++ `regist_one` 需对 `Picture` 巨两次（`Picture`/`Image`）。180. `image
 **测试**：用例 `cases/lfw/img.txt` **113 行** + `cases/lfw/smooth.txt` **44 行**；变异 `lfw_widget.mjs` **15/15 全杀**；
 全量差分 **228/228**。
 
+## 112. 切片 4AY：Reachable / ReachableGroup（焦点导航）
+
+两个新组件：`reachable`（args = [group]；`group_name` 缺省空串；`group()` 从 `node.root()` 向上 `lookup_component`
+同名 ReachableGroup）与 `reachable_group`（args = [group, direction, binded_layout_id?]；`binded_layout` 缺省自身、
+否则 `root().find_child(id)`；`on_start` 从 root 收同组 Reachable 并按 global_pos 排序（lr→x、ud→y）；
+`on_key_down` 先过 direction 门（lr=L/R、ud=U/D）+ binded_layout 的 visible/disabled 门，再 focus_prev/next；
+两函数都只把可见且未禁用的项计入，prev=`(max(idx,0)+len-1)%len`、next=`(idx+1)%len`）。
+附修：`props_tag()` 默认改为按注册表反查首名（新 `ui_class_name`，等价 TS `static get TAG()`）。
+
+照拄怪癖（编号接 182 → 183）：183. `props_tag()` 默认必须是**子类的 TAGS[0]**（TS `static get TAG` 是 getter）——
+早期默认实现静态绑到基类，未覆写的组件会打 "UIComponent"。184. `Reachable.group()` 是**从 root 向上**找——
+组挂在子节点（而非 root 自身/祖先）时永远找不到（TS 如此）。185. `binded_layout` 的 `find_child` 只查**直接子节点**。
+186. `focus_prev` 无焦点时 `max(idx,0)` → 落在最后一项；`focus_next` 无焦点（-1）→ 0 即最左项。
+
+**测试**：用例 `cases/lfw/focus_nav.txt` **55 行**（新台面 op `reach`）；变异 `lfw_reach.mjs` **13/13 全杀**；
+全量差分 **229/229**。
+

@@ -106,7 +106,12 @@ const Value& UIComponent::PROPS() {
   return props;
 }
 
-const std::u16string& UIComponent::props_tag() const { return TAGS()[0]; }
+const std::u16string& UIComponent::props_tag() const {
+  // 等价 TS `static get TAG() { return this.TAGS[0] }`：按注册顺序反查首个类名。
+  const std::u16string* const name = ui_class_name(clazz());
+  static const std::u16string fallback = u"UIComponent";
+  return name != nullptr ? *name : fallback;
+}
 
 const Value& UIComponent::props_meta() const { return PROPS(); }
 

@@ -17,6 +17,8 @@
 #include "lfw/ui/component/pause_handling.h"
 #include "lfw/ui/component/picture.h"
 #include "lfw/ui/component/position_animation.h"
+#include "lfw/ui/component/reachable.h"
+#include "lfw/ui/component/reachable_group.h"
 #include "lfw/ui/component/scale_animation.h"
 #include "lfw/ui/component/scale_clickable.h"
 #include "lfw/ui/component/sine_opacity.h"
@@ -62,6 +64,8 @@ void regist_components() {
   regist_one<Picture>(u"Picture");
   regist_one<Picture>(u"Image");
   regist_one<ImgLoop>(u"ImgLoop");
+  regist_one<Reachable>(u"Reachable");
+  regist_one<ReachableGroup>(u"ReachableGroup");
 }
 
 }

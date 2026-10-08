@@ -4864,3 +4864,13 @@ harness op：
   `col*row < count` 造**（用例：col2×row1 网格 + count10 ⇒ idx≥2 隐藏）。
 - ⚠ stop/start 的 `times` 差异要 **回卷之后再多跑几步** 才看得到（done 只在回卷帧置位，下一帧才停）。
 - 台面自重构：组件/工具驱动 op 已抽到单函数 `run_comp_ops`（主 else-if 链块嵌套超 MSVC 上限）。
+
+### 6.9.156 Reachable / ReachableGroup（`cases/lfw/focus_nav.txt` 55 行；变异 13/13 全杀）
+
+- 新台面 op `reach <nid> <rd|grd>`：`rd` 打 `reach|<nid>|g|组名|组节点或 u`；`grd` 打
+  `reach|<nid>|rg|组|方向|binded 节点|数量|各 Reachable 节点…`。
+- ⚠ 用例布局：`Reachable.group()` 是**从 root 向上**查同名组 —— 想让 `reach <re> rd` 命中，组必须挂
+  **root 自身**（本用例把 ReachableGroup 放在根节点，而不是某个子容器）。
+- ⚠ 导航的可见/禁用过滤要挑“当前焦点**之后**的项”去禁（禁用项被跳过后 `next` 会回卷），
+  过滤与不过滤才会走出不同目标。
+- 组件条目不带 `properties` 键也能正常创建（`args` 有的情况）；trace 产物可能滞后于上一轮，看漂移前先确认是新一轮的 artifact。

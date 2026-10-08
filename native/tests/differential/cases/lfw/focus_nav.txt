@@ -1,0 +1,57 @@
+# 4AY：Reachable / ReachableGroup（焦点导航）
+
+nmk rg1 - o 6 id s "rg1" pos a 3 n 0 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "ReachableGroup" id s "g1" args a 3 s "g1" s "lr" s "pad"
+nmk pad rg1 o 5 id s "pad" pos a 3 n 0 n 0 n 0 size a 3 n 50 n 50 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nmk re1 rg1 o 6 id s "re1" pos a 3 n 0 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "Reachable" id s "re1c" args a 1 s "g1"
+nmk re2 rg1 o 6 id s "re2" pos a 3 n 50 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "Reachable" id s "re2c" args a 1 s "g1"
+nmk re3 rg1 o 6 id s "re3" pos a 3 n -20 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "Reachable" id s "re3c" args a 1 s "g1"
+nmk re4 rg1 o 6 id s "re4" pos a 3 n 90 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "Reachable" id s "re4c" args a 1 s "g2"
+nmk re5 rg1 o 6 id s "re5" pos a 3 n 30 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 3 cls s "Reachable" id s "re5c" args a 1 s "g1"
+nadd rg1 pad
+nadd rg1 re1
+nadd rg1 re2
+nadd rg1 re3
+nadd rg1 re4
+nadd rg1 re5
+
+# 分组：Reachable.group() 从 root 向上找同名 ReachableGroup（root=rg1 自身 ⇒ 命中；g2 ⇒ u）
+reach re1 rd
+reach re3 rd
+reach rg1 grd
+nlife rg1 start
+reach rg1 grd
+
+# 导航：R 从无焦点开始取最左（re3），随后 re1、re5；L 回退；U 在 lr 组直接 return
+nrd re1 foc
+nkey rg1 down R KeyR
+nrd re3 foc
+nkey rg1 down R KeyR
+nrd re1 foc
+nkey rg1 down R KeyR
+nrd re5 foc
+nkey rg1 down L KeyL
+nrd re1 foc
+nkey rg1 down U KeyU
+nrd re1 foc
+
+# 可见过滤：隐藏 re2 后从 re1 前进到 re5
+nset re2 visible 0
+nkey rg1 down R KeyR
+nrd re5 foc
+nset re2 visible 1
+
+# 禁用过滤：禁用 re2 后从 re5 前进应回卷到 re3（而不是 re2）
+nset re2 disabled 1
+nkey rg1 down R KeyR
+nrd re3 foc
+nset re2 disabled 0
+
+# binded_layout（pad）不可见/禁用时按键无反应
+nset pad visible 0
+nkey rg1 down R KeyR
+nrd re3 foc
+nset pad visible 1
+nset pad disabled 1
+nkey rg1 down R KeyR
+nrd re3 foc
+nset pad disabled 0

@@ -26,6 +26,8 @@
 #include "lfw/ui/component/opacity_flash.h"
 #include "lfw/ui/component/picture.h"
 #include "lfw/ui/component/position_animation.h"
+#include "lfw/ui/component/reachable.h"
+#include "lfw/ui/component/reachable_group.h"
 #include "lfw/ui/component/scale_animation.h"
 #include "lfw/ui/component/smooth_number.h"
 #include "lfw/ui/component/ui_component.h"
@@ -966,6 +968,44 @@ bool run_comp_ops(lfw::LFW& lfw, const std::vector<std::string>& t, size_t& i,
       g_smooths.at(t[i++])->update();
     } else if (op == "shandle") {
       g_smooths.at(t[i++])->handle();
+    } else if (op == "reach") {
+      const std::string nid = t[i++];
+      const std::string act = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (act == "rd") {
+        lfw::ui::Reachable* r = nullptr;
+        for (lfw::ui::UIComponent* const c : n.components()) {
+          if (c->clazz() == lfw::ui::Reachable::class_tag()) {
+            r = static_cast<lfw::ui::Reachable*>(c);
+            break;
+          }
+        }
+        if (r == nullptr) {
+          push("reach|" + nid + "|none");
+        } else {
+          lfw::ui::ReachableGroup* const g = r->group();
+          push("reach|" + nid + "|g|" + to_ascii(r->group_name()) + "|" +
+               (g != nullptr ? node_ref(&g->node) : std::string("u")));
+        }
+      } else {
+        lfw::ui::ReachableGroup* rg = nullptr;
+        for (lfw::ui::UIComponent* const c : n.components()) {
+          if (c->clazz() == lfw::ui::ReachableGroup::class_tag()) {
+            rg = static_cast<lfw::ui::ReachableGroup*>(c);
+            break;
+          }
+        }
+        if (rg == nullptr) {
+          push("reach|" + nid + "|none");
+        } else {
+          std::string line = "reach|" + nid + "|rg|" + to_ascii(rg->group()) + "|" +
+                             to_ascii(rg->direction()) + "|" +
+                             node_ref(&rg->binded_layout()) + "|" +
+                             std::to_string(rg->reachables().size());
+          for (lfw::ui::Reachable* const r : rg->reachables()) line += "|" + node_ref(&r->node);
+          push(line);
+        }
+      }
 
   } else {
     return false;

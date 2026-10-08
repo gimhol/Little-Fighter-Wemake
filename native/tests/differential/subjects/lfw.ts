@@ -1304,6 +1304,27 @@ async function run_ops(): Promise<void> {
       smooths.get(next())!.update();
     } else if (op === "shandle") {
       smooths.get(next())!.handle();
+    } else if (op === "reach") {
+      const nid = next();
+      const act = next();
+      const n = tnodes.get(nid)!;
+      const comps = n.components as Rec[];
+      const tags = (v: Rec): string[] => (((v.constructor as Rec).TAGS as string[] | undefined) ?? []);
+      if (act === "rd") {
+        const r = comps.find((v) => tags(v).includes("Reachable"));
+        if (!r) push(`reach|${nid}|none`);
+        else push(`reach|${nid}|g|${String((r as Rec).group_name)}|${(r as Rec).group ? nref((r as Rec).group.node as UINode) : "u"}`);
+      } else {
+        const rg = comps.find((v) => tags(v).includes("ReachableGroup"));
+        if (!rg) push(`reach|${nid}|none`);
+        else {
+          const parts = [
+            `reach|${nid}|rg|${String((rg as Rec).group)}|${String((rg as Rec).direction)}|${nref((rg as Rec).binded_layout as UINode)}|${((rg as Rec).reachables as Rec[]).length}`,
+            ...((rg as Rec).reachables as Rec[]).map((v) => nref(v.node as UINode)),
+          ];
+          push(parts.join("|"));
+        }
+      }
     } else if (op === "nact") {
       const n = tnodes.get(next())!;
       actor.act(n, parseValue(t, i) as never);

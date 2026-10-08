@@ -40,5 +40,13 @@ inline const ClazzTag* find_ui_class(const std::u16string& name) {
   return nullptr;
 }
 
+// 反查：首个登记的名字（等价 TS `static get TAG() { return this.TAGS[0] }`）。
+inline const std::u16string* ui_class_name(const ClazzTag* tag) {
+  for (const UIClassEntry& e : ui_class_registry()) {
+    if (e.tag == tag) return &e.name;
+  }
+  return nullptr;
+}
+
 }
 }
