@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -39,7 +41,7 @@ const Value& default_info() {
     o.set(u"type", Value(std::u16string(u"FULL")));
     o.set(u"version", Value(0.0));
     o.set(u"title", Value(std::u16string(u"Little Fighter Wemake Origin Full Game")));
-    o.set(u"description", Value(std::u16string(u"Little Fighter Wemake Origin Full Zip")));
+    o.set(u"description", Value(std::u16string(u"Little Fighter Wemake Origin Full Game Zip")));
     o.set(u"author", Value(std::u16string(u"Gim")));
     o.set(u"paths", Value(std::move(arr)));
     return Value(std::make_shared<Object>(o));
@@ -1016,6 +1018,502 @@ bool LFW::ctrl_goingto(const controller::BaseController& ctrl) const {
   if (ctrl.creator() != controller::bot_controller_creator()) return false;
   const bot::BotController* const b = static_cast<const bot::BotController*>(&ctrl);
   return truthy(b->goingto);
+}
+
+namespace {
+
+// ---- 4AC 加载流程的小助手 ----
+constexpr size_t kNpos = std::u16string::npos;
+
+bool nullish(const Value& v) {
+  return std::holds_alternative<std::monostate>(v) || std::holds_alternative<NullTag>(v);
+}
+
+// `a ?? b`。
+Value coalesce(const Value& a, const Value& b) { return nullish(a) ? b : a; }
+
+// `String.prototype.endsWith`。
+bool js_ends_with(const std::u16string& s, const std::u16string& suffix) {
+  if (suffix.size() > s.size()) return false;
+  return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+// `pick_data_info(raw)`（模块级函数；只留字符串/数字字段，其余 `undefined`）。
+IDataInfo pick_data_info(const Value& raw) {
+  static const Value kEmpty = Value(std::make_shared<Object>());
+  const Value v = nullish(raw) ? kEmpty : raw;
+  const auto str_field = [&v](const char16_t* key) -> Value {
+    const Value& x = field_or(v, key);
+    return std::holds_alternative<std::u16string>(x) ? x : Value();
+  };
+  const auto num_field = [&v](const char16_t* key) -> Value {
+    const Value& x = field_or(v, key);
+    return std::holds_alternative<double>(x) ? x : Value();
+  };
+  IDataInfo info;
+  info.type = str_field(u"type");
+  info.url = str_field(u"url");
+  info.title = str_field(u"title");
+  info.description = str_field(u"description");
+  info.author = str_field(u"author");
+  info.version = num_field(u"version");
+  info.time = str_field(u"time");
+  info.md5 = str_field(u"md5");
+  return info;
+}
+
+// `no_cache_url(url)`：`?`/`&` 接 `time=${Date.now()}`。
+std::u16string no_cache_url(const std::u16string& url, double now) {
+  const bool has_query = url.find(u'?') != kNpos;
+  return url + (has_query ? u"&" : u"?") + u"time=" + number_to_string(now);
+}
+
+bool starts_http(const std::u16string& s) {
+  return js_starts_with(s, u"http://") || js_starts_with(s, u"https://");
+}
+
+// `zip_content_url(zip_url, md5)`：`if (!md5) return zip_url`。
+std::u16string zip_content_url(const std::u16string& zip_url, const Value& md5) {
+  const std::u16string* const m = as_str(md5);
+  if (m == nullptr || m->empty()) return zip_url;
+  const bool has_query = zip_url.find(u'?') != kNpos;
+  return zip_url + (has_query ? u"&" : u"?") + u"md5=" + *m;
+}
+
+// `full_zip_url(info_url, zip_url)`：照抄 JS 的 indexOf/-1/`>0` 语义。
+std::u16string full_zip_url(const std::u16string& info_url, const std::u16string& zip_url) {
+  if (starts_http(zip_url)) return zip_url;
+  if (!starts_http(info_url)) return zip_url;
+  const long long si =
+      info_url.find(u'?') == kNpos ? -1 : static_cast<long long>(info_url.find(u'?'));
+  const long long hi =
+      info_url.find(u'#') == kNpos ? -1 : static_cast<long long>(info_url.find(u'#'));
+  const long long end = (si > 0 && hi > 0) ? std::min(si, hi) : (si > 0 ? si : hi);
+  const std::u16string part_a = end > 0 ? info_url.substr(0, static_cast<size_t>(end)) : info_url;
+  if (!js_ends_with(part_a, u".zip.json")) return zip_url;
+  const std::u16string part_b = end > 0 ? info_url.substr(static_cast<size_t>(end)) : u"";
+  const size_t ttt = part_a.rfind(u'/');
+  return part_a.substr(0, ttt == kNpos ? 0 : ttt) + u"/" + zip_url + part_b;
+}
+
+// `number.toFixed(1).replace(".0", "")`。
+std::u16string one_decimal(double v) {
+  const long long scaled = static_cast<long long>(v * 10.0 + 0.5);
+  std::u16string s = number_to_string(static_cast<double>(scaled / 10));
+  const long long frac = scaled % 10;
+  if (frac != 0) s += u"." + number_to_string(static_cast<double>(frac));
+  return s;
+}
+
+// `get_short_file_size_txt(bytes)`。
+std::u16string short_size(double bytes0) {
+  double bytes = bytes0;
+  if (bytes < 1024) return number_to_string(bytes) + u"B";
+  bytes /= 1024;
+  if (bytes < 1024) return one_decimal(bytes) + u"KB";
+  bytes /= 1024;
+  if (bytes < 1024) return one_decimal(bytes) + u"MB";
+  bytes /= 1024;
+  return one_decimal(bytes) + u"GB";
+}
+
+// `/(^|\/)data\/data\.index\./i`。
+bool is_base_index_name(const std::u16string& name) {
+  static const std::u16string kNeedle = u"data/data.index.";
+  const std::u16string lower = to_lower_case(name);
+  size_t pos = lower.find(kNeedle);
+  while (pos != kNpos) {
+    if (pos == 0 || lower[pos - 1] == u'/') return true;
+    pos = lower.find(kNeedle, pos + 1);
+  }
+  return false;
+}
+
+}  // namespace
+
+std::vector<IDataInfo> LFW::collect_data_infos() {
+  LFW* const inst = instance();
+  if (inst == nullptr) return {};
+  const std::vector<IDataInfo*> loaded = inst->zips_.data_infos();
+  std::set<std::u16string> loaded_md5s;
+  std::vector<IDataInfo> ret;
+  for (IDataInfo* const info : loaded) {
+    if (const std::u16string* const m = as_str(info->md5)) loaded_md5s.insert(*m);
+    ret.push_back(*info);
+  }
+  for (const ZipItem& a : ZIPS()) {
+    if (a.is_zip()) continue;
+    Value raw;
+    Value hit;
+    std::u16string error;
+    if (!inst->import_as_json({no_cache_url(a.path, inst->host_->now())}, raw, hit, error)) {
+      inst->host_->warn({Value(u"[LFW::collect_data_infos] 读取数据包信息失败: " + a.path),
+                         Value(error)});
+      continue;
+    }
+    const IDataInfo info = pick_data_info(raw);
+    const std::u16string* const m = as_str(info.md5);
+    if (m != nullptr && !m->empty() && loaded_md5s.count(*m) == 0) {
+      ret.push_back(info);
+    }
+  }
+  return ret;
+}
+
+bool LFW::disposed_guard(const std::u16string& fn, std::u16string& error) {
+  if (!_disposed) return true;
+  error = u"[LFW::" + fn + u"] instance disposed.";
+  return false;
+}
+
+void LFW::on_loading_file(const std::u16string& url, double progress, double full_size) {
+  const std::u16string txt = url + u"(" + short_size(full_size) + u")";
+  emit_progress_size(txt, progress, Value(full_size));
+}
+
+bool LFW::pick_zip_info(IZip& zip, IDataInfo& out) {
+  Value raw;
+  bool has_raw = false;
+  for (const char16_t* const name : {u"__info.json", u"__info.json5"}) {
+    IZipObject* const file = zip.file(name);
+    if (file == nullptr) continue;
+    Value v;
+    std::u16string ignored;
+    if (!file->json(v, ignored)) continue;  // TS `.catch(() => undefined)`
+    if (truthy(v) && as_object(v) != nullptr && !is_array(v)) {
+      raw = v;
+      has_raw = true;
+      break;
+    }
+  }
+  const IDataInfo picked = has_raw ? pick_data_info(raw) : IDataInfo{};
+  out.type = coalesce(picked.type, field_or(INFO(), u"type"));
+  out.url = picked.url;
+  out.title = coalesce(picked.title,
+                       coalesce(field_or(INFO(), u"title"), Value(std::u16string(zip.name()))));
+  out.description = coalesce(picked.description, field_or(INFO(), u"description"));
+  out.author = coalesce(picked.author, field_or(INFO(), u"author"));
+  out.version = coalesce(picked.version, field_or(INFO(), u"version"));
+  out.time = picked.time;
+  const std::optional<std::u16string> md5 = zip.md5();
+  out.md5 = md5.has_value() ? Value(*md5) : Value();
+  return true;
+}
+
+bool LFW::load_zip_from_object(IZip& zip, LoadedZip& out, std::u16string& error) {
+  if (!disposed_guard(u"_load_zip_from_object", error)) return false;
+  IDataInfo info;
+  pick_zip_info(zip, info);
+  if (!disposed_guard(u"_load_zip_from_object", error)) return false;
+  out.zip = &zip;
+  out.info = info;
+  return true;
+}
+
+bool LFW::load_zip_from_url(const std::u16string& info_url, LoadedZip& out,
+                            std::u16string& error) {
+  const auto check = [this, &error]() { return disposed_guard(u"load_zip_from_url", error); };
+  if (!check()) return false;
+  emit_progress(info_url, 0.0);
+  Value raw;
+  Value hit;
+  if (!import_as_json({no_cache_url(info_url, host_->now())}, raw, hit, error)) return false;
+  if (!check()) return false;
+
+  const IDataInfo info = pick_data_info(raw);
+  if (!truthy(info.url)) {
+    error = u"[LFW::load_zip_from_url] info json url got: " + info_url;
+    return false;
+  }
+
+  const std::u16string url = to_string(info.url);
+  const Value md5 = info.md5;
+  const std::u16string* const md5s = as_str(md5);
+  const bool has_md5 = md5s != nullptr && !md5s->empty();
+  const std::u16string zip_url = zip_content_url(full_zip_url(info_url, url), md5);
+
+  IZip* zip = nullptr;
+  if (has_md5) {
+    const Value stored = host_->zip_get_stored(zip_url, *md5s);
+    if (!check()) return false;
+    if (truthy(stored)) {
+      if (!host_->zip_read_blob(*md5s, stored, md5, zip, error)) return false;
+      if (!check()) return false;
+    }
+  }
+
+  if (zip == nullptr) {
+    const Value exists = has_md5 ? host_->zip_cache_get(*md5s) : Value();
+    if (truthy(exists) && !check()) return false;
+    if (truthy(exists)) {
+      const Value name = field_or(exists, u"name");
+      const Value data = field_or(exists, u"data");
+      const Value blob = field_or(exists, u"blob");
+      if (truthy(data)) {
+        if (!host_->zip_read_buf(to_string(name), data, zip, error)) return false;
+        if (!check()) return false;
+      } else if (truthy(blob)) {
+        if (!host_->zip_read_blob(to_string(name), blob, md5, zip, error)) return false;
+        if (!check()) return false;
+      }
+    }
+  }
+
+  if (zip == nullptr) {
+    ILfwHost::DownloadedZip downloaded;
+    if (!host_->zip_download(zip_url, md5, *this, downloaded, error)) return false;
+    if (!check()) return false;
+
+    host_->zip_cache_del(info_url, u"");
+    if (!check()) return false;
+
+    const auto read_blob = [&](const std::u16string& name, const Value& blob,
+                               const Value& m) -> bool {
+      return host_->zip_read_blob(name, blob, m, zip, error);
+    };
+    if (downloaded.stored) {
+      if (!read_blob(has_md5 ? *md5s : zip_url, downloaded.blob, downloaded.md5)) return false;
+    } else if (has_md5) {
+      Object entry;
+      entry.set(u"name", Value(*md5s));
+      entry.set(u"version", Value(DATA_VERSION()));
+      entry.set(u"type", Value(DATA_TYPE()));
+      entry.set(u"blob", downloaded.blob);
+      entry.set(u"data", Value(NullTag{}));
+      host_->zip_cache_put(Value(std::make_shared<Object>(entry)));
+      if (!check()) return false;
+
+      const Value cached = host_->zip_cache_get(*md5s);
+      if (truthy(field_or(cached, u"blob"))) {
+        if (!read_blob(to_string(field_or(cached, u"name")), field_or(cached, u"blob"), md5)) {
+          return false;
+        }
+      } else {
+        if (!read_blob(*md5s, downloaded.blob, downloaded.md5)) return false;
+      }
+    } else {
+      if (!read_blob(zip_url, downloaded.blob, downloaded.md5)) return false;
+    }
+    if (!check()) return false;
+  }
+
+  emit_progress(url, 100.0);
+  out.zip = zip;
+  out.info = info;
+  return true;
+}
+
+bool LFW::load_ui(IZip& zip, std::vector<Value>& out, std::u16string& error) {
+  const auto check = [this, &error]() { return disposed_guard(u"load_ui", error); };
+  if (!check()) return false;
+  std::vector<Value> ret;
+  for (IZipObject* const file : zip.file_regex(u"^ui\\/.*?\\.ui\\.(json5?|xml)$")) {
+    if (js_ends_with(file->name(), u".xml")) {
+      Value text;
+      std::u16string ignored;
+      if (!file->text(text, ignored)) continue;  // TS `.catch(() => null)`
+      if (!check()) return false;
+      if (!truthy(text)) continue;
+      Value marker;
+      std::shared_ptr<IXMLElement> root;
+      host_->xml_parse(text, marker, root, ignored);
+      if (root == nullptr) continue;
+      Value ui_info;
+      host_->ui_xml_to_info(*this, root, ui_info);
+      if (!truthy(ui_info)) continue;
+      if (const Object* const o = as_object(ui_info); o != nullptr && o->empty()) continue;
+      Value cooked;
+      if (!host_->ui_cook_value(*this, ui_info, cooked, error)) return false;
+      if (!check()) return false;
+      ret.push_back(cooked);
+    } else {
+      Value json;
+      std::u16string ignored;
+      if (!file->json(json, ignored)) continue;  // TS `.catch(() => null)`
+      if (!check()) return false;
+      if (!truthy(json) || is_array(json)) continue;
+      Value cooked;
+      if (!host_->ui_cook_value(*this, json, cooked, error)) return false;
+      if (!check()) return false;
+      ret.push_back(cooked);
+    }
+  }
+
+  if (_disposed) {
+    host_->ui_clear(*this);
+    out = host_->ui_all(*this);
+    return true;
+  }
+  _ui_loaded = true;
+  host_->ui_add(*this, ret);
+  {
+    LfwCallbackArgs args;
+    args.lfw = this;
+    args.infos = ret;
+    callbacks.call(u"on_ui_loaded", {args});
+  }
+  out = ret;
+  return true;
+}
+
+bool LFW::load_builtin_ui(std::vector<Value>& out, std::u16string& error) {
+  const auto check = [this, &error]() { return disposed_guard(u"load_builtin_ui", error); };
+  if (!check()) return false;
+  ImportResult res;
+  if (!resources_->import_json(u"builtin_data/launch/_index.json", true, res, error)) return false;
+  std::vector<Value> ret;
+  if (const Array* const paths = as_array(res.data)) {
+    for (size_t i = 0; i < paths->size(); ++i) {
+      const std::u16string* const path = as_str(paths->at(i));
+      if (path == nullptr) continue;
+      Value cooked;
+      if (!host_->ui_cook_path(*this, *path, cooked, error)) return false;
+      if (!check()) return false;
+      ret.insert(ret.begin(), cooked);  // `ret.unshift(cooked_ui_info)`
+    }
+  }
+  host_->ui_add(*this, ret);
+  out = ret;
+  return true;
+}
+
+bool LFW::load_data(const LoadedZip& z, std::u16string& error) {
+  const auto check = [this, &error]() { return disposed_guard(u"load_data", error); };
+  if (!check()) return false;
+  IZip& zip = *z.zip;
+
+  Value r;
+  if (IZipObject* const f = zip.file(u"strings.json")) {
+    if (!f->json(r, error)) return false;
+    if (truthy(r)) _i18n.add(r);
+  }
+  if (!check()) return false;
+
+  if (IZipObject* const f = zip.file(u"strings.json5")) {
+    if (!f->json(r, error)) return false;
+    if (truthy(r)) _i18n.add(r);
+  }
+  if (!check()) return false;
+
+  for (IZipObject* const file : zip.file_regex(u"\\.(i18n|strings)\\.json5?$")) {
+    Value words;
+    std::u16string ignored;
+    const bool ok = file->json(words, ignored);
+    if (!check()) return false;
+    if (ok && truthy(words)) _i18n.add(words);
+  }
+  if (!check()) return false;
+
+  _owned_infos.push_back(std::make_unique<IDataInfo>(z.info));
+  zips_.add(ILoadedZip{z.zip, _owned_infos.back().get()});
+  {
+    LfwCallbackArgs args;
+    args.lfw = this;
+    args.zips = zips_.zips();
+    callbacks.call(u"on_zips_changed", {args});
+  }
+
+  std::vector<std::u16string> base;
+  std::vector<std::u16string> rest;
+  for (IZipObject* const file : zip.file_regex(u"\\.index\\.(json5|xml)$")) {
+    if (is_base_index_name(file->name())) base.push_back(file->name());
+    else rest.push_back(file->name());
+  }
+  std::vector<std::u16string> paths = base;
+  paths.insert(paths.end(), rest.begin(), rest.end());
+  if (!datas_->load(paths, error)) return false;
+  if (!check()) return false;
+
+  // TS 的 `regist(this.fighters, d)`（`add_<name>` 动态方法）：端口不建模，记 README 偏差表。
+  for (IZipObject* const bgm : zip.file_regex(u"bgm\\/.*?\\.mp3$")) {
+    bool dup = false;
+    for (const std::u16string& v : bgms) {
+      if (v == bgm->name()) {
+        dup = true;
+        break;
+      }
+    }
+    if (!dup) bgms.push_back(bgm->name());
+  }
+
+  std::vector<Value> cooked;
+  return load_ui(zip, cooked, error);
+}
+
+bool LFW::load(const std::vector<ZipItem>& arg1, std::u16string& error) {
+  const bool is_first = zips_.length() == 0;
+  const auto check = [this, &error]() { return disposed_guard(u"load", error); };
+  if (!check()) return false;
+  _loading = true;
+  {
+    LfwCallbackArgs args;
+    args.lfw = this;
+    callbacks.call(u"on_loading_start", {args});
+  }
+
+  // TS 这段在建 `try` 之前：失败直接 reject、`finally` 不跑 ⇒ `_loading` 留在 true。
+  if (is_first) {
+    ImportResult res;
+    if (!resources_->import_json(u"builtin_data/launch/strings.json", true, res, error)) {
+      return false;
+    }
+    if (!check()) return false;
+    _i18n.add(res.data);
+    std::vector<Value> cooked;
+    if (!load_builtin_ui(cooked, error)) return false;
+    if (!check()) return false;
+    bool found = false;
+    Value id;
+    for (const Value& v : host_->ui_all(*this)) {
+      const Value& vid = field_or(v, u"id");
+      const std::u16string* const s = as_str(vid);
+      if (s != nullptr && *s == first_page) {
+        found = true;
+        id = vid;
+        break;
+      }
+    }
+    Object opts;
+    opts.set(u"id", found ? id : Value());
+    _layers->set_page(Value(std::make_shared<Object>(opts)), 0.0);
+  }
+
+  bool failed = false;
+  std::u16string fail_error;
+  for (const ZipItem& a : arg1) {
+    LoadedZip z;
+    if (a.is_zip()) failed = !load_zip_from_object(*a.zip, z, fail_error);
+    else failed = !load_zip_from_url(a.path, z, fail_error);
+    if (!failed) failed = !check();
+    if (!failed) failed = !load_data(z, fail_error);
+    if (!failed) failed = !check();
+    if (failed) break;
+  }
+
+  if (failed) {
+    _loading = false;
+    error = fail_error;
+    if (_disposed) return false;
+    LfwCallbackArgs args;
+    args.lfw = this;
+    args.value = Value(fail_error);
+    callbacks.call(u"on_loading_failed", {args});
+    return false;
+  }
+
+  if (is_first) {
+    LfwCallbackArgs args;
+    args.lfw = this;
+    callbacks.call(u"on_prel_loaded", {args});
+  }
+  _playable = true;
+  {
+    LfwCallbackArgs args;
+    args.lfw = this;
+    callbacks.call(u"on_loading_end", {args});
+  }
+  _loading = false;
+  return true;
 }
 
 }  // namespace lfw

@@ -159,6 +159,40 @@ class ILfwHost {
   // `set_lang` 的节点遍历那一半（`UINode` 未移植）。约定时序与 TS 一致：先按 `prev` 收集、
   // 再 `lfw.i18n().set_lang(lang)`、再改写节点。
   virtual void lang_apply(LFW& lfw, const std::u16string& lang, const std::u16string& prev) = 0;
+
+  // ---- `_load_zip_from_url` 的 IO 面（`I.Ditto.Zip` + `I.Ditto.Cache`）----
+  // `await Zip.get_stored(url, md5)`（未命中 ⇒ `undefined`）。
+  virtual Value zip_get_stored(const std::u16string& zip_url, const std::u16string& md5) = 0;
+  // `await Zip.read_blob(name, blob, md5)` / `read_buf(name, data)`；失败 ⇒ `false` + `error`。
+  virtual bool zip_read_blob(const std::u16string& name, const Value& blob, const Value& md5,
+                             IZip*& out, std::u16string& error) = 0;
+  virtual bool zip_read_buf(const std::u16string& name, const Value& data, IZip*& out,
+                            std::u16string& error) = 0;
+  // `await Zip.download(url, progress, opts)` 的解（`{stored, blob, md5}`）；下载进度由宿主
+  // 回调 `lfw.on_loading_file`（TS 传的就是 `this.on_loading_file` 这个闭包）。
+  struct DownloadedZip {
+    bool stored = false;
+    Value blob;
+    Value md5;
+  };
+  virtual bool zip_download(const std::u16string& zip_url, const Value& md5, LFW& lfw,
+                            DownloadedZip& out, std::u16string& error) = 0;
+  // `await Cache.get(name)`（未命中 ⇒ `undefined`）/ `Cache.del(name, version)` / `Cache.put(entry)`。
+  virtual Value zip_cache_get(const std::u16string& name) = 0;
+  virtual void zip_cache_del(const std::u16string& name, const std::u16string& version) = 0;
+  virtual void zip_cache_put(const Value& entry) = 0;
+
+  // ---- UI 未移植 ⇒ `UI.cook_ui_info` / `UI.xml_to_ui_info` / `this.uis` 的缝 ----
+  // `await UI.cook_ui_info(lfw, path)` / `cook_ui_info(lfw, json)`；失败 ⇒ `false` + `error`。
+  virtual bool ui_cook_path(LFW& lfw, const std::u16string& path, Value& out,
+                            std::u16string& error) = 0;
+  virtual bool ui_cook_value(LFW& lfw, const Value& v, Value& out, std::u16string& error) = 0;
+  // `UI.xml_to_ui_info(root)`（`root` 为 null 时 TS 侧根本不会走到这里）。
+  virtual bool ui_xml_to_info(LFW& lfw, const std::shared_ptr<IXMLElement>& root, Value& out) = 0;
+  // `this.uis.add(...ret)` / `uis.clear()` / `uis.all`。
+  virtual void ui_add(LFW& lfw, const std::vector<Value>& cooked) = 0;
+  virtual void ui_clear(LFW& lfw) = 0;
+  virtual std::vector<Value> ui_all(LFW& lfw) = 0;
 };
 
 // TS `src/LFW/LFW.ts`（门面）。
@@ -236,7 +270,27 @@ class LFW : public IWorldLfw,
   bool ui_loaded() const { return _ui_loaded; }
   bool loading() const { return _loading; }
   bool playable() const { return _playable; }
+  bool disposed() const { return _disposed; }
   bool need_load() const { return !_playable && !_loading; }
+
+  // ---- 加载流程（4AC）----
+  // TS `ILoadedZip` + `IDataInfo` 的按值端口（`ZipMgr` 要指针 ⇒ 见 `_owned_infos`）。
+  struct LoadedZip {
+    IZip* zip = nullptr;
+    IDataInfo info;
+  };
+  static std::vector<IDataInfo> collect_data_infos();
+  // `this.on_loading_file(url, progress, full_size)`（宿主下载进度回调用，TS 里是私有方法）。
+  void on_loading_file(const std::u16string& url, double progress, double full_size);
+  bool load(const std::vector<ZipItem>& arg1, std::u16string& error);
+  bool load_data(const LoadedZip& z, std::u16string& error);
+  bool load_ui(IZip& zip, std::vector<Value>& out, std::u16string& error);
+  bool load_builtin_ui(std::vector<Value>& out, std::u16string& error);
+  bool load_zip_from_url(const std::u16string& info_url, LoadedZip& out, std::u16string& error);
+  bool load_zip_from_object(IZip& zip, LoadedZip& out, std::u16string& error);
+  bool pick_zip_info(IZip& zip, IDataInfo& out);
+  // `dispose_guard(fn)`：未 dispose ⇒ true；已 dispose ⇒ false + `[LFW::fn] instance disposed.`。
+  bool disposed_guard(const std::u16string& fn, std::u16string& error);
 
   Keys* keys();
   World& world() { return *world_; }
@@ -425,6 +479,8 @@ class LFW : public IWorldLfw,
 
   std::vector<std::pair<std::u16string, std::unique_ptr<PlayerInfo>>> _players;
   std::vector<std::unique_ptr<stage::EntityItem>> entity_items_;
+  // `load_data` 里 `zips.add({zip, info})` 的 info 所有权（`ZipMgr` 存指针 ⇒ 这里给稳定地址）。
+  std::vector<std::unique_ptr<IDataInfo>> _owned_infos;
 
   bool _disposed = false;
   bool _loading = false;

@@ -63,6 +63,15 @@ class FakeZip : public lfw::IZip {
     return it->second.get();
   }
 
+  std::vector<lfw::IZipObject*> file_regex(const std::u16string& pattern) override {
+    push("rgx:" + to_ascii(_name) + "|" + to_ascii(pattern));
+    std::vector<lfw::IZipObject*> out;
+    for (auto& pair : _files) {
+      if (lfw::zip_name_matches(pair.second->name(), pattern)) out.push_back(pair.second.get());
+    }
+    return out;
+  }
+
   // 台面脚本：`zfile <zid> <path> hit <fname>` / `miss`。
   void set_file(const std::string& path, const std::string* file_name) {
     if (file_name == nullptr) {

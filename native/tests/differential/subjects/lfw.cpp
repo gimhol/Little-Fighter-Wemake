@@ -1,7 +1,9 @@
 // `LFW`（门面 4AB）的 C++ 侧台面，op 与 `subjects/lfw.ts` 一一对应。
 #include <cstdio>
 #include <fstream>
+#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -62,7 +64,11 @@ class FakeLayers : public lfw::IUiLayers {
     // （空 uis ⇒ 两个 undefined）⇒ 端口同款回调一次。
     _lfw->ui_changed(nullptr, nullptr);
   }
-  void set_page(const lfw::Value&, double) override {}
+  void set_page(const lfw::Value& opts, double) override {
+    ::push("layers:set_page|" + to_ascii(lfw::to_string(lfw::field_or(opts, u"id"))));
+    // TS 的 `UILayers.set_page` 会在 `uis.all` 里找页 ⇒ 台面把这次读也记出来。
+    (void)_lfw->host().ui_all(*_lfw);
+  }
   void push_page(const lfw::Value&, double) override {}
   void dispose() override {}
   lfw::ui::UINode* ui() override { return nullptr; }
@@ -71,6 +77,152 @@ class FakeLayers : public lfw::IUiLayers {
  private:
   lfw::LFW* _lfw;
 };
+
+// ---- 4AC：加载流程的脚本化假 zip ----
+// kind 迷你语言：`-`=undefined / `o`={} / `a`=[] / `k:<name>`={"<name>":"1"} / `str:<v>` / `e`=失败("boom")。
+struct LoadScript {
+  std::string path;
+  std::string kind = "-";
+};
+
+// `imp`/`lzadd` 共用的 kind 迷你语言（两侧一致）：`-`/`o`/`a`/`k:<n>`/`str:<v>`/`md5:<v>`/`w:<n>`/`spk`/`e`。
+lfw::Value build_kind_value(const std::string& k);
+
+class LoadZipObject : public lfw::IZipObject {
+ public:
+  std::u16string entry_name;
+  LoadScript* script = nullptr;
+
+  const std::u16string& name() const override { return entry_name; }
+  bool json(lfw::Value& out, std::u16string& error) override {
+    push("lz:json|" + script->path);
+    return read(out, error);
+  }
+  bool text(lfw::Value& out, std::u16string& error) override {
+    push("lz:text|" + script->path);
+    return read(out, error);
+  }
+  bool blob_url(lfw::Value&, std::u16string& error) override {
+    error = u"unscripted";
+    return false;
+  }
+  bool array_buffer(lfw::Value&, std::u16string& error) override {
+    error = u"unscripted";
+    return false;
+  }
+  bool image_bitmap(lfw::Value&, std::u16string& error) override {
+    error = u"unscripted";
+    return false;
+  }
+
+ private:
+  bool read(lfw::Value& out, std::u16string& error) {
+    const std::string& k = script->kind;
+    if (k == "e") {
+      error = u"boom";
+      return false;
+    }
+    if (k == "-") {
+      out = lfw::Value();
+      return true;
+    }
+    out = build_kind_value(k);
+    return true;
+  }
+};
+
+class LoadZip : public lfw::IZip {
+ public:
+  std::string zid;
+  std::u16string zip_name;
+  std::optional<std::u16string> zip_md5;
+
+  const std::u16string& name() const override { return zip_name; }
+  std::optional<std::u16string> md5() const override { return zip_md5; }
+
+  lfw::IZipObject* file(const std::u16string& path) override {
+    const std::string key = to_ascii(path);
+    push("lz:file|" + zid + "|" + key);
+    for (LoadScript& s : scripts) {
+      if (s.path != key) continue;
+      return object_for(s);
+    }
+    return nullptr;
+  }
+
+  std::vector<lfw::IZipObject*> file_regex(const std::u16string& pattern) override {
+    push("lz:rgx|" + zid + "|" + to_ascii(pattern));
+    std::vector<lfw::IZipObject*> out;
+    for (LoadScript& s : scripts) {
+      if (lfw::zip_name_matches(to_u16(s.path), pattern)) out.push_back(object_for(s));
+    }
+    return out;
+  }
+
+  lfw::IZipObject* object_for(LoadScript& s) {
+    for (const std::unique_ptr<LoadZipObject>& o : objects) {
+      if (o->script == &s) return o.get();
+    }
+    auto obj = std::make_unique<LoadZipObject>();
+    obj->entry_name = to_u16(s.path);
+    obj->script = &s;
+    objects.push_back(std::move(obj));
+    return objects.back().get();
+  }
+
+  std::vector<LoadScript> scripts;
+
+ private:
+  std::vector<std::unique_ptr<LoadZipObject>> objects;
+};
+
+std::map<std::string, std::unique_ptr<LoadZip>> g_lzips;
+
+// `imp`/`lzadd` 的 kind 迷你语言（两侧一致）：`-`/`o`/`a`/`k:<name>`/`str:<v>`/`md5:<v>`/`w:<name>`/`spk`。
+lfw::Value build_kind_value(const std::string& k) {
+  if (k == "o") return lfw::Value(std::make_shared<lfw::Object>());
+  if (k == "a") return lfw::Value(std::make_shared<lfw::Array>());
+  if (k.rfind("k:", 0) == 0) {
+    lfw::Object o;
+    o.set(to_u16(k.substr(2)), lfw::Value(std::u16string(u"1")));
+    return lfw::Value(std::make_shared<lfw::Object>(o));
+  }
+  if (k.rfind("str:", 0) == 0) return lfw::Value(to_u16(k.substr(4)));
+  if (k.rfind("w:", 0) == 0) {
+    lfw::Object words;
+    words.set(to_u16(k.substr(2)), lfw::Value(std::u16string(u"1")));
+    lfw::Object langs;
+    langs.set(u"", lfw::Value(std::make_shared<lfw::Object>(words)));
+    return lfw::Value(std::make_shared<lfw::Object>(langs));
+  }
+  if (k == "spk") {
+    lfw::Object base;
+    base.set(u"name", lfw::Value(std::u16string(u"Spark")));
+    lfw::Object o;
+    o.set(u"id", lfw::Value(std::u16string(u"spark")));
+    o.set(u"type", lfw::Value(4.0));
+    o.set(u"base", lfw::Value(std::make_shared<lfw::Object>(base)));
+    return lfw::Value(std::make_shared<lfw::Object>(o));
+  }
+  if (k.rfind("md5:", 0) == 0) {
+    lfw::Object o;
+    o.set(u"md5", lfw::Value(to_u16(k.substr(4))));
+    return lfw::Value(std::make_shared<lfw::Object>(o));
+  }
+  return lfw::Value();
+}
+
+std::string dump_info(const lfw::IDataInfo& info) {
+  return to_ascii(lfw::to_string(info.type)) + "|" + to_ascii(lfw::to_string(info.url)) + "|" +
+         to_ascii(lfw::to_string(info.title)) + "|" + to_ascii(lfw::to_string(info.description)) +
+         "|" + to_ascii(lfw::to_string(info.author)) + "|" +
+         to_ascii(lfw::to_string(info.version)) + "|" + to_ascii(lfw::to_string(info.time)) +
+         "|" + to_ascii(lfw::to_string(info.md5));
+}
+
+// `imp` 脚本：URL（不含 `?time=` 的部分）→ 值；`has_import` 标记失败脚本。
+std::map<std::string, lfw::Value> g_imports;
+std::map<std::string, std::string> g_import_fails;
 
 class FakeHost : public lfw::ILfwHost {
  public:
@@ -98,7 +250,7 @@ class FakeHost : public lfw::ILfwHost {
     push("wr_init");
     return &_renderer;
   }
-  void load_img(const std::u16string&) override {}
+  void load_img(const std::u16string& path) override { push("img:load|" + to_ascii(path)); }
 
   bool dev() const override { return false; }
   void warn(const std::vector<lfw::Value>& args) override { push(join("warn", args)); }
@@ -131,9 +283,24 @@ class FakeHost : public lfw::ILfwHost {
   bool player_cache_del(const std::u16string&, std::u16string&) override { return true; }
   void player_cache_put(const lfw::PlayerInfoCachePut&) override {}
 
-  bool import_as_json(const std::vector<std::u16string>&, lfw::Value&, lfw::Value&,
+  bool import_as_json(const std::vector<std::u16string>& urls, lfw::Value& data, lfw::Value&,
                       std::u16string& error) override {
-    error = u"host";
+    for (const std::u16string& url : urls) {
+      std::string key = to_ascii(url);
+      const size_t q = key.find('?');
+      if (q != std::string::npos) key = key.substr(0, q);
+      push("imp:json|" + key);
+      const auto fail = g_import_fails.find(key);
+      if (fail != g_import_fails.end()) {
+        error = to_u16(fail->second);
+        return false;
+      }
+      const auto it = g_imports.find(key);
+      if (it == g_imports.end()) continue;
+      data = it->second;
+      return true;
+    }
+    error = u"unscripted import";
     return false;
   }
   bool import_as_blob_url(const std::vector<std::u16string>&, lfw::Value&, lfw::Value&,
@@ -167,6 +334,69 @@ class FakeHost : public lfw::ILfwHost {
     lfw.i18n().set_lang(lfw::Value(lang), err);
   }
 
+  // ---- ILfwHost：4AC 的 zip/缓存/UI 缝（台面脚本化；URL 流程的覆盖留 4AD） ----
+  lfw::Value zip_get_stored(const std::u16string& zip_url, const std::u16string& md5) override {
+    push("zip:get_stored|" + to_ascii(zip_url) + "|" + to_ascii(md5));
+    return lfw::Value();
+  }
+  bool zip_read_blob(const std::u16string& name, const lfw::Value&, const lfw::Value&,
+                     lfw::IZip*& out, std::u16string& error) override {
+    push("zip:read_blob|" + to_ascii(name));
+    out = nullptr;
+    error = u"unscripted blob";
+    return false;
+  }
+  bool zip_read_buf(const std::u16string& name, const lfw::Value&, lfw::IZip*& out,
+                    std::u16string& error) override {
+    push("zip:read_buf|" + to_ascii(name));
+    out = nullptr;
+    error = u"unscripted buf";
+    return false;
+  }
+  bool zip_download(const std::u16string& zip_url, const lfw::Value&, lfw::LFW&,
+                    ILfwHost::DownloadedZip&, std::u16string& error) override {
+    push("zip:download|" + to_ascii(zip_url));
+    error = u"unscripted download";
+    return false;
+  }
+  lfw::Value zip_cache_get(const std::u16string& name) override {
+    push("cache:get|" + to_ascii(name));
+    return lfw::Value();
+  }
+  void zip_cache_del(const std::u16string& name, const std::u16string& version) override {
+    push("cache:del|" + to_ascii(name) + "|" + to_ascii(version));
+  }
+  void zip_cache_put(const lfw::Value& entry) override {
+    push("cache:put|" + to_ascii(lfw::to_string(lfw::field_or(entry, u"name"))));
+  }
+  bool ui_cook_path(lfw::LFW&, const std::u16string& path, lfw::Value& out,
+                    std::u16string& error) override {
+    push("ui:cook_path|" + to_ascii(path));
+    out = lfw::Value();
+    error = u"unscripted ui path";
+    return false;
+  }
+  bool ui_cook_value(lfw::LFW&, const lfw::Value&, lfw::Value& out,
+                     std::u16string& error) override {
+    push("ui:cook_value");
+    out = lfw::Value();
+    error = u"unscripted ui value";
+    return false;
+  }
+  bool ui_xml_to_info(lfw::LFW&, const std::shared_ptr<lfw::IXMLElement>&, lfw::Value& out) override {
+    push("ui:xml_to_info");
+    out = lfw::Value();
+    return true;
+  }
+  void ui_add(lfw::LFW&, const std::vector<lfw::Value>& cooked) override {
+    push("ui:add|" + to_ascii(lfw::number_to_string(static_cast<double>(cooked.size()))));
+  }
+  void ui_clear(lfw::LFW&) override { push("ui:clear"); }
+  std::vector<lfw::Value> ui_all(lfw::LFW&) override {
+    push("ui:all");
+    return _ui_list;
+  }
+
  private:
   static std::string join(const std::string& prefix, const std::vector<lfw::Value>& args) {
     std::string out = prefix;
@@ -178,6 +408,7 @@ class FakeHost : public lfw::ILfwHost {
 
   lfw::LFW** _slot = nullptr;
   std::unique_ptr<FakeLayers> _layers;
+  std::vector<lfw::Value> _ui_list;
   class Renderer : public lfw::IWorldRenderer {
    public:
     void add_entity(lfw::Entity&) override {}
@@ -210,6 +441,21 @@ void listen(lfw::LFW& lfw) {
       line += "|s:" + to_ascii(a.text) + "|s:" + to_ascii(a.prev_text) + "|self";
     } else if (name == u"on_extra_zips_changed") {
       line += "|self";
+    } else if (name == u"on_loading_start" || name == u"on_loading_end") {
+      line += "";
+    } else if (name == u"on_prel_loaded") {
+      line += "|self";
+    } else if (name == u"on_loading_failed") {
+      line += "|s:" + to_ascii(lfw::to_string(a.value));
+    } else if (name == u"on_ui_loaded") {
+      line += "|" + to_ascii(lfw::number_to_string(static_cast<double>(a.infos.size())));
+    } else if (name == u"on_zips_changed") {
+      std::string names;
+      for (size_t i = 0; i < a.zips.size(); ++i) {
+        if (i != 0) names += ",";
+        names += to_ascii(a.zips[i]->name());
+      }
+      line += "|" + names;
     } else if (name == u"on_dispose") {
       line += "";
     } else if (name == u"controller_detected" || name == u"keyboard_detected") {
@@ -475,6 +721,99 @@ int main(int argc, char** argv) {
       lfw.dispose();
       push("dispose|" + to_ascii(lfw::number_to_string(
                             static_cast<double>(lfw::LFW::instances().size()))));
+    } else if (op == "lznew") {
+      auto z = std::make_unique<LoadZip>();
+      z->zid = t[i++];
+      z->zip_name = key_of(t[i++]);
+      if (i < t.size()) z->zip_md5 = key_of(t[i++]);
+      g_lzips[z->zid] = std::move(z);
+    } else if (op == "lzadd") {
+      const std::string zid = to_ascii(key_of(t[i++]));
+      LoadScript s;
+      s.path = to_ascii(key_of(t[i++]));
+      s.kind = t[i++];
+      g_lzips[zid]->scripts.push_back(s);
+    } else if (op == "imp") {
+      const std::string key = t[i++];
+      g_imports[key] = build_kind_value(t[i++]);
+    } else if (op == "impfail") {
+      const std::string key = t[i++];
+      g_import_fails[key] = i < t.size() ? t[i++] : "boom";
+    } else if (op == "zips") {
+      std::string names;
+      const std::vector<lfw::IZip*> zs = lfw.zips().zips();
+      for (size_t j = 0; j < zs.size(); ++j) {
+        if (j != 0) names += ",";
+        names += to_ascii(zs[j]->name());
+      }
+      std::string md5s;
+      const std::vector<lfw::IDataInfo*> infos = lfw.zips().data_infos();
+      for (size_t j = 0; j < infos.size(); ++j) {
+        if (j != 0) md5s += ",";
+        md5s += to_ascii(lfw::to_string(infos[j]->md5));
+      }
+      push("zips|" + names + "|" + md5s);
+    } else if (op == "collect") {
+      const std::vector<lfw::IDataInfo> infos = lfw::LFW::collect_data_infos();
+      std::string body;
+      for (size_t j = 0; j < infos.size(); ++j) {
+        if (j != 0) body += ";";
+        body += to_ascii(lfw::to_string(infos[j].type)) + ":" +
+                to_ascii(lfw::to_string(infos[j].url)) + ":" +
+                to_ascii(lfw::to_string(infos[j].title)) + ":" +
+                to_ascii(lfw::to_string(infos[j].md5));
+      }
+      push("collect|" + to_ascii(lfw::number_to_string(static_cast<double>(infos.size()))) +
+           "|" + body);
+    } else if (op == "lstate") {
+      push(std::string("lstate|loading=") + (lfw.loading() ? "1" : "0") + "|playable=" +
+           (lfw.playable() ? "1" : "0") + "|ui=" + (lfw.ui_loaded() ? "1" : "0") +
+           "|disposed=" + (lfw.disposed() ? "1" : "0"));
+    } else if (op == "bgms") {
+      std::string names;
+      for (size_t j = 0; j < lfw.bgms.size(); ++j) {
+        if (j != 0) names += ",";
+        names += to_ascii(lfw.bgms[j]);
+      }
+      push("bgms|" + names);
+    } else if (op == "loadobj") {
+      const std::string zid = to_ascii(key_of(t[i++]));
+      const auto it = g_lzips.find(zid);
+      lfw::LFW::LoadedZip z;
+      std::u16string err;
+      if (it == g_lzips.end()) push("loadobj|missing|" + zid);
+      else if (!lfw.load_zip_from_object(*it->second, z, err)) {
+        push("loadobj|fail|" + to_ascii(err));
+      } else {
+        push("loadobj|ok|" + dump_info(z.info));
+      }
+    } else if (op == "loaddata") {
+      const std::string zid = to_ascii(key_of(t[i++]));
+      const auto it = g_lzips.find(zid);
+      lfw::LFW::LoadedZip z;
+      std::u16string err;
+      if (it == g_lzips.end()) push("loaddata|missing|" + zid);
+      else if (!lfw.load_zip_from_object(*it->second, z, err)) {
+        push("loaddata|fail|" + to_ascii(err));
+      } else if (!lfw.load_data(z, err)) {
+        push("loaddata|fail|" + to_ascii(err));
+      } else {
+        push("loaddata|ok");
+      }
+    } else if (op == "load") {
+      std::vector<lfw::LFW::ZipItem> items;
+      while (i < t.size()) {
+        const std::string tok = t[i++];
+        if (tok.rfind("z:", 0) == 0) {
+          const auto it = g_lzips.find(tok.substr(2));
+          items.push_back(lfw::LFW::ZipItem{u"", it == g_lzips.end() ? nullptr : it->second.get()});
+        } else {
+          items.push_back(lfw::LFW::ZipItem{key_of(tok.rfind("s:", 0) == 0 ? tok.substr(2) : tok),
+                                             nullptr});
+        }
+      }
+      std::u16string err;
+      push(lfw.load(items, err) ? "load|ok" : "load|fail|" + to_ascii(err));
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
       return 2;

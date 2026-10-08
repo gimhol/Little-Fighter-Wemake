@@ -27,6 +27,41 @@ const num = (n: number): string => renderValue(n);
 
 let clock_ms = 0;
 
+// `imp`/`lzadd` 的 kind 迷你语言（两侧一致）：`-`/`o`/`a`/`k:<name>`/`str:<v>`/`e`（失败，抛 "boom"）。
+const imports = new Map<string, string>();
+const import_fails = new Map<string, string>();
+
+function kind_value(k: string): unknown {
+  if (k === "o") return {};
+  if (k === "a") return [];
+  if (k.startsWith("k:")) return { [k.slice(2)]: "1" };
+  if (k.startsWith("str:")) return k.slice(4);
+  if (k.startsWith("md5:")) return { md5: k.slice(4) };
+  if (k.startsWith("w:")) return { "": { [k.slice(2)]: "1" } };
+  if (k === "spk") return { id: "spark", type: 4, base: { name: "Spark" } };
+  return undefined;
+}
+
+function err_msg(e: unknown): string {
+  return typeof e === "string" ? e : e instanceof Error ? e.message : String(e);
+}
+
+// `cook` 给数据挂的 `xml*` 访问器/函数：C++ 侧不建形 ⇒ 渲染前剥掉（两边 warn 输出才能同形）。
+function safe_render(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(safe_render);
+  if (v !== null && typeof v === "object") {
+    const out: Rec = {};
+    for (const k of Object.keys(v as Rec)) {
+      if (k === "xml" || k === "xml_roundtrip" || k === "xml_roundtrip_ok") continue;
+      const val = (v as Rec)[k];
+      if (typeof val === "function") continue;
+      out[k] = safe_render(val);
+    }
+    return out;
+  }
+  return v;
+}
+
 function install_ditto(): void {
   class FakeSounds {
     constructor(_lfw: unknown) {
@@ -52,6 +87,9 @@ function install_ditto(): void {
   class FakeImageMgr {
     constructor(_lfw: unknown) {
       push("img_init");
+    }
+    load_img(path: string): void {
+      push("img:load|" + path);
     }
     measure_text(): string {
       push("measure");
@@ -107,6 +145,18 @@ function install_ditto(): void {
       return Promise.resolve();
     },
   };
+  const importer = {
+    async import_as_json(urls: string[]) {
+      for (const url of urls) {
+        const key = url.split("?")[0]!;
+        push(`imp:json|${key}`);
+        const fail = import_fails.get(key);
+        if (fail !== undefined) throw fail;
+        if (imports.has(key)) return [kind_value(imports.get(key)!), url];
+      }
+      throw "unscripted import";
+    },
+  };
   const clock = {
     ms: 0,
     next: 1,
@@ -160,7 +210,7 @@ function install_ditto(): void {
     Keyboard: FakeKeyboard as never,
     Pointings: FakePointings as never,
     FullScreen: class {} as never,
-    Importer: {} as never,
+    Importer: importer as never,
     Cache: cache as never,
     Vector3: class {
       x = 0;
@@ -176,10 +226,12 @@ function install_ditto(): void {
     ImageMgr: FakeImageMgr as never,
     UIInputHandle: FakeUIInputHandle as never,
     XML: {} as never,
-    warn: (...args: unknown[]) => push("warn|" + args.map((a) => render_value(a)).join("~")),
-    error: (...args: unknown[]) => push("error|" + args.map((a) => render_value(a)).join("~")),
-    Log: (...args: unknown[]) => push("Log|" + args.map((a) => render_value(a)).join("~")),
-    debug: (...args: unknown[]) => push("debug|" + args.map((a) => render_value(a)).join("~")),
+    warn: (...args: unknown[]) => push("warn|" + args.map((a) => render_value(safe_render(a))).join("~")),
+    error: (...args: unknown[]) =>
+      push("error|" + args.map((a) => render_value(safe_render(a))).join("~")),
+    Log: (...args: unknown[]) => push("Log|" + args.map((a) => render_value(safe_render(a))).join("~")),
+    debug: (...args: unknown[]) =>
+      push("debug|" + args.map((a) => render_value(safe_render(a))).join("~")),
     DEV: false,
     IsDesktop: false,
     alert: () => undefined,
@@ -219,6 +271,9 @@ function listen(): void {
       const parts: string[] = [`cb|${name}`];
       for (const a of args) {
         if (a === lfw) parts.push("self");
+        else if (name === "on_ui_loaded") parts.push(String((a as unknown[]).length));
+        else if (name === "on_zips_changed")
+          parts.push((a as { name: string }[]).map((v) => v.name).join(","));
         else if (a === undefined || a === null) parts.push("u");
         else if (a instanceof PlayerInfo) parts.push("pl:" + String(a.id));
         else if (typeof a === "number") parts.push("n:" + num(a));
@@ -236,12 +291,109 @@ function team_token(t: string): string | undefined {
   return t;
 }
 
+// ---- 4AC：加载流程的脚本化假 zip ----
+class LzObject {
+  constructor(
+    private readonly path: string,
+    private readonly kind: string,
+  ) {}
+  get name(): string {
+    return this.path;
+  }
+  async json(): Promise<unknown> {
+    push(`lz:json|${this.path}`);
+    if (this.kind === "e") throw "boom";
+    return kind_value(this.kind);
+  }
+  async text(): Promise<unknown> {
+    push(`lz:text|${this.path}`);
+    if (this.kind === "e") throw "boom";
+    const v = kind_value(this.kind);
+    return typeof v === "string" ? v : v === undefined ? undefined : JSON.stringify(v);
+  }
+}
+
+class Lz {
+  zid = "";
+  name = "";
+  md5?: string;
+  entries: { path: string; kind: string }[] = [];
+  file(path: string | RegExp): unknown {
+    if (typeof path === "string") {
+      push(`lz:file|${this.zid}|${path}`);
+      const e = this.entries.find((v) => v.path === path);
+      return e ? new LzObject(e.path, e.kind) : null;
+    }
+    push(`lz:rgx|${this.zid}|${path.source}`);
+    return this.entries
+      .filter((v) => {
+        path.lastIndex = 0;
+        return path.test(v.path);
+      })
+      .map((v) => new LzObject(v.path, v.kind));
+  }
+}
+
+const lzips = new Map<string, Lz>();
+
+function dump_info(info: Rec): string {
+  return [
+    info["type"],
+    info["url"],
+    info["title"],
+    info["description"],
+    info["author"],
+    info["version"],
+    info["time"],
+    info["md5"],
+  ]
+    .map((v) => String(v))
+    .join("|");
+}
+
 function main(): void {
   install_ditto();
   (Date as unknown as Rec).now = () => 12345;
   lfw = new LFW(false);
   listen();
 
+  void run_ops().catch((e) => {
+    process.stderr.write(err_msg(e) + "\n");
+    process.exit(2);
+  });
+}
+
+async function run_ops(): Promise<void> {
+  const lfw_rec = lfw as unknown as Rec;
+  const uis = lfw_rec["uis"] as Rec;
+  const orig_add = (uis["add"] as (...a: unknown[]) => void).bind(uis);
+  uis["add"] = (...a: unknown[]) => {
+    push("ui:add|" + a.length);
+    return orig_add(...a);
+  };
+  const orig_clear = (uis["clear"] as () => void).bind(uis);
+  uis["clear"] = () => {
+    push("ui:clear");
+    return orig_clear();
+  };
+  const desc = Object.getOwnPropertyDescriptor(uis, "all");
+  const proto_desc =
+    desc ?? Object.getOwnPropertyDescriptor(Object.getPrototypeOf(uis) as object, "all");
+  if (proto_desc?.get) {
+    Object.defineProperty(uis, "all", {
+      configurable: true,
+      get() {
+        push("ui:all");
+        return proto_desc.get!.call(uis);
+      },
+    });
+  }
+  const layers = lfw_rec["layers"] as Rec;
+  const orig_set_page = (layers["set_page"] as (...a: unknown[]) => unknown).bind(layers);
+  layers["set_page"] = (opts: Rec, idx: number) => {
+    push(`layers:set_page|${String(opts?.id)}`);
+    return orig_set_page(opts, idx);
+  };
   for (const line of readCaseLines(process.argv[2]!)) {
     const t = splitWs(line);
     if (t.length === 0) continue;
@@ -409,6 +561,71 @@ function main(): void {
     } else if (op === "dispose") {
       lfw.dispose();
       push(`dispose|${LFW.instances.length}`);
+    } else if (op === "lznew") {
+      const z = new Lz();
+      z.zid = nextKey();
+      z.name = nextKey();
+      if (i[0] < t.length) z.md5 = nextKey();
+      lzips.set(z.zid, z);
+    } else if (op === "lzadd") {
+      const zid = nextKey();
+      const path = nextKey();
+      const kind = t[i[0]!++]!;
+      lzips.get(zid)!.entries.push({ path, kind });
+    } else if (op === "imp") {
+      imports.set(next(), next());
+    } else if (op === "impfail") {
+      const key = next();
+      import_fails.set(key, i[0] < t.length ? next() : "boom");
+    } else if (op === "zips") {
+      const zs = (lfw as unknown as Rec)["zips"].zips as { name: string }[];
+      const infos = (lfw as unknown as Rec)["zips"].data_infos as Rec[];
+      push(`zips|${zs.map((v) => v.name).join(",")}|${infos.map((v) => String(v.md5)).join(",")}`);
+    } else if (op === "collect") {
+      const infos = (await (LFW as unknown as Rec).collect_data_infos()) as Rec[];
+      const body = infos
+        .map((v) => `${String(v.type)}:${String(v.url)}:${String(v.title)}:${String(v.md5)}`)
+        .join(";");
+      push(`collect|${infos.length}|${body}`);
+    } else if (op === "lstate") {
+      const r = lfw as unknown as Rec;
+      push(
+        `lstate|loading=${r["_loading"] ? 1 : 0}|playable=${r["_playable"] ? 1 : 0}|ui=${r["_ui_loaded"] ? 1 : 0}|disposed=${r["_disposed"] ? 1 : 0}`,
+      );
+    } else if (op === "bgms") {
+      push(`bgms|${((lfw as unknown as Rec)["bgms"] as string[]).join(",")}`);
+    } else if (op === "loadobj") {
+      const zid = nextKey();
+      const z = lzips.get(zid);
+      try {
+        const loaded = await (lfw as unknown as Rec)["_load_zip_from_object"](z);
+        push(`loadobj|ok|${dump_info(loaded.info)}`);
+      } catch (e) {
+        push(`loadobj|fail|${err_msg(e)}`);
+      }
+    } else if (op === "loaddata") {
+      const zid = nextKey();
+      const z = lzips.get(zid);
+      try {
+        const loaded = await (lfw as unknown as Rec)["_load_zip_from_object"](z);
+        await (lfw as unknown as Rec)["load_data"](loaded);
+        push("loaddata|ok");
+      } catch (e) {
+        push(`loaddata|fail|${err_msg(e)}`);
+      }
+    } else if (op === "load") {
+      const items: unknown[] = [];
+      while (i[0] < t.length) {
+        const tok = t[i[0]!++]!;
+        if (tok.startsWith("z:")) items.push(lzips.get(tok.slice(2)));
+        else items.push(keyOf(tok.startsWith("s:") ? tok.slice(2) : tok));
+      }
+      try {
+        await lfw.load(...(items as never[]));
+        push("load|ok");
+      } catch (e) {
+        push(`load|fail|${err_msg(e)}`);
+      }
     } else {
       fail(`unknown op '${op}'`);
     }

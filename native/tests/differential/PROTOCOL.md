@@ -4558,3 +4558,27 @@ harness op：
 - 用例值字面量语法：数字是 `n <v>`（如 `setlangbad n 5`）、键是裸词或 `"引号串"`；
   `mtrange`/`switchdiff` 这类**纯数字**参数直接写数字（写成 `n 1` 会被当键串吞掉，
   TS 侧 `Number("n")=NaN` 静默错）。
+
+### 6.9.134 `LFW` 加载流程（`cases/lfw/load.txt` 144 行；变异 `lfw.mjs` 累计 25/25 全杀）
+
+- kind 迷你语言（`imp <url> <kind>` / `lzadd <zid> <path> <kind>`，两侧同名同义）：
+  `-`=undefined / `o`={} / `a`=[] / `k:<n>`={"<n>":"1"} / `str:<v>` / `md5:<v>`={"md5":v} /
+  `w:<n>`={"":{"<n>":"1"}}（走 i18n 顶层语言键）/ `spk`=内置 spark 数据 / `e`=读失败（抛 "boom"）。
+- `imp` 的键是 URL **去掉 `?` 之后**的部分（端口侧的 `no_cache_url` 会加 `?time=`）。
+- TS 侧 Importer **每次现造值**：`cook` 会给数据对象挂 `xml*` 访问器，复用同一个对象再 cook
+  一次会崩（"Cannot set property xml"）。
+- TS 侧 warn/error/Log/debug 渲染前用 `safe_render` 剥掉 `xml`/`xml_roundtrip`/`xml_roundtrip_ok`
+  与函数值字段 —— C++ 侧不建这些形，不剥两边 warn 文案对不上。
+- `uis` 的 `add/clear/all` 与 `layers.set_page` 在 TS 侧是包装日志（`ui:add|n` / `ui:clear` /
+  `ui:all` / `layers:set_page|<id>`）；C++ 侧是 `ILfwHost` 缝 + `FakeLayers.set_page` 里补一次
+  `ui_all` 读（真 `UILayers.set_page` 会在 `uis.all` 里找页，台面照样记出来）。
+- **首次 `load` 必须在任何 `loaddata`/`zips.add` 之前**（`is_first = zips.length === 0`）；
+  用例第一段就是无 md5 的 `prel.zip` 首次加载。
+- 数据包假 zip（`lznew/lzadd`）：`file(name)` 恒打 `lz:file`、`file(regex)` 打
+  `lz:rgx|<zid>|<pattern>`（pattern 就是 TS 正则的 `source`，两侧逐字一致）；对象读值打
+  `lz:json` / `lz:text`。`zips` op dump 名称与 md5；`bgms` op dump 音乐名。
+- 首屏用的内置数据在 fake 侧全脚本化：`builtin_data/launch/strings.json`、`_index.json`（给 `a`
+  表示 0 个内置页）、`data/spark.obj.json5`（给 `spk`）。内置页为 0 ⇒ 首次 load 会走
+  `layers:set_page|undefined` 且 `ui:add|0`。
+- 右侧（C++）`img:load|<path>` / `imp:json|<key>` / `layers:set_page` 等全是台面假宿主打的；
+  改这些日志前先看一眼 TS 侧同名包装。

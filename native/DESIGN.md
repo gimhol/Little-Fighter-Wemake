@@ -8745,3 +8745,31 @@ LFW 只发 `on_lang_changed`）。
 **测试**：新 subject `lfw` + 4 份用例 **125 行**（basic / keys / misc / welds）；
 变异 `lfw.mjs` **11/11 全杀**；全量差分 **202/202**、lint 通过（剩 raw-new 风格告警）。
 
+## 90. 切片 4AC：`LFW` 加载流程（对象包路径 + 首屏）
+
+`collect_data_infos`（含 `pick_data_info` / `no_cache_url`）、`on_loading_file`（含
+`get_short_file_size_txt` 的 `toFixed(1)` 端口）、`dispose_guard`（无异常模型：失败出参）、
+`_pick_zip_info` / `_load_zip_from_object` / `load_data`（strings/i18n 扫描、索引 base 优先、
+bgms 去重、UI 缝）/ `load_ui` / `load_builtin_ui` / `load`（内置段 + 对象包循环 + 失败回调）；
+`_load_zip_from_url` 与 `full_zip_url` / `zip_content_url` 一并落地（下载/缓存的 IO 全走
+`ILfwHost` 新缝）。`IZip` 扩到 `file(regex)` + `md5`；`ILfwHost` 新增 zip 读写/下载/缓存 7 条
+与 UI 5 条（`ui_cook_path`/`ui_cook_value`/`ui_xml_to_info`/`ui_add`/`ui_clear`/`ui_all`）。
+
+照抄怪癖（编号接 87）：88. `collect_data_infos` 的 `loaded_md5s` **只**从已加载数据包收集，
+本次调用新收的不进集合 ⇒ 同一调用里两个同 md5 的待加载包会**都**进结果（TS 如此）。
+89. 索引排序只看 `(^|/)data/data\.index\.`（大小写不敏感、允许前缀目录）；base 在前、其余保持
+包内原序。90. `load` 的内置段（内置 strings / 内置 UI / 首屏 set_page）**在 try 之外**：
+失败直接返回、`_loading` 留在 true（TS finally 覆盖不到）。91. 首屏 `set_page({id})` 的 id
+取 `uis.all` 里第一个 `id === first_page` 的页；找不到给 `undefined`（对象仍带 `id` 键）。
+92. `_pick_zip_info` 的 `type/title/...` 回退链最后落到 `LFW.INFO`，title 兜底再落 `zip.name`；
+`md5` 恒取 `zip.md5`（本包元数据，不看 `__info.json` 里写的 md5）。
+
+偏差记录：`zip.file(regex)` 用**固定模式表**匹配（只认移植触及的 5 条模式，未登记模式按全串
+相等）——`std::regex` 被 lint 禁且有本地化差异；`load_data` 的 `regist(add_<name>)` 动态方法
+不建模；错误一律文本（`on_loading_failed` 的 `value` 是消息串，TS 是 Error 对象）；
+URL 下载/缓存缝只有接口 + 实现（惰性顺序照抄），台面/变异覆盖留 4AD（`no_cache_url` 已被
+collect 用例覆盖）。
+
+**测试**：`cases/lfw/load.txt`（144 行，collect/对象包/load_data/首屏 load/失败与 guard）；
+变异 `lfw.mjs` 累计 **25/25 全杀**；全量差分 **203/203**、lint 全清。
+

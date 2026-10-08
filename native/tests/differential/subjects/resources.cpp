@@ -90,6 +90,20 @@ class FakeZip : public lfw::IZip {
     return _objects.back().get();
   }
 
+  std::vector<lfw::IZipObject*> file_regex(const std::u16string& pattern) override {
+    push("rgx:" + to_ascii(_name) + "|" + to_ascii(pattern));
+    std::vector<lfw::IZipObject*> out;
+    for (auto& pair : _scripts) {
+      if (!lfw::zip_name_matches(to_u16(pair.first), pattern)) continue;
+      auto obj = std::make_unique<FakeZipObject>();
+      obj->name_text = to_u16(pair.second.name);
+      obj->script = &pair.second;
+      _objects.push_back(std::move(obj));
+      out.push_back(_objects.back().get());
+    }
+    return out;
+  }
+
   FileScript& script_of(const std::string& path) {
     auto it = _scripts.find(path);
     if (it != _scripts.end()) return it->second;

@@ -1,0 +1,42 @@
+# lfw：加载流程（collect / 对象包 / load_data / 首次 load）
+imp builtin_data/launch/strings.json w:VERSION_NAME
+imp builtin_data/launch/_index.json a
+imp data/spark.obj.json5 spk
+imp data/data.index.json5 o
+imp bg/one.index.json5 o
+lznew z1 prel.zip
+lzadd z1 strings.json w:W1
+lzadd z1 x.i18n.json5 w:W2
+lzadd z1 data/data.index.json5 o
+lzadd z1 bg/one.index.json5 o
+lzadd z1 bgm/a.mp3 o
+lzadd z1 bgm/b.mp3 o
+loadobj z1
+load z:z1
+lstate
+str W1
+str W2
+loaddata z1
+zips
+lstate
+str VERSION_NAME
+lznew z2 data.zip md5xx
+lzadd z2 __info.json k:url
+loadobj z2
+setzips a.json c.json
+imp a.json md5:ma
+imp b.json md5:mb
+imp c.json md5:ma
+impfail d.json boom
+collect
+setzips d.json b.json
+collect
+load s:missing.zip
+load z:z1
+bgms
+zips
+dispose
+loadobj z1
+loaddata z1
+load z:z1
+lstate
