@@ -4700,3 +4700,14 @@ harness op：
   字符串与对象两路（`dw ?? w`、校验、`ui_load_img` 的 key）/ size 三档（raw.size → img →
   屏幕）与 `!h && w` 的 floor 换算 / items 递归（parent 环）与空 items 删键 / 严格类型错的
   消息文本。
+
+### 6.9.144 事件层 + `UIImgLoader`（lfw 台面新 op；`cases/lfw/event.txt` 15 行 / `imloader.txt` 31 行；变异 15/15 全杀）
+
+- 事件 op：`newp <id> <x> <y> <z> <btn>` / `newk <id> <player> <0|1> <gk> <key>` /
+  `stp`/`sti <id>`（两个事件表合并查找）/ `rdp`/`rdk <id>`（打全部字段 + `stopped`）。
+- 图片 op：`imnode <lid> <nid|->`（自动建节点；`-` ⇒ getter 回 null）/ `imjid <lid>`（观测
+  `_jid` 的 value/min/max）/ `imignore <lid>` / `imload <lid> <img 值>` / `imset <lid> <path>`。
+  成功打 `imload|ok|<图>`，失败打 `imload|err|<esc>`（out-of-date 追加 `|ood|`，端口同步测不到）。
+- 用例钉住：stopped 三态与两种 stop 的差异 / 事件字段搬运（pressed 布尔、game_key 与 key 的
+  区分）/ `ignore_out_of_date` 后 jid 全 0 / `add` 推进 jid / `w/scale` 的 resize 参数 /
+  缺 w/h/scale 的 NaN / 节点缺失与宿主失败的两种错误文本。

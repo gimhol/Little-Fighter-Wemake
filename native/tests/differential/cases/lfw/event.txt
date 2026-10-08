@@ -1,0 +1,13 @@
+# 事件层（4AM）：stopped 三态 / 指针与按键字段
+newp p1 1 2 3 0
+rdp p1
+stp p1
+rdp p1
+newp p2 0 0 0 1
+sti p2
+rdp p2
+newk k1 wukong 1 U KeyU
+rdk k1
+newk k2 pe2 0 L KeyL
+stp k2
+rdk k2

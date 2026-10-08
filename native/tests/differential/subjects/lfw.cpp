@@ -17,6 +17,8 @@
 #include "lfw/loader/stage_val_getters.h"
 #include "lfw/player_info.h"
 #include "lfw/ui/cook_ui_info.h"
+#include "lfw/ui/ui_event.h"
+#include "lfw/ui/ui_img_loader.h"
 #include "lfw/ui/ui_load_img.h"
 #include "lfw/utils/container_help/field_or.h"
 
@@ -267,6 +269,28 @@ std::map<std::string, lfw::Value> g_ui_vals;
 
 // 4AK：`imgset` 的图片脚本（`ui_image_load` 按 img_key 查）。
 std::map<std::string, lfw::Value> g_images;
+
+// 4AM：事件层与 UIImgLoader 的脚本。
+std::map<std::string, lfw::ui::LFWPointerEvent> g_pevs;
+std::map<std::string, lfw::ui::LFWKeyEvent> g_kevs;
+
+class FakeImgNode : public lfw::ui::IUIImgLoaderNode {
+ public:
+  lfw::LFW* lfw_ = nullptr;
+  lfw::Value image;
+  lfw::LFW& lfw() override { return *lfw_; }
+  void set_image(const lfw::Value& v) override {
+    push("imnode:image|" + to_ascii(render_value(v)));
+    image = v;
+  }
+  void resize(double w, double h) override {
+    push("imnode:resize|" + to_ascii(render_value(lfw::Value(w))) + "|" +
+         to_ascii(render_value(lfw::Value(h))));
+  }
+};
+
+std::map<std::string, std::unique_ptr<FakeImgNode>> g_img_nodes;
+std::map<std::string, std::unique_ptr<lfw::ui::UIImgLoader>> g_loaders;
 
 // 4AD：URL 流程脚本。
 std::map<std::string, std::string> g_stored;       // `zip_url|md5` → blob token
@@ -1030,6 +1054,80 @@ int main(int argc, char** argv) {
     } else if (op == "imgset") {
       const std::string key = t[i++];
       g_images[key] = parse_value(t, i);
+    } else if (op == "newp") {
+      const std::string id = t[i++];
+      const double x = to_double(t[i++]);
+      const double y = to_double(t[i++]);
+      const double z = to_double(t[i++]);
+      const double btn = to_double(t[i++]);
+      g_pevs.emplace(id, lfw::ui::LFWPointerEvent(lfw::Vector3(x, y, z), btn));
+    } else if (op == "newk") {
+      const std::string id = t[i++];
+      const std::u16string player = key_of(t[i++]);
+      const bool pressed = t[i++] == "1";
+      const std::u16string gk = key_of(t[i++]);
+      const std::u16string key = key_of(t[i++]);
+      g_kevs.emplace(id, lfw::ui::LFWKeyEvent(player, pressed, gk, key));
+    } else if (op == "stp" || op == "sti") {
+      const std::string id = t[i++];
+      lfw::ui::IUIEvent* e = nullptr;
+      if (const auto p = g_pevs.find(id); p != g_pevs.end()) e = &p->second;
+      else if (const auto k = g_kevs.find(id); k != g_kevs.end()) e = &k->second;
+      if (e == nullptr) {
+        std::fprintf(stderr, "unknown event '%s'\n", id.c_str());
+        return 2;
+      }
+      if (op == "stp") e->stop_propagation();
+      else e->stop_immediate_propagation();
+    } else if (op == "rdp") {
+      const std::string id = t[i++];
+      lfw::ui::LFWPointerEvent& p = g_pevs.at(id);
+      push("rdp|" + id + "|" + num(p.point.x) + "|" + num(p.point.y) + "|" + num(p.point.z) +
+           "|" + num(p.button) + "|" + std::to_string(p.stopped()));
+    } else if (op == "rdk") {
+      const std::string id = t[i++];
+      lfw::ui::LFWKeyEvent& k = g_kevs.at(id);
+      push("rdk|" + id + "|" + trace::esc(k.player) + "|" + trace::esc(k.game_key) + "|" +
+           trace::esc(k.key) + "|" + (k.pressed ? "1" : "0") + "|" +
+           std::to_string(k.stopped()));
+    } else if (op == "imnode") {
+      const std::string lid = t[i++];
+      const std::string nid = t[i++];
+      if (nid == "-") {
+        g_loaders[lid] = std::make_unique<lfw::ui::UIImgLoader>(
+            []() -> lfw::ui::IUIImgLoaderNode* { return nullptr; });
+      } else {
+        if (g_img_nodes.find(nid) == g_img_nodes.end()) {
+          auto n = std::make_unique<FakeImgNode>();
+          n->lfw_ = &lfw;
+          g_img_nodes[nid] = std::move(n);
+        }
+        FakeImgNode* const node = g_img_nodes[nid].get();
+        g_loaders[lid] = std::make_unique<lfw::ui::UIImgLoader>(
+            [node]() -> lfw::ui::IUIImgLoaderNode* { return node; });
+      }
+    } else if (op == "imjid") {
+      const lfw::Times& j = g_loaders.at(t[i++])->jid();
+      push("imjid|" + num(j.value()) + "|" + num(j.min()) + "|" + num(j.max()));
+    } else if (op == "imignore") {
+      g_loaders.at(t[i++])->ignore_out_of_date();
+    } else if (op == "imload" || op == "imset") {
+      const std::string lid = t[i++];
+      lfw::ui::UIImgLoader& loader = *g_loaders.at(lid);
+      lfw::ui::UIImgLoadResult r;
+      if (op == "imload") {
+        const lfw::Value img = parse_value(t, i);
+        r = loader.load(img);
+      } else {
+        r = loader.set_img(key_of(t[i++]));
+      }
+      if (r.ok) {
+        push("imload|ok|" + to_ascii(render_value(r.image)));
+      } else if (r.out_of_date) {
+        push("imload|err|" + trace::esc(r.error) + "|ood|" + to_ascii(render_value(r.texture)));
+      } else {
+        push("imload|err|" + trace::esc(r.error));
+      }
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
       return 2;

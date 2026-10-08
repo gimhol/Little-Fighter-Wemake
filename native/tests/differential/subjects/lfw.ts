@@ -9,6 +9,9 @@ import { LFW } from "../../../../src/LFW/LFW";
 import { get_val_getter_from_stage } from "../../../../src/LFW/loader/get_val_getter_from_stage";
 import { PlayerInfo } from "../../../../src/LFW/PlayerInfo";
 import { cook_ui_info, find_ui_template, merge_ui_template } from "../../../../src/LFW/ui/cook_ui_info";
+import { LFWKeyEvent } from "../../../../src/LFW/ui/LFWKeyEvent";
+import { LFWPointerEvent } from "../../../../src/LFW/ui/LFWPointerEvent";
+import { UIImgLoader } from "../../../../src/LFW/ui/UIImgLoader";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
 import { esc, keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
@@ -61,6 +64,32 @@ const import_soft_fails = new Set<string>();
 const ui_vals = new Map<string, Rec>();
 // 4AK：`imgset` 的图片脚本（FakeImageMgr.load_img 按 img_key 查）。
 const image_vals = new Map<string, unknown>();
+
+// 4AM：事件层与 UIImgLoader 的脚本。
+const pevs = new Map<string, LFWPointerEvent>();
+const kevs = new Map<string, LFWKeyEvent>();
+const img_nodes = new Map<string, Rec>();
+const loaders = new Map<string, UIImgLoader>();
+
+function make_img_node(lfw_: LFW): Rec {
+  const node: Rec = {
+    lfw: lfw_,
+    _image: null,
+    resize(w: number, h: number): void {
+      push(`imnode:resize|${num(w)}|${num(h)}`);
+    },
+  };
+  Object.defineProperty(node, "image", {
+    get() {
+      return node["_image"];
+    },
+    set(v: unknown) {
+      node["_image"] = v;
+      push(`imnode:image|${renderValue(v)}`);
+    },
+  });
+  return node;
+}
 
 // 4AD：URL 流程脚本。
 const zip_stored = new Map<string, string>(); // `zip_url|md5` → blob token
@@ -683,6 +712,68 @@ async function run_ops(): Promise<void> {
     } else if (op === "imgset") {
       const key = next();
       image_vals.set(key, parseValue(t, i));
+    } else if (op === "newp") {
+      const id = next();
+      const x = Number(next());
+      const y = Number(next());
+      const z = Number(next());
+      const btn = Number(next());
+      pevs.set(id, new LFWPointerEvent({ x, y, z }, btn));
+    } else if (op === "newk") {
+      const id = next();
+      const player = nextKey();
+      const pressed = next() === "1";
+      const gk = nextKey();
+      const key = nextKey();
+      kevs.set(id, new LFWKeyEvent(player, pressed, gk as never, key));
+    } else if (op === "stp" || op === "sti") {
+      const id = next();
+      const e = pevs.get(id) ?? kevs.get(id);
+      if (!e) fail(`unknown event '${id}'`);
+      if (op === "stp") e.stop_propagation();
+      else e.stop_immediate_propagation();
+    } else if (op === "rdp") {
+      const id = next();
+      const e = pevs.get(id)!;
+      push(`rdp|${id}|${num(e.point.x)}|${num(e.point.y)}|${num(e.point.z)}|${num(e.button)}|${e.stopped}`);
+    } else if (op === "rdk") {
+      const id = next();
+      const e = kevs.get(id)!;
+      push(`rdk|${id}|${esc(e.player)}|${esc(e.game_key)}|${esc(e.key)}|${e.pressed ? "1" : "0"}|${e.stopped}`);
+    } else if (op === "imnode") {
+      const lid = next();
+      const nid = next();
+      let node: Rec | null = null;
+      if (nid !== "-") {
+        node = img_nodes.get(nid) ?? null;
+        if (!node) {
+          node = make_img_node(lfw);
+          img_nodes.set(nid, node);
+        }
+      }
+      const captured = node;
+      loaders.set(lid, new UIImgLoader(() => captured as never));
+    } else if (op === "imjid") {
+      const j = (loaders.get(next()) as unknown as Rec)["_jid"] as Rec;
+      push(`imjid|${num(j["value"] as number)}|${num(j["min"] as number)}|${num(j["max"] as number)}`);
+    } else if (op === "imignore") {
+      loaders.get(next())!.ignore_out_of_date();
+    } else if (op === "imload" || op === "imset") {
+      const lid = next();
+      const loader = loaders.get(lid)!;
+      try {
+        const imgs =
+          op === "imload"
+            ? await loader.load(parseValue(t, i) as never)
+            : await loader.set_img(nextKey());
+        push(`imload|ok|${renderValue(imgs)}`);
+      } catch (e) {
+        const rec = e as Rec;
+        push(
+          `imload|err|${esc(err_msg(e))}` +
+            (rec && rec["__is_out_of_date_error"] ? "|ood|" + renderValue(rec["texture"]) : ""),
+        );
+      }
     } else if (op === "uinew") {
       ui_vals.set(next(), parseValue(t, i) as Rec);
     } else if (op === "uinest") {

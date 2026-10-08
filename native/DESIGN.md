@@ -8975,3 +8975,22 @@ items TS 按字符迭代，端口只告警。
 **测试**：用例 `cases/lfw/ucook.txt` **35 行**（17 次 `ucook`）；变异 `lfw_ucook.mjs`
 **19/19 全杀**；全量差分 **215/215**、lint 全清。
 
+## 100. 切片 4AM：UI 事件层 + `UIImgLoader`
+
+`native/lfw/ui/ui_event.h`（头文件即全部：`IUIEvent` / `LFWUIEvent` / `LFWPointerEvent` /
+`LFWKeyEvent`；TS 的 `GK` 是字符串枚举 ⇒ 端口用 `std::u16string`）+ `ui/ui_img_loader.{h,cpp}`
+（`IUIImgLoaderNode` 缝：`lfw()` / `set_image` / `resize`；`UIImgLoader` 暴露 `jid()` 观测量）。
+测试挂 **lfw 台面**（事件：`newp`/`newk`/`stp`/`sti`/`rdp`/`rdk`；图片：`imnode`/`imjid`/
+`imignore`/`imload`/`imset`，TS 侧假节点用 `defineProperty` 给 image 写日志）。
+
+照抄怪癖（编号接 127 → 128）：128. `stopped` 三态：`0` 未阻止 / `1` `stop_propagation` /
+`2` `stop_immediate_propagation`。129. `UIImgLoader.load` 的 `_jid` 是 `Times`：`add()` 之后
+取 `jid`；`ignore_out_of_date` 把 `min=max=value=0`（之后 `add` 会「到顶回绕」再落回 0）；
+`resize` 收 `w/scale`、`h/scale`（字段缺省 ⇒ NaN），`node.image` **先写**、再 resize。
+
+偏差记录：TS node getter 回 `null | undefined` 的区分在端口收成一个 nullptr（报错文案固定
+`node got null`）；`load` 里两次 out-of-date 比较在同步端口不可翻转（宿主不重入）。
+
+**测试**：lfw 台面新 op 一族 + 用例 `cases/lfw/event.txt` **15 行** / `imloader.txt` **31 行**；
+变异 `lfw_misc.mjs` **15/15 全杀**；全量差分 **217/217**、lint 全清。
+

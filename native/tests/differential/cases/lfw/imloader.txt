@@ -1,0 +1,17 @@
+# UIImgLoader（4AM）：jid / ignore / load 的 image+resize / 节点缺失与宿主失败
+imnode l1 n1
+imjid l1
+imgset a.png?x=h:,,,,,,0,0 o 3 w n 30 h n 40 scale n 2
+imload l1 o 1 path s "a.png"
+imjid l1
+imnode l2 n2
+imignore l2
+imjid l2
+imgset b.png?x=h:,,,,,,0,0 o 3 w n 10 h n 20 scale n 1
+imset l2 b.png
+imnode l3 -
+imload l3 o 1 path s "c.png"
+imnode l4 n4
+imload l4 o 1 path s "d.png"
+imgset e.png?x=h:,,,,,,0,0 o 1 k s "no wh"
+imload l1 o 1 path s "e.png"
