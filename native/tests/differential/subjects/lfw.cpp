@@ -21,10 +21,13 @@
 #include "lfw/ui/action/actor.h"
 #include "lfw/ui/component/fade_out_opacity.h"
 #include "lfw/ui/component/flex_item.h"
+#include "lfw/ui/component/img_loop.h"
 #include "lfw/ui/component/opacity_animation.h"
 #include "lfw/ui/component/opacity_flash.h"
+#include "lfw/ui/component/picture.h"
 #include "lfw/ui/component/position_animation.h"
 #include "lfw/ui/component/scale_animation.h"
+#include "lfw/ui/component/smooth_number.h"
 #include "lfw/ui/component/ui_component.h"
 #include "lfw/ui/component/ui_props.h"
 #include "lfw/ui/instance_ref.h"
@@ -284,6 +287,7 @@ class FakeImgNode : public lfw::ui::IUIImgLoaderNode {
 
 std::map<std::string, std::unique_ptr<FakeImgNode>> g_img_nodes;
 std::map<std::string, std::unique_ptr<lfw::ui::UIImgLoader>> g_loaders;
+std::map<std::string, std::unique_ptr<lfw::SmoothNumber>> g_smooths;
 
 // 4AN：UINode 脚本。
 std::map<std::string, std::unique_ptr<lfw::ui::UINode>> g_nodes;
@@ -800,6 +804,174 @@ class FakeHost : public lfw::ILfwHost {
 };
 
 std::vector<std::u16string> g_words;
+
+// 4AV/4AW/4AX 的组件/工具驱动 op（单开一函数，避免主 else-if 链块嵌套超限）。
+bool run_comp_ops(lfw::LFW& lfw, const std::vector<std::string>& t, size_t& i,
+                  const std::string& op) {
+  if (op == "wpause") {
+      const double v = to_double(t[i++]);
+      lfw.world().set_paused_value(v);
+      push("wpause|" + num(v) + "|" + (lfw.world().paused() ? "1" : "0"));
+    } else if (op == "cplay") {
+      const std::string nid = t[i++];
+      const std::string cls = t[i++];
+      const std::string act = t[i++];
+      const bool rev = t[i++] == "1";
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      const std::u16string cls16 = to_u16(cls);
+      lfw::ui::UIComponent* comp = nullptr;
+      for (lfw::ui::UIComponent* const c : n.components()) {
+        const lfw::ClazzTag* const t = c->clazz();
+        const bool hit =
+            (cls16 == u"OpacityAnimation" && t == lfw::ui::OpacityAnimation::class_tag()) ||
+            (cls16 == u"OpacityFlash" && t == lfw::ui::OpacityFlash::class_tag()) ||
+            (cls16 == u"FadeOutOpacity" && t == lfw::ui::FadeOutOpacity::class_tag()) ||
+            (cls16 == u"ScaleAnimation" && t == lfw::ui::ScaleAnimation::class_tag()) ||
+            (cls16 == u"PositionAnimation" && t == lfw::ui::PositionAnimation::class_tag());
+        if (hit) {
+          comp = c;
+          break;
+        }
+      }
+      if (comp != nullptr) {
+        if (cls == "OpacityAnimation") {
+          lfw::ui::OpacityAnimation* const a = static_cast<lfw::ui::OpacityAnimation*>(comp);
+          if (act == "start") a->start(rev);
+          else if (act == "stop") a->stop(rev);
+        } else if (cls == "OpacityFlash") {
+          lfw::ui::OpacityFlash* const a = static_cast<lfw::ui::OpacityFlash*>(comp);
+          if (act == "start") a->start();
+          else if (act == "stop") a->stop();
+          else if (act == "replay") a->replay();
+        } else if (cls == "FadeOutOpacity") {
+          if (act == "start") static_cast<lfw::ui::FadeOutOpacity*>(comp)->start(rev);
+        } else if (cls == "ScaleAnimation") {
+          if (act == "start") static_cast<lfw::ui::ScaleAnimation*>(comp)->start(rev);
+        } else if (cls == "PositionAnimation") {
+          if (act == "start") static_cast<lfw::ui::PositionAnimation*>(comp)->start(rev);
+        }
+      }
+      push("cplay|" + nid + "|" + cls + "|" + act + "|" +
+           (comp != nullptr ? "ok" : "none") + "|" +
+           (comp != nullptr && comp->enabled() ? "b1" : "b0"));
+    } else if (op == "calign") {
+      const std::string nid = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      lfw::ui::FlexItem* f = nullptr;
+      for (lfw::ui::UIComponent* const c : n.components()) {
+        if (c->clazz() == lfw::ui::FlexItem::class_tag()) {
+          f = static_cast<lfw::ui::FlexItem*>(c);
+          break;
+        }
+      }
+      if (f == nullptr) {
+        push("calign|" + nid + "|none");
+      } else {
+        std::string out = "err";
+        if (f->ensure_props()) {
+          const std::optional<std::u16string> a = f->align();
+          out = a.has_value() ? to_ascii(*a) : "null";
+        }
+        push("calign|" + nid + "|" + out + "|" +
+             num(static_cast<double>(f->props_errors().size())));
+      }
+    } else if (op == "pic") {
+      const std::string nid = t[i++];
+      const std::string act = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      lfw::ui::Picture* pic = nullptr;
+      lfw::ui::ImgLoop* loop = nullptr;
+      for (lfw::ui::UIComponent* const c : n.components()) {
+        if (c->clazz() == lfw::ui::Picture::class_tag()) pic = static_cast<lfw::ui::Picture*>(c);
+        else if (c->clazz() == lfw::ui::ImgLoop::class_tag()) loop = static_cast<lfw::ui::ImgLoop*>(c);
+      }
+      if (act == "src" && pic != nullptr) {
+        pic->set_src(to_u16(t[i++]));
+        push("pic|" + nid + "|src|" + to_ascii(pic->src()));
+      } else if (act == "rd" && pic != nullptr) {
+        push("pic|" + nid + "|rd|" + num(pic->width()) + "|" + num(pic->height()) +
+             "|" + to_ascii(pic->src()));
+      } else if (act == "setw" && pic != nullptr) {
+        pic->set_width(to_double(t[i++]));
+        push("pic|" + nid + "|setw|" + num(pic->width()));
+      } else if (act == "seth" && pic != nullptr) {
+        pic->set_height(to_double(t[i++]));
+        push("pic|" + nid + "|seth|" + num(pic->height()));
+      } else if (act == "setimg" && (pic != nullptr || loop != nullptr)) {
+        const lfw::Value raw = parse_value(t, i);
+        auto out = std::make_shared<lfw::Object>();
+        out->set(u"key", lfw::Value(u""));
+        out->set(u"url", lfw::Value(u""));
+        out->set(u"src", lfw::Value(u""));
+        out->set(u"src_url", lfw::Value(u""));
+        out->set(u"scale", lfw::Value(0.0));
+        out->set(u"w", lfw::Value(0.0));
+        out->set(u"h", lfw::Value(0.0));
+        out->set(u"min_filter", lfw::Value());
+        out->set(u"mag_filter", lfw::Value());
+        out->set(u"wrap_s", lfw::Value());
+        out->set(u"wrap_t", lfw::Value());
+        out->set(u"pic", lfw::Value());
+        out->set(u"flip_x", lfw::Value());
+        out->set(u"flip_y", lfw::Value());
+        out->set(u"clip_x", lfw::Value());
+        out->set(u"clip_y", lfw::Value());
+        out->set(u"clip_w", lfw::Value());
+        out->set(u"clip_h", lfw::Value());
+        out->set(u"bitmap", lfw::Value());
+        if (const lfw::Object* const src = lfw::as_object(raw)) {
+          for (const std::u16string& k : src->keys()) {
+            const lfw::Value* const v = src->get(k);
+            if (v != nullptr) out->set(k, *v);
+          }
+        }
+        n.set_image(lfw::Value(out));
+        push("pic|" + nid + "|setimg|1");
+      } else if (act == "istart" && loop != nullptr) {
+        loop->start();
+        push("pic|" + nid + "|istart|1");
+      } else if (act == "istop" && loop != nullptr) {
+        loop->stop();
+        push("pic|" + nid + "|istop|1");
+      } else {
+        push("pic|" + nid + "|" + act + "|none");
+      }
+    } else if (op == "snew") {
+      const std::string sid = t[i++];
+      std::unique_ptr<lfw::SmoothNumber> s = std::make_unique<lfw::SmoothNumber>();
+      s->handler([sid](lfw::SmoothNumber& self) {
+        push("scb|" + sid + "|" + num(self.value()) + "|" + (self.done() ? "1" : "0"));
+      });
+      g_smooths[sid] = std::move(s);
+    } else if (op == "srd") {
+      const std::string sid = t[i++];
+      lfw::SmoothNumber& s = *g_smooths.at(sid);
+      push("srd|" + sid + "|" + num(s.value()) + "|" + num(s.target()) + "|" +
+           (s.done() ? "1" : "0"));
+    } else if (op == "svalue" || op == "starget" || op == "sspeed" || op == "sfactor" ||
+               op == "smdiff") {
+      const std::string sid = t[i++];
+      const double v = to_double(t[i++]);
+      lfw::SmoothNumber& s = *g_smooths.at(sid);
+      if (op == "svalue") s.set_value(v);
+      else if (op == "starget") s.set_target(v);
+      else if (op == "sspeed") s.speed(v);
+      else if (op == "sfactor") s.factor(v);
+      else s.min_diff(v);
+    } else if (op == "smode") {
+      const std::string sid = t[i++];
+      const std::string mode = t[i++];
+      g_smooths.at(sid)->mode(mode);
+    } else if (op == "supd") {
+      g_smooths.at(t[i++])->update();
+    } else if (op == "shandle") {
+      g_smooths.at(t[i++])->handle();
+
+  } else {
+    return false;
+  }
+  return true;
+}
 
 void listen(lfw::LFW& lfw) {
   auto call = [&](const std::u16string& name, const lfw::LfwCallbacks::Payloads& p) {
@@ -1699,73 +1871,7 @@ int main(int argc, char** argv) {
         push("cfind|" + nid + "|" + cid + "|" + to_ascii(which) + "|" +
              (r != nullptr ? node_ref(r) : std::string("u")));
       }
-    } else if (op == "wpause") {
-      const double v = to_double(t[i++]);
-      lfw.world().set_paused_value(v);
-      push("wpause|" + num(v) + "|" + (lfw.world().paused() ? "1" : "0"));
-    } else if (op == "cplay") {
-      const std::string nid = t[i++];
-      const std::string cls = t[i++];
-      const std::string act = t[i++];
-      const bool rev = t[i++] == "1";
-      lfw::ui::UINode& n = *g_nodes.at(nid);
-      const std::u16string cls16 = to_u16(cls);
-      lfw::ui::UIComponent* comp = nullptr;
-      for (lfw::ui::UIComponent* const c : n.components()) {
-        const lfw::ClazzTag* const t = c->clazz();
-        const bool hit =
-            (cls16 == u"OpacityAnimation" && t == lfw::ui::OpacityAnimation::class_tag()) ||
-            (cls16 == u"OpacityFlash" && t == lfw::ui::OpacityFlash::class_tag()) ||
-            (cls16 == u"FadeOutOpacity" && t == lfw::ui::FadeOutOpacity::class_tag()) ||
-            (cls16 == u"ScaleAnimation" && t == lfw::ui::ScaleAnimation::class_tag()) ||
-            (cls16 == u"PositionAnimation" && t == lfw::ui::PositionAnimation::class_tag());
-        if (hit) {
-          comp = c;
-          break;
-        }
-      }
-      if (comp != nullptr) {
-        if (cls == "OpacityAnimation") {
-          lfw::ui::OpacityAnimation* const a = static_cast<lfw::ui::OpacityAnimation*>(comp);
-          if (act == "start") a->start(rev);
-          else if (act == "stop") a->stop(rev);
-        } else if (cls == "OpacityFlash") {
-          lfw::ui::OpacityFlash* const a = static_cast<lfw::ui::OpacityFlash*>(comp);
-          if (act == "start") a->start();
-          else if (act == "stop") a->stop();
-          else if (act == "replay") a->replay();
-        } else if (cls == "FadeOutOpacity") {
-          if (act == "start") static_cast<lfw::ui::FadeOutOpacity*>(comp)->start(rev);
-        } else if (cls == "ScaleAnimation") {
-          if (act == "start") static_cast<lfw::ui::ScaleAnimation*>(comp)->start(rev);
-        } else if (cls == "PositionAnimation") {
-          if (act == "start") static_cast<lfw::ui::PositionAnimation*>(comp)->start(rev);
-        }
-      }
-      push("cplay|" + nid + "|" + cls + "|" + act + "|" +
-           (comp != nullptr ? "ok" : "none") + "|" +
-           (comp != nullptr && comp->enabled() ? "b1" : "b0"));
-    } else if (op == "calign") {
-      const std::string nid = t[i++];
-      lfw::ui::UINode& n = *g_nodes.at(nid);
-      lfw::ui::FlexItem* f = nullptr;
-      for (lfw::ui::UIComponent* const c : n.components()) {
-        if (c->clazz() == lfw::ui::FlexItem::class_tag()) {
-          f = static_cast<lfw::ui::FlexItem*>(c);
-          break;
-        }
-      }
-      if (f == nullptr) {
-        push("calign|" + nid + "|none");
-      } else {
-        std::string out = "err";
-        if (f->ensure_props()) {
-          const std::optional<std::u16string> a = f->align();
-          out = a.has_value() ? to_ascii(*a) : "null";
-        }
-        push("calign|" + nid + "|" + out + "|" +
-             num(static_cast<double>(f->props_errors().size())));
-      }
+    } else if (run_comp_ops(lfw, t, i, op)) {
     } else if (op == "nact") {
       const std::string nid = t[i++];
       const lfw::Value action = parse_value(t, i);

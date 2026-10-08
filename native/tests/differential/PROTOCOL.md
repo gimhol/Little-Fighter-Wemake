@@ -4852,3 +4852,15 @@ harness op：
 - VerticalLayout/HorizontalLayout 会跳过不可见子节点（用例里都放了隐藏子 + `nset <id> visible 0` 钉住）；
   VerticalLayout 的 `pos_list` 是 unshift+pop 配对，打乱顺序能直接观察到 y 错位。
 - 用例里 vl1 的 `center` 取 `0.5,0.25`（非零 cy），否则 `yy` 里的 center 项观察不到。
+
+### 6.9.155 Picture / ImgLoop / SmoothNumber（`cases/lfw/{img,smooth}.txt` 113/44 行；变异 15/15 全杀）
+
+- 新台面 op `pic <nid> <rd|src|setw|seth|setimg|istart|istop> [arg]`（Picture/ImgLoop 驱动；`setimg` 用
+  **真 ImageInfo** 建模，C++ 侧按同字段序拼同一对象）与 `snew/srd/svalue/starget/smode/sspeed/sfactor/smdiff/supd/shandle`
+  （SmoothNumber 脚本；`snew` 里挂的 handler 每次调用打 `scb|<id>|<value>|<done>`）。
+- ⚠ `image.clone()` 会带上 ImageInfo 的 **全部声明字段**（含 12 个 `u` 可选项）——台面拼对象时字段与顺序都要对齐，
+  否则 `nrd image` 的 json 直接漂移。
+- ⚠ ImgLoop 的 idx 永远是 `floor(value) < count`（循环在 `time>=duration` 处回卷），**越界分支只能靠
+  `col*row < count` 造**（用例：col2×row1 网格 + count10 ⇒ idx≥2 隐藏）。
+- ⚠ stop/start 的 `times` 差异要 **回卷之后再多跑几步** 才看得到（done 只在回卷帧置位，下一帧才停）。
+- 台面自重构：组件/工具驱动 op 已抽到单函数 `run_comp_ops`（主 else-if 链块嵌套超 MSVC 上限）。

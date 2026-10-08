@@ -1,0 +1,102 @@
+# 4AX：Picture / ImgLoop
+
+# Picture：set_src 走 UIImgLoader（img_key 带 dw/dh），load 后 image 落节点并 resize(w/scale)
+imgset p.png?x=h:,,,,10,20,0,0 o 4 w n 10 h n 20 scale n 2 src s "p.png"
+nmk p1 - o 6 id s "p1" pos a 3 n 0 n 0 n 0 size a 3 n 10 n 20 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "Picture" id s "p1c" args a 0 properties o 0
+pic p1 rd
+pic p1 src p.png
+pic p1 rd
+nrd p1 size
+pic p1 setw 7
+pic p1 rd
+imgset q.png?x=h:,,,,7,10,0,0 o 4 w n 7 h n 10 scale n 1 src s "q.png"
+pic p1 src q.png
+pic p1 rd
+pic p1 seth 30
+pic p1 rd
+
+# Picture：别名 TAGS "Image" 也要能建
+nmk p2 - o 6 id s "p2" pos a 3 n 0 n 0 n 0 size a 3 n 10 n 20 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "Image" id s "p2c" args a 0 properties o 0
+pic p2 rd
+pic p2 src p.png
+pic p2 rd
+
+# ImgLoop：3x2 网格只取 2 格（col=2 row=1）而 count=10 ⇒ idx>=2 走越界隐藏；停/启切 times
+nmk il1 - o 6 id s "il1" pos a 3 n 0 n 0 n 0 size a 3 n 20 n 20 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "ImgLoop" id s "il1c" args a 0 properties o 6 w n 4 h n 8 col n 2 row n 1 count n 10 duration n 1000
+pic il1 setimg o 3 src s "sheet" w n 12 h n 16
+nlife il1 start
+nrd il1 image
+nrd il1 flags
+cupd il1 100
+nrd il1 image
+nrd il1 flags
+cupd il1 100
+nrd il1 image
+nrd il1 flags
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+nrd il1 flags
+pic il1 istop
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+pic il1 istart
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image
+cupd il1 100
+nrd il1 image

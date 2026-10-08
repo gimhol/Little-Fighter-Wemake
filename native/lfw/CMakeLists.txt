@@ -216,6 +216,9 @@ add_library(lfw_core STATIC
   ui/component/horizontal_layout.cpp
   ui/component/fit_children.cpp
   ui/component/wrap_content.cpp
+  ui/component/picture.cpp
+  ui/component/img_loop.cpp
+  ui/component/smooth_number.cpp
   ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp

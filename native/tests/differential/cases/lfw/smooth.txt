@@ -1,0 +1,54 @@
+# 4AX：SmoothNumber（linear / exponential、setter 早退、handler 回调、handle 手动触发）
+
+snew s1
+srd s1
+starget s1 100
+srd s1
+supd s1
+srd s1
+supd s1
+srd s1
+supd s1
+srd s1
+supd s1
+srd s1
+supd s1
+srd s1
+supd s1
+srd s1
+svalue s1 5
+srd s1
+starget s1 5
+srd s1
+shandle s1
+starget s1 9
+supd s1
+srd s1
+
+snew s2
+smode s2 exponential
+sspeed s2 3
+sfactor s2 0.5
+smdiff s2 0.5
+starget s2 10
+supd s2
+srd s2
+supd s2
+srd s2
+supd s2
+srd s2
+supd s2
+srd s2
+supd s2
+srd s2
+supd s2
+srd s2
+supd s2
+srd s2
+supd s2
+srd s2
+starget s2 0
+supd s2
+srd s2
+svalue s2 -1
+srd s2

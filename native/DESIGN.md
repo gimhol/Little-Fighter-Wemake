@@ -9279,3 +9279,21 @@ props `wrapWidth/wrapHeight` 仅参与校验，`apply` 先读一次 props）。
 
 **测试**：用例 `cases/lfw/layout.txt` **40 行**；变异 `lfw_layout.mjs` **16/16 全杀**；全量差分 **226/226**。
 
+## 111. 切片 4AX：Picture / ImgLoop / SmoothNumber
+
+三个新件：`picture`（TAGS `["Picture", "Image"]`；props `width/height`；`set_src` 拼 `{path, dw, dh}` 进
+`UIImgLoader`，失败走 `host.warn`；getter 回退 `node.w/h`；`src` 读 `node.image.src`）、`img_loop`
+（props `w/h`（必填）/`col/row/count/duration`；构造期把 `Easing` 打成 1000ms+linear+times(0)+fill(1)；
+`on_start` 按行列展开 `rects`（双重循环都卡 `count`）；`update` 按 `floor(anim.value)` 切片——
+越界隐藏、命中就 `image.clone()` 后写 `clip_*`，`done` 自禁；`stop/start` 切 `times`+`count`）、
+`SmoothNumber`（线性=每步 `speed`、指数=`factor*(t-v)` 且 `min_diff` 内吸到目标；setter 相等早退；`handler` 回调）。
+
+照拄怪癖（编号接 178 → 179）：179. TS `Factory.register_component` 按 **全部 TAGS 逐个注册**（别名也要能建）——
+C++ `regist_one` 需对 `Picture` 巨两次（`Picture`/`Image`）。180. `image.clone()` 是 ImageInfo 浅拷贝：
+先落 **全部 19 个声明字段**（含 12 个 undefined 可选项），再按源键序覆盖/追加；少写字段会直接 json 差异。
+181. ImgLoop 的双重循环**两层都卡 count**（内层条件去掉在可观察面上等效：idx 永远 < count）。
+182. SmoothNumber 的两个 setter 都有「与当前相等就早退」守卫（`set_target` 相等时不重置 `done`）。
+
+**测试**：用例 `cases/lfw/img.txt` **113 行** + `cases/lfw/smooth.txt` **44 行**；变异 `lfw_widget.mjs` **15/15 全杀**；
+全量差分 **228/228**。
+

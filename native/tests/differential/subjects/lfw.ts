@@ -3,6 +3,7 @@
 // `Ditto` 的宿主包全脚本化（Sounds/ImageMgr/Keyboard/Pointings/UIInputHandle/WorldRender/
 // Cache/Zip/Clock/Render/Timeout/…）；`Date.now` 固定成 12345（端口侧 `host.now()`）。
 import { Ditto } from "../../../../src/LFW/ditto/Instance";
+import { ImageInfo } from "../../../../src/LFW/ditto";
 import { Expression } from "../../../../src/LFW/base/Expression";
 import { Factory } from "../../../../src/LFW/Factory";
 import { LFW } from "../../../../src/LFW/LFW";
@@ -16,6 +17,7 @@ import { Style } from "../../../../src/LFW/ui/Style";
 import { UILayers, type IPopPageOpts, type UILayer } from "../../../../src/LFW/ui/UILayer";
 import { actor } from "../../../../src/LFW/ui/action/Actor";
 import { UIComponent } from "../../../../src/LFW/ui/component/UIComponent";
+import { SmoothNumber } from "../../../../src/LFW/ui/component/SmoothNumber";
 import { UINode } from "../../../../src/LFW/ui/UINode";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
@@ -75,6 +77,11 @@ const pevs = new Map<string, LFWPointerEvent>();
 const kevs = new Map<string, LFWKeyEvent>();
 const img_nodes = new Map<string, Rec>();
 const loaders = new Map<string, UIImgLoader>();
+// 4AX：SmoothNumber 脚本。
+const smooths = new Map<string, SmoothNumber>();
+const flush_microtasks = async (): Promise<void> => {
+  for (let k = 0; k < 12; k++) await Promise.resolve();
+};
 // 4AN：UINode 脚本。
 const tnodes = new Map<string, UINode>();
 
@@ -1241,6 +1248,62 @@ async function run_ops(): Promise<void> {
         }
         push(`calign|${nid}|${out}|${num(errs)}`);
       }
+    } else if (op === "pic") {
+      const nid = next();
+      const act = next();
+      const n = tnodes.get(nid)!;
+      const comps = n.components as Rec[];
+      const pic = comps.find((v) => (((v.constructor as Rec).TAGS as string[] | undefined) ?? []).includes("Picture"));
+      const loop = comps.find((v) => (((v.constructor as Rec).TAGS as string[] | undefined) ?? []).includes("ImgLoop"));
+      if (act === "src" && pic) {
+        (pic as Rec).set_src(next());
+        await flush_microtasks();
+        push(`pic|${nid}|src|${String((pic as Rec).src)}`);
+      } else if (act === "rd" && pic) {
+        push(`pic|${nid}|rd|${num((pic as Rec).width)}|${num((pic as Rec).height)}|${String((pic as Rec).src)}`);
+      } else if (act === "setw" && pic) {
+        (pic as Rec).width = Number(next());
+        push(`pic|${nid}|setw|${num((pic as Rec).width)}`);
+      } else if (act === "seth" && pic) {
+        (pic as Rec).height = Number(next());
+        push(`pic|${nid}|seth|${num((pic as Rec).height)}`);
+      } else if (act === "setimg" && (pic || loop)) {
+        (n as Rec).image = new ImageInfo(parseValue(t, i) as Rec);
+        push(`pic|${nid}|setimg|1`);
+      } else if (act === "istart" && loop) {
+        (loop as Rec).start();
+        push(`pic|${nid}|istart|1`);
+      } else if (act === "istop" && loop) {
+        (loop as Rec).stop();
+        push(`pic|${nid}|istop|1`);
+      } else {
+        push(`pic|${nid}|${act}|none`);
+      }
+    } else if (op === "snew") {
+      const sid = next();
+      const s = new SmoothNumber();
+      s.handler((self) => push(`scb|${sid}|${num(self.value)}|${self.done ? 1 : 0}`));
+      smooths.set(sid, s);
+    } else if (op === "srd") {
+      const sid = next();
+      const s = smooths.get(sid)!;
+      push(`srd|${sid}|${num(s.value)}|${num(s.target)}|${s.done ? 1 : 0}`);
+    } else if (op === "svalue" || op === "starget" || op === "sspeed" || op === "sfactor" || op === "smdiff") {
+      const sid = next();
+      const v = Number(next());
+      const s = smooths.get(sid)!;
+      if (op === "svalue") s.value = v;
+      else if (op === "starget") s.target = v;
+      else if (op === "sspeed") s.speed(v);
+      else if (op === "sfactor") s.factor(v);
+      else s.min_diff(v);
+    } else if (op === "smode") {
+      const sid = next();
+      smooths.get(sid)!.mode(next() as never);
+    } else if (op === "supd") {
+      smooths.get(next())!.update();
+    } else if (op === "shandle") {
+      smooths.get(next())!.handle();
     } else if (op === "nact") {
       const n = tnodes.get(next())!;
       actor.act(n, parseValue(t, i) as never);

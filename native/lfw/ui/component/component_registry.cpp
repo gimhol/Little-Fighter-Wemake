@@ -10,10 +10,12 @@
 #include "lfw/ui/component/focus_behavior.h"
 #include "lfw/ui/component/horizontal_layout.h"
 #include "lfw/ui/component/hover_behavior.h"
+#include "lfw/ui/component/img_loop.h"
 #include "lfw/ui/component/opacity_animation.h"
 #include "lfw/ui/component/opacity_flash.h"
 #include "lfw/ui/component/opacity_hover.h"
 #include "lfw/ui/component/pause_handling.h"
+#include "lfw/ui/component/picture.h"
 #include "lfw/ui/component/position_animation.h"
 #include "lfw/ui/component/scale_animation.h"
 #include "lfw/ui/component/scale_clickable.h"
@@ -57,6 +59,9 @@ void regist_components() {
   regist_one<HorizontalLayout>(u"HorizontalLayout");
   regist_one<FitChildren>(u"FitChildren");
   regist_one<WrapContent>(u"WrapContent");
+  regist_one<Picture>(u"Picture");
+  regist_one<Picture>(u"Image");
+  regist_one<ImgLoop>(u"ImgLoop");
 }
 
 }
