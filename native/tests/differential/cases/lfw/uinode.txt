@@ -1,0 +1,159 @@
+# UINode（4AN）：构造 / 几何与缓存 / 全局坐标链 / 可见性传播 / 焦点 / 树查询 / 指针状态
+nod r o 6 id s "root" pos a 3 n 10 n 20 n 0 size a 3 n 100 n 50 n 1 center a 3 n 0.5 n 0.5 n 0 scale a 3 n 1 n 1 n 1 values o 0
+nrd r id
+nrd r pos
+nrd r scale
+nrd r flags
+nrd r op
+nrd r bg
+nrd r fg
+nrd r outline
+nrd r cross
+nrd r rect
+nrd r geo
+nrd r gp
+nrd r hit 10 20
+nrd r hit 70 60
+nrd r state
+nrd r lifetime
+nod d o 13 id s "d" pos a 3 n 0 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 visible b 0 disabled b 1 clips b 1 opacity n 0.25 color s "red" outlineColor s "blue" outlineWidth n 3 outlineAlpha n 0.5
+nrd d flags
+nrd d op
+nrd d bg
+nrd d fg
+nrd d outline
+nrd d clip
+noc dc d o 5 id s "dc" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nadd d dc
+nrd dc flags
+# 几何 setter / round_float / 缓存失效
+nset r cx 0
+nrd r cross
+nset r resize3 40 20 2
+nrd r cross
+nrd r rect
+nrd r size
+nset r w 10
+nrd r size
+nrd r hit 25 30
+nset r x 1.0004
+nrd r pos
+nset r x 1.0006
+nrd r pos
+nset r resize3 1.0004 1.0006 1
+nrd r size
+nset r center3 0.25 0.25 0
+nrd r cross
+# 全局坐标：父子链 + 缓存陈旧（父移动不清子缓存；update 只在自己几何变化时清）
+nod p o 6 id s "p" pos a 3 n 100 n 100 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 values o 2 k s "pk" p2 s "p2v"
+noc c p o 7 id s "c" name s "cc" pos a 3 n 1 n 2 n 0 size a 3 n 4 n 4 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 values o 1 k s "ck"
+nadd p c
+noc g c o 5 id s "g" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nadd c g
+noc n5 p o 5 id n 5 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nadd p n5
+nrd c gp
+nset p opacity 0.5
+nset c opacity 0.5
+nrd c op
+nset p move3 200 200 0
+nrd c gp
+nset c update 1
+nrd c gp
+nrd c lifetime
+nrd g lifetime
+nset p move3 300 300 0
+nset c update 2
+nrd c gp
+nrd c lifetime
+nset c sx 1.0004
+nrd c scale
+nset c x 5
+nrd c gp
+# 树查询
+nrd p depth
+nrd c depth
+nrd g depth
+nrd p fc "c"
+nrd p fc "g"
+nrd p sn "g"
+nrd c ln "c"
+nrd c ln "zzz"
+nrd c fp "p"
+nrd c fp "zzz"
+nrd g fp "p"
+nrd p fc "5"
+nrd c fcn "cc"
+nrd c value "k"
+nrd c value "p2"
+nrd c value "nope"
+# 可见性传播 + 回调
+noc v2 p o 5 id s "v2" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nadd p v2
+ncb p show
+ncb v2 show
+ncb v2 hide
+nrd v2 flags
+nset p visible 0
+nrd v2 flags
+nset v2 visible 0
+nrd v2 flags
+nset p visible 1
+nrd v2 flags
+nset v2 visible 1
+nrd v2 flags
+nset v2 visible 0
+nset p visible 0
+nset p visible 1
+nset v2 visible 1
+# 焦点
+ncb p foucs_item_changed
+ncb c foucs_changed
+nset c focused 1
+nrd p foc
+nrd c foc
+ncb g foucs_changed
+nset g focused 1
+nrd p foc
+nrd c foc
+nfn p -
+nrd p foc
+nset c disabled 1
+nfn p c
+nrd p foc
+nset c disabled 0
+nset c focused 1
+nrd p foc
+nset c disabled 1
+nrd p foc
+nset c disabled 0
+nfn p -
+nrd p foc
+# 自动聚焦（on_show 路径）
+noc af p o 6 id s "af" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 auto_focus b 1
+nadd p af
+nset p visible 0
+nset p visible 1
+nrd p foc
+nfn p -
+# 指针状态 + 回调
+ncb c pdown
+ncb c pup
+ncb c pleave
+ncb c penter
+npd c
+nrd c ptr
+npc c
+nrd c ptr
+npd c
+npu c
+nrd c ptr
+npl c
+nrd c ptr
+npe c
+nrd c ptr
+nset c disabled 1
+nset p update 5
+nrd c lifetime
+nrd g lifetime
+nset c disabled 0

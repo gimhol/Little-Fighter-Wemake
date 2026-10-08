@@ -43,6 +43,7 @@ add_library(lfw_core STATIC
   ui/ui_img_loader.cpp
   ui/ui_load_img.cpp
   ui/ui_parse.cpp
+  ui/uinode.cpp
   ui/validate_ui_img_info.cpp
   ui/value_spread.cpp
   ui/xml_to_ui_info.cpp

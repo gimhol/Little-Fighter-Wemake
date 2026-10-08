@@ -8994,3 +8994,41 @@ items TS 按字符迭代，端口只告警。
 **测试**：lfw 台面新 op 一族 + 用例 `cases/lfw/event.txt` **15 行** / `imloader.txt` **31 行**；
 变异 `lfw_misc.mjs` **15/15 全杀**；全量差分 **217/217**、lint 全清。
 
+## 101. 切片 4AN：`UINode` 第一段（几何/状态/树/焦点/指针）
+
+`native/lfw/ui/uinode.{h,cpp}`：构造（`data` → 各字段，`_root` 挂父链）、`UINodeCallbacks`
+九回调、几何（`set_w/h`、`resize`/`move_to`/`set_center`/`set_scale` 收 `std::optional<double>`
+对等 TS 缺省实参）、`global_pos()/set_global_pos/move_to_global`、`cross()/rect()/geo()` 三个
+缓存结构、`hit`、可见性/禁用/透明度、焦点链、树查询与 `get_value`、指针五态、
+`invoke_all_on_show/hide/visible`、`update`。本刀**不做**：`text`/`image` 建形与 `set_text`、
+renderer 面、components 行为（`find`/`search`/`lookup_component`…）、生命周期
+`on_start/stop/resume/pause`、`on_click`/`on_key_*`、`pop_page`/`UILayer`、静态 `create`。
+
+台面：lfw subject 新 op 一族：`nod <nid> [parent] <data>`（`noc` 同上）、`nadd`、`nfn`、
+`nset <nid> <what> …`（x/y/z/w/h/cx/cy/cz/sx/sy/sz/visible/disabled/opacity/clip/focused/
+background(-)/foreground(-)/backgroundAlpha/foregroundAlpha/outline*/move3/resize3/center3/
+scale3/global_pos/update）、`nrd <nid> <what>`（pos|scale|size|center 分轴、cross/rect/geo、gp、
+flags、op、bg/fg、outline 三值、id（含 name|depth）、lifetime、ptr、foc、state、value、
+fc|sn|ln|fp、fcn、hit、clip、depth）、`npd/npm/npu/npc`、`npl/npe`、`ncb <nid> <ev>`
+（show/hide/foucs_changed/foucs_item_changed/pdown/pmove/pup/pcancel/pleave/penter），
+回调打 `cb|<nid>|<ev>|…`，节点参数用 `node_ref`/`nref` 归一。
+
+照抄怪癖（编号接 129 → 130）：130. `global_pos()` 只在**自己** `update` 检到几何变化才清缓存
+（含父链），父节点移动/`set_scale` 都不清 ⇒ 陈旧值可见；`cross/rect/geo` 同理全靠 `clear_caches`。
+131. `hit` 左上角用 `round(center*size)`，右下角却读**原始 `data.size`**（后续 resize 不影响右
+下角）。132. `visible()`/`disabled()` 沿父链 `&&`/`||`，`invoke_all_*` 递归看的是**自身** `_visible`。
+133. 焦点：`set_focused_node` 先将禁用/不可见的新焦点置空；派发 old.on_blur → old cb →
+new.on_foucs → new cb → root 的 `on_foucs_item_changed(val, old)`；`set_disabled(true)` 只在自己
+真的（父链）禁用后清焦点；`on_hide` 清自己的焦点。134. 指针：down 置 click=1；up/cancel 只
+抬 down；leave 清 over+click；enter 置 over。135. `update` 的 prev 只记 size.x/y、center.x/y、
+pos.xyz；递归子节点跳过（含父链）禁用者；`_update_times` 无条件 add。136. `id`/`name` 的宽松
+比较让数字/布尔 id 可与字符串对上（`id n 5` 匹配 `"5"`）；`find_child` 只看直接子节点，
+`search_node` 递归、`lookup_node` 上行、`find_parent_by_id` 沿父链；`get_value` 本节点 values
+→ 父链。
+
+偏差记录：TS 构造尾 `new UINodeRenderer(this)`（渲染器面）不建形；`Object.freeze(data)` 无对等；
+`data.txt_info`/`img` 分支延后刀（台面数据不含）。
+
+**测试**：用例 `cases/lfw/uinode.txt` **125 行**；变异 `lfw_uinode.mjs` **44/44 全杀**；
+全量差分 **218/218**、lint 全清。
+

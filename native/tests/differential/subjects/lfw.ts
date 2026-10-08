@@ -12,6 +12,7 @@ import { cook_ui_info, find_ui_template, merge_ui_template } from "../../../../s
 import { LFWKeyEvent } from "../../../../src/LFW/ui/LFWKeyEvent";
 import { LFWPointerEvent } from "../../../../src/LFW/ui/LFWPointerEvent";
 import { UIImgLoader } from "../../../../src/LFW/ui/UIImgLoader";
+import { UINode } from "../../../../src/LFW/ui/UINode";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
 import { esc, keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
@@ -70,6 +71,12 @@ const pevs = new Map<string, LFWPointerEvent>();
 const kevs = new Map<string, LFWKeyEvent>();
 const img_nodes = new Map<string, Rec>();
 const loaders = new Map<string, UIImgLoader>();
+// 4AN：UINode 脚本。
+const tnodes = new Map<string, UINode>();
+
+function nref(p: UINode | undefined | null): string {
+  return p ? renderValue(p.id) : "u";
+}
 
 function make_img_node(lfw_: LFW): Rec {
   const node: Rec = {
@@ -332,9 +339,20 @@ function install_ditto(): void {
     Importer: importer as never,
     Cache: cache as never,
     Vector3: class {
-      x = 0;
-      y = 0;
-      z = 0;
+      x: number;
+      y: number;
+      z: number;
+      constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+      }
+      set(x = 0, y = 0, z = 0): unknown {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        return this;
+      }
     } as never,
     Vector2: class {
       x = 0;
@@ -774,6 +792,154 @@ async function run_ops(): Promise<void> {
             (rec && rec["__is_out_of_date_error"] ? "|ood|" + renderValue(rec["texture"]) : ""),
         );
       }
+    } else if (op === "nod" || op === "noc") {
+      const nid = next();
+      const parent = op === "noc" ? tnodes.get(next()) : undefined;
+      const data = parseValue(t, i);
+      tnodes.set(nid, new UINode(lfw, data as never, parent as never));
+    } else if (op === "nadd") {
+      const parent = tnodes.get(next())!;
+      const child = tnodes.get(next())!;
+      parent.add_child(child);
+    } else if (op === "nfn") {
+      const n = tnodes.get(next())!;
+      const tok = next();
+      n.focused_node = tok === "-" ? undefined : tnodes.get(tok)!;
+    } else if (op === "nset") {
+      const nid = next();
+      const what = next();
+      const n = tnodes.get(nid)!;
+      const nnum = (): number => Number(next());
+      if (what === "x") n.set_x(nnum());
+      else if (what === "y") n.set_y(nnum());
+      else if (what === "z") n.set_z(nnum());
+      else if (what === "w") n.set_w(nnum());
+      else if (what === "h") n.set_h(nnum());
+      else if (what === "cx") n.set_cx(nnum());
+      else if (what === "cy") n.set_cy(nnum());
+      else if (what === "cz") n.set_cz(nnum());
+      else if (what === "sx") n.set_sx(nnum());
+      else if (what === "sy") n.set_sy(nnum());
+      else if (what === "sz") n.set_sz(nnum());
+      else if (what === "visible") n.set_visible(next() === "1");
+      else if (what === "disabled") n.set_disabled(next() === "1");
+      else if (what === "opacity") n.set_opacity(nnum());
+      else if (what === "clip") n.clip_children = next() === "1";
+      else if (what === "focused") n.focused = next() === "1";
+      else if (what === "background" || what === "foreground") {
+        const tok = next();
+        const v = tok === "-" ? null : keyOf(tok);
+        if (what === "background") n.background = v;
+        else n.foreground = v;
+      } else if (what === "backgroundAlpha" || what === "foregroundAlpha") {
+        const tok = next();
+        const v = tok === "-" ? null : Number(tok);
+        if (what === "backgroundAlpha") n.backgroundAlpha = v;
+        else n.foregroundAlpha = v;
+      } else if (what === "outlineColor" || what === "outlineWidth" || what === "outlineAlpha") {
+        const v = parseValue(t, i);
+        if (what === "outlineColor") n.outlineColor = v as never;
+        else if (what === "outlineWidth") n.outlineWidth = v as never;
+        else n.outlineAlpha = v as never;
+      } else if (what === "global_pos") {
+        n.global_pos = { x: nnum(), y: nnum(), z: nnum() };
+      } else if (what === "resize3") {
+        n.resize(nnum(), nnum(), nnum());
+      } else if (what === "move3") {
+        n.move_to(nnum(), nnum(), nnum());
+      } else if (what === "center3") {
+        n.set_center(nnum(), nnum(), nnum());
+      } else if (what === "scale3") {
+        n.set_scale(nnum(), nnum(), nnum());
+      } else if (what === "update") {
+        n.update(nnum());
+      } else fail(`unknown nset '${what}'`);
+    } else if (op === "nrd") {
+      const nid = next();
+      const what = next();
+      const n = tnodes.get(nid)!;
+      if (what === "pos" || what === "scale" || what === "size" || what === "center") {
+        const v = what === "pos" ? n.pos : what === "scale" ? n.scale : what === "size" ? n.size : n.center;
+        push(`nrd|${nid}|${what}|${num(v.x)}|${num(v.y)}|${num(v.z)}`);
+      } else if (what === "clip") {
+        push(`nrd|${nid}|clip|${n.clip_children ? "1" : "0"}`);
+      } else if (what === "cross") {
+        const c = n.cross;
+        push(`nrd|${nid}|cross|${num(c.left)}|${num(c.top)}|${num(c.right)}|${num(c.bottom)}|${num(c.mid_x)}|${num(c.mid_y)}`);
+      } else if (what === "rect") {
+        const r = n.rect;
+        push(`nrd|${nid}|rect|${num(r.left)}|${num(r.top)}|${num(r.right)}|${num(r.bottom)}`);
+      } else if (what === "geo") {
+        const g = n.geo;
+        push(`nrd|${nid}|geo|${num(g.pos.x)}|${num(g.pos.y)}|${num(g.left)}|${num(g.top)}|${num(g.right)}|${num(g.bottom)}`);
+      } else if (what === "gp") {
+        const g = n.global_pos;
+        push(`nrd|${nid}|gp|${num(g.x)}|${num(g.y)}|${num(g.z)}`);
+      } else if (what === "flags") {
+        push(`nrd|${nid}|flags|${n.visible ? 1 : 0}${n.self_visible ? 1 : 0}${n.disabled ? 1 : 0}${n.self_disabled ? 1 : 0}`);
+      } else if (what === "op") {
+        push(`nrd|${nid}|op|${num(n.opacity)}|${num(n.global_opacity)}`);
+      } else if (what === "bg") {
+        push(`nrd|${nid}|bg|${esc(n.background)}|${num(n.backgroundAlpha)}`);
+      } else if (what === "fg") {
+        push(`nrd|${nid}|fg|${esc(n.foreground)}|${num(n.foregroundAlpha)}`);
+      } else if (what === "outline") {
+        push(`nrd|${nid}|outline|${renderValue(n.outlineColor)}|${renderValue(n.outlineWidth)}|${renderValue(n.outlineAlpha)}`);
+      } else if (what === "id") {
+        push(`nrd|${nid}|id|${renderValue(n.id)}|${renderValue(n.name)}|${num(n.depth)}`);
+      } else if (what === "depth") {
+        push(`nrd|${nid}|depth|${num(n.depth)}`);
+      } else if (what === "lifetime") {
+        push(`nrd|${nid}|lifetime|${num(n.lifetime)}`);
+      } else if (what === "ptr") {
+        push(`nrd|${nid}|ptr|${n.pointer_over}|${n.pointer_down}|${n.click_flag}`);
+      } else if (what === "foc") {
+        push(`nrd|${nid}|foc|${n.focused ? 1 : 0}|${nref(n.focused_node)}`);
+      } else if (what === "state") {
+        push(`nrd|${nid}|state|${renderValue(n.state)}`);
+      } else if (what === "value") {
+        push(`nrd|${nid}|value|${renderValue(n.get_value(keyOf(next())))}`);
+      } else if (what === "fc" || what === "sn" || what === "ln" || what === "fp") {
+        const id = keyOf(next());
+        const hit =
+          what === "fc" ? n.find_child(id) : what === "sn" ? n.search_node(id) : what === "ln" ? n.lookup_node(id) : n.find_parent((p) => p.id === id);
+        push(`nrd|${nid}|${what}|${nref(hit)}`);
+      } else if (what === "fcn") {
+        push(`nrd|${nid}|fcn|${nref(n.find_child_by_name(keyOf(next())))}`);
+      } else if (what === "hit") {
+        const x = Number(next());
+        const y = Number(next());
+        push(`nrd|${nid}|hit|${n.hit(x, y) ? 1 : 0}`);
+      } else fail(`unknown nrd '${what}'`);
+    } else if (op === "npd" || op === "npm" || op === "npu" || op === "npc") {
+      const nid = next();
+      const n = tnodes.get(nid)!;
+      const e = new LFWPointerEvent({ x: 0, y: 0, z: 0 }, 0);
+      if (op === "npd") n.on_pointer_down(e);
+      else if (op === "npm") n.on_pointer_move(e);
+      else if (op === "npu") n.on_pointer_up(e);
+      else n.on_pointer_cancel(e);
+      push(`np|${nid}|${op}|stop=${e.stopped}`);
+    } else if (op === "npl" || op === "npe") {
+      const nid = next();
+      const n = tnodes.get(nid)!;
+      if (op === "npl") n.on_pointer_leave();
+      else n.on_pointer_enter();
+      push(`np|${nid}|${op}`);
+    } else if (op === "ncb") {
+      const nid = next();
+      const ev = next();
+      const n = tnodes.get(nid)!;
+      if (ev === "show") n.callbacks.on("on_show", (node) => push(`cb|${nid}|show|${nref(node as never as UINode)}`));
+      else if (ev === "hide") n.callbacks.on("on_hide", (node) => push(`cb|${nid}|hide|${nref(node as never as UINode)}`));
+      else if (ev === "foucs_changed") n.callbacks.on("on_foucs_changed", (node) => push(`cb|${nid}|foucs_changed|${nref(node as never as UINode)}`));
+      else if (ev === "foucs_item_changed") n.callbacks.on("on_foucs_item_changed", (f, b) => push(`cb|${nid}|foucs_item_changed|${nref(f as never)}|${nref(b as never)}`));
+      else if (ev === "pdown" || ev === "pmove" || ev === "pup" || ev === "pcancel") {
+        const key = ev === "pdown" ? "on_pointer_down" : ev === "pmove" ? "on_pointer_move" : ev === "pup" ? "on_pointer_up" : "on_pointer_cancel";
+        n.callbacks.on(key, (e) => push(`cb|${nid}|${ev}|${num((e as LFWPointerEvent).button)}`));
+      } else if (ev === "pleave") n.callbacks.on("on_pointer_leave", (node) => push(`cb|${nid}|pleave|${nref(node as never as UINode)}`));
+      else if (ev === "penter") n.callbacks.on("on_pointer_enter", (node) => push(`cb|${nid}|penter|${nref(node as never as UINode)}`));
+      else fail(`unknown ncb '${ev}'`);
     } else if (op === "uinew") {
       ui_vals.set(next(), parseValue(t, i) as Rec);
     } else if (op === "uinest") {

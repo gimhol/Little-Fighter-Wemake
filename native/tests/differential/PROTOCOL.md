@@ -4711,3 +4711,23 @@ harness op：
 - 用例钉住：stopped 三态与两种 stop 的差异 / 事件字段搬运（pressed 布尔、game_key 与 key 的
   区分）/ `ignore_out_of_date` 后 jid 全 0 / `add` 推进 jid / `w/scale` 的 resize 参数 /
   缺 w/h/scale 的 NaN / 节点缺失与宿主失败的两种错误文本。
+
+### 6.9.145 `UINode` 第一段（lfw 台面新 op；`cases/lfw/uinode.txt` 125 行；变异 44/44 全杀）
+
+- 建树 op：`nod <nid> [parent] <data>` / `noc <nid> <parent> <data>`（data = 完整 cooked 形对象
+  字面量，pos/size/center/scale 都是数组）/ `nadd <pid> <cid>` / `nfn <nid> <-|目标>`（直接调
+  `set_focused_node` 观测量）/ `ncb <nid> <ev>`（九事件挂回调；日志带节点引用）。
+- 读 op：`nrd <nid> <what>`：[pos|scale|size|center]×分轴 / cross / rect / geo / gp / flags
+  （4 位：可见|自身可见|禁用|自身禁用）/ op（opacity|global_opacity）/ bg / fg（都被打印成
+  `字符串|alpha`）/ outline（三值）/ id（`id|name|depth`）/ depth / lifetime（自身 update 次数）/
+  ptr（over|down|click）/ foc（focused|focused_node 引用）/ state / value <name> / hit x y /
+  clip / fc <id> / fcn <name> / sn <id> / ln <id> / fp <id>。
+- 写 op：`nset <nid> <what> …`：x/y/z/w/h/cx/cy/cz/sx/sy/sz/visible/disabled/opacity/clip/
+  focused/background(-)/foreground(-)/backgroundAlpha/foregroundAlpha/outlineColor|Width|Alpha/
+  move3 x y z / resize3 x y z / center3 x y z / scale3 x y z / global_pos x y z / update dt。
+- 指针 op：`npd|npm|npu|npc <nid>`（打 `np|<nid>|<op>|stop=<0|1|2>`）、`npl|npe <nid>`。
+- 用例钉住：构造默认与数据三旗 / 几何 setter 的 round_float 边界与缓存失效（
+  `set_scale` **不清**）/ `global_pos` 陈旧（父 move3 不影响子缓存，自己 update 才清，
+  `update` 无变化不清）/ `hit` 的原始 data.size / 树查询与宽松数字 id / 可见性递归与
+  `invoke_all_on_hide` 跳过自身不可见子节点 / 焦点链（禁用拒收、`set_disabled` 清焦点、
+  auto_focus）/ 指针五态 / `update` 跳过禁用子节点。

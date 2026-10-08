@@ -20,6 +20,7 @@
 #include "lfw/ui/ui_event.h"
 #include "lfw/ui/ui_img_loader.h"
 #include "lfw/ui/ui_load_img.h"
+#include "lfw/ui/uinode.h"
 #include "lfw/utils/container_help/field_or.h"
 
 #include "trace_util.h"
@@ -291,6 +292,13 @@ class FakeImgNode : public lfw::ui::IUIImgLoaderNode {
 
 std::map<std::string, std::unique_ptr<FakeImgNode>> g_img_nodes;
 std::map<std::string, std::unique_ptr<lfw::ui::UIImgLoader>> g_loaders;
+
+// 4AN：UINode 脚本。
+std::map<std::string, std::unique_ptr<lfw::ui::UINode>> g_nodes;
+
+std::string node_ref(lfw::ui::UINode* const p) {
+  return p != nullptr ? to_ascii(render_value(p->id())) : std::string("u");
+}
 
 // 4AD：URL 流程脚本。
 std::map<std::string, std::string> g_stored;       // `zip_url|md5` → blob token
@@ -1127,6 +1135,197 @@ int main(int argc, char** argv) {
         push("imload|err|" + trace::esc(r.error) + "|ood|" + to_ascii(render_value(r.texture)));
       } else {
         push("imload|err|" + trace::esc(r.error));
+      }
+    } else if (op == "nod" || op == "noc") {
+      const std::string nid = t[i++];
+      lfw::ui::UINode* parent = nullptr;
+      if (op == "noc") parent = g_nodes.at(t[i++]).get();
+      const lfw::Value data = parse_value(t, i);
+      g_nodes[nid] = std::make_unique<lfw::ui::UINode>(lfw, data, parent);
+    } else if (op == "nadd") {
+      lfw::ui::UINode& parent = *g_nodes.at(t[i++]);
+      lfw::ui::UINode& child = *g_nodes.at(t[i++]);
+      parent.add_child(child);
+    } else if (op == "nfn") {
+      lfw::ui::UINode& n = *g_nodes.at(t[i++]);
+      const std::string tok = t[i++];
+      n.set_focused_node(tok == "-" ? nullptr : g_nodes.at(tok).get());
+    } else if (op == "nset") {
+      const std::string nid = t[i++];
+      const std::string what = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (what == "x") n.set_x(to_double(t[i++]));
+      else if (what == "y") n.set_y(to_double(t[i++]));
+      else if (what == "z") n.set_z(to_double(t[i++]));
+      else if (what == "w") n.set_w(to_double(t[i++]));
+      else if (what == "h") n.set_h(to_double(t[i++]));
+      else if (what == "cx") n.set_cx(to_double(t[i++]));
+      else if (what == "cy") n.set_cy(to_double(t[i++]));
+      else if (what == "cz") n.set_cz(to_double(t[i++]));
+      else if (what == "sx") n.set_sx(to_double(t[i++]));
+      else if (what == "sy") n.set_sy(to_double(t[i++]));
+      else if (what == "sz") n.set_sz(to_double(t[i++]));
+      else if (what == "visible") n.set_visible(t[i++] == "1");
+      else if (what == "disabled") n.set_disabled(t[i++] == "1");
+      else if (what == "opacity") n.set_opacity(to_double(t[i++]));
+      else if (what == "clip") n.set_clip_children(t[i++] == "1");
+      else if (what == "focused") n.set_focused(t[i++] == "1");
+      else if (what == "background" || what == "foreground") {
+        const std::string tok = t[i++];
+        const std::optional<std::u16string> v = tok == "-" ? std::nullopt : std::optional<std::u16string>(key_of(tok));
+        if (what == "background") n.set_background(v);
+        else n.set_foreground(v);
+      } else if (what == "backgroundAlpha" || what == "foregroundAlpha") {
+        const std::string tok = t[i++];
+        const std::optional<double> v = tok == "-" ? std::nullopt : std::optional<double>(to_double(tok));
+        if (what == "backgroundAlpha") n.set_background_alpha(v);
+        else n.set_foreground_alpha(v);
+      } else if (what == "outlineColor" || what == "outlineWidth" || what == "outlineAlpha") {
+        const lfw::Value v = parse_value(t, i);
+        if (what == "outlineColor") n.set_outline_color(v);
+        else if (what == "outlineWidth") n.set_outline_width(v);
+        else n.set_outline_alpha(v);
+      } else if (what == "global_pos") {
+        const double x = to_double(t[i++]);
+        const double y = to_double(t[i++]);
+        const double z = to_double(t[i++]);
+        n.set_global_pos(x, y, z);
+      } else if (what == "resize3" || what == "move3" || what == "center3" || what == "scale3") {
+        const double x = to_double(t[i++]);
+        const double y = to_double(t[i++]);
+        const double z = to_double(t[i++]);
+        if (what == "resize3") n.resize(x, y, z);
+        else if (what == "move3") n.move_to(x, y, z);
+        else if (what == "center3") n.set_center(x, y, z);
+        else n.set_scale(x, y, z);
+      } else if (what == "update") {
+        n.update(to_double(t[i++]));
+      } else {
+        std::fprintf(stderr, "unknown nset '%s'\n", what.c_str());
+        return 2;
+      }
+    } else if (op == "nrd") {
+      const std::string nid = t[i++];
+      const std::string what = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (what == "pos" || what == "scale" || what == "size" || what == "center") {
+        const lfw::Vector3& v = what == "pos"     ? n.pos
+                                : what == "scale" ? n.scale
+                                : what == "size"  ? n.size
+                                                   : n.center;
+        push("nrd|" + nid + "|" + what + "|" + num(v.x) + "|" + num(v.y) + "|" + num(v.z));
+      } else if (what == "clip") {
+        push("nrd|" + nid + "|clip|" + (n.clip_children() ? "1" : "0"));
+      } else if (what == "cross") {
+        const lfw::ui::UINode::Cross& c = n.cross();
+        push("nrd|" + nid + "|cross|" + num(c.left) + "|" + num(c.top) + "|" + num(c.right) +
+             "|" + num(c.bottom) + "|" + num(c.mid_x) + "|" + num(c.mid_y));
+      } else if (what == "rect") {
+        const lfw::ui::UINode::Rect& r = n.rect();
+        push("nrd|" + nid + "|rect|" + num(r.left) + "|" + num(r.top) + "|" + num(r.right) +
+             "|" + num(r.bottom));
+      } else if (what == "geo") {
+        const lfw::ui::UINode::Geo& g = n.geo();
+        push("nrd|" + nid + "|geo|" + num(g.pos_x) + "|" + num(g.pos_y) + "|" + num(g.left) +
+             "|" + num(g.top) + "|" + num(g.right) + "|" + num(g.bottom));
+      } else if (what == "gp") {
+        const lfw::Vector3& g = n.global_pos();
+        push("nrd|" + nid + "|gp|" + num(g.x) + "|" + num(g.y) + "|" + num(g.z));
+      } else if (what == "flags") {
+        push("nrd|" + nid + "|flags|" + (n.visible() ? "1" : "0") +
+             (n.self_visible() ? "1" : "0") + (n.disabled() ? "1" : "0") +
+             (n.self_disabled() ? "1" : "0"));
+      } else if (what == "op") {
+        push("nrd|" + nid + "|op|" + num(n.opacity()) + "|" + num(n.global_opacity()));
+      } else if (what == "bg") {
+        push("nrd|" + nid + "|bg|" + trace::esc(n.background()) + "|" +
+             num(n.backgroundAlpha()));
+      } else if (what == "fg") {
+        push("nrd|" + nid + "|fg|" + trace::esc(n.foreground()) + "|" +
+             num(n.foregroundAlpha()));
+      } else if (what == "outline") {
+        push("nrd|" + nid + "|outline|" + to_ascii(render_value(n.outlineColor())) + "|" +
+             to_ascii(render_value(n.outlineWidth())) + "|" +
+             to_ascii(render_value(n.outlineAlpha())));
+      } else if (what == "id") {
+        push("nrd|" + nid + "|id|" + to_ascii(render_value(n.id())) + "|" +
+             to_ascii(render_value(n.name())) + "|" + num(n.depth()));
+      } else if (what == "depth") {
+        push("nrd|" + nid + "|depth|" + num(n.depth()));
+      } else if (what == "lifetime") {
+        push("nrd|" + nid + "|lifetime|" + num(n.lifetime()));
+      } else if (what == "ptr") {
+        push("nrd|" + nid + "|ptr|" + std::to_string(n.pointer_over()) + "|" +
+             std::to_string(n.pointer_down()) + "|" + std::to_string(n.click_flag()));
+      } else if (what == "foc") {
+        push("nrd|" + nid + "|foc|" + (n.focused() ? "1" : "0") + "|" +
+             node_ref(n.focused_node()));
+      } else if (what == "state") {
+        push("nrd|" + nid + "|state|" + to_ascii(render_value(n.state())));
+      } else if (what == "value") {
+        const std::u16string name = key_of(t[i++]);
+        push("nrd|" + nid + "|value|" + to_ascii(render_value(n.get_value(name))));
+      } else if (what == "fc" || what == "sn" || what == "ln" || what == "fp") {
+        const std::u16string id = key_of(t[i++]);
+        lfw::ui::UINode* hit = what == "fc"   ? n.find_child(id)
+                               : what == "sn" ? n.search_node(id)
+                               : what == "ln" ? n.lookup_node(id)
+                                               : n.find_parent_by_id(id);
+        push("nrd|" + nid + "|" + what + "|" + node_ref(hit));
+      } else if (what == "fcn") {
+        const std::u16string nm = key_of(t[i++]);
+        push("nrd|" + nid + "|fcn|" + node_ref(n.find_child_by_name(nm)));
+      } else if (what == "hit") {
+        const double x = to_double(t[i++]);
+        const double y = to_double(t[i++]);
+        push("nrd|" + nid + "|hit|" + (n.hit(x, y) ? "1" : "0"));
+      } else {
+        std::fprintf(stderr, "unknown nrd '%s'\n", what.c_str());
+        return 2;
+      }
+    } else if (op == "npd" || op == "npm" || op == "npu" || op == "npc") {
+      const std::string nid = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      lfw::ui::LFWPointerEvent e(lfw::Vector3(0, 0, 0), 0.0);
+      if (op == "npd") n.on_pointer_down(e);
+      else if (op == "npm") n.on_pointer_move(e);
+      else if (op == "npu") n.on_pointer_up(e);
+      else n.on_pointer_cancel(e);
+      push("np|" + nid + "|" + op + "|stop=" + std::to_string(e.stopped()));
+    } else if (op == "npl" || op == "npe") {
+      const std::string nid = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (op == "npl") n.on_pointer_leave();
+      else n.on_pointer_enter();
+      push("np|" + nid + "|" + op);
+    } else if (op == "ncb") {
+      const std::string nid = t[i++];
+      const std::string ev = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      lfw::ui::UINodeCallbacks& cb = n.callbacks;
+      if (ev == "show") {
+        cb.on_show = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|show|" + node_ref(&node)); };
+      } else if (ev == "hide") {
+        cb.on_hide = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|hide|" + node_ref(&node)); };
+      } else if (ev == "foucs_changed") {
+        cb.on_foucs_changed = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|foucs_changed|" + node_ref(&node)); };
+      } else if (ev == "foucs_item_changed") {
+        cb.on_foucs_item_changed = [nid](lfw::ui::UINode* f, lfw::ui::UINode* b) { push("cb|" + nid + "|foucs_item_changed|" + node_ref(f) + "|" + node_ref(b)); };
+      } else if (ev == "pdown" || ev == "pmove" || ev == "pup" || ev == "pcancel") {
+        const auto fn = [nid, ev](lfw::ui::LFWPointerEvent& e, lfw::ui::UINode&) {
+          push("cb|" + nid + "|" + ev + "|" + to_ascii(render_value(lfw::Value(e.button))));
+        };
+        if (ev == "pdown") cb.on_pointer_down = fn;
+        else if (ev == "pmove") cb.on_pointer_move = fn;
+        else if (ev == "pup") cb.on_pointer_up = fn;
+        else cb.on_pointer_cancel = fn;
+      } else if (ev == "pleave") {
+        cb.on_pointer_leave = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|pleave|" + node_ref(&node)); };
+      } else if (ev == "penter") {
+        cb.on_pointer_enter = [nid](lfw::ui::UINode& node) { push("cb|" + nid + "|penter|" + node_ref(&node)); };
+      } else {
+        std::fprintf(stderr, "unknown ncb '%s'\n", ev.c_str());
+        return 2;
       }
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
