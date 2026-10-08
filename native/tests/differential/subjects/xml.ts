@@ -141,6 +141,7 @@ import {
 } from "../../../../src/LFW/dat_translator/xml/xml_x_stage_object_info";
 import { xml_2_wpoint, xml_x_wpoint } from "../../../../src/LFW/dat_translator/xml/xml_x_wpoint";
 import type { IXMLElement } from "../../../../src/LFW/ditto/xml";
+import { xml_to_ui_info } from "../../../../src/LFW/ui/xml_to_ui_info";
 import { ToolXML, ToolXMLElement } from "../../../../tool/src/xml";
 
 import { esc, keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
@@ -480,6 +481,8 @@ function main(): void {
       const made = xml_x_t_next_frame(xml, d, tag, parent);
       made.forEach((e, j) => els.set(`${parentId}:${j}`, e as ToolXMLElement));
       log.push(`wrins|${parentId}|n=${made.length}|${esc(parent.stringify())}`);
+    } else if (op === "x2ui") {
+      log.push(`x2ui|${renderValue(xml_to_ui_info(el(next())))}`);
     } else if (op === "dump") {
       dump(el(next()), 0);
     } else if (op === "rd") {

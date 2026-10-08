@@ -8882,3 +8882,25 @@ null 不报错）；ui 三连校验（falsy / 数组 / 非对象）的报错文�
 **测试**：新 subject `ui_img_info` + 1 份用例 **37 行**（`v` / `vd` / `tag` 三种 op）；变异
 `ui_img_info.mjs` **9/9 全杀**；全量差分 **211/211**、lint 全清（coverage 11/11）。
 
+## 96. 切片 4AI：`xml_to_ui_info`
+
+`native/lfw/ui/xml_to_ui_info.{h,cpp}`：XML 元素 → IUIInfo（`Value` 对象）。纯函数、只要
+`IXMLElement` 接口（xml 那刀开的缝），所以直接挂进 **xml 台面**（新 op `x2ui`，用例
+`cases/xml/ui.txt`）。
+
+照抄怪癖（编号接 112 → 113）：113. 键的**存在性**三档：直接赋值（`id`/`name`/…/`pos`/
+`img`/`style`）即使值是 `undefined` 也建键；`!= null` 守卫的（`opacity`/`count`/`visible`/…）
+缺省不建键、但空串会赋值（`Number('') = 0`）；`if (x)` 真值守卫的（`args`/`id`/`weight`、
+`cls` 回落、`ref`）空串当缺省。114. `cls` / `path` / `template` 的 `||` 回落按真值：空串
+`cls` 回落到 tag、`img.path` 空串回落到 `src`（src 也缺则 `undefined`）、`template` 的 id
+空串看 name（都缺 → 键 `''`）。115. `img` 的 `x/y/w/h` 恒建键（缺省 `Number(undefined)=NaN`）；
+`dw = Number(dw) || w`（`0` / `NaN` 都回落 w）、`dh` 同理。116. `actions`：属性先全部进表
+（逗号分数组 + trim），再按 ACTION_PLACES 子元素合并 —— 已有数组 `concat`、单值包数组；
+`action_str()` 走 `action | name` 真值序与可选 `args`。117. `values` 是 `Object.assign`
+语义：后一份同名键**覆盖值但保位置**（用例 v1/v2 锁住）。
+
+偏差记录：无（纯函数，`IXMLElement` 缝已齐）。
+
+**测试**：xml 台面新 op `x2ui` + 用例 `cases/xml/ui.txt` **193 行**（15 次 `x2ui`）；变异
+`xml_ui.mjs` **16/16 全杀**；全量差分 **212/212**、lint 全清。
+

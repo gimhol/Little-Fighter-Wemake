@@ -56,6 +56,7 @@
 #include "lfw/dat_translator/xml/xml_x_wpoint.h"
 #include "lfw/ditto/xml/tool_xml.h"
 #include "lfw/ditto/xml/tool_xml_element.h"
+#include "lfw/ui/xml_to_ui_info.h"
 
 #include "trace_util.h"
 
@@ -619,6 +620,9 @@ int main(int argc, char** argv) {
       }
       push("wrins|" + parent_id + "|n=" + std::to_string(made.size()) + "|" +
            esc(parent.stringify()));
+    } else if (op == "x2ui") {
+      const lfw::Value info = lfw::ui::xml_to_ui_info(el(t[i++]));
+      push("x2ui|" + to_ascii(render_value(info)));
     } else if (op == "dump") {
       dump_node(el(t[i++]), 0);
     } else if (op == "rd") {

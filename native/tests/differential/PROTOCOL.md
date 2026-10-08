@@ -4653,3 +4653,14 @@ harness op：
   `non-nagetive integer`；`nine_patch` 是裸 `{type:'object'}` ⇒ 空对象过、带键全告警；
   数组入参（`typeof [] === 'object'`）会走 object 分支；properties 按表顺序早退
   （`x n -1 w n 0` 只报 x）。
+
+### 6.9.140 `xml_to_ui_info`（xml 台面 op `x2ui`；`cases/xml/ui.txt` 193 行（15 次 `x2ui`）；变异 16/16 全杀）
+
+- op：`x2ui <eid>`（复用 xml 台面的 `new`/`attr`/`text`/`ins` 构造要素）→ 打
+  `x2ui|<render_value(info)>` 一行。
+- 用例覆盖：默认键存在性（`id` 直赋档 = 有键但 `u`）、属性直赋 / nums（`"1,,2"` → `[1,0,2]`、
+  `""` → `[0]`、`"x"` → `[NaN]`）、布尔只认 `'true'`、递归 items（`ref` 短路）、values 的
+  Object.assign 覆盖保位、actions（属性逗号分数组 + trim、子元素合并、无 name 走 text 的
+  逗号分/trim、ACTION_PLACES 外不进）、components（cls 回落 tag、args 空串不建键、weight
+  `Number`、properties 子元素）、style（数值转换就地覆盖、空 style 元素给 `undefined`）、
+  img（空 path 回落 src、`dw=0` 回落 w、x 缺省 NaN）、template（id > name > `''`）。

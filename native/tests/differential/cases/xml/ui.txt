@@ -1,0 +1,193 @@
+# `xml_to_ui_info`（4AI）：默认键存在性 / 属性直赋 / nums / 布尔 / 递归 / values / actions / components / style / img / template
+new n0 node
+x2ui n0
+new n1 node
+attr n1 id s "main"
+attr n1 name s "Main"
+attr n1 i18n s "title"
+attr n1 color s "#fff"
+attr n1 background s "bg"
+attr n1 foreground s "fg"
+attr n1 outlineColor s "ol"
+attr n1 template s "tpl"
+attr n1 auto_focus s "true"
+attr n1 opacity s "0.5"
+attr n1 count s "3"
+attr n1 visible s "true"
+attr n1 disabled s "1"
+attr n1 clips s "false"
+attr n1 backgroundAlpha s "0"
+attr n1 foregroundAlpha s "1.5"
+attr n1 outlineWidth s "2"
+attr n1 outlineAlpha s "0.25"
+attr n1 pos s "1,2,3"
+attr n1 size s "10,20"
+attr n1 center s "0.5, 0.25"
+attr n1 scale s "2"
+x2ui n1
+new n2 node
+attr n2 auto_focus s "false"
+attr n2 visible s "false"
+attr n2 disabled s "false"
+attr n2 opacity s ""
+attr n2 pos s "1,,2"
+attr n2 size s ""
+attr n2 scale s "x"
+x2ui n2
+new n3 node
+attr n3 id s ""
+x2ui n3
+new n4 node
+new c1 item
+attr c1 ref s "other"
+ins n4 c1 -
+new c2 node
+attr c2 id s "sub"
+ins n4 c2 -
+new c3 item
+ins n4 c3 -
+x2ui n4
+new n5 node
+new v1 values
+attr v1 foo s "bar"
+ins n5 v1 -
+new vv value
+attr vv name s "k"
+ins v1 vv -
+new v2 values
+attr v2 foo s "baz"
+attr v2 extra s "1"
+ins n5 v2 -
+x2ui n5
+new n6 node
+new a1 actions
+attr a1 click s "sound(ok),set_page(loading)"
+attr a1 resume s " go "
+attr a1 foo s "x"
+ins n6 a1 -
+new ac1 click
+attr ac1 action s "sound(ok)"
+attr ac1 args s "1,2"
+ins a1 ac1 -
+new ac2 click
+attr ac2 name s "chain"
+ins a1 ac2 -
+new ac3 resume
+text ac3 "p,q ,r"
+ins a1 ac3 -
+new ac4 stop
+text ac4 " stop "
+ins a1 ac4 -
+new ac5 pause
+attr ac5 action s "a1"
+ins a1 ac5 -
+x2ui n6
+new n7 node
+new cs components
+new p1 Label
+attr p1 cls s "MyLabel"
+attr p1 args s " a, b "
+attr p1 id s "pid"
+attr p1 weight s "2.5"
+new pr properties
+attr pr color s "red"
+ins p1 pr -
+ins cs p1 -
+new p2 Reachable
+ins cs p2 -
+new p5 Label
+attr p5 args s ""
+ins cs p5 -
+ins n7 cs -
+new p3 Button
+attr p3 args s "x"
+ins n7 p3 -
+new p4 Reachable
+attr p4 args s ""
+ins n7 p4 -
+x2ui n7
+new n8 node
+new st style
+attr st line_width s "2"
+attr st scale s "1.5"
+attr st padding_l s "0"
+attr st padding_r s "1"
+attr st padding_t s "2"
+attr st padding_b s "3"
+attr st shadow_blur s "4"
+attr st shadow_offset_x s "5"
+attr st shadow_offset_y s "6"
+attr st underline_width s "7"
+attr st smoothing s "true"
+attr st disposable s "false"
+attr st color s "red"
+new st2 style
+ins n8 st2 -
+ins n8 st -
+x2ui n8
+new m1 node
+new im1 img
+attr im1 path s "a.png"
+attr im1 x s "1"
+attr im1 y s "2"
+attr im1 w s "10"
+attr im1 h s "20"
+attr im1 dw s "0"
+attr im1 dh s ""
+attr im1 flip_x s "1"
+attr im1 flip_y s "0"
+attr im1 wrapS s "1000"
+attr im1 offsetAnimR s "0.5"
+attr im1 repeatX s "2"
+ins m1 im1 -
+x2ui m1
+new m2 node
+new im2 img
+attr im2 src s "b.png"
+ins m2 im2 -
+x2ui m2
+new m3 node
+new im3 img
+attr im3 path s ""
+attr im3 src s "c.png"
+ins m3 im3 -
+x2ui m3
+new m4 node
+new im4 img
+attr im4 path s ""
+ins m4 im4 -
+x2ui m4
+new n10 node
+new t1 template
+attr t1 id s "tpl1"
+attr t1 name s "ignored"
+new tn node
+attr tn id s "inner"
+ins t1 tn -
+ins n10 t1 -
+new t2 template
+attr t2 name s "tpl2"
+ins n10 t2 -
+new t3 template
+ins n10 t3 -
+new t4 template
+attr t4 id s ""
+attr t4 name s "only"
+ins n10 t4 -
+x2ui n10
+new n11 node
+new x1 item
+attr x1 ref s "r"
+ins n11 x1 -
+new x2 values
+attr x2 a s "1"
+ins n11 x2 -
+new x3 Label
+ins n11 x3 -
+new x4 img
+attr x4 src s "z.png"
+ins n11 x4 -
+new x5 template
+attr x5 id s "tt"
+ins n11 x5 -
+x2ui n11
