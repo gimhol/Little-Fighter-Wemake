@@ -214,5 +214,97 @@ export default {
       from: `  _ui_loaded = true;`,
       to: `  _ui_loaded = false;`,
     },
+
+    // ------------------------------------------------------------ 4AD：URL 流程
+    {
+      note: "no_cache_url：分隔符串了（?/& 反）",
+      file: "native/lfw/lfw.cpp",
+      from: `  return url + (has_query ? u"&" : u"?") + u"time=" + number_to_string(now);`,
+      to: `  return url + (has_query ? u"?" : u"&") + u"time=" + number_to_string(now);`,
+    },
+    {
+      note: "full_zip_url：相对 info_url 时把 zip_url 换成了 info_url",
+      file: "native/lfw/lfw.cpp",
+      from: `  if (!starts_http(info_url)) return zip_url;`,
+      to: `  if (!starts_http(info_url)) return info_url;`,
+    },
+    {
+      note: "full_zip_url：丢掉 info_url 的 query/hash 尾巴",
+      file: "native/lfw/lfw.cpp",
+      from: `  return part_a.substr(0, ttt == kNpos ? 0 : ttt) + u"/" + zip_url + part_b;`,
+      to: `  return part_a.substr(0, ttt == kNpos ? 0 : ttt) + u"/" + zip_url;`,
+    },
+    {
+      note: "zip_content_url：内容标识参数名写成大写",
+      file: "native/lfw/lfw.cpp",
+      from: `  return zip_url + (has_query ? u"&" : u"?") + u"md5=" + *m;`,
+      to: `  return zip_url + (has_query ? u"&" : u"?") + u"MD5=" + *m;`,
+    },
+    {
+      note: "load_zip_from_url：起始进度报成 100",
+      file: "native/lfw/lfw.cpp",
+      from: `  emit_progress(info_url, 0.0);`,
+      to: `  emit_progress(info_url, 100.0);`,
+    },
+    {
+      note: "load_zip_from_url：收尾进度报成 0",
+      file: "native/lfw/lfw.cpp",
+      from: `  emit_progress(url, 100.0);`,
+      to: `  emit_progress(url, 0.0);`,
+    },
+    {
+      note: "load_zip_from_url：缺 url 的报错文案不同",
+      file: "native/lfw/lfw.cpp",
+      from: `    error = u"[LFW::load_zip_from_url] info json url got: " + info_url;`,
+      to: `    error = u"[LFW::load_zip_from_url] url got: " + info_url;`,
+    },
+    {
+      note: "load_zip_from_url：stored 分支恒用 zip_url 当名字",
+      file: "native/lfw/lfw.cpp",
+      from: `      if (!read_blob(has_md5 ? *md5s : zip_url, downloaded.blob, downloaded.md5)) return false;`,
+      to: `      if (!read_blob(zip_url, downloaded.blob, downloaded.md5)) return false;`,
+    },
+    {
+      note: "load_zip_from_url：Cache.del 两个实参反过来",
+      file: "native/lfw/lfw.cpp",
+      from: `    host_->zip_cache_del(info_url, u"");`,
+      to: `    host_->zip_cache_del(u"", info_url);`,
+    },
+    {
+      note: "load_zip_from_url：Cache.put 的 name 写成 zip_url",
+      file: "native/lfw/lfw.cpp",
+      from: `      entry.set(u"name", Value(*md5s));`,
+      to: `      entry.set(u"name", Value(zip_url));`,
+    },
+    {
+      note: "load_zip_from_url：stored 判断反了",
+      file: "native/lfw/lfw.cpp",
+      from: `    if (downloaded.stored) {`,
+      to: `    if (!downloaded.stored) {`,
+    },
+    {
+      note: "load_zip_from_url：缓存命中时不取 cached.name",
+      file: "native/lfw/lfw.cpp",
+      from: `        if (!read_blob(to_string(field_or(cached, u"name")), field_or(cached, u"blob"), md5)) {`,
+      to: `        if (!read_blob(*md5s, field_or(cached, u"blob"), md5)) {`,
+    },
+    {
+      note: "load_zip_from_url：cache.data 命中时改读 blob 字段",
+      file: "native/lfw/lfw.cpp",
+      from: `        if (!host_->zip_read_buf(to_string(name), data, zip, error)) return false;`,
+      to: `        if (!host_->zip_read_buf(to_string(name), blob, zip, error)) return false;`,
+    },
+    {
+      note: "on_loading_file：文本不再带括号",
+      file: "native/lfw/lfw.cpp",
+      from: `  const std::u16string txt = url + u"(" + short_size(full_size) + u")";`,
+      to: `  const std::u16string txt = url + short_size(full_size);`,
+    },
+    {
+      note: "short_size：KB 单位写成 kB",
+      file: "native/lfw/lfw.cpp",
+      from: `  if (bytes < 1024) return one_decimal(bytes) + u"KB";`,
+      to: `  if (bytes < 1024) return one_decimal(bytes) + u"kB";`,
+    },
   ],
 };

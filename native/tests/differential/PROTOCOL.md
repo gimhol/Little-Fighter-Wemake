@@ -4582,3 +4582,20 @@ harness op：
   `layers:set_page|undefined` 且 `ui:add|0`。
 - 右侧（C++）`img:load|<path>` / `imp:json|<key>` / `layers:set_page` 等全是台面假宿主打的；
   改这些日志前先看一眼 TS 侧同名包装。
+
+### 6.9.135 `LFW` URL 流程（`cases/lfw/url.txt` 103 行；变异 `lfw.mjs` 累计 40/40 全杀）
+
+- `cachelog` 是开关：TS 构造期每个 `PlayerInfo` 都读一次 `Cache.get`，不关会污染所有用例；
+  url 用例首行打开它（C++ 侧对应 op 是空操作，其 `zip_cache_*` 缝本就只在 URL 流程里被调）。
+- URL 脚本 op：`stored <url> <md5> <token>`（`zip_url|md5` → blob 令牌）、
+  `blob <token> <zid>` / `buf <token> <zid>`（令牌 → 假 zip，read_blob/read_buf 用）、
+  `dl <url> <stored|blob|fail> <token> <md5|-`（下载 md5 令牌，`-` 即 undefined）`> <size>`、
+  `cacheblob/cachedata <key> <name> <token>`、`cachelate <key> <name> <token>`、
+  `impinfo <key> <zip-url|-> <md5|->`、`url <info_url>`。
+- `stored`/`dl` 的键是**计算出来的 zip_url**（含 `?md5=`，无 md5 不含）；相对 info_url 或
+  绝对 zip_url 时 `full_zip_url` 原样返回。`cachelate` 的 key 是 **md5**（Cache.get 键），
+  不是 URL。
+- `dl` 会先回调 `progress(50, size)` → 台面上的 `on_loading_file`（进度文本里能看到
+  `1.1MB` / `2KB` 等，`short_size` 的变异就靠它）。
+- 失败文案两侧一致：`unscripted import` / `unscripted blob` / `unscripted buf` / `dl-fail` /
+  `[LFW::load_zip_from_url] info json url got: …`（都是字符串，TS 侧抛同名字符串）。

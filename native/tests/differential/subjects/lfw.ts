@@ -28,8 +28,16 @@ const num = (n: number): string => renderValue(n);
 let clock_ms = 0;
 
 // `imp`/`lzadd` 的 kind 迷你语言（两侧一致）：`-`/`o`/`a`/`k:<name>`/`str:<v>`/`e`（失败，抛 "boom"）。
-const imports = new Map<string, string>();
+const imports = new Map<string, () => unknown>();
 const import_fails = new Map<string, string>();
+
+// 4AD：URL 流程脚本。
+const zip_stored = new Map<string, string>(); // `zip_url|md5` → blob token
+const blob_zip = new Map<string, string>(); // blob/data token → zid
+const dl_scripts = new Map<string, { mode: string; token: string; md5?: string; size: number }>();
+const cache_vals = new Map<string, unknown>();
+const cache_late = new Map<string, unknown>();
+let cache_log = false;
 
 function kind_value(k: string): unknown {
   if (k === "o") return {};
@@ -131,12 +139,21 @@ function install_ditto(): void {
       push(`cache:forget|${type}|${num(version)}`);
       return Promise.resolve();
     },
-    get() {
-      return Promise.resolve(undefined);
+    async get(name: string) {
+      if (cache_log) push(`cache:get|${name}`);
+      if (cache_late.has(name)) {
+        const v = cache_late.get(name);
+        cache_late.delete(name);
+        cache_vals.set(name, v);
+        return undefined;
+      }
+      return cache_vals.get(name);
     },
-    put() {},
-    del() {
-      return Promise.resolve();
+    put(entry: Rec) {
+      if (cache_log) push(`cache:put|${String(entry?.["name"])}`);
+    },
+    async del(name: string, version: string) {
+      if (cache_log) push(`cache:del|${name}|${version}`);
     },
   };
   const zip = {
@@ -144,6 +161,34 @@ function install_ditto(): void {
       push(`zip:forget|${type}|${num(version)}`);
       return Promise.resolve();
     },
+    async get_stored(url: string, md5: string) {
+      push(`zip:get_stored|${url}|${md5}`);
+      return zip_stored.get(`${url}|${md5}`);
+    },
+    async read_blob(name: string, blob: unknown, md5: unknown) {
+      push(`zip:read_blob|${name}|${String(md5)}`);
+      return resolve_token(blob, "unscripted blob");
+    },
+    async read_buf(name: string, data: unknown) {
+      push(`zip:read_buf|${name}`);
+      return resolve_token(data, "unscripted buf");
+    },
+    async download(url: string, progress: (p: number, s: number) => void) {
+      push(`zip:download|${url}`);
+      const s = dl_scripts.get(url);
+      if (!s) throw "unscripted download";
+      if (s.mode === "fail") throw "dl-fail";
+      progress(50, s.size);
+      return { stored: s.mode === "stored", blob: s.token, md5: s.md5 };
+    },
+  };
+  const resolve_token = (token: unknown, msg: string): unknown => {
+    if (typeof token !== "string") throw msg;
+    const zid = blob_zip.get(token);
+    if (zid === undefined) throw msg;
+    const z = lzips.get(zid);
+    if (!z) throw msg;
+    return z;
   };
   const importer = {
     async import_as_json(urls: string[]) {
@@ -152,7 +197,7 @@ function install_ditto(): void {
         push(`imp:json|${key}`);
         const fail = import_fails.get(key);
         if (fail !== undefined) throw fail;
-        if (imports.has(key)) return [kind_value(imports.get(key)!), url];
+        if (imports.has(key)) return [imports.get(key)!(), url];
       }
       throw "unscripted import";
     },
@@ -573,7 +618,9 @@ async function run_ops(): Promise<void> {
       const kind = t[i[0]!++]!;
       lzips.get(zid)!.entries.push({ path, kind });
     } else if (op === "imp") {
-      imports.set(next(), next());
+      const key = next();
+      const kind = next();
+      imports.set(key, () => kind_value(kind));
     } else if (op === "impfail") {
       const key = next();
       import_fails.set(key, i[0] < t.length ? next() : "boom");
@@ -625,6 +672,49 @@ async function run_ops(): Promise<void> {
         push("load|ok");
       } catch (e) {
         push(`load|fail|${err_msg(e)}`);
+      }
+    } else if (op === "stored") {
+      const url = next();
+      const md5 = next();
+      zip_stored.set(`${url}|${md5}`, next());
+    } else if (op === "blob" || op === "buf") {
+      blob_zip.set(next(), next());
+    } else if (op === "dl") {
+      const url = next();
+      const mode = next();
+      const token = next();
+      const md5 = next();
+      const size = Number(next());
+      dl_scripts.set(url, { mode, token, md5: md5 === "-" ? undefined : md5, size });
+    } else if (op === "cacheblob" || op === "cachedata") {
+      const key = next();
+      const name = next();
+      const token = next();
+      cache_vals.set(key, op === "cacheblob" ? { name, blob: token } : { name, data: token });
+    } else if (op === "cachelate") {
+      const key = next();
+      const name = next();
+      const token = next();
+      cache_late.set(key, { name, blob: token });
+    } else if (op === "cachelog") {
+      cache_log = true;
+    } else if (op === "impinfo") {
+      const key = next();
+      const url = next();
+      const md5 = next();
+      imports.set(key, () => {
+        const v: Rec = { type: "FULL", title: "T" };
+        if (url !== "-") v["url"] = url;
+        if (md5 !== "-") v["md5"] = md5;
+        return v;
+      });
+    } else if (op === "url") {
+      const info_url = nextKey();
+      try {
+        const loaded = await (lfw as unknown as Rec)["_load_zip_from_url"](info_url);
+        push(`url|ok|${loaded.zip.name}|${dump_info(loaded.info)}`);
+      } catch (e) {
+        push(`url|fail|${err_msg(e)}`);
       }
     } else {
       fail(`unknown op '${op}'`);

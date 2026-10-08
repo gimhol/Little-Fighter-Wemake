@@ -8773,3 +8773,23 @@ collect 用例覆盖）。
 **测试**：`cases/lfw/load.txt`（144 行，collect/对象包/load_data/首屏 load/失败与 guard）；
 变异 `lfw.mjs` 累计 **25/25 全杀**；全量差分 **203/203**、lint 全清。
 
+## 91. 切片 4AD：`LFW` URL 流程台面/变异补齐（+ `cachelate`）
+
+上刀 `_load_zip_from_url` 的代码落地但只有缝层，本刀把 URL 流程从「信息 json → 已存 blob →
+Cache.data/blob → 下载（stored / blob+md5 → put → cached / 无 md5）→ 失败」全部拉上台面，
+并给 `full_zip_url` / `zip_content_url` / `no_cache_url` / `short_size` / `on_loading_file` 补上
+可杀变异。台面新增脚本 op：`stored` / `blob`|`buf`（token → 假 zip）/ `dl`（下载脚本）/
+`cacheblob` / `cachedata` / `cachelate` / `cachelog` / `impinfo` / `url`。
+
+照抄怪癖（编号接 92 → 93）：93. `full_zip_url` 的 `?`/`#` 定位是 **`indexOf > 0`** 语义
+（查不到 = -1；位置 0 不算），`part_b`（query/hash 尾巴）会原样拼回；相对 info_url 或
+绝对 zip_url 直接原样返回。94. `read_buf` 优先于 `read_blob`（`exists.data` 先判）；
+`Cache.del(info_url, "")` 在**下载成功之后、落缓存之前**。95. `cachelate` 是为了钉住
+「put 之后的第二次 `Cache.get` 走 `cached.name`」——一次性条目第一次查报 miss、第二次才
+给值（首查命中就没机会下载）。
+
+偏差记录：同 §90（regex 固定模式表 / 错误文本化 / `add_<name>` 不建模）。
+
+**测试**：`cases/lfw/url.txt`（103 行）；变异 `lfw.mjs` 累计 **40/40 全杀**；
+全量差分 **204/204**、lint 全清。
+

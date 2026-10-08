@@ -224,6 +224,20 @@ std::string dump_info(const lfw::IDataInfo& info) {
 std::map<std::string, lfw::Value> g_imports;
 std::map<std::string, std::string> g_import_fails;
 
+// 4AD：URL 流程脚本。
+std::map<std::string, std::string> g_stored;       // `zip_url|md5` → blob token
+std::map<std::string, std::string> g_blob_to_zip;  // blob/data token → zid
+struct DlScript {
+  std::string mode;
+  std::string token;
+  std::string md5;
+  bool has_md5 = false;
+  double size = 0.0;
+};
+std::map<std::string, DlScript> g_dls;      // zip_url → 下载脚本
+std::map<std::string, lfw::Value> g_caches;  // Cache.get 键 → 值
+std::map<std::string, lfw::Value> g_cache_late;  // 首次 get 报 miss、之后才给值的条目
+
 class FakeHost : public lfw::ILfwHost {
  public:
   explicit FakeHost(lfw::LFW** slot) : _slot(slot) {}
@@ -334,34 +348,62 @@ class FakeHost : public lfw::ILfwHost {
     lfw.i18n().set_lang(lfw::Value(lang), err);
   }
 
-  // ---- ILfwHost：4AC 的 zip/缓存/UI 缝（台面脚本化；URL 流程的覆盖留 4AD） ----
+  // ---- ILfwHost：4AC/4AD 的 zip/缓存/UI 缝（台面脚本化）----
   lfw::Value zip_get_stored(const std::u16string& zip_url, const std::u16string& md5) override {
     push("zip:get_stored|" + to_ascii(zip_url) + "|" + to_ascii(md5));
-    return lfw::Value();
+    const auto it = g_stored.find(to_ascii(zip_url) + "|" + to_ascii(md5));
+    if (it == g_stored.end()) return lfw::Value();
+    return lfw::Value(to_u16(it->second));
   }
-  bool zip_read_blob(const std::u16string& name, const lfw::Value&, const lfw::Value&,
+  bool zip_read_blob(const std::u16string& name, const lfw::Value& blob, const lfw::Value& md5,
                      lfw::IZip*& out, std::u16string& error) override {
-    push("zip:read_blob|" + to_ascii(name));
+    push("zip:read_blob|" + to_ascii(name) + "|" + to_ascii(lfw::to_string(md5)));
     out = nullptr;
-    error = u"unscripted blob";
-    return false;
+    if (!resolve_token(blob, out)) {
+      error = u"unscripted blob";
+      return false;
+    }
+    return true;
   }
-  bool zip_read_buf(const std::u16string& name, const lfw::Value&, lfw::IZip*& out,
+  bool zip_read_buf(const std::u16string& name, const lfw::Value& data, lfw::IZip*& out,
                     std::u16string& error) override {
     push("zip:read_buf|" + to_ascii(name));
     out = nullptr;
-    error = u"unscripted buf";
-    return false;
+    if (!resolve_token(data, out)) {
+      error = u"unscripted buf";
+      return false;
+    }
+    return true;
   }
-  bool zip_download(const std::u16string& zip_url, const lfw::Value&, lfw::LFW&,
-                    ILfwHost::DownloadedZip&, std::u16string& error) override {
+  bool zip_download(const std::u16string& zip_url, const lfw::Value&, lfw::LFW& lfw,
+                    ILfwHost::DownloadedZip& out, std::u16string& error) override {
     push("zip:download|" + to_ascii(zip_url));
-    error = u"unscripted download";
-    return false;
+    const auto it = g_dls.find(to_ascii(zip_url));
+    if (it == g_dls.end()) {
+      error = u"unscripted download";
+      return false;
+    }
+    if (it->second.mode == "fail") {
+      error = u"dl-fail";
+      return false;
+    }
+    lfw.on_loading_file(zip_url, 50.0, it->second.size);
+    out.stored = it->second.mode == "stored";
+    out.blob = lfw::Value(to_u16(it->second.token));
+    out.md5 = it->second.has_md5 ? lfw::Value(to_u16(it->second.md5)) : lfw::Value();
+    return true;
   }
   lfw::Value zip_cache_get(const std::u16string& name) override {
     push("cache:get|" + to_ascii(name));
-    return lfw::Value();
+    const auto late = g_cache_late.find(to_ascii(name));
+    if (late != g_cache_late.end()) {
+      const lfw::Value value = late->second;
+      g_cache_late.erase(late);
+      g_caches[to_ascii(name)] = value;
+      return lfw::Value();
+    }
+    const auto it = g_caches.find(to_ascii(name));
+    return it == g_caches.end() ? lfw::Value() : it->second;
   }
   void zip_cache_del(const std::u16string& name, const std::u16string& version) override {
     push("cache:del|" + to_ascii(name) + "|" + to_ascii(version));
@@ -404,6 +446,18 @@ class FakeHost : public lfw::ILfwHost {
       out += (i == 0 ? "|" : "~") + to_ascii(render_value(args[i]));
     }
     return out;
+  }
+
+  // `read_blob`/`read_buf` 的 blob/data 令牌 → 台面上的假 zip（`blob`/`buf` op 登记）。
+  static bool resolve_token(const lfw::Value& token_value, lfw::IZip*& out) {
+    const std::u16string* const token = std::get_if<std::u16string>(&token_value);
+    if (token == nullptr) return false;
+    const auto it = g_blob_to_zip.find(to_ascii(*token));
+    if (it == g_blob_to_zip.end()) return false;
+    const auto z = g_lzips.find(it->second);
+    if (z == g_lzips.end()) return false;
+    out = z->second.get();
+    return true;
   }
 
   lfw::LFW** _slot = nullptr;
@@ -814,6 +868,55 @@ int main(int argc, char** argv) {
       }
       std::u16string err;
       push(lfw.load(items, err) ? "load|ok" : "load|fail|" + to_ascii(err));
+    } else if (op == "stored") {
+      const std::string url = t[i++];
+      const std::string md5 = t[i++];
+      g_stored[url + "|" + md5] = t[i++];
+    } else if (op == "cachelog") {
+      // TS 侧用它打开 `Cache.get/put/del` 的日志（构造期 PlayerInfo 会读缓存，默认静音）。
+    } else if (op == "blob" || op == "buf") {
+      const std::string token = t[i++];
+      g_blob_to_zip[token] = t[i++];
+    } else if (op == "dl") {
+      DlScript s;
+      const std::string url = t[i++];
+      s.mode = t[i++];
+      s.token = t[i++];
+      const std::string md5 = t[i++];
+      if (md5 != "-") {
+        s.md5 = md5;
+        s.has_md5 = true;
+      }
+      s.size = to_double(t[i++]);
+      g_dls[url] = s;
+    } else if (op == "cacheblob" || op == "cachedata") {
+      const std::string key = t[i++];
+      lfw::Object o;
+      o.set(u"name", lfw::Value(to_u16(t[i++])));
+      o.set(op == "cacheblob" ? u"blob" : u"data", lfw::Value(to_u16(t[i++])));
+      g_caches[key] = lfw::Value(std::make_shared<lfw::Object>(o));
+    } else if (op == "cachelate") {
+      const std::string key = t[i++];
+      lfw::Object o;
+      o.set(u"name", lfw::Value(to_u16(t[i++])));
+      o.set(u"blob", lfw::Value(to_u16(t[i++])));
+      g_cache_late[key] = lfw::Value(std::make_shared<lfw::Object>(o));
+    } else if (op == "impinfo") {
+      const std::string key = t[i++];
+      const std::string url = t[i++];
+      const std::string md5 = t[i++];
+      lfw::Object o;
+      o.set(u"type", lfw::Value(std::u16string(u"FULL")));
+      if (url != "-") o.set(u"url", lfw::Value(to_u16(url)));
+      o.set(u"title", lfw::Value(std::u16string(u"T")));
+      if (md5 != "-") o.set(u"md5", lfw::Value(to_u16(md5)));
+      g_imports[key] = lfw::Value(std::make_shared<lfw::Object>(o));
+    } else if (op == "url") {
+      const std::u16string info_url = key_of(t[i++]);
+      lfw::LFW::LoadedZip z;
+      std::u16string err;
+      if (!lfw.load_zip_from_url(info_url, z, err)) push("url|fail|" + to_ascii(err));
+      else push("url|ok|" + to_ascii(z.zip->name()) + "|" + dump_info(z.info));
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
       return 2;

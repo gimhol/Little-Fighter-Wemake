@@ -1,0 +1,59 @@
+# lfw：URL 加载流程（info json / stored / cache / download / url 三助手）
+cachelog
+imp builtin_data/launch/strings.json w:VERSION_NAME
+imp builtin_data/launch/_index.json a
+imp data/spark.obj.json5 spk
+url missing.json
+impfail badinfo.json boom
+url badinfo.json
+impinfo noinfo.json - -
+url noinfo.json
+impinfo rel.json sub/x.zip -
+lznew r1 sub/x.zip
+buf tr1 r1
+dl sub/x.zip blob tr1 - 2048
+url rel.json
+impinfo https://cdn/a.zip.json z2.zip -
+lznew r2 z2.zip
+blob tr2 r2
+dl https://cdn/z2.zip?x=1 blob tr2 - 4096
+url https://cdn/a.zip.json?x=1
+impinfo p1.json https://cdn/p.zip m1
+lznew r3 p1.zip
+blob tb1 r3
+stored https://cdn/p.zip?md5=m1 m1 tb1
+url p1.json
+impinfo p3.json https://cdn/r.zip m3
+lznew r4 r.zip
+buf tb2 r4
+cachedata m3 cn1 tb2
+url p3.json
+impinfo p4.json https://cdn/s.zip m4
+lznew r5 s.zip
+blob tb3 r5
+cacheblob m4 n2 tb3
+url p4.json
+impinfo p5.json https://cdn/t.zip m5
+lznew r6 t.zip
+buf td1 r6
+dl https://cdn/t.zip?md5=m5 stored td1 - 1126400
+url p5.json
+impinfo p6.json https://cdn/u.zip m6
+lznew r7 u.zip
+buf td2 r7
+dl https://cdn/u.zip?md5=m6 blob td2 u5 403400
+url p6.json
+impinfo p7.json https://cdn/v.zip m7
+lznew r8 v.zip
+blob td3 r8
+cachelate m7 cname td3
+dl https://cdn/v.zip?md5=m7 blob td2b u6 2048
+url p7.json
+impinfo p8.json https://cdn/w.zip -
+lznew r9 w.zip
+buf td4 r9
+dl https://cdn/w.zip blob td4 - 2048
+url p8.json
+impinfo p9.json https://cdn/x.zip m9
+dl https://cdn/x.zip?md5=m9 fail td5 - 0
+url p9.json
