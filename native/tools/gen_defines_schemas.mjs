@@ -4,6 +4,7 @@
 // 由来（4W）：`src/LFW/defines/*.ts` 里的 `Schema_*` 是 `make_schema(...)` 的**纯数据**产物
 // （无函数、无类实例；探针确认只有 object/string/boolean/number），照 `gen_defines_fields.mjs`
 // 的先例整体 dump 成 JSON5 表，台面两侧（C++ 用生成表、TS 用真模块）对同一份数据做差分。
+// 4AH 起扫描根扩到 `src/LFW/defines` + `src/LFW/ui`（`Schema_IUIImgInfo` 在 UI 侧）。
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -13,18 +14,16 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
-const src_defines = resolve(root, "src/LFW/defines");
+const src_lfw = resolve(root, "src/LFW");
+const scan_dirs = [resolve(src_lfw, "defines"), resolve(src_lfw, "ui")];
 const gen_dir = resolve(root, "native/build/gen");
+const subject_gen_dir = resolve(root, "native/tests/differential/subjects/gen");
 const out_header = resolve(root, "native/lfw/defines/schemas_gen.h");
 const out_ts = resolve(root, "native/tests/differential/subjects/gen/defines_schemas.ts");
 
-const REL_FROM_GEN = relative(gen_dir, src_defines).split("\\").join("/");
-const REL_FROM_SUBJECT_GEN = relative(
-  resolve(root, "native/tests/differential/subjects/gen"),
-  src_defines,
-)
-  .split("\\")
-  .join("/");
+const relNoExt = (from, f) => relative(from, f).replace(/\.ts$/, "").split("\\").join("/");
+const relFromGen = (f) => relNoExt(gen_dir, f);
+const relFromSubjectGen = (f) => relNoExt(subject_gen_dir, f);
 
 function walk(dir, out) {
   for (const n of readdirSync(dir).sort()) {
@@ -35,23 +34,29 @@ function walk(dir, out) {
   return out;
 }
 
-const modules = walk(src_defines, []).filter((f) => {
-  const base = f.split(/[\\/]/).pop();
-  if (base === "index.ts") return false;
-  return readFileSync(f, "utf8").includes("Schema_");
-});
+const modules = [];
+for (const dir of scan_dirs) {
+  for (const f of walk(dir, [])) {
+    const base = f.split(/[\\/]/).pop();
+    if (base === "index.ts") continue;
+    if (!/export\s+(?:const|let|var|function|class)\s+Schema_\w+/.test(readFileSync(f, "utf8"))) {
+      continue;
+    }
+    modules.push(f);
+  }
+}
 
 if (modules.length === 0) {
   console.error("gen_defines_schemas: no modules with Schema_ found");
   process.exit(1);
 }
 
-const modPath = (f) => relative(src_defines, f).replace(/\.ts$/, "").split("\\").join("/");
+const modPath = (f) => relNoExt(src_lfw, f);
 const aliasFor = (f) => `S_${modPath(f).replace(/[^A-Za-z0-9]/g, "_")}`;
 
 const entry = [];
 for (const f of modules) {
-  entry.push(`import * as ${aliasFor(f)} from "${REL_FROM_GEN}/${modPath(f)}";`);
+  entry.push(`import * as ${aliasFor(f)} from "${relFromGen(f)}";`);
 }
 entry.push("");
 entry.push("function plain(v) {");
@@ -207,7 +212,7 @@ let idx = 0;
 for (const f of modules) {
   const name = `S${idx++}`;
   aliases.set(modPath(f), name);
-  tsOut.push(`import * as ${name} from "${REL_FROM_SUBJECT_GEN}/${modPath(f)}";`);
+  tsOut.push(`import * as ${name} from "${relFromSubjectGen(f)}";`);
 }
 tsOut.push("");
 tsOut.push("export const SCHEMA_TABLES: { name: string; value: unknown }[] = [");

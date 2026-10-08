@@ -8860,3 +8860,25 @@ null 不报错）；ui 三连校验（falsy / 数组 / 非对象）的报错文�
 **测试**：新 subject `ui_value` + 1 份用例 **35 行**；变异 `ui_value.mjs` **11/11 全杀**；
 全量差分 **210/210**、lint 全清。
 
+## 95. 切片 4AH：`Schema_IUIImgInfo` + `validate_ui_img_info`
+
+生成器 `native/tools/gen_defines_schemas.mjs` 的扫描根从 `src/LFW/defines` 扩到
+`src/LFW/defines` + `src/LFW/ui`（只捞「导出 `Schema_`」的模块）；`schemas_gen.h` 现 **11 份**
+表、台面 `defines_schemas.ts` 多一条 `SCHEMA_TABLES`（§84 的「UI 的 `Schema_IUIImgInfo` 不在
+范围」注就此作废）。coverage 工具 `check_defines_coverage.mjs` 同样扩根（defines 全量 + ui 只扫
+`export const Schema_`），报数 `10/10` → `11/11`。
+
+`native/lfw/ui/validate_ui_img_info.{h,cpp}`：每次调用新建 `SchemaValidator` 校验固定表，把
+消息并进调用方数组（C++ 传 null 指针 = TS 的默认空数组）；TAG 落成 `kValidateUIImgInfoTag`。
+
+照抄怪癖（编号接 108 → 109）：109. `path` 是唯一必填（非 nullable）字段，其余（含
+`nine_patch`）都可缺省；`nine_patch` 只声明 `type:'object'` 没有 properties ⇒ 任何对象过、
+键全告警。110. 数值错误文案由**声明**挑（`_wrong` 的判定顺序），不是违规点：`x` 的
+`{int, nagetive:false}` 对 `1.5` 与 `-1` 都报 `non-nagetive integer`。111. 返回
+`!errors.length`：告警不拦（未知键仍 `b1`）；数组入参 `typeof [] === 'object'` 会走 object
+分支（键名告警 + 缺 path 报错）。112. 属性按表顺序早退，只报第一个命中的（`x n -1 w n 0`
+只报 x）。
+
+**测试**：新 subject `ui_img_info` + 1 份用例 **37 行**（`v` / `vd` / `tag` 三种 op）；变异
+`ui_img_info.mjs` **9/9 全杀**；全量差分 **211/211**、lint 全清（coverage 11/11）。
+

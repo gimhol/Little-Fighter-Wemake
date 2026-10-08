@@ -1,0 +1,37 @@
+# `Schema_IUIImgInfo` 正例 / 逐字段否定例 / 未知键告警 / 早退顺序 / 非对象入参 / 无数组入口
+tag
+v v1 o 1 path s "a.png"
+v v2 o 2 path s "a.png" x n 0
+v v3 o 4 path s "a.png" x n 1 y n 2 flip_x n 1
+v v4 o 3 path s "a.png" offsetAnimR n -0.5 repeatX n 3
+v v5 o 2 path s "a.png" flip_x n 2
+v v6 o 2 path s "a.png" flip_y n 3
+v v7 o 1 path s "  "
+v v8 o 1 path s ""
+v v9 o 1 path n 1
+v v10 o 0
+v v11 o 2 path s "a.png" x n 1.5
+v v12 o 2 path s "a.png" x n -1
+v v13 o 2 path s "a.png" w n 0
+v v14 o 2 path s "a.png" h n -3
+v v15 o 2 path s "a.png" dw n 2.5
+v v16 o 2 path s "a.png" wrapS s "x"
+v v17 o 2 path s "a.png" wrapS z
+v v18 o 2 path s "a.png" nine_patch z
+v v19 o 2 path s "a.png" nine_patch o 0
+v v20 o 2 path s "a.png" nine_patch o 1 f_l n 1
+v v21 o 2 path s "a.png" nine_patch n 1
+v v22 o 2 path s "a.png" nine_patch s "x"
+v v23 o 3 path s "a.png" foo n 1 bar n 2
+v v24 o 2 path s "" foo n 1
+v v25 o 3 path s "a.png" x n -1 w n 0
+v v26 z
+v v27 u
+v v28 n 1
+v v29 b 1
+v v30 s "abc"
+v v31 a 0
+v v32 a 2 n 1 n 2
+vd d1 o 1 path s "a.png"
+vd d2 o 0
+vd d3 n 1

@@ -304,7 +304,7 @@ VS Code 里也已经指好（`.vscode/settings.json`）：
 | `FacingFlag` / `HitFlag` / `EntityEnum` / `CMD` / `BinOp` | **手写**，不在生成范围内 | 前 4 个的成员引用了同文件常量 / 同枚举成员 / 别的枚举（生成器不求值）；`BinOp` 是早期手写的 `bin_op.h` |
 | 生成的 `bdy_kind_name_of` 等 | 命名 `xxx_name_of`（TS 里叫 `bdy_kind_name`） | 避开将来手写同名函数 |
 | `lfw/defines/fields_gen.h` | **由 `native/tools/gen_defines_fields.mjs` 生成，不要手改** | 它跑真实的 TS 字段表、内嵌成 JSON5，运行时用 `json5_parse` 还原 |
-| `lfw/defines/schemas_gen.h` | **由 `native/tools/gen_defines_schemas.mjs` 生成，不要手改** | 10 份 `Schema_*`（纯数据：无函数/无类实例）dump 成 JSON5；UI 的 `Schema_IUIImgInfo` 不在范围（`ui/` 未移植） |
+| `lfw/defines/schemas_gen.h` | **由 `native/tools/gen_defines_schemas.mjs` 生成，不要手改** | 11 份 `Schema_*`（纯数据：无函数/无类实例）dump 成 JSON5；扫描根 = `src/LFW/defines` 全量 + `src/LFW/ui` 里导出 `Schema_*` 的模块（4AH 起） |
 | `SchemaValidator` 的类类型分支 | TS 的 `typeof type === 'function'`（自定义类）、“值必须是字符串”、`Object.defineProperty` 惰性属性、`instance_getter/setter` 钩子不建形 | `Value` 装不下函数；已移植 10 份 schema 无此形态（DESIGN §84） |
 | `preprocess_bg_data` 的 `Ditto.warn/error` | 端口加 `warnings` / `errors` **sink 参数**（宿主缝） | TS 是宿主包全局；台面两侧分别用 sink / 替换桩捕获成 `bgw`/`bge`（DESIGN §84） |
 | `JSON.stringify` 会把 `-0` 写成 `0` | 生成字段表时用 | 当前 34 张表里没有 `-0`；若有，差分会在位模式上暴露 |
@@ -415,7 +415,8 @@ VS Code 里也已经指好（`.vscode/settings.json`）：
 | `CMDS` 的默认表 + 台面 `__probe__` 都走 `register_cmd` | TS 的注册是 `CMDS.register` 静态方法 | 形状一致（键统一降格、helps 另存）；台面私货用大写键注册以暴露注册侧降格 |
 
 > `native.mjs all` 里的 `coverage` 步骤会跑 `tools/check_defines_coverage.mjs`：
-> 它用「运行时枚举 TS 导出」这条**独立于生成器**的路径，检查 TS 里的枚举/字段表有没有漏搬。
+> 它用「运行时枚举 TS 导出」这条**独立于生成器**的路径，检查 TS 里的枚举/字段表/schema 有没有漏搬
+> （4AH 起 `src/LFW/ui` 里导出 `Schema_*` 的模块也在扫描范围内）。
 
 **注意修正过的顺序**：`loader/preprocess_*.ts` 在运行时依赖 `dat_translator`
 （`CondMaker` / `set_hit_flag` / `make_entity_special` / `xml_x_entity_data` /
@@ -560,3 +561,4 @@ VS Code 里也已经指好（`.vscode/settings.json`）：
 | 4AE | 切片 4AE（**步骤 4 主干第三十一刀**）：**UI 叶层第一批** —— `native/lfw/ui/` 开张：`color.{h,cpp}`（`hex_to_rgba`/`int_to_rgba`/名字表 `RGBA_MAP`/`parse_rgba`）、`ui_parse.{h,cpp}`（`parse_call_func_expression`/`read_func_args`）、`cross_info.{h,cpp}`、`ui_action_enum.h`。照抄怪癖：名字表尾随空格拼写、`#`/rgba 家族的缓存（含 null）、贪婪分组用「从右取逗号」复刻、无锚点正则的 id 回溯 + 空 name 直接 null、`CrossInfo` 的 number 过滤与「不同⇒true」。新 subject `ui_base` 3 份用例 76 行；变异 **15/15 全杀**；全量差分 **207/207**。细节见 DESIGN §92 |
 | 4AF | 切片 4AF（**步骤 4 主干第三十二刀**）：**`Style` + `isClass`** —— `ui/style.{h,cpp}`（IStyle 用 `Value` 对象；29 对访问器 + `from` 身份包装缓存 + `assign`/`touch`/两种 `data` 赋值）、`utils/is_class.h`（RTTI 关闭 ⇒ 显式 `ClazzTag` 链）。照抄怪癖：版本号三档比较（setter 宽松 `==`、`assign` 严格 `===`、`touch`/`data` 无条件 +1）、`data=Style` 浅拷贝 vs 其它直接别名。新 subject `ui_style` 2 份用例 42 行；变异 **10/10 全杀**；全量差分 **209/209**。细节见 DESIGN §93 |
 | 4AG | 切片 4AG（**步骤 4 主干第三十三刀**）：**`read_info_value`** —— `find_ui_value`（两趟：values 链走完再走 template_values 链，nullish 跳过）+ `parse_ui_value`（nullish 最前短路、ui 三连校验、`$val:` 前缀判定与截取错位怪癖、bool/num/str/judger 分支）+ 三个 judger（`is_0_or_1`/`unsafe_is_object`/`unsafe_is_array`）。ICookedUIInfo 用 `Value` 对象；judger 用枚举、`type` 用 `UIValueType`（Cls 暂不支持，偏差）。新 subject `ui_value` 35 行；变异 **11/11 全杀**；全量差分 **210/210**。细节见 DESIGN §94 |
+| 4AH | 切片 4AH（**步骤 4 主干第三十四刀**）：**`Schema_IUIImgInfo` + `validate_ui_img_info`** —— 生成器扫描根扩到 `src/LFW/ui`（表 10→11）、coverage 工具同扩根；`ui/validate_ui_img_info.{h,cpp}`（新建 validator、消息并入调用方数组、null=默认空数组、TAG 常量）。新 subject `ui_img_info` 37 行；变异 **9/9 全杀**；全量差分 **211/211**。细节见 DESIGN §95 |

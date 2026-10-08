@@ -40,6 +40,7 @@ add_library(lfw_core STATIC
   ui/read_info_value.cpp
   ui/style.cpp
   ui/ui_parse.cpp
+  ui/validate_ui_img_info.cpp
   defines/defines.cpp
   defines/labels.cpp
   defines/runtime_gen.cpp

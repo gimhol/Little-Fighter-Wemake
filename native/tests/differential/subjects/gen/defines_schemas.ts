@@ -7,6 +7,7 @@ import * as S5 from "../../../../../src/LFW/defines/IStageInfo";
 import * as S6 from "../../../../../src/LFW/defines/IStagePhaseInfo";
 import * as S7 from "../../../../../src/LFW/defines/ITerrainInfo";
 import * as S8 from "../../../../../src/LFW/defines/IWorldDataset";
+import * as S9 from "../../../../../src/LFW/ui/IUIImgInfo.dat";
 
 export const SCHEMA_TABLES: { name: string; value: unknown }[] = [
   { name: "Schema_IBgData", value: S0.Schema_IBgData },
@@ -17,6 +18,7 @@ export const SCHEMA_TABLES: { name: string; value: unknown }[] = [
   { name: "Schema_IStageInfo", value: S5.Schema_IStageInfo },
   { name: "Schema_IStagePhaseInfo", value: S6.Schema_IStagePhaseInfo },
   { name: "Schema_ITerrainInfo", value: S7.Schema_ITerrainInfo },
+  { name: "Schema_IUIImgInfo", value: S9.Schema_IUIImgInfo },
   { name: "Schema_IWorldDataset", value: S8.Schema_IWorldDataset },
   { name: "Schema_IWorldDataset_Partial", value: S8.Schema_IWorldDataset_Partial },
 ];

@@ -8,7 +8,9 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
-const src_root = resolve(root, "src/LFW/defines");
+const src_lfw = resolve(root, "src/LFW");
+const src_defines = resolve(src_lfw, "defines");
+const src_ui = resolve(src_lfw, "ui");
 const gen_dir = resolve(root, "native/build/gen");
 
 function walk(dir, out) {
@@ -20,14 +22,19 @@ function walk(dir, out) {
   return out;
 }
 
-const modules = walk(src_root, []).filter((f) => f.split(/[\\/]/).pop() !== "index.ts");
-const key = (f) => relative(src_root, f).replace(/\.ts$/, "").split("\\").join("/");
+// defines/ 全量扫（枚举/字段表/schema）；ui/ 只扫带 `export const Schema_` 的文件
+// （4AH 起 `Schema_IUIImgInfo` 在 UI 侧，其余 UI 导出不在本工具口径内）。
+const modules = [
+  ...walk(src_defines, []).filter((f) => f.split(/[\\/]/).pop() !== "index.ts"),
+  ...walk(src_ui, []).filter((f) => /export\s+const\s+Schema_\w+/.test(readFileSync(f, "utf8"))),
+];
+const key = (f) => relative(src_lfw, f).replace(/\.ts$/, "").split("\\").join("/");
 const alias = (f) => `M_${key(f).replace(/[^A-Za-z0-9]/g, "_")}`;
 
 const lines = [];
 for (const f of modules) {
   lines.push(
-    `import * as ${alias(f)} from "${relative(gen_dir, src_root).split("\\").join("/")}/${key(f)}";`,
+    `import * as ${alias(f)} from "${relative(gen_dir, src_lfw).split("\\").join("/")}/${key(f)}";`,
   );
 }
 lines.push("");

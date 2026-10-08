@@ -4641,3 +4641,15 @@ harness op：
 - TS 的 parse 报错有两种形状：ui 三连校验是普通 `Error`，类型不符是 `{ui, error}` ⇒
   TS 台面 catch 里 `e.error ? e.error.message : e.message` 取文案（C++ 只有文本）。
 - 渲染用 `sv()`：`u`/`z`/`render_value`（`bool` 打 `b1`、对象打 `{}`、数组打 `[]`）。
+
+### 6.9.139 `ui_img_info`（validate_ui_img_info；`cases/ui_img_info/value.txt` 37 行；变异 9/9 全杀）
+
+- 这张表来自 `Schema_IUIImgInfo`：生成器 `gen_defines_schemas.mjs` 的扫描根已扩到
+  `src/LFW/ui`（只捞「导出 `Schema_`」的模块），`schemas_gen.h` 的表数 11。
+- op：`tag`（打 TAG 常量）/ `v <vid> <值>`（带数组，逐条打 `ve`/`vw`）/ `vd <vid> <值>`
+  （不传数组：C++ 传 null、TS 用默认参）——`vd` 专锁「null 指针 == 默认空数组」语义。
+- 值字面量走 `parse_value`/`parseValue`（`o`/`a`/`s`/`n`/`b`/`u`/`z`）。
+- 用例钉住的怪癖：`x`（`int + nagetive:false`）对 `1.5` 和 `-1` 同报
+  `non-nagetive integer`；`nine_patch` 是裸 `{type:'object'}` ⇒ 空对象过、带键全告警；
+  数组入参（`typeof [] === 'object'`）会走 object 分支；properties 按表顺序早退
+  （`x n -1 w n 0` 只报 x）。
