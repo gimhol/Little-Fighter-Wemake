@@ -204,6 +204,13 @@ add_library(lfw_core STATIC
   ui/component/opacity_hover.cpp
   ui/component/sine_opacity.cpp
   ui/component/fade_in_opacity.cpp
+  ui/component/fade_out_opacity.cpp
+  ui/component/opacity_animation.cpp
+  ui/component/opacity_flash.cpp
+  ui/component/scale_animation.cpp
+  ui/component/position_animation.cpp
+  ui/component/scale_clickable.cpp
+  ui/component/pause_handling.cpp
   ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp

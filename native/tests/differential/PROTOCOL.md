@@ -4832,3 +4832,13 @@ harness op：
   （必然存活）；改 `_p = num(3)` 为 `_p = std::nullopt` 能从父观察步骤杀掉。
 - ⚠ TS 成员初始化器（`new Easing(0,1).set_duration(150)`）在 C++ 要显式构造器落参；漏了只在
   「缺省 duration + 悬停首帧」才能暴露（drift `n0 vs n0.4999…`）。
+
+### 6.9.153 动画族组件（`cases/lfw/anim.txt` 138 行；变异 22/22 全杀）
+
+- 新台面 op：`wpause <0|1|2>`（`world.set_paused` + 读回 `paused`，PauseHandling 用）与
+  `cplay <nid> <cls> <start|stop|replay> <0|1>`（按类标签找组件驱动 IPlayable + 打印 `ok/none` 与 `enabled`）。
+- ⚠ **`vec3(i)`/`nums` 的参数是「一个数组参数」**（`a 3 n x n y n z` 或 `"x,y,z"` 串），不是三个连续参数：
+  Scale/Position 的 args 形如 `[play, reverse, [x,y,z], duration, [x,y,z], duration, …]`。
+- Scale/Position 首段恒为 Delay（`i == 0` 时 prev 自比），且 `done` 时只 `set_enabled(false)` 不再写节点。
+- TS 假 `Vector3` 需补 `equals`/`clone`/`sub`（Scale/Position 会调；之前假实现只有 `set`）。
+- FadeOutOpacity 的缓动是**默认** ease_in_out_sine（没显式 `set_easing`）；OpacityAnimation 段间才用 `ease_linearity`。

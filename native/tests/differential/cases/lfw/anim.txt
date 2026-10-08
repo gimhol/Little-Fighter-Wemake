@@ -1,0 +1,151 @@
+# 4AV：动画族组件（OpacityAnimation / OpacityFlash / FadeOutOpacity / ScaleAnimation / PositionAnimation / ScaleClickable / PauseHandling）
+
+# OpacityAnimation：args = [play, reverse, opacity, duration, opacity, duration]（Delay 段 + 缓动段）
+nmk oa1 - o 6 id s "oa1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "OpacityAnimation" id s "oa1c" args a 6 b 1 b 0 n 0 n 100 n 1 n 100 properties o 0
+nlife oa1 start
+nrd oa1 op
+cupd oa1 100
+nrd oa1 op
+cupd oa1 25
+nrd oa1 op
+cupd oa1 75
+nrd oa1 op
+cplay oa1 OpacityAnimation stop 0
+nrd oa1 op
+cplay oa1 OpacityAnimation start 1
+nrd oa1 op
+cupd oa1 50
+nrd oa1 op
+cupd oa1 50
+nrd oa1 op
+
+# OpacityFlash：缺省 steps（含相等段的 Delay 分支）+ start/stop/replay
+nmk of1 - o 6 id s "of1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "OpacityFlash" id s "of1c" args a 0 properties o 0
+nlife of1 start
+nrd of1 op
+cplay of1 OpacityFlash start 0
+nrd of1 op
+cupd of1 350
+nrd of1 op
+cupd of1 175
+nrd of1 op
+cupd of1 100
+nrd of1 op
+cupd of1 350
+nrd of1 op
+cplay of1 OpacityFlash stop 0
+cplay of1 OpacityFlash replay 0
+cupd of1 100
+nrd of1 op
+
+# OpacityFlash：自定义 steps + times=2（循环）
+nmk of2 - o 6 id s "of2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "OpacityFlash" id s "of2c" args a 0 properties o 2 steps a 5 n 0 n 50 n 0 n 50 n 1 times n 2
+nlife of2 start
+cplay of2 OpacityFlash start 0
+cupd of2 50
+nrd of2 op
+cupd of2 25
+nrd of2 op
+cupd of2 25
+nrd of2 op
+cupd of2 75
+nrd of2 op
+
+# FadeOutOpacity：args = [duration, delay]，start 与反向 start
+nmk fo1 - o 6 id s "fo1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "FadeOutOpacity" id s "fo1c" args a 2 n 200 n 50 properties o 0
+nlife fo1 start
+nrd fo1 op
+cplay fo1 FadeOutOpacity start 0
+nrd fo1 op
+cupd fo1 50
+nrd fo1 op
+cupd fo1 100
+nrd fo1 op
+cupd fo1 100
+nrd fo1 op
+cplay fo1 FadeOutOpacity start 1
+nrd fo1 op
+cupd fo1 100
+nrd fo1 op
+
+# ScaleAnimation：args = [play, reverse, [x,y,z], duration, [x,y,z], duration]
+nmk sa1 - o 6 id s "sa1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "ScaleAnimation" id s "sa1c" args a 6 b 1 b 0 a 3 n 1 n 1 n 1 n 100 a 3 n 2 n 2 n 2 n 100 properties o 0
+nlife sa1 start
+nrd sa1 scale
+cupd sa1 100
+nrd sa1 scale
+cupd sa1 50
+nrd sa1 scale
+cupd sa1 50
+nrd sa1 scale
+cplay sa1 ScaleAnimation start 1
+nrd sa1 scale
+cupd sa1 50
+nrd sa1 scale
+cupd sa1 100
+nrd sa1 scale
+
+# PositionAnimation：args = [play, reverse, [x,y,z], duration, [x,y,z], duration]
+nmk pa1 - o 6 id s "pa1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "PositionAnimation" id s "pa1c" args a 6 b 1 b 0 a 3 n 0 n 0 n 0 n 100 a 3 n 10 n 20 n 30 n 100 properties o 0
+nlife pa1 start
+nrd pa1 pos
+cupd pa1 100
+nrd pa1 pos
+cupd pa1 50
+nrd pa1 pos
+cupd pa1 50
+nrd pa1 pos
+cplay pa1 PositionAnimation start 1
+cupd pa1 50
+nrd pa1 pos
+cupd pa1 100
+nrd pa1 pos
+
+# ScaleClickable：args = [normal, hover, duration, watch_parent]（观察父节点）
+nmk scp - o 5 id s "scp" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nmk sc1 scp o 6 id s "sc1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "ScaleClickable" id s "sc1c" args a 4 n 1 n 2 n 200 n 1 properties o 0
+nadd scp sc1
+nlife sc1 start
+nrd sc1 scale
+cupd sc1 100
+nrd sc1 scale
+npe scp
+cupd sc1 100
+nrd sc1 scale
+cupd sc1 100
+nrd sc1 scale
+npd scp
+cupd sc1 100
+nrd sc1 scale
+npu scp
+npl scp
+cupd sc1 100
+nrd sc1 scale
+nset sc1 focused 1
+cupd sc1 100
+nrd sc1 scale
+
+# PauseHandling：props.reverse 反转；缺省跟随 paused
+nmk ph1 - o 6 id s "ph1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "PauseHandling" id s "ph1c" args a 0 properties o 1 reverse b 1
+cupd ph1 0
+nrd ph1 flags
+wpause 1
+cupd ph1 0
+nrd ph1 flags
+wpause 0
+cupd ph1 0
+nrd ph1 flags
+nmk ph2 - o 6 id s "ph2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "PauseHandling" id s "ph2c" args a 0 properties o 0
+cupd ph2 0
+nrd ph2 flags
+wpause 1
+cupd ph2 0
+nrd ph2 flags
+wpause 0
+nmk ph3 - o 6 id s "ph3" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 component a 1 o 4 cls s "PauseHandling" id s "ph3c" args a 0 properties o 1 reverse b 0
+cupd ph3 0
+nrd ph3 flags
+wpause 1
+cupd ph3 0
+nrd ph3 flags
+wpause 0

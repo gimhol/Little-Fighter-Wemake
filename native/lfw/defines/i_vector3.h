@@ -4,8 +4,7 @@ namespace lfw {
 
 // Mirrors `src/LFW/defines/IVector3.ts`.  TS gets vector instances from the host
 // (`Ditto.vec3`), so only the operations the ported code actually calls are
-// implemented here; the rest (`add` / `sub` / `copy` / `clone` / `normalize` /
-// `equals`) arrives with the physics slices that need them.
+// implemented here.
 struct Vector3 {
   double x = 0;
   double y = 0;
@@ -19,6 +18,14 @@ struct Vector3 {
     y = py;
     z = pz;
   }
+
+  bool equals(const Vector3& o) const {
+    return x == o.x && y == o.y && z == o.z;
+  }
+
+  Vector3 clone() const { return *this; }
+
+  Vector3 sub(const Vector3& o) const { return Vector3(x - o.x, y - o.y, z - o.z); }
 };
 
 }

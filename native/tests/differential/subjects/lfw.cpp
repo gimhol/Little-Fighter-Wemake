@@ -19,6 +19,11 @@
 #include "lfw/player_info.h"
 #include "lfw/ui/cook_ui_info.h"
 #include "lfw/ui/action/actor.h"
+#include "lfw/ui/component/fade_out_opacity.h"
+#include "lfw/ui/component/opacity_animation.h"
+#include "lfw/ui/component/opacity_flash.h"
+#include "lfw/ui/component/position_animation.h"
+#include "lfw/ui/component/scale_animation.h"
 #include "lfw/ui/component/ui_component.h"
 #include "lfw/ui/component/ui_props.h"
 #include "lfw/ui/instance_ref.h"
@@ -1693,6 +1698,52 @@ int main(int argc, char** argv) {
         push("cfind|" + nid + "|" + cid + "|" + to_ascii(which) + "|" +
              (r != nullptr ? node_ref(r) : std::string("u")));
       }
+    } else if (op == "wpause") {
+      const double v = to_double(t[i++]);
+      lfw.world().set_paused_value(v);
+      push("wpause|" + num(v) + "|" + (lfw.world().paused() ? "1" : "0"));
+    } else if (op == "cplay") {
+      const std::string nid = t[i++];
+      const std::string cls = t[i++];
+      const std::string act = t[i++];
+      const bool rev = t[i++] == "1";
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      const std::u16string cls16 = to_u16(cls);
+      lfw::ui::UIComponent* comp = nullptr;
+      for (lfw::ui::UIComponent* const c : n.components()) {
+        const lfw::ClazzTag* const t = c->clazz();
+        const bool hit =
+            (cls16 == u"OpacityAnimation" && t == lfw::ui::OpacityAnimation::class_tag()) ||
+            (cls16 == u"OpacityFlash" && t == lfw::ui::OpacityFlash::class_tag()) ||
+            (cls16 == u"FadeOutOpacity" && t == lfw::ui::FadeOutOpacity::class_tag()) ||
+            (cls16 == u"ScaleAnimation" && t == lfw::ui::ScaleAnimation::class_tag()) ||
+            (cls16 == u"PositionAnimation" && t == lfw::ui::PositionAnimation::class_tag());
+        if (hit) {
+          comp = c;
+          break;
+        }
+      }
+      if (comp != nullptr) {
+        if (cls == "OpacityAnimation") {
+          lfw::ui::OpacityAnimation* const a = static_cast<lfw::ui::OpacityAnimation*>(comp);
+          if (act == "start") a->start(rev);
+          else if (act == "stop") a->stop(rev);
+        } else if (cls == "OpacityFlash") {
+          lfw::ui::OpacityFlash* const a = static_cast<lfw::ui::OpacityFlash*>(comp);
+          if (act == "start") a->start();
+          else if (act == "stop") a->stop();
+          else if (act == "replay") a->replay();
+        } else if (cls == "FadeOutOpacity") {
+          if (act == "start") static_cast<lfw::ui::FadeOutOpacity*>(comp)->start(rev);
+        } else if (cls == "ScaleAnimation") {
+          if (act == "start") static_cast<lfw::ui::ScaleAnimation*>(comp)->start(rev);
+        } else if (cls == "PositionAnimation") {
+          if (act == "start") static_cast<lfw::ui::PositionAnimation*>(comp)->start(rev);
+        }
+      }
+      push("cplay|" + nid + "|" + cls + "|" + act + "|" +
+           (comp != nullptr ? "ok" : "none") + "|" +
+           (comp != nullptr && comp->enabled() ? "b1" : "b0"));
     } else if (op == "nact") {
       const std::string nid = t[i++];
       const lfw::Value action = parse_value(t, i);

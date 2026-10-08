@@ -9239,3 +9239,26 @@ reverse 公式 `(!over && !focused) || down`）、`sine_opacity`（五参 min/ma
 
 **测试**：用例 `cases/lfw/components.txt` **97 行**；变异 `lfw_components.mjs` **16/16 全杀**；全量差分 **224/224**。
 
+## 109. 切片 4AV：动画族组件（OpacityAnimation/OpacityFlash/FadeOutOpacity/ScaleAnimation/PositionAnimation/ScaleClickable/PauseHandling）
+
+七个新组件：`opacity_animation`（args 对列，相等段 Delay / 不同段 Easing+linear，`play/reverse` 真值起播，`start`/`stop` 公开）、
+`opacity_flash`（props `steps`/`times`，缺省 steps 自带的相等段走 Delay，`loop.set_times`；start/stop/replay）、
+`fade_out_opacity`（Delay(当前透明度)+Easing(→0)，默认缓动 ease_in_out_sine）、`scale_animation`/`position_animation`
+（`values` 表按动画指针索引，`a + b*value`；scale 用 ease_linearity、position 用 ease_in_out_sine；
+`play=false` 时 `end()`）、`scale_clickable`（150→100ms 成员初始化、`_p` 父观察、按下比例、每帧 set_val_1）、
+`pause_handling`（按 `world.paused` 切 visible，props.reverse 反转）。`Vector3` 补 `equals`/`clone`/`sub`。
+
+照拄怪癖（编号接 165 → 166）：166. `vec3(i)`/`nums` 的参数是**一个数组参数**（`[x,y,z]` 或 `"x,y,z"` 串），
+不是三个连续参数 —— Scale/Position 的 args 形状按此。167. Scale/Position 首段恒为 Delay：`i == 0` 时
+`prev_scale = scale` 自比。168. Scale/Position 的 `values` 表以**动画对象指针**为键（端口 `std::map<const Animation*, pair>`）；
+`update` 先取 `curr_anim` 查表，查不到直接 return。169. Scale/Position 的 `done` 分支只 `set_enabled(false)`，不再写节点。
+170. OpacityAnimation/FadeOutOpacity 取 `update(dt)` 返回值的 `.value()`；OpacityFlash 每帧无条件写 opacity；
+FadeOutOpacity 的缓动用**默认** ease_in_out_sine（没显式 set_easing）。171. FadeOutOpacity 构造 `Easing(prev,0)` 后
+TS 又链了冗余的 `set_val_1/set_val_2`（端口构造参数已同值；`set_val_1` 无链式返回）。172. OpacityFlash 的 props 缺省
+按「字段存在」判定（不是「非空」）：`steps` 缺省=内置 19 元表，`times` 缺省=1。173. ScaleClickable 的 100ms 是 TS 成员
+初始化（构造器补）；press/normal 每帧 `set_val_1`，hover/反向归 `auto_trip`。174. PauseHandling 的 `props.reverse`
+真值（`'false'`/`'0'` 以外全真）；缺 props 时反转为假 = 跟随 `world.paused`。
+
+**测试**：用例 `cases/lfw/anim.txt` **138 行**（新台面 op `wpause`/`cplay`；TS 假 Vector3 补 equals/clone/sub）；
+变异 `lfw_anim.mjs` **22/22 全杀**；全量差分 **225/225**。
+

@@ -486,7 +486,7 @@ function install_ditto(): void {
     FullScreen: class {} as never,
     Importer: importer as never,
     Cache: cache as never,
-    Vector3: class {
+    Vector3: class Vec3 {
       x: number;
       y: number;
       z: number;
@@ -500,6 +500,15 @@ function install_ditto(): void {
         this.y = y;
         this.z = z;
         return this;
+      }
+      equals(o: Vec3): boolean {
+        return this.x === o.x && this.y === o.y && this.z === o.z;
+      }
+      clone(): Vec3 {
+        return new Vec3(this.x, this.y, this.z);
+      }
+      sub(o: Vec3): Vec3 {
+        return new Vec3(this.x - o.x, this.y - o.y, this.z - o.z);
       }
     } as never,
     Vector2: class {
@@ -1187,6 +1196,32 @@ async function run_ops(): Promise<void> {
         const c = n.components.find((v: Rec) => v.id === cid) as FakeComponent | undefined;
         push(`cfind|${nid}|${cid}|${which}|${c ? nref(c.find_node(which) as UINode) : "u"}`);
       }
+    } else if (op === "wpause") {
+      const v = Number(next());
+      lfw.world.set_paused(v as never);
+      push(`wpause|${num(v)}|${lfw.world.paused ? 1 : 0}`);
+    } else if (op === "cplay") {
+      const nid = next();
+      const cls = next();
+      const act = next();
+      const rev = next() === "1";
+      const n = tnodes.get(nid)!;
+      const comp = (n.components as Rec[]).find(
+        (c) => (((c.constructor as Rec).TAGS as string[] | undefined) ?? []).includes(cls),
+      );
+      if (comp) {
+        if (cls === "OpacityAnimation") {
+          if (act === "start") (comp as Rec).start(rev);
+          else if (act === "stop") (comp as Rec).stop(rev);
+        } else if (cls === "OpacityFlash") {
+          if (act === "start") (comp as Rec).start();
+          else if (act === "stop") (comp as Rec).stop();
+          else if (act === "replay") (comp as Rec).replay();
+        } else if (cls === "FadeOutOpacity" || cls === "ScaleAnimation" || cls === "PositionAnimation") {
+          if (act === "start") (comp as Rec).start(rev);
+        }
+      }
+      push(`cplay|${nid}|${cls}|${act}|${comp ? "ok" : "none"}|${comp && (comp as Rec).enabled ? "b1" : "b0"}`);
     } else if (op === "nact") {
       const n = tnodes.get(next())!;
       actor.act(n, parseValue(t, i) as never);
