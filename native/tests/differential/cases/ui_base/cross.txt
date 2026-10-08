@@ -1,0 +1,6 @@
+# ui_base：CrossInfo（make / set 过滤 / compare / clone）
+cross 1 2 3 4 5 6
+cross 0 0 0 0 0 0
+cross 1 2 3 4 5 6
+crossmix 1 2 3 4 5 6
+crossmix 0 0 0 0 0 0

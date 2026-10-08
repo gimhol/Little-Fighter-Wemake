@@ -8793,3 +8793,30 @@ Cache.data/blob → 下载（stored / blob+md5 → put → cached / 无 md5）�
 **测试**：`cases/lfw/url.txt`（103 行）；变异 `lfw.mjs` 累计 **40/40 全杀**；
 全量差分 **204/204**、lint 全清。
 
+## 92. 切片 4AE：UI 叶层第一批（颜色 / 文本解析 / CrossInfo）
+
+`native/lfw/ui/` 开张：`color.{h,cpp}`（`Rgb/Rgba` + `hex_to_rgba` + `int_to_rgba` +
+名字表 `RGBA_MAP` + `parse_rgba`）、`ui_parse.{h,cpp}`（`parse_call_func_expression` +
+`read_func_args`）、`cross_info.{h,cpp}`、`ui_action_enum.h`（常量，无逻辑）。
+
+照抄怪癖（编号接 95 → 96）：96. `parse_rgba` 先 `trim()` + `toLowerCase()` 再查表；
+名字表里 TS 原样的拼写瑕疵（`Indigo ` / `IndianRed ` 的**尾随空格**）也照抄；`#` 开头的
+经过 `hex_to_rgba` 后**连 `null` 结果一起缓存**（未命中 regex 的串不缓存）；
+`rgba/argb/rgb` 三个模式用「从右往左取 N 个逗号」复刻 JS `(.*),(.*)…` 的贪婪分组，
+alpha 用 `parseFloat`、其余 `parseInt`（无 radix ⇒ 认 `0x`）。97. `hex_to_rgba` 的 3/4 位是
+**逐位重复**摊写成 6/8 位；8 位的 alpha = `parseInt(...,16)/255`；长度不对 ⇒ `null`。
+98. `parse_call_func_expression` 是无锚点正则：每个起点先试「带 id」分支（`<.*>` 从**最右**
+`>` 往左回溯），再试「不带」；`(.*)\((.*)\)` 的名字取最右可行 `(`、参数取整个串最后一个 `)`；
+**匹配到但 name 为空 ⇒ 直接 `null`**（不再往后找）。99. `read_func_args` 只认**第一个**
+`func_name(`，参数取其后到**全串最后一个** `)`；`min_arg_count` 为 `>=0` 且 `>` 参数个数才 null。
+100. `CrossInfo.set` 只认 `typeof === 'number'` 的字段（字符串/null/缺失都留 0）；`compare`
+的名实相反：**不同**才返 true。
+
+偏差记录：`RGBA_MAP` 的数字键用 `std::map<double,…>`，`NaN` 键不会命中（JS Map 的
+`SameValueZero` 会命中，差异只在 `parse_rgba(NaN)` 的重复调用上，不可观测到值）；
+`parse_rgba` 的「null 与未命中」在端口统一用 `found=false` 输出（对外同形，缓存状态
+仍按 TS 写回）。
+
+**测试**：新 subject `ui_base` + 3 份用例 **76 行**（color 43 / parse 28 / cross 5）；
+变异 `ui_base.mjs` **15/15 全杀**；全量差分 **207/207**、lint 全清。
+

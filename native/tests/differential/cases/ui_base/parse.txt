@@ -1,0 +1,29 @@
+# ui_base：parse_call_func_expression / read_func_args
+callexpr "play_sound(a,b)"
+callexpr "<btn1>play_sound(a, b ,c)"
+callexpr "<btn1>!pause()"
+callexpr "!f()"
+callexpr "f()"
+callexpr "f"
+callexpr "<a>b.f(1)(2)"
+callexpr "<a><b>g(1)"
+callexpr "  x(y)  "
+callexpr "a-b(c"
+callexpr "(f"
+callexpr "f(x))"
+callexpr "<x>missing"
+callexpr "<>f()"
+callexpr "()"
+callexpr "!()"
+callexpr "<a>()"
+callexpr "<a>b.f(1"
+funcargs "f(a,b)" f
+funcargs "f(a,b)" g
+funcargs "g(1) f(a,b,c)" f
+funcargs "f(a,b)" f 3
+funcargs "f(a,b)" f 2
+funcargs "f()" f
+funcargs "f(a, b , c)" f
+funcargs "ff(1)" f
+funcargs "()" f
+funcargs "f(1)" ""

@@ -35,6 +35,9 @@ add_library(lfw_core STATIC
   lfw.cpp
   buff/registry.cpp
   loader/stage_val_getters.cpp
+  ui/color.cpp
+  ui/cross_info.cpp
+  ui/ui_parse.cpp
   defines/defines.cpp
   defines/labels.cpp
   defines/runtime_gen.cpp

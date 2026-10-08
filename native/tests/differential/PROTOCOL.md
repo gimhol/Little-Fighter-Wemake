@@ -4599,3 +4599,18 @@ harness op：
   `1.1MB` / `2KB` 等，`short_size` 的变异就靠它）。
 - 失败文案两侧一致：`unscripted import` / `unscripted blob` / `unscripted buf` / `dl-fail` /
   `[LFW::load_zip_from_url] info json url got: …`（都是字符串，TS 侧抛同名字符串）。
+
+### 6.9.136 `ui_base`（UI 叶层：颜色 / 文本解析 / CrossInfo；`cases/ui_base/*.txt` 3 份 76 行；变异 15/15 全杀）
+
+- op：`hex <str>` / `inti <n>` / `col <kind>` / `colget <kind>` / `callexpr <text>` /
+  `funcargs <text> <name> [min]` / `cross <6 nums>` / `crossmix <6 nums>`。
+- `kind` 迷你语言：`str:<v>` / `num:<v>` / `z`（null）/ `-`|`u`（undefined）。
+  `colget u` 打 `undef`（Map 未命中）、`colget z` 打 `null`（`Map.get(null)` 的 null 结果
+  与未命中同形，台面按 `undef`/`null` 区分的是**参数**而不是结果）。
+- 值全部用 bench 的 `num()` 打印（`n<js>:<hex>`）；空 `name`/失败统一打 `null`。
+- 带空格/括号的文本要整词加引号（`col "str:rgba( 4 , 5 , 6 , 0.25 )"`），
+  两侧都先 `key_of` 去引号再拆 `str:`/`num:` 前缀。
+- `crossmix` = 第二个对象里 `bottom` 是字符串、`mid_y` 是 null、`mid_x` 缺失（钉
+  `CrossInfo.set` 的 number 过滤）；两侧都用「完整数字对象」作对比对象算 `cmp`。
+- 颜色用例里有几条专门钉缓存/大小写：`col str:"#AbCdEf"` 后 `colget str:"#AbCdEf"`
+  必须 miss（TS 缓存的是小写键），`col str:RGB(1,2,3)`/`Argb(...)` 钉大小写折叠。

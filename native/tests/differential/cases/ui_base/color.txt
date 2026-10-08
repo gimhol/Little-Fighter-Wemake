@@ -1,0 +1,44 @@
+# ui_base：颜色（hex / int / 名字表 / rgba 家族 / 缓存）
+hex 000000
+hex fff
+hex ffff
+hex 00000000
+hex 12345678
+hex 12345
+hex zz
+hex "  ab "
+hex abcdef
+inti 0
+inti 4278190335
+inti 4294967295
+inti -1
+inti 1.5
+inti 16711680
+col str:Red
+col str:red
+col str:RED
+col str:"Indigo "
+col str:indigo
+col str:#abc
+col str:#abcd
+col str:#zz
+col "str:rgba(1,2,3,0.5)"
+col "str:argb(0.5,1,2,3)"
+col "str:rgb(255,0,10)"
+col "str:rgba( 4 , 5 , 6 , 0.25 )"
+col "str:RGB(1,2,3)"
+col "str:Argb(0.5,1,2,3)"
+col str:transparent
+col str:#ABCDEF
+col num:16711680
+col num:0
+col z
+col u
+colget str:#abc
+col str:#AbCdEf
+colget str:#AbCdEf
+colget str:#zz
+colget num:16711680
+colget str:red
+colget str:nope
+colget num:4278190335
