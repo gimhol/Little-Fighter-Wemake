@@ -1222,6 +1222,25 @@ async function run_ops(): Promise<void> {
         }
       }
       push(`cplay|${nid}|${cls}|${act}|${comp ? "ok" : "none"}|${comp && (comp as Rec).enabled ? "b1" : "b0"}`);
+    } else if (op === "calign") {
+      const nid = next();
+      const n = tnodes.get(nid)!;
+      const c = (n.components as Rec[]).find(
+        (v) => (((v.constructor as Rec).TAGS as string[] | undefined) ?? []).includes("FlexItem"),
+      );
+      if (!c) {
+        push(`calign|${nid}|none`);
+      } else {
+        let out = "err";
+        let errs = 0;
+        try {
+          out = String((c as Rec).align);
+          errs = (((c as Rec).props_holder as Rec).errors as unknown[]).length;
+        } catch (e) {
+          errs = (((e as Rec).errors as unknown[] | undefined) ?? []).length;
+        }
+        push(`calign|${nid}|${out}|${num(errs)}`);
+      }
     } else if (op === "nact") {
       const n = tnodes.get(next())!;
       actor.act(n, parseValue(t, i) as never);

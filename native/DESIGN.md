@@ -9262,3 +9262,20 @@ TS 又链了冗余的 `set_val_1/set_val_2`（端口构造参数已同值；`set
 **测试**：用例 `cases/lfw/anim.txt` **138 行**（新台面 op `wpause`/`cplay`；TS 假 Vector3 补 equals/clone/sub）；
 变异 `lfw_anim.mjs` **22/22 全杀**；全量差分 **225/225**。
 
+## 110. 切片 4AW：布局族组件（FlexItem/VerticalLayout/HorizontalLayout/FitChildren/WrapContent）
+
+五个新组件 + `flex_align.h`（`FlexAlign` 枚举 + `ALL_FLEX_ALIGN()`）：`flex_item`（props `align` +
+`oneof` 四值校验；getter 缺省 null；台面 op `calign` 钉校验失败/缺省两种路径）、`vertical_layout`
+（gap=`num(0)||0`；第一遍 unshift 存 `[(1-cx)w, max_h+(1-cy)h, z]` 并累加 `h+gap`、取 max_w；第二遍 pop 回放算出
+`yy=p[1]-cy*max_h-h`、`xx=cx*max_w-p[0]`，最后 `resize(max_w, max_h)`）、`horizontal_layout`（依次
+`move_to(累加宽, y, z)`；结束后 `resize(w,h)` 且若有父节点把自己对齐到父中心）、`fit_children`（按可见子节点 rect
+包围盒 `resize` + `set_center(-min_left/w, -min_top/h)`，`on_resume`/`update` 都 apply）、`wrap_content`（同包围盒逻辑，
+props `wrapWidth/wrapHeight` 仅参与校验，`apply` 先读一次 props）。
+
+照拄怪癖（编号接 174 → 175）：175. VerticalLayout 的 `pos_list` 用 **unshift + pop** 配对（先建逆序表再顺序消费）。
+176. VerticalLayout/HorizontalLayout 都**跳过不可见子节点**（隐藏子不参与排版也不占位）。177. FitChildren/WrapContent 的
+`w/h` 为 0 时 center 落 0（除零保护写成三目）；`child.rect` 用真包围盒（含 center 偏移）。
+178. FlexItem 的 `oneof` 是 schema 关键字（不在选项内 → 校验失败 → 端口 props() 返 nullptr，TS 抛）。
+
+**测试**：用例 `cases/lfw/layout.txt` **40 行**；变异 `lfw_layout.mjs` **16/16 全杀**；全量差分 **226/226**。
+

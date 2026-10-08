@@ -4842,3 +4842,13 @@ harness op：
 - Scale/Position 首段恒为 Delay（`i == 0` 时 prev 自比），且 `done` 时只 `set_enabled(false)` 不再写节点。
 - TS 假 `Vector3` 需补 `equals`/`clone`/`sub`（Scale/Position 会调；之前假实现只有 `set`）。
 - FadeOutOpacity 的缓动是**默认** ease_in_out_sine（没显式 `set_easing`）；OpacityAnimation 段间才用 `ease_linearity`。
+
+### 6.9.154 布局族组件（`cases/lfw/layout.txt` 40 行；变异 16/16 全杀）
+
+- 新台面 op `calign <nid>`：找节点上的 `FlexItem`，跑一遍 props 校验并打 `calign|<nid>|<align|null>|<错误数>`
+  （TS 侧校验失败走 catch 打 `err`；两边都带错误数）。
+- ⚠ 无 `component` 键的节点数据是 `o 5`（id/pos/size/center/scale），有组件才是 `o 6` ——
+  対数字数错了会报 `value literal truncated in object`。
+- VerticalLayout/HorizontalLayout 会跳过不可见子节点（用例里都放了隐藏子 + `nset <id> visible 0` 钉住）；
+  VerticalLayout 的 `pos_list` 是 unshift+pop 配对，打乱顺序能直接观察到 y 错位。
+- 用例里 vl1 的 `center` 取 `0.5,0.25`（非零 cy），否则 `yy` 里的 center 项观察不到。

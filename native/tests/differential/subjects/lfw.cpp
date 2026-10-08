@@ -20,6 +20,7 @@
 #include "lfw/ui/cook_ui_info.h"
 #include "lfw/ui/action/actor.h"
 #include "lfw/ui/component/fade_out_opacity.h"
+#include "lfw/ui/component/flex_item.h"
 #include "lfw/ui/component/opacity_animation.h"
 #include "lfw/ui/component/opacity_flash.h"
 #include "lfw/ui/component/position_animation.h"
@@ -1744,6 +1745,27 @@ int main(int argc, char** argv) {
       push("cplay|" + nid + "|" + cls + "|" + act + "|" +
            (comp != nullptr ? "ok" : "none") + "|" +
            (comp != nullptr && comp->enabled() ? "b1" : "b0"));
+    } else if (op == "calign") {
+      const std::string nid = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      lfw::ui::FlexItem* f = nullptr;
+      for (lfw::ui::UIComponent* const c : n.components()) {
+        if (c->clazz() == lfw::ui::FlexItem::class_tag()) {
+          f = static_cast<lfw::ui::FlexItem*>(c);
+          break;
+        }
+      }
+      if (f == nullptr) {
+        push("calign|" + nid + "|none");
+      } else {
+        std::string out = "err";
+        if (f->ensure_props()) {
+          const std::optional<std::u16string> a = f->align();
+          out = a.has_value() ? to_ascii(*a) : "null";
+        }
+        push("calign|" + nid + "|" + out + "|" +
+             num(static_cast<double>(f->props_errors().size())));
+      }
     } else if (op == "nact") {
       const std::string nid = t[i++];
       const lfw::Value action = parse_value(t, i);

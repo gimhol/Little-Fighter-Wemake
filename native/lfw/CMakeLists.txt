@@ -211,6 +211,11 @@ add_library(lfw_core STATIC
   ui/component/position_animation.cpp
   ui/component/scale_clickable.cpp
   ui/component/pause_handling.cpp
+  ui/component/flex_item.cpp
+  ui/component/vertical_layout.cpp
+  ui/component/horizontal_layout.cpp
+  ui/component/fit_children.cpp
+  ui/component/wrap_content.cpp
   ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp
