@@ -16,6 +16,7 @@
 #include "lfw/loader/stage_val_getters.h"
 #include "lfw/player_info.h"
 #include "lfw/ui/cook_ui_info.h"
+#include "lfw/ui/ui_load_img.h"
 #include "lfw/utils/container_help/field_or.h"
 
 #include "trace_util.h"
@@ -228,6 +229,9 @@ std::map<std::string, std::string> g_import_fails;
 // 4AJ：`uinew`/`uinest` 的 UI 值脚本（`uifind`/`uimerge` 的 parent 链用）。
 std::map<std::string, lfw::Value> g_ui_vals;
 
+// 4AK：`imgset` 的图片脚本（`ui_image_load` 按 img_key 查）。
+std::map<std::string, lfw::Value> g_images;
+
 // 4AD：URL 流程脚本。
 std::map<std::string, std::string> g_stored;       // `zip_url|md5` → blob token
 std::map<std::string, std::string> g_blob_to_zip;  // blob/data token → zid
@@ -269,6 +273,24 @@ class FakeHost : public lfw::ILfwHost {
     return &_renderer;
   }
   void load_img(const std::u16string& path) override { push("img:load|" + to_ascii(path)); }
+
+  // 4AK：UI 图片缝：`ui_load_img` 的 load/pin + `Ditto.MD5`（固定加前缀，两侧一致）。
+  bool ui_image_load(const std::u16string& img_key, const lfw::Value& path, const lfw::Value& ops,
+                     lfw::Value& out, std::u16string& error) override {
+    push("img:load|" + to_ascii(img_key) + "|" + to_ascii(render_value(path)) + "|" +
+         to_ascii(render_value(ops)));
+    const auto it = g_images.find(to_ascii(img_key));
+    if (it == g_images.end()) {
+      error = u"unscripted image";
+      return false;
+    }
+    out = it->second;
+    return true;
+  }
+  void ui_image_pin(const std::u16string& img_key) override {
+    push("img:pin|" + to_ascii(img_key));
+  }
+  std::u16string md5(const std::u16string& text) override { return u"h:" + text; }
 
   bool dev() const override { return false; }
   void warn(const std::vector<lfw::Value>& args) override { push(join("warn", args)); }
@@ -947,6 +969,19 @@ int main(int argc, char** argv) {
     } else if (op == "impsoft") {
       const std::string key = t[i++];
       g_import_fails[key] = "soft";
+    } else if (op == "uimg") {
+      const std::string vid = t[i++];
+      const lfw::Value img = parse_value(t, i);
+      lfw::Value out;
+      std::u16string err;
+      if (lfw::ui::ui_load_img(lfw, img, out, err)) {
+        push("uimg|" + vid + "|ok|" + to_ascii(render_value(out)));
+      } else {
+        push("uimg|" + vid + "|err|" + trace::esc(err));
+      }
+    } else if (op == "imgset") {
+      const std::string key = t[i++];
+      g_images[key] = parse_value(t, i);
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
       return 2;

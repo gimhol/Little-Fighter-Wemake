@@ -115,6 +115,15 @@ class ILfwHost {
   // `await lfw.images.load_img(path, path)`（D DatMgr 的 `images.load_img`）
   virtual void load_img(const std::u16string& path) = 0;
 
+  // `await lfw.images.load_img(img_key, path, ops)`（UI 图片：`ops` 是 `ImageOperation[]`）；
+  // 失败 ⇒ `false` + `error`（TS 的 Promise 拒绝）。
+  virtual bool ui_image_load(const std::u16string& img_key, const Value& path, const Value& ops,
+                             Value& out, std::u16string& error) = 0;
+  // `lfw.images.pin(img_key)`
+  virtual void ui_image_pin(const std::u16string& img_key) = 0;
+  // `Ditto.MD5(text)`（`ui_load_img` 拼 key 用；MersenneTwister 不碰）
+  virtual std::u16string md5(const std::u16string& text) = 0;
+
   // `Ditto.DEV` / `Ditto.warn/error/Log/debug`
   virtual bool dev() const = 0;
   // `Date.now()`（`new MersenneTwister(Date.now())`）

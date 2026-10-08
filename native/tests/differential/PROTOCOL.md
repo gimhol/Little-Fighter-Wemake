@@ -4675,3 +4675,15 @@ harness op：
   （`id, component, values, template, template_values`）/ dev 两轮拼接 / values 浅并（余下赢）。
 - TS 侧假 importer 配套：`import_as_text` 静默抛 ImportError 形状（C++ 侧 `import_as_text`
   同样不落日志）；`.ui.xml` 候选只测失败路。
+
+### 6.9.142 `ui_load_img`（lfw 台面 op `uimg` / `imgset`；`cases/lfw/uimg.txt` 15 行；变异 9/9 全杀）
+
+- op：`imgset <img_key> <值>`（脚本 `images.load_img` 的返回；未脚本 ⇒ 报 `unscripted image`）/
+  `uimg <vid> <img 值>`（跑 `ui_load_img`，成功 `uimg|<vid>|ok|<返回>`、失败
+  `uimg|<vid>|err|<esc(错误)>`）。
+- 宿主的 `img:load|<key>|<path>|<ops>` 与 `img:pin|<key>` 日志就是被断言的对象：**key 的拼法**
+  （flip 缺省补 `0`、其余 nullish 空串）由脚本化的 key 反查；`ops` 渲染直接钉 crop/flip 的
+  条件与键序。
+- 用例钉住：全缺省（key `?x=h:,,,,,,0,0`、ops `[]`）/ 全给（crop 在 flip 前、`{type:'crop',
+  ...img}` 键序）/ 只 `flip_y`（op 里 `x:0` 默认）/ `dw=0` 被验证器拦（`positive integer`）/
+  `flip_x:0` 在场不触发 flip / 空对象与 `null` 的校验错 / 未脚本化图的失败传播。

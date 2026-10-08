@@ -8924,3 +8924,24 @@ template_values}` —— component 先模板后余下、dev 时再各接一轮 `
 **测试**：lfw 台面新 op 一族 + 用例 `cases/lfw/cook.txt` **35 行**；变异 `lfw_cook.mjs`
 **14/14 全杀**；全量差分 **213/213**、lint 全清。
 
+## 98. 切片 4AK：`ui_load_img`（+ UI 值小工具与宿主图片缝）
+
+`native/lfw/ui/value_spread.{h,cpp}`（把 4AJ 里 cook 文件的 `spread_into` / `field_of` /
+`js_key_count` 提出来共用）+ `ui/ui_load_img.{h,cpp}`。`ILfwHost` 加三缝：
+`ui_image_load(key, path, ops)`（= `lfw.images.load_img`，失败 = TS 的拒绝）、`ui_image_pin(key)`
+（= `images.pin`）、`md5(text)`（= `Ditto.MD5`）。测试挂 lfw 台面（新 op `uimg` / `imgset`；
+TS 侧假 `ImageMgr` 扩三参 `load_img` / `pin`，`MD5` 改成 `"h:"+text`、C++ 侧同款）。
+
+照抄怪癖（编号接 119 → 120）：120. `img_key` 的 MD5 输入是
+`[x, y, w, h, dw, dh, flip_x, flip_y].join()` —— **flip 两项用的是默认值**（缺省 `0`），
+x/y/w/h/dw/dh 保持原样（nullish → 空串）；key 是 `` `${path}?x=${md5}` ``（path 缺省 → 字面
+`undefined`）。121. crop op 条件是 `dw || dh`（验证器要求两者为正整数 ⇒ 在场即真值，`dw=0`
+被验证器先拦）；flip op 条件是 `flip_x || flip_y`（`oneof [0,1]` ⇒ 在场的 `0` 不触发），op 里
+`x/y` 用默认后的值（缺省 0 会出现在另一轴的位上）。122. crop op 是 `{type:'crop', ...img}`
+—— `type` 在最前、img 的键按原序跟在后面（渲染可见）。
+
+偏差记录：TS 校验错是 `Error(errors.join('\n'))` ⇒ 端口 `error` 同款拼接。
+
+**测试**：lfw 台面新 op + 用例 `cases/lfw/uimg.txt` **15 行**；变异 `lfw_uimg.mjs` **9/9 全杀**；
+全量差分 **214/214**、lint 全清。
+

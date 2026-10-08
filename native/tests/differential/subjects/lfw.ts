@@ -9,8 +9,9 @@ import { LFW } from "../../../../src/LFW/LFW";
 import { get_val_getter_from_stage } from "../../../../src/LFW/loader/get_val_getter_from_stage";
 import { PlayerInfo } from "../../../../src/LFW/PlayerInfo";
 import { find_ui_template, merge_ui_template } from "../../../../src/LFW/ui/cook_ui_info";
+import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
-import { keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
+import { esc, keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
 
 type Rec = Record<string, any>;
 
@@ -35,6 +36,8 @@ const import_fails = new Map<string, string>();
 const import_soft_fails = new Set<string>();
 // 4AJ：`uinew`/`uinest` 的 UI 值脚本。
 const ui_vals = new Map<string, Rec>();
+// 4AK：`imgset` 的图片脚本（FakeImageMgr.load_img 按 img_key 查）。
+const image_vals = new Map<string, unknown>();
 
 // 4AD：URL 流程脚本。
 const zip_stored = new Map<string, string>(); // `zip_url|md5` → blob token
@@ -101,8 +104,18 @@ function install_ditto(): void {
     constructor(_lfw: unknown) {
       push("img_init");
     }
-    load_img(path: string): void {
-      push("img:load|" + path);
+    load_img(key: string, path?: unknown, ops?: unknown): unknown {
+      // 两参以下的调用是 DatMgr 那条（只打一行）；三参是 `ui_load_img`（带 ops）。
+      if (ops === undefined) {
+        push("img:load|" + key);
+        return "";
+      }
+      push(`img:load|${key}|${renderValue(path)}|${renderValue(ops)}`);
+      if (!image_vals.has(key)) throw "unscripted image";
+      return image_vals.get(key);
+    }
+    pin(key: string): void {
+      push("img:pin|" + key);
     }
     measure_text(): string {
       push("measure");
@@ -257,7 +270,7 @@ function install_ditto(): void {
       },
       del(_id: number) {},
     } as never,
-    MD5: () => "",
+    MD5: (s: unknown) => "h:" + String(s),
     JSON5: { parse: (s: string) => JSON.parse(s), stringify: (v: unknown) => JSON.stringify(v) },
     Zip: zip as never,
     Sounds: FakeSounds as never,
@@ -635,6 +648,18 @@ async function run_ops(): Promise<void> {
       import_fails.set(key, i[0] < t.length ? next() : "boom");
     } else if (op === "impsoft") {
       import_soft_fails.add(next());
+    } else if (op === "uimg") {
+      const vid = next();
+      const img = parseValue(t, i);
+      try {
+        const info = await ui_load_img(lfw, img as never);
+        push(`uimg|${vid}|ok|${renderValue(safe_render(info))}`);
+      } catch (e) {
+        push(`uimg|${vid}|err|${esc(err_msg(e))}`);
+      }
+    } else if (op === "imgset") {
+      const key = next();
+      image_vals.set(key, parseValue(t, i));
     } else if (op === "uinew") {
       ui_vals.set(next(), parseValue(t, i) as Rec);
     } else if (op === "uinest") {

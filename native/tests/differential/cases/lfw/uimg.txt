@@ -1,0 +1,15 @@
+# ui_load_img（4AK）：img_key 拼法（x,y,w,h,dw,dh,flip_x,flip_y 的 join → MD5）/ crop・flip 条件 / 默认 0 / 校验报错 / 未脚本化
+imgset a.png?x=h:,,,,,,0,0 o 2 w n 10 h n 20
+uimg v1 o 1 path s "a.png"
+imgset f.png?x=h:,,,,5,,0,0 s "imgf"
+uimg v9 o 2 path s "f.png" dw n 5
+imgset b.png?x=h:1,2,3,4,5,6,1,0 s "img2"
+uimg v2 o 9 path s "b.png" x n 1 y n 2 w n 3 h n 4 dw n 5 dh n 6 flip_x n 1 flip_y n 0
+imgset c.png?x=h:,,,,,,0,1 s "img3"
+uimg v3 o 2 path s "c.png" flip_y n 1
+uimg v4 o 2 path s "d.png" dw n 0
+imgset e.png?x=h:,,,,,,0,0 s "img5"
+uimg v5 o 2 path s "e.png" flip_x n 0
+uimg v6 o 0
+uimg v7 z
+uimg v8 o 1 path s "nf.png"
