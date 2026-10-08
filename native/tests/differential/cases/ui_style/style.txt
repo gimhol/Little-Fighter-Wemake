@@ -1,0 +1,49 @@
+# ui_style：Style（版本号 / 宽松 setter / 严格 assign / 包装缓存 / data 别名与浅拷贝）
+obj o1
+oset o1 padding_t num:5
+oset o1 font str:x
+oset o1 smoothing bool:1
+sf s1 o1
+sget s1 padding_t
+sget s1 font
+sget s1 smoothing
+sget s1 scale
+sver s1
+sset s1 padding_t num:6
+sver s1
+sset s1 padding_t str:6
+sver s1
+sget s1 padding_t
+sset s1 padding_t num:5
+sver s1
+sget s1 padding_t
+stouch s1
+sver s1
+obj o2
+oset o2 padding_t num:5
+sassign s1 o2
+sver s1
+oset o2 padding_t num:7
+oset o2 shadow_blur num:2
+sassign s1 o2
+sver s1
+sget s1 padding_t
+sget s1 shadow_blur
+sf s1b o1
+sver s1
+snew d1
+sdata d1 o1
+sget d1 padding_t
+sver d1
+oset o1 padding_t num:9
+sget d1 padding_t
+snew d2
+sdatastyle d2 d1
+sget d2 padding_t
+sver d2
+oset o1 padding_t num:11
+sget d1 padding_t
+sget d2 padding_t
+sset d2 padding_t num:1
+sget d1 padding_t
+sget d2 padding_t

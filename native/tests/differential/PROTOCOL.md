@@ -4614,3 +4614,17 @@ harness op：
   `CrossInfo.set` 的 number 过滤）；两侧都用「完整数字对象」作对比对象算 `cmp`。
 - 颜色用例里有几条专门钉缓存/大小写：`col str:"#AbCdEf"` 后 `colget str:"#AbCdEf"`
   必须 miss（TS 缓存的是小写键），`col str:RGB(1,2,3)`/`Argb(...)` 钉大小写折叠。
+
+### 6.9.137 `ui_style`（Style / isClass；`cases/ui_style/*.txt` 2 份 42 行；变异 10/10 全杀）
+
+- op：`obj <oid>` / `oset <oid> <field> <kind>` / `sf <sid> <oid>` / `sget` / `sset` / `sver` /
+  `stouch` / `sassign <sid> <oid>` / `sdata <sid> <oid>`（直接赋对象，别名）/
+  `sdatastyle <sid> <sid2>`（浅拷贝）/ `snew <sid>` / `iscls <a|b|c|none> <...>`。
+- `kind`：`num:` / `str:` / `bool:` / `u`（undefined）/ `z`（null）。
+- 值渲染用 `sv()`：`undefined` ⇒ `u`、`null` ⇒ `z`、其余走 `render_value`（两侧同名）。
+- 字段名必须用 IStyle 真字段（`padding_t`/`font`/`smoothing`/`scale`/`shadow_blur`…）——
+  TS 侧 `sget/sset` 直接打在 `Style` 实例的属性上，不存在的键两边都读 `undefined`。
+- 版本号用例钉三档语义：`sset num:6` 后 `sset str:6` **不涨**（宽松 `==`）；`sassign`
+  同值不涨（严格）；`stouch`/`sdata`/`sdatastyle` 无条件涨。
+- `iscls` 的链在台面里硬编码：TS 用真类 `ClassA ← ClassB ← ClassC`，C++ 用
+  `ClazzTag{parent}` 三步链，`none` 两侧都是 `null`/`nullptr`。

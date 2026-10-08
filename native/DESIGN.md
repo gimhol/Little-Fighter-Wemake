@@ -8820,3 +8820,22 @@ alpha 用 `parseFloat`、其余 `parseInt`（无 radix ⇒ 认 `0x`）。97. `he
 **测试**：新 subject `ui_base` + 3 份用例 **76 行**（color 43 / parse 28 / cross 5）；
 变异 `ui_base.mjs` **15/15 全杀**；全量差分 **207/207**、lint 全清。
 
+## 93. 切片 4AF：`Style` + `isClass`
+
+`native/lfw/ui/style.{h,cpp}`（TS `ui/Style.ts`，IStyle 用 `Value` 对象表示，字段名同 TS；
+29 对访问器）+ `native/lfw/utils/is_class.h`（`ui/utils/isClass.ts` 的端口模型）。
+
+照抄怪癖（编号接 100 → 101）：101. 版本号语义三档：setter 用 JS **宽松** `==` 早退
+（`6 == '6'` 不涨版本），`assign` 用**严格** `===`，`touch` 与两种 `data` 赋值无条件 +1。
+102. `Style.from(v)` 的包装缓存按**对象身份**（端口用对象指针）；同一个对象恒回同一个
+`Style`，每次 `from` 都会再 `assign` 一遍（同值不涨版本）。103. `data = other`：`other` 是
+`Style` ⇒ **浅拷贝新对象**（之后两边独立）；否则**直接别名**（改源对象两边都变）。
+104. `isClass` 在端口用显式类标签链（构建关了 RTTI `/GR-`）——每个类带 `ClazzTag`，
+`parent` 指向基类；链条尽头 `nullptr` = JS 的 `Function.prototype`。
+
+偏差记录：`from(non-object)` TS 会在 `WeakMap.set` 抛（`get` 不抛、`set` 抛）——端口改为
+返回一份**不缓存**的临时包装；`_data` 被赋成非对象后 TS 的 setter 会 TypeError，端口空转。
+
+**测试**：新 subject `ui_style` + 2 份用例 **42 行**（style 32 / class 10）；变异
+`ui_style.mjs` **10/10 全杀**；全量差分 **209/209**、lint 全清。
+

@@ -1,0 +1,11 @@
+# ui_style：isClass（类标签链 A ← B ← C）
+iscls c a
+iscls c b
+iscls c c
+iscls b a
+iscls b c
+iscls a a
+iscls a c
+iscls none a
+iscls a none
+iscls none none
