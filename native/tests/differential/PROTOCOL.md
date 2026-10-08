@@ -4808,3 +4808,14 @@ harness op：
   key down/up 两侧次序与 `stop_key` 短路、指针转发、`update` 与 `del_at` 延迟删除、`enabled` 跳过 update、
   add/del 回调、find_node 迷你语言（parent/parent:N/self/id:/name:/bro:*）；`recycle_keys` 的
   `keys already registered` warn 钉住 `array_del` 怪癖。
+
+### 6.9.151 UINode renderer 缝（`cases/lfw/uicomp.txt` 149 行；变异 23/23 全杀）
+
+- 台面 `UINodeRenderer` 假实现（宿主 `create_ui_node_renderer` 每节点给一个）全方法打
+  `rend|del_self|on_start|on_stop|on_resume|on_pause|on_show|on_hide|on_foucs|on_blur|<节点>`；
+  TS 侧靠 `Ditto.setup({ UINodeRenderer })` 注入，C++ 侧是 `FakeHost::create_ui_node_renderer`。
+- 用例新增：`nset t1 focused 1/0`（驱 `rend|on_foucs/on_blur` 与组件的 `foucs/blur`）、非根节点 `t2` 的
+  pause/resume（钉 `del_self` 只给根节点）；其余用例行数同步增长（`uilayer` 199、`uinode` 165、
+  `uinode_life` 111）——两边同源，不需改用例。
+- ⚠ 台面坑：`items` 里建的子节点**不在** `g_nodes`（只有 `nmk`/`nml` 登记的才能被 `nlife`/`cadd` 等引用），
+  直接 `nlife tk …` 会 `map::at` 失败 ‐– 要测子节点就用 `nmk <新 id> <父 id>` 另建一个。

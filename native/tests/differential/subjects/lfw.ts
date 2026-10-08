@@ -508,7 +508,19 @@ function install_ditto(): void {
     } as never,
     WorldRender: FakeWorldRender as never,
     UINodeRenderer: class {
-      del_self(): void {}
+      constructor(private readonly uinode: UINode) {}
+      private ref(): string {
+        return nref(this.uinode);
+      }
+      del_self(): void { push(`rend|del_self|${this.ref()}`); }
+      on_start(): void { push(`rend|on_start|${this.ref()}`); }
+      on_stop(): void { push(`rend|on_stop|${this.ref()}`); }
+      on_resume(): void { push(`rend|on_resume|${this.ref()}`); }
+      on_pause(): void { push(`rend|on_pause|${this.ref()}`); }
+      on_show(): void { push(`rend|on_show|${this.ref()}`); }
+      on_hide(): void { push(`rend|on_hide|${this.ref()}`); }
+      on_foucs(): void { push(`rend|on_foucs|${this.ref()}`); }
+      on_blur(): void { push(`rend|on_blur|${this.ref()}`); }
     } as never,
     ImageMgr: FakeImageMgr as never,
     UIInputHandle: FakeUIInputHandle as never,

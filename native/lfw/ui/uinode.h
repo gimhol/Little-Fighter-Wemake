@@ -10,6 +10,7 @@
 #include "lfw/defines/i_vector3.h"
 #include "lfw/ui/style.h"
 #include "lfw/ui/ui_event.h"
+#include "lfw/ui/ui_node_renderer.h"
 #include "lfw/utils/is_class.h"
 #include "lfw/utils/times.h"
 
@@ -45,8 +46,7 @@ struct UINodeCallbacks {
 enum class UIFind { No, Yes, Abort, End };
 
 // TS `ui/UINode.ts`。**第一二段**（4AN：几何/状态/树/焦点/指针；4AO：文本/图像/i18n 自动尺寸）。
-//
-// 本刀不建形（后续刀补）：`renderer` 缝。
+// 渲染面走宿主缝 `ILfwHost::create_ui_node_renderer`（TS 是 `new Ditto.UINodeRenderer(node)`）。
 class UINode {
  public:
   static constexpr const char* TAG = "UINode";
@@ -62,6 +62,9 @@ class UINode {
   const Value& raw() const { return _raw; }
 
   UINodeCallbacks callbacks;
+
+  // TS `renderer: IUINodeRenderer`（ctor 里由 `new Ditto.UINodeRenderer(this)` 赋值）。
+  IUINodeRenderer* renderer = nullptr;
 
   // `readonly pos/scale/size/center`（TS 的 `new D.Vector3()` 默认 0；`scale` 默认 (1,1,1)）。
   Vector3 pos;
@@ -244,7 +247,7 @@ class UINode {
   void invoke_all_on_hide();
   void invoke_all_visible();
 
-  // ---- 生命周期 / 输入 / 动作（4AP；components/renderer 面空转）----
+  // ---- 生命周期 / 输入 / 动作（4AP；4AS 组件 / 4AT renderer 转发）----
   void on_start();
   void on_stop();
   void on_resume();
@@ -308,6 +311,7 @@ class UINode {
   std::vector<std::unique_ptr<UIComponent>> _owned_components;
   bool _components_updating = false;
   std::vector<UIComponent*> _del_components;
+  std::unique_ptr<IUINodeRenderer> _owned_renderer;
   Vector3 _prev_size;
   Vector3 _prev_center;
   Vector3 _prev_pos;

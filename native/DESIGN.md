@@ -9194,3 +9194,22 @@ IS 无 RTTI 的 `isUIComponentClass`/`isUINodeClass` 替代）、`ui/instance_re
 **测试**：用例 `cases/lfw/uicomp.txt` **119 行**；变异 `lfw_uicomp.mjs` **18/18 全杀**
 （`lfw_uinode_life.mjs` 锚点随本刀修字后 **40/40** 复跑）；全量差分 **223/223**。
 
+## 107. 切片 4AT：UINode renderer 缝
+
+新 `ui/ui_node_renderer.h`（`IUINodeRenderer`：`del_self` + 八个 `on_*` 虚函数，默认空实现）；
+`ILfwHost` 新增缝 `create_ui_node_renderer(UINode&)`（默认 nullptr；TS 是每节点 `new Ditto.UINodeRenderer(node)`）；
+`UINode` 新增公有 `renderer` 成员（节点自持 `_owned_renderer`，CTOR 末尾向宿主要），九处转发：`on_start`/
+`on_stop`/`on_resume` 在**最后**、`on_show`/`on_hide` 在 callbacks+auto_focus 之后、`on_foucs`/`on_blur` 在组件循环后、
+`on_pause` 的 `del_self` 在**根块之后 / actions 之前**且仅 `root()==this`，`on_pause` 转发在 children 之后。
+台面：`UINodeRenderer` 假实现全方法打 `rend|<evt>|<节点>`（含 `del_self`）；新增焦点切换驱动（`nset focused 1/0`）
+与非根节点 `t2` 的 pause/resume（钉 `del_self` 根判定）。
+
+照抄怪癖（编号接 157 → 158）：158. `on_pause` 的 `del_self` 只给**根节点**且排在 `invoke_all_on_hide` 之后、
+actions 之前；子节点 pause 不碰 renderer。`on_show` 的 renderer 转发在 `auto_focus` **之后**（先定焦点再 show）。
+
+偏差记录：渲染未移植 ⇒ 宿主缝返 nullptr 时全部转发跳过（TS 永远有实例）；
+`render/add/del/parent/x/y/visible` 等渲染面方法未建形。
+
+**测试**：用例 `cases/lfw/uicomp.txt` **149 行**（其余 lfw 用例行数同步增长：`uilayer` 199、`uinode` 165、
+`uinode_life` 111…）；变异 `lfw_uicomp.mjs` **23/23 全杀**；全量差分 **223/223**。
+

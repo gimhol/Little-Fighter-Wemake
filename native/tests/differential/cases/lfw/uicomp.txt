@@ -24,9 +24,14 @@ npu t1
 npc t1
 npe t1
 npl t1
+nset t1 focused 1
+nset t1 focused 0
 nlife t1 start
 nlife t1 pause
 nlife t1 resume
+nmk t2 t1 o 5 id s "t2" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nlife t2 pause
+nlife t2 resume
 cset t1 tc 0
 cupd t1 16
 cset t1 tc 1

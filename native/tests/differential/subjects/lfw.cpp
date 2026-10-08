@@ -540,9 +540,30 @@ std::map<std::string, DlScript> g_dls;      // zip_url → 下载脚本
 std::map<std::string, lfw::Value> g_caches;  // Cache.get 键 → 值
 std::map<std::string, lfw::Value> g_cache_late;  // 首次 get 报 miss、之后才给值的条目
 
+class FakeUINodeRenderer : public lfw::ui::IUINodeRenderer {
+ public:
+  explicit FakeUINodeRenderer(lfw::ui::UINode& node) : node_(&node) {}
+  void del_self() override { push("rend|del_self|" + node_ref(node_)); }
+  void on_start() override { push("rend|on_start|" + node_ref(node_)); }
+  void on_stop() override { push("rend|on_stop|" + node_ref(node_)); }
+  void on_resume() override { push("rend|on_resume|" + node_ref(node_)); }
+  void on_pause() override { push("rend|on_pause|" + node_ref(node_)); }
+  void on_show() override { push("rend|on_show|" + node_ref(node_)); }
+  void on_hide() override { push("rend|on_hide|" + node_ref(node_)); }
+  void on_foucs() override { push("rend|on_foucs|" + node_ref(node_)); }
+  void on_blur() override { push("rend|on_blur|" + node_ref(node_)); }
+
+ private:
+  lfw::ui::UINode* node_ = nullptr;
+};
+
 class FakeHost : public lfw::ILfwHost {
  public:
   explicit FakeHost(lfw::LFW** slot) : _slot(slot) {}
+
+  lfw::ui::IUINodeRenderer* create_ui_node_renderer(lfw::ui::UINode& node) override {
+    return new FakeUINodeRenderer(node);
+  }
 
   double now() override { return 12345.0; }
   void sounds_init(lfw::LFW&) override { push("snd_init"); }

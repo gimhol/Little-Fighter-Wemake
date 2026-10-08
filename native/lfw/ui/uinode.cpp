@@ -103,6 +103,8 @@ UINode::UINode(LFW& lfw, const Value& data, UINode* parent, UILayer* layer)
                                                              : Value();
   const Value* const style_v = field_of(data, u"style");
   if (style_v != nullptr && truthy(*style_v)) style.assign(*style_v);
+  _owned_renderer.reset(lfw.host().create_ui_node_renderer(*this));
+  renderer = _owned_renderer.get();
 }
 
 void UINode::set3(Vector3& v, const Value& arr) {
@@ -553,20 +555,24 @@ void UINode::on_show() {
   if (auto_focus != nullptr && truthy(*auto_focus) && !disabled() && focused_node() == nullptr) {
     set_focused_node(this);
   }
+  if (renderer != nullptr) renderer->on_show();
 }
 
 void UINode::on_hide() {
   if (focused_node() == this) set_focused_node(nullptr);
   for (UIComponent* const c : _components) c->on_hide();
   if (callbacks.on_hide) callbacks.on_hide(*this);
+  if (renderer != nullptr) renderer->on_hide();
 }
 
 void UINode::on_foucs() {
   for (UIComponent* const c : _components) c->on_foucs();
+  if (renderer != nullptr) renderer->on_foucs();
 }
 
 void UINode::on_blur() {
   for (UIComponent* const c : _components) c->on_blur();
+  if (renderer != nullptr) renderer->on_blur();
 }
 
 void UINode::invoke_all_on_show() {
@@ -670,6 +676,7 @@ void UINode::on_start() {
   const Value* const actions = field_of(_data, u"actions");
   const Value* const start = actions != nullptr ? field_of(*actions, u"start") : nullptr;
   if (start != nullptr && truthy(*start)) actor().act(*this, *start);
+  if (renderer != nullptr) renderer->on_start();
 }
 
 void UINode::on_stop() {
@@ -681,6 +688,7 @@ void UINode::on_stop() {
   const Value* const actions = field_of(_data, u"actions");
   const Value* const stop = actions != nullptr ? field_of(*actions, u"stop") : nullptr;
   if (stop != nullptr && truthy(*stop)) actor().act(*this, *stop);
+  if (renderer != nullptr) renderer->on_stop();
 }
 
 void UINode::on_resume() {
@@ -697,6 +705,7 @@ void UINode::on_resume() {
   const Value* const actions = field_of(_data, u"actions");
   const Value* const resume = actions != nullptr ? field_of(*actions, u"resume") : nullptr;
   if (resume != nullptr && truthy(*resume)) actor().act(*this, *resume);
+  if (renderer != nullptr) renderer->on_resume();
 }
 
 void UINode::on_pause() {
@@ -705,6 +714,7 @@ void UINode::on_pause() {
     set_focused_node(nullptr);
     invoke_all_on_hide();
   }
+  if (&root() == this && renderer != nullptr) renderer->del_self();
   const Value* const actions = field_of(_data, u"actions");
   const Value* const pause = actions != nullptr ? field_of(*actions, u"pause") : nullptr;
   if (pause != nullptr && truthy(*pause)) actor().act(*this, *pause);
@@ -715,6 +725,7 @@ void UINode::on_pause() {
     c->recycle_keys();
   }
   for (UINode* const c : _children) c->on_pause();
+  if (renderer != nullptr) renderer->on_pause();
 }
 
 void UINode::on_click(LFWPointerEvent& e) {

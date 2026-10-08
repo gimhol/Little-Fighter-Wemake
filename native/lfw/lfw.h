@@ -38,6 +38,7 @@ namespace ui {
 class UINode;
 class UIComponent;
 class UILayers;
+class IUINodeRenderer;
 }  // namespace ui
 
 namespace stage {
@@ -111,6 +112,11 @@ class ILfwHost {
   virtual void regist_components() = 0;
   // `new Ditto.WorldRender(world)`（`World` 的渲染宿主；TS 里由 `World` 自己 new）
   virtual IWorldRenderer* create_world_renderer(LFW& lfw) = 0;
+  // `new Ditto.UINodeRenderer(node)`（每个 UINode 一个；渲染未移植 ⇒ 可给假实现或 nullptr）。
+  virtual ui::IUINodeRenderer* create_ui_node_renderer(ui::UINode& node) {
+    (void)node;
+    return nullptr;
+  }
   // `await lfw.images.load_img(path, path)`（D DatMgr 的 `images.load_img`）
   virtual void load_img(const std::u16string& path) = 0;
 
