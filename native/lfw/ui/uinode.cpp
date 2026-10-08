@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "lfw/core/js_string.h"
+#include "lfw/core/json.h"
 #include "lfw/lfw.h"
 #include "lfw/ui/value_spread.h"
 #include "lfw/utils/math/base.h"
@@ -21,6 +22,17 @@ bool nullish(const Value& v) {
 double num_of(const Value& v) {
   const double* const d = std::get_if<double>(&v);
   return d != nullptr ? *d : std::nan("");
+}
+
+// JS 数值真值性：`0` / `NaN` 为假。
+double num_or_zero(const Value& v) {
+  const double n = to_number(v);
+  return truthy(Value(n)) ? n : 0.0;
+}
+
+double num_or_one(const Value& v) {
+  const double n = to_number(v);
+  return truthy(Value(n)) ? n : 1.0;
 }
 
 // `v.id == id` 的 JS 宽松比较（字符串/数字/布尔才可能相等）。
@@ -55,7 +67,17 @@ UINode::UINode(LFW& lfw, const Value& data, UINode* parent, UILayer* layer)
   if (const Value* const p = field_of(data, u"pos")) set3(pos, *p);
   if (const Value* const s = field_of(data, u"size")) set3(size, *s);
   if (const Value* const sc = field_of(data, u"scale")) set3(scale, *sc);
-  // 4AN：`text` / `image` / `renderer` 不建形（后续刀）。
+  {
+    const Value* const txt = field_of(data, u"txt_info");
+    const Value* const i18n = field_of(data, u"i18n");
+    Value tv = txt != nullptr && !nullish(*txt) ? *txt : Value(NullTag{});
+    if (truthy(tv) && i18n != nullptr && truthy(*i18n)) tv = make_i18n_text(tv, *i18n);
+    set_text_object(tv);
+  }
+  {
+    const Value* const img = field_of(data, u"img_info");
+    _image = img != nullptr && !nullish(*img) ? *img : Value(NullTag{});
+  }
   if (const Value* const col = field_of(data, u"color");
       col != nullptr && std::holds_alternative<std::u16string>(*col)) {
     color = std::get<std::u16string>(*col);
@@ -75,6 +97,92 @@ void UINode::set3(Vector3& v, const Value& arr) {
   if (a == nullptr) return;
   v.set(a->size() > 0 ? num_of(a->at(0)) : std::nan(""), a->size() > 1 ? num_of(a->at(1)) : std::nan(""),
         a->size() > 2 ? num_of(a->at(2)) : std::nan(""));
+}
+
+Value UINode::make_i18n_text(const Value& baked, const Value& key) {
+  const Value resolved = _lfw->string(key);
+  const Value* const baked_text = field_of(baked, u"text");
+  if (baked_text != nullptr && strict_equals(resolved, *baked_text)) return baked;
+  const Value* const baked_style = field_of(baked, u"style");
+  const Value* const data_style = field_of(_data, u"style");
+  const Value style = baked_style != nullptr && !nullish(*baked_style)
+                          ? *baked_style
+                          : (data_style != nullptr && !nullish(*data_style) ? *data_style : Value());
+  return _lfw->host().measure_text(resolved, style);
+}
+
+UINode& UINode::set_text_object(const Value& v) {
+  _text_style_versioned = false;
+  _text = v;
+  auto_size_by_text(v);
+  return *this;
+}
+
+UINode& UINode::set_text(const std::u16string& text) { return set_text(text, Value()); }
+
+UINode& UINode::set_text(const std::u16string& text, const Value& style) {
+  // `new TextInfo({ text, style: style ?? this.style })`；ImageInfo 的默认字段一并落键。
+  const bool use_node_style = nullish(style);
+  Value obj(std::make_shared<Object>());
+  Object* const o = as_object(obj);
+  o->set(u"text", Value(text));
+  o->set(u"style", use_node_style ? this->style.data() : style);
+  o->set(u"w", Value(0.0));
+  o->set(u"h", Value(0.0));
+  o->set(u"scale", Value(0.0));
+  _text_style_versioned = use_node_style;
+  _text = obj;
+  auto_size_by_text(_text);
+  return *this;
+}
+
+bool UINode::same_text_size_key(const TextSizeKey& a, const TextSizeKey& b) const {
+  if (a.versioned != b.versioned || a.text != b.text) return false;
+  return a.versioned ? a.version == b.version : a.json == b.json;
+}
+
+UINode::TextSizeKey UINode::text_size_key(const Value& v) const {
+  TextSizeKey k;
+  k.set = true;
+  const Value* const text_v = field_of(v, u"text");
+  k.text = to_string(_lfw->string(text_v != nullptr ? *text_v : Value()));
+  const Value* const s = field_of(v, u"style");
+  if (_text_style_versioned) {
+    k.versioned = true;
+    k.version = style.version();
+  } else {
+    const Value sv = s != nullptr && !nullish(*s) ? *s : Value(std::make_shared<Object>());
+    const std::optional<std::u16string> js = json_stringify(sv);
+    k.json = js.has_value() ? *js : u"undefined";
+  }
+  return k;
+}
+
+void UINode::auto_size_by_text(const Value& v) {
+  const Value* const raw_size = field_of(_raw, u"size");
+  if (!truthy(v) || (raw_size != nullptr && truthy(*raw_size)) || _parent == nullptr) {
+    _auto_size_key = TextSizeKey();
+    return;
+  }
+  const TextSizeKey key = text_size_key(v);
+  if (_auto_size_key.set && same_text_size_key(_auto_size_key, key)) return;
+  _auto_size_key = key;
+  Value ti = v;
+  const Value* const vw = field_of(v, u"w");
+  const Value* const vh = field_of(v, u"h");
+  if (!(vw != nullptr && truthy(*vw) && vh != nullptr && truthy(*vh))) {
+    const Value* const text_v = field_of(v, u"text");
+    const Value* const style_v = field_of(v, u"style");
+    ti = _lfw->host().measure_text(_lfw->string(text_v != nullptr ? *text_v : Value()),
+                                   style_v != nullptr ? *style_v : Value());
+  }
+  const Value* const tw = field_of(ti, u"w");
+  const Value* const th = field_of(ti, u"h");
+  const Value* const ts = field_of(ti, u"scale");
+  const double w = tw != nullptr ? num_or_zero(*tw) : 0.0;
+  const double h = th != nullptr ? num_or_zero(*th) : 0.0;
+  const double s = ts != nullptr ? num_or_one(*ts) : 1.0;
+  resize(w / s, h / s);
 }
 
 void UINode::clear_caches() {

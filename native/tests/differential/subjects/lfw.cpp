@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "lfw/core/js_string.h"
+#include "lfw/core/json.h"
 #include "lfw/defines/defines_data.h"
 #include "lfw/entity/entity.h"
 #include "lfw/factory.h"
@@ -21,6 +22,7 @@
 #include "lfw/ui/ui_img_loader.h"
 #include "lfw/ui/ui_load_img.h"
 #include "lfw/ui/uinode.h"
+#include "lfw/ui/value_spread.h"
 #include "lfw/utils/container_help/field_or.h"
 
 #include "trace_util.h"
@@ -380,9 +382,18 @@ class FakeHost : public lfw::ILfwHost {
   void keyboard_dispose() override { push("kbd_dispose"); }
   void pointings_dispose() override { push("pt_dispose"); }
 
-  lfw::Value measure_text(const lfw::Value&, const lfw::Value&) override {
-    push("measure");
-    return lfw::Value(std::u16string());
+  lfw::Value measure_text(const lfw::Value& text, const lfw::Value& style) override {
+    push("measure|" + to_ascii(render_value(text)) + "|" + to_ascii(render_value(style)));
+    const bool null_text = std::holds_alternative<std::monostate>(text) ||
+                           std::holds_alternative<lfw::NullTag>(text);
+    const std::u16string t = null_text ? std::u16string() : lfw::to_string(text);
+    lfw::Value out(std::make_shared<lfw::Object>());
+    lfw::Object* const o = lfw::as_object(out);
+    o->set(u"text", lfw::Value(t));
+    o->set(u"w", lfw::Value(static_cast<double>(t.size() * 4)));
+    o->set(u"h", lfw::Value(10.0));
+    o->set(u"scale", lfw::Value(1.0));
+    return out;
   }
 
   void player_cache_get(const std::u16string&, lfw::PlayerInfoCacheEntry& out) override {
@@ -1200,6 +1211,19 @@ int main(int argc, char** argv) {
         else n.set_scale(x, y, z);
       } else if (what == "update") {
         n.update(to_double(t[i++]));
+      } else if (what == "text") {
+        n.set_text(key_of(t[i++]));
+      } else if (what == "text2") {
+        const std::u16string s = key_of(t[i++]);
+        n.set_text(s, parse_value(t, i));
+      } else if (what == "texti") {
+        n.set_text_object(parse_value(t, i));
+      } else if (what == "image") {
+        n.set_image(parse_value(t, i));
+      } else if (what == "style_assign") {
+        n.style.assign(parse_value(t, i));
+      } else if (what == "style_touch") {
+        n.style.touch();
       } else {
         std::fprintf(stderr, "unknown nset '%s'\n", what.c_str());
         return 2;
@@ -1279,6 +1303,38 @@ int main(int argc, char** argv) {
         const double x = to_double(t[i++]);
         const double y = to_double(t[i++]);
         push("nrd|" + nid + "|hit|" + (n.hit(x, y) ? "1" : "0"));
+      } else if (what == "text") {
+        const lfw::Value& tv = n.text();
+        const bool tv_null = std::holds_alternative<std::monostate>(tv) ||
+                             std::holds_alternative<lfw::NullTag>(tv);
+        if (tv_null) {
+          push("nrd|" + nid + "|text|null");
+        } else {
+          const bool ver = n.text_style_is_node_style();
+          const std::u16string sv =
+              ver ? (u"v" + lfw::number_to_string(n.style.version())) : u"-";
+          std::u16string sj = u"-";
+          std::string sj_out = "-";
+          if (!ver) {
+            const lfw::Value* const st = lfw::ui::field_of(tv, u"style");
+            const lfw::Value s2 = st != nullptr && !std::holds_alternative<std::monostate>(*st) &&
+                                          !std::holds_alternative<lfw::NullTag>(*st)
+                                      ? *st
+                                      : lfw::Value(std::make_shared<lfw::Object>());
+            const std::optional<std::u16string> js = lfw::json_stringify(s2);
+            sj = js.has_value() ? *js : u"undefined";
+            sj_out = trace::esc(sj);
+          }
+          push("nrd|" + nid + "|text|" + to_ascii(render_value(lfw::field_or(tv, u"text"))) +
+               "|" + to_ascii(render_value(lfw::field_or(tv, u"w"))) + "|" +
+               to_ascii(render_value(lfw::field_or(tv, u"h"))) + "|" +
+               to_ascii(render_value(lfw::field_or(tv, u"scale"))) + "|" + to_ascii(sv) +
+               "|" + sj_out);
+        }
+      } else if (what == "image") {
+        push("nrd|" + nid + "|image|" + to_ascii(render_value(n.image())));
+      } else if (what == "color") {
+        push("nrd|" + nid + "|color|" + to_ascii(render_value(lfw::Value(n.color))));
       } else {
         std::fprintf(stderr, "unknown nrd '%s'\n", what.c_str());
         return 2;

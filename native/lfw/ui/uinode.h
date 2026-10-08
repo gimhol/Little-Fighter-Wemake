@@ -38,12 +38,11 @@ struct UINodeCallbacks {
   // `on_component_add` / `on_component_del` 随 UIComponent 刀补。
 };
 
-// TS `ui/UINode.ts`。**第一段**（4AN）：几何 / 状态 / 树 / 焦点 / 指针状态。
+// TS `ui/UINode.ts`。**第一二段**（4AN：几何/状态/树/焦点/指针；4AO：文本/图像/i18n 自动尺寸）。
 //
-// 本刀不建形（后续刀补）：`text`/`image`/`set_text`/`auto_size_by_text`（要 TextInfo/ImageInfo）、
-// `renderer` 缝、`components` 行为（find/search/lookup_component、add/del_components、
-// on_start/stop/resume/pause）、`on_click`/`on_key_*`（要 actor/actions）、`pop_page`/`layer`
-// 行为（要 UILayer）、`static create`（要 factory）。
+// 本刀不建形（后续刀补）：`renderer` 缝、`components` 行为（find/search/lookup_component、
+// add/del_components、on_start/stop/resume/pause）、`on_click`/`on_key_*`（要 actor/actions）、
+// `pop_page`/`layer` 行为（要 UILayer）、`static create`（要 factory）。
 class UINode {
  public:
   static constexpr const char* TAG = "UINode";
@@ -64,6 +63,18 @@ class UINode {
 
   std::u16string color;  // `color: string = ''`
   Style style;
+
+  // ---- 文本 / 图像（`TextInfo` / `ImageInfo` 以普通对象表示；`undefined` = 无）----
+  // `set text`（TS setter）：赋值 + `auto_size_by_text`。
+  UINode& set_text_object(const Value& v);
+  const Value& text() const { return _text; }
+  // `set_text(text, style?)`：`style ?? this.style`（缺省/nullish ⇒ 节点 Style，走版本号分支）。
+  UINode& set_text(const std::u16string& text);
+  UINode& set_text(const std::u16string& text, const Value& style);
+  const Value& image() const { return _image; }
+  void set_image(Value v) { _image = std::move(v); }
+  // 观测量（台面用）：文本样式是否指向节点 Style（TS 的 `s instanceof Style` 分支）。
+  bool text_style_is_node_style() const { return _text_style_versioned; }
 
   // ---- 几何 ----
   double w() const { return size.x; }
@@ -211,10 +222,26 @@ class UINode {
  private:
   void clear_caches();
   void set3(Vector3& v, const Value& arr);
+  Value make_i18n_text(const Value& baked, const Value& key);
+  void auto_size_by_text(const Value& v);
+  // `_text_size_key`：文本 + （Style 包装 ? `v<版本>` : `JSON.stringify(style ?? {})`）。
+  struct TextSizeKey {
+    bool set = false;
+    bool versioned = false;
+    std::u16string text;
+    std::u16string json;
+    double version = 0;
+  };
+  TextSizeKey text_size_key(const Value& v) const;
+  bool same_text_size_key(const TextSizeKey& a, const TextSizeKey& b) const;
 
   LFW* _lfw = nullptr;
   Value _data;
   Value _raw;
+  Value _text;
+  Value _image;
+  bool _text_style_versioned = false;
+  TextSizeKey _auto_size_key;
   UINode* _root = nullptr;
   UILayer* _layer = nullptr;
   UINode* _focused_node = nullptr;

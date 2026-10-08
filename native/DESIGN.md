@@ -9032,3 +9032,34 @@ pos.xyz；递归子节点跳过（含父链）禁用者；`_update_times` 无条
 **测试**：用例 `cases/lfw/uinode.txt` **125 行**；变异 `lfw_uinode.mjs` **44/44 全杀**；
 全量差分 **218/218**、lint 全清。
 
+## 102. 切片 4AO：`UINode` 第二段（文本/图像/i18n 自动尺寸）
+
+`uinode.{h,cpp}` 第二段：`text`/`image` 建形（`txt_info` 走 `make_i18n_text`；`img_info ?? null`；
+`color`）、`set text`（`set_text_object`：赋值 + `auto_size_by_text`）、`set_text(text, style?)`、
+`auto_size_by_text` / `_text_size_key` / `TextSizeKey` 结构（版本分支 vs JSON 分支）。
+本刀不做：`renderer` 缝、`components`、`on_start/stop/resume/pause`、`on_click`/`on_key_*`、
+`pop_page`/`layer`（同 4AN 待后续刀）。
+
+台面：`nset <nid> text <s>`（节点 Style 分支）/ `text2 <s> <样式值>`（nullish 回落节点 Style；
+否则字面量）/ `texti <值>`（直挂 setter）/ `image <值>` / `style_assign <值>` / `style_touch`；
+`nrd <nid> text`（打 `text|w|h|scale|sv|sj`：`sv` = `v<版本>` 或 `-`，`sj` = JSON 字符串或 `-`）、
+`nrd image`（`z` = null）、`nrd color`。假宿主 `measure_text` 改为返回
+`{text, w: len*4, h: 10, scale: 1}` 并打 `measure|<文本>|<样式>`（TS 侧先把 Style 实例归一成 `.data`）。
+
+照抄怪癖（编号接 136 → 137）：137. `make_i18n_text` 只在 `string(key)` **严格等于**
+`baked.text` 时复用已烤好的 `txt_info`，否则整份重测（新对象**不带** `baked.style`——后续 `sj` 变 `{}`）；
+样式回落是 `baked.style ?? data.style ?? void 0`（nullish 链）。138. `auto_size_by_text` 的拦截顺序：
+`!v || raw.size 真值 || 无父` 都只**清签名**直接返回；签名 `_auto_size_key` 在**测量之前**落定
+（同键时连测都不测）；`(v.w && v.h)` 真值则直接用 v，否则测；尺寸 = `(w||0)/(scale||1)`
+（0/NaN 按假值 → 0 / 1）。139. `set_text` 的样式分支：`style ?? this.style` —— nullish 时拿**节点 Style 实例**
+（键走 `text\0v<version>`，`style_touch`/`assign` 版本 +1 就重测；数据不动时只有版本变），
+非 nullish 时存字面量（键走 `text\0JSON.stringify(style ?? {})`）。140. 构造函数里
+`txt_info && i18n` 后才走 i18n 解析；`txt_info ?? null`（undefined 也归一成 **null**）；
+`image = img_info ?? null`。
+
+偏差记录：`renderer = new D.UINodeRenderer(this)` 不建形（同 4AN）；`TextInfo`/`ImageInfo` 只保留
+本刀用到的字段（`text/style/w/h/scale`），其余类字段（`key/url/pic/…`）不建形。
+
+**测试**：用例 `cases/lfw/uinode_txt.txt` **61 行**；变异 `lfw_uinode_txt.mjs` **24/24 全杀**；
+全量差分 **219/219**、lint 全清。
+

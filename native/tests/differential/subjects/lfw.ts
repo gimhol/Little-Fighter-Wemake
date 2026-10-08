@@ -12,6 +12,7 @@ import { cook_ui_info, find_ui_template, merge_ui_template } from "../../../../s
 import { LFWKeyEvent } from "../../../../src/LFW/ui/LFWKeyEvent";
 import { LFWPointerEvent } from "../../../../src/LFW/ui/LFWPointerEvent";
 import { UIImgLoader } from "../../../../src/LFW/ui/UIImgLoader";
+import { Style } from "../../../../src/LFW/ui/Style";
 import { UINode } from "../../../../src/LFW/ui/UINode";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
@@ -176,9 +177,11 @@ function install_ditto(): void {
     pin(key: string): void {
       push("img:pin|" + key);
     }
-    measure_text(): string {
-      push("measure");
-      return "";
+    measure_text(text: unknown, style: unknown): unknown {
+      const norm = style instanceof Style ? (style as unknown as Rec).data : style;
+      push(`measure|${renderValue(text)}|${renderValue(norm)}`);
+      const t = String(text ?? "");
+      return { text: t, w: t.length * 4, h: 10, scale: 1 };
     }
   }
   class FakeKeyboard {
@@ -853,6 +856,19 @@ async function run_ops(): Promise<void> {
         n.set_scale(nnum(), nnum(), nnum());
       } else if (what === "update") {
         n.update(nnum());
+      } else if (what === "text") {
+        n.set_text(keyOf(next()));
+      } else if (what === "text2") {
+        const s = keyOf(next());
+        n.set_text(s, parseValue(t, i) as never);
+      } else if (what === "texti") {
+        n.text = parseValue(t, i) as never;
+      } else if (what === "image") {
+        n.image = parseValue(t, i) as never;
+      } else if (what === "style_assign") {
+        n.style.assign(parseValue(t, i) as never);
+      } else if (what === "style_touch") {
+        n.style.touch();
       } else fail(`unknown nset '${what}'`);
     } else if (op === "nrd") {
       const nid = next();
@@ -910,6 +926,20 @@ async function run_ops(): Promise<void> {
         const x = Number(next());
         const y = Number(next());
         push(`nrd|${nid}|hit|${n.hit(x, y) ? 1 : 0}`);
+      } else if (what === "text") {
+        const tv = n.text as Rec | null | undefined;
+        if (tv === null || tv === undefined) push(`nrd|${nid}|text|null`);
+        else {
+          const st = (tv as Rec).style;
+          const ver = st instanceof Style;
+          const sv = ver ? "v" + String((st as unknown as Rec).version) : "-";
+          const sj = ver ? "-" : esc(JSON.stringify(st ?? {}));
+          push(`nrd|${nid}|text|${renderValue((tv as Rec).text)}|${renderValue((tv as Rec).w)}|${renderValue((tv as Rec).h)}|${renderValue((tv as Rec).scale)}|${sv}|${sj}`);
+        }
+      } else if (what === "image") {
+        push(`nrd|${nid}|image|${renderValue(n.image)}`);
+      } else if (what === "color") {
+        push(`nrd|${nid}|color|${renderValue(n.color)}`);
       } else fail(`unknown nrd '${what}'`);
     } else if (op === "npd" || op === "npm" || op === "npu" || op === "npc") {
       const nid = next();

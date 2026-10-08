@@ -1,0 +1,87 @@
+# 构造：txt_info 三条路（i18n 命中复用 baked / i18n 不命中重测 / 无 i18n 直挂）
+nod t1 o 7 id s "t1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 4 text s "KEY_A" w n 6 h n 12 scale n 2 i18n s "KEY_A"
+nrd t1 text
+nrd t1 size
+nod t2 o 7 id s "t2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 5 text s "OLD" w n 6 h n 6 scale n 1 style o 1 color s "green" i18n s "NEW"
+nrd t2 text
+nod t3 o 8 id s "t3" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 1 text s "X" i18n s "KEYB" style o 1 font s "16px Arial"
+nrd t3 text
+nod t4 o 7 id s "t4" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 1 text s "X" i18n s "KEYC"
+nrd t4 text
+nod t5 o 5 id s "t5" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nrd t5 text
+nrd t5 image
+nrd t5 color
+# 自动尺寸：w/h 齐备不测 / 缺 w/h 走 measure / raw.size 拦 / 无父不调
+nod pt o 5 id s "pt" pos a 3 n 0 n 0 n 0 size a 3 n 50 n 50 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+noc c1 pt o 6 id s "c1" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 4 text s "hello" w n 20 h n 10 scale n 1
+nrd c1 text
+nrd c1 size
+noc c2 pt o 6 id s "c2" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 1 text s "abc"
+nrd c2 text
+nrd c2 size
+noc c3 pt o 7 id s "c3" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 1 text s "abc" raw o 1 size a 3 n 9 n 9 n 1
+nrd c3 size
+noc c4 pt o 7 id s "c4" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 txt_info o 1 text s "abc" raw o 0
+nrd c4 size
+# set_text：缺省样式走节点 Style（版本分支）/ 重复跳过 / 版本变化重测 / raw.size 拦 / 无父不调
+noc s1 pt o 5 id s "s1" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s1 text abc1
+nrd s1 text
+nrd s1 size
+nset s1 text abc1
+nset s1 style_touch
+nset s1 text abc1
+nset s1 style_assign o 1 color s "red"
+nset s1 text abc1
+nrd s1 text
+nset s1 texti o 3 text s "mix" w n 4 h n 4
+nrd s1 text
+noc s2 pt o 6 id s "s2" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 raw o 1 size a 3 n 9 n 9 n 1
+nset s2 text def
+nrd s2 text
+nrd s2 size
+nod s3 o 5 id s "s3" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s3 text xyz
+nrd s3 text
+nrd s3 size
+# text2：样式字面量（JSON 分支）/ nullish 回落节点 Style
+noc s4 pt o 5 id s "s4" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s4 text2 def o 1 color s "blue"
+nrd s4 text
+nrd s4 size
+nset s4 text2 ghi z
+nrd s4 text
+nrd s4 size
+# texti：直挂 + w/h 齐备不走 measure / 同键跳过 / 样式变化重调
+noc s5 pt o 5 id s "s5" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s5 texti o 3 text s "lit" w n 8 h n 4
+nrd s5 text
+nrd s5 size
+nset s5 texti o 3 text s "lit" w n 20 h n 40
+nrd s5 size
+nset s5 texti o 4 text s "lit" w n 20 h n 40 style o 1 color s "x"
+nrd s5 size
+nrd s5 text
+# 零宽走 measure / scale 除法 / scale 为 0 回落 1
+noc s6 pt o 5 id s "s6" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s6 texti o 3 text s "z" w n 0 h n 4
+nrd s6 size
+noc s7 pt o 5 id s "s7" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s7 texti o 4 text s "s" w n 30 h n 8 scale n 2
+nrd s7 size
+noc s8 pt o 5 id s "s8" pos a 3 n 1 n 1 n 0 size a 3 n 5 n 5 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nset s8 texti o 4 text s "s" w n 30 h n 8 scale n 0
+nrd s8 size
+# image / color
+nod i1 o 6 id s "i1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 img_info o 2 key s "k1" w n 3
+nrd i1 image
+nrd i1 color
+nset i1 image o 1 key s "k2"
+nrd i1 image
+nset i1 image z
+nrd i1 image
+nset i1 image u
+nrd i1 image
+nod i3 o 6 id s "i3" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 color s "red"
+nrd i3 color

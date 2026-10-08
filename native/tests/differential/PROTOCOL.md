@@ -4731,3 +4731,16 @@ harness op：
   `update` 无变化不清）/ `hit` 的原始 data.size / 树查询与宽松数字 id / 可见性递归与
   `invoke_all_on_hide` 跳过自身不可见子节点 / 焦点链（禁用拒收、`set_disabled` 清焦点、
   auto_focus）/ 指针五态 / `update` 跳过禁用子节点。
+
+### 6.9.146 `UINode` 第二段：文本/图像/i18n（`cases/lfw/uinode_txt.txt` 61 行；变异 24/24 全杀）
+
+- 写 op：`nset <nid> text <s>`（样式缺省 = 节点 Style）/ `text2 <s> <样式值>`（`z`/`u` 也走节点 Style）/ 
+  `texti <值>`（直挂 `set text`）/ `image <值>`（`z`=null、`u`=undefined）/ `style_assign <值>` / `style_touch`。
+- 读 op：`nrd <nid> text` → `text|null|<文本>|w|h|scale|sv|sj`（`sv` = `v<版本>` 或 `-`；`sj` = 样式 JSON 或 `-`，
+  JSON 走 esc）；`nrd image`（原值渲染，null=`z`）；`nrd color`。
+- 假宿主 `measure_text` 返回 `{text, w: 文本长*4, h: 10, scale: 1}`，并打 `measure|<文本>|<样式>`
+  （TS 侧 Style 实例先归一成 `.data`，所以两侧日志同形）。
+- 用例钉住：i18n 命中复用（无 measure）/ 不命中重测（三种样式回落）/ 无 i18n 直挂；
+  auto-size 的四道拦截（`w&&h` 直用、缺 w/h 测、`raw.size` 拦、无父不调）；`set_text` 的版本分支
+  （重复跳过 / `style_touch` 版本变 / `assign` 数据变）、JSON 分支、`texti` 同键跳过与样式变化重调、
+  零宽走测、scale 除法与 0 回落 1；`image` 的 `z`/`u`、`color` 默认空串。
