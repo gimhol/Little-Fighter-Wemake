@@ -4628,3 +4628,16 @@ harness op：
   同值不涨（严格）；`stouch`/`sdata`/`sdatastyle` 无条件涨。
 - `iscls` 的链在台面里硬编码：TS 用真类 `ClassA ← ClassB ← ClassC`，C++ 用
   `ClazzTag{parent}` 三步链，`none` 两侧都是 `null`/`nullptr`。
+
+### 6.9.138 `ui_value`（read_info_value；`cases/ui_value/value.txt` 35 行；变异 11/11 全杀）
+
+- op：`uinew <id>` / `uparent <id> <pid>` / `val <id> <name> <kind>` / `tval ...`（写
+  `values` / `template_values`）/ `find <id> <name>` / `puv <id> <type> <kind>` /
+  `puierr <type> <uikind> <valkind>`（`ui` 直接给 kind，用来测三条 ui 校验）。
+- kind：`num:` / `str:` / `bool:` / `arr` / `arr12`（`[1,2]`，钉报错文案的 `${ui}`）/
+  `obj` / `u` / `z`；type：`null` / `bool` / `num` / `str` / `j01` / `jobj` / `jarr`。
+- **带空格的 kind 要加引号**（如 `"str:  $val:a"`）：两侧台面对 kind token 都先
+  `key_of`/`keyOf` 去引号。
+- TS 的 parse 报错有两种形状：ui 三连校验是普通 `Error`，类型不符是 `{ui, error}` ⇒
+  TS 台面 catch 里 `e.error ? e.error.message : e.message` 取文案（C++ 只有文本）。
+- 渲染用 `sv()`：`u`/`z`/`render_value`（`bool` 打 `b1`、对象打 `{}`、数组打 `[]`）。

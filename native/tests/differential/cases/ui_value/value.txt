@@ -1,0 +1,45 @@
+# ui_value：find_ui_value / parse_ui_value / judger
+uinew u1
+val u1 a num:5
+tval u1 b str:x
+val u1 n z
+uinew u2
+uparent u2 u1
+val u2 a z
+tval u2 a str:t2
+find u1 a
+find u1 b
+find u1 n
+find u2 a
+find u2 b
+find u1 nope
+val u2 a num:1
+find u2 a
+puv u1 num str:5
+puv u1 num num:5
+puv u1 num z
+puv u1 num u
+puv u1 num "str:$val:a"
+puv u1 str "str:$val:a"
+puv u1 num "str:$val: a"
+puv u1 num "str:  $val:a"
+puv u1 num "str:$val:nope"
+puv u2 num "str:$val:a"
+puv u1 num "str:$val:n"
+puv u1 bool num:1
+puv u1 bool bool:1
+puv u1 str num:1
+puv u1 j01 num:0
+puv u1 j01 num:1
+puv u1 j01 num:2
+puv u1 jobj obj
+puv u1 jobj arr
+puv u1 jarr arr
+puv u1 jarr obj
+puv u1 null num:5
+puierr num u num:1
+puierr num z num:1
+puierr num num:5 num:1
+puierr num arr12 num:1
+puierr num obj num:1
+puierr str u str:a

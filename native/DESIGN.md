@@ -8839,3 +8839,24 @@ alpha 用 `parseFloat`、其余 `parseInt`（无 radix ⇒ 认 `0x`）。97. `he
 **测试**：新 subject `ui_style` + 2 份用例 **42 行**（style 32 / class 10）；变异
 `ui_style.mjs` **10/10 全杀**；全量差分 **209/209**、lint 全清。
 
+## 94. 切片 4AG：`read_info_value`（`find_ui_value` / `parse_ui_value`）
+
+`native/lfw/ui/read_info_value.{h,cpp}`：`ICookedUIInfo` 用 `Value` 对象表示（`values` /
+`template_values` / `parent`）；judger 不能塞进 `Value` ⇒ 用枚举 `UIJudger`；`type` 用
+`UIValueType`（Null/Boolean/Number/String/Judger/Clazz）。
+
+照抄怪癖（编号接 104 → 105）：105. `find_ui_value` 是**两趟**：先把整条 `values` 链走到头，
+再从 `ui` 重新沿 `template_values` 链；nullish 跳过、但 `0`/`''`/`false` 这种 falsy 值会返回。
+106. `parse_ui_value` 的 nullish 短路在**最前面**（甚至早于 ui 校验：`ui` 无效 + 值 null ⇒ 返回
+null 不报错）；ui 三连校验（falsy / 数组 / 非对象）的报错文案用 `${ui}` 插值（对象 ⇒
+`[object Object]`、数组 ⇒ 逗号拼接）。107. `$val:` 的**判定**用 `ret.trim().startsWith`，
+但取名字是 `ret.substring(5).trim()`——前导空格会把 `$val` 切坏（用例专门钉了
+`"  $val:a"` ⇒ null 的怪癖）。108. `unsafe_is_object` 照 JS `typeof v === 'object'`：数组与
+`null` 都先算 object，再用 `!Array.isArray` 排阵。
+
+偏差记录：`Cls`/构造函数型 `type`（`ret instanceof type`）需要对象→类的映射，端口暂不支持
+（按 null 处理）；judger 的 `is_0_or_1` / `unsafe_is_object` / `unsafe_is_array` 三个已落。
+
+**测试**：新 subject `ui_value` + 1 份用例 **35 行**；变异 `ui_value.mjs` **11/11 全杀**；
+全量差分 **210/210**、lint 全清。
+
