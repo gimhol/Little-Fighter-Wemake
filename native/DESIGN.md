@@ -9063,3 +9063,37 @@ pos.xyz；递归子节点跳过（含父链）禁用者；`_update_times` 无条
 **测试**：用例 `cases/lfw/uinode_txt.txt` **61 行**；变异 `lfw_uinode_txt.mjs` **24/24 全杀**；
 全量差分 **219/219**、lint 全清。
 
+## 103. 切片 4AP：UI 骨架（页面栈 + 生命周期 + 输入 + 动作）
+
+`ui/uilayer.{h,cpp}`：`UILayer`（页面栈 + `set/push/pop/dispose` + `UILayersCallbacks`）
+与 `UILayers`（`push/ensure/at/all/ui_top/length`，实现 `IUiLayers` 缝；页面用 `unique_ptr` 持有）。
+`ui/action/actor.{h,cpp}`：`UIActor`（handler 表 + `act`）与单例 `actor()`。
+`UINode` 追加：`static create`（items 计数递归；components 随后续刀）、`on_start/on_stop/on_resume/
+on_pause`、`on_click`、`on_key_down/on_key_up`、`pop_page`。`ILfwHost` 新缝 `sounds_play_preset`。
+
+台面：`nmk <nid> <parent|-> <data>`（create）、`nml <nid> <层号|-> <data>`（挂在真层上的节点）、
+`nlife <nid> start|stop|resume|pause`、`nclick <nid> <btn>`、`nkey <nid> down|up <gk> <key> [1=预 stop]`、
+`nact <nid> <值>`（actor 直发）、`uipg <id> <数据>`（给 `uis` 补页）、
+`rl*` 一族（真 `UILayers`：`rlnew/rlpush/rlset/rlpushp/rlpop <idx> <min> <incl> <until|->/
+rlinfo/rlui/rlz/rlfind/rlfocus/rlfn/rltree/rlact/rldisp`）、`unpatch`（TS 侧复原被补丁改写的
+`uis.add/clear/all` 与 `layers.set_page`；C++ 无补丁）、`nrd <nid> kids`。
+
+照抄怪癖（编号接 140 → 141）：141. `on_start` 先 `_update_times.reset()` 再换新 `_state`（焦点存 `_state`），
+子节点先于自己的 actions；`on_pause` 根节点把焦点存进 `_state` → 清空 → `invoke_all_on_hide` → actions.pause，
+`on_resume` 根节点还原焦点 + `invoke_all_visible`，子节点在 actions 前（resume）/后（pause）。
+142. 输入：`on_click` 按 `button` 0/1/2 分派 click/mclick/rclick 并 `stop_propagation`；`on_key_down`
+子节点先走（stopped==2 短路），焦点节点上 `a/j/d` → click/rclick/mclick + `stop_immediate_propagation`。
+143. `UILayer.set` 同 id 早退；换页 = 旧页 `on_pause+on_stop` → 新页 `z += 层号`（`set_z` 会 round）。
+`pop` 的 `max_pop = len - min(max(min_pages,0),len)`；`until` 命中才停（`inclusive` 含命中项），
+只有**首个**被弹页 `on_pause`（其余只 `on_stop`），弹完下层 `on_resume`；空层直接不动。
+144. `Actor` 的旧别名 `set_ui/push_ui/pop_ui` 指向同一 handler；`load_data` 缺 url ⇒ `ZIPS.slice(1)`，
+失败 warn `Failed to load, reason`；`sound` 的 x/y/z 是 `isNaN(Number(v)) ? undefined : Number(v)`；
+未命中 handler 打 `[Actor::act] failed to act, handler not found by name, expression: <name>(<args用逗号拼>)`。
+
+偏差记录：`create` 不建 components（后续刀）；`UILayers` 的非整数/负数层号进 `_loose`（TS 挂属性，
+不进 `all`）；`create` 的 `while (count)` 语义照抄（小数 count 在 TS 会死循环，用例不覆盖）；
+`renderer` 面继续空转；`broadcast` 端口在 LFW 层就把参数 `to_string`（台面 listen 对 on_broadcast 做同构归一）。
+
+**测试**：用例 `cases/lfw/uinode_life.txt` **59 行** / `uilayer.txt` **70 行**；变异 `lfw_uinode_life.mjs`
+**38/38 全杀**；全量差分 **221/221**、lint 全清。
+

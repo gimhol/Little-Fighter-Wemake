@@ -21,6 +21,7 @@ namespace ui {
 class UIComponent;
 class UILayer;
 class UINode;
+struct UIPopPageOpts;
 
 // TS `IUICallback`（`Callbacks<IUICallback>` 的具名方法端口化成一份可选字段表）。
 struct UINodeCallbacks {
@@ -214,6 +215,20 @@ class UINode {
   void invoke_all_on_hide();
   void invoke_all_visible();
 
+  // ---- 生命周期 / 输入 / 动作（4AP；components/renderer 面空转）----
+  void on_start();
+  void on_stop();
+  void on_resume();
+  void on_pause();
+  void on_click(LFWPointerEvent& e);
+  void on_key_down(LFWKeyEvent& e);
+  void on_key_up(LFWKeyEvent& e);
+  // `pop_page(opts?)`：仅当自己仍是所在层栈顶时生效。
+  bool pop_page(const UIPopPageOpts& opts);
+  // `static create(lfw, info, parent?, layer?)`：items 计数递归建子树（components 随后续刀）。
+  static std::unique_ptr<UINode> create(LFW& lfw, const Value& info, UINode* parent = nullptr,
+                                        UILayer* layer = nullptr);
+
   void update(double dt);
 
   // `set_disabled`（TS 返回 this）。
@@ -245,6 +260,8 @@ class UINode {
   UINode* _root = nullptr;
   UILayer* _layer = nullptr;
   UINode* _focused_node = nullptr;
+  // `on_pause` 时把焦点存起来（TS 存在 `_state.focused_node` 对象里；端口存在节点旁）。
+  UINode* _state_focused_node = nullptr;
 
   bool _visible = true;
   bool _disabled = false;
@@ -254,6 +271,8 @@ class UINode {
 
   UINode* _parent = nullptr;
   std::vector<UINode*> _children;
+  // `create` 建的子树由父节点持有（TS 靠 GC）。
+  std::vector<std::unique_ptr<UINode>> _owned_children;
   Vector3 _prev_size;
   Vector3 _prev_center;
   Vector3 _prev_pos;

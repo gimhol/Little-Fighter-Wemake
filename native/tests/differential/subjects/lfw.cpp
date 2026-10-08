@@ -18,9 +18,11 @@
 #include "lfw/loader/stage_val_getters.h"
 #include "lfw/player_info.h"
 #include "lfw/ui/cook_ui_info.h"
+#include "lfw/ui/action/actor.h"
 #include "lfw/ui/ui_event.h"
 #include "lfw/ui/ui_img_loader.h"
 #include "lfw/ui/ui_load_img.h"
+#include "lfw/ui/uilayer.h"
 #include "lfw/ui/uinode.h"
 #include "lfw/ui/value_spread.h"
 #include "lfw/utils/container_help/field_or.h"
@@ -298,8 +300,33 @@ std::map<std::string, std::unique_ptr<lfw::ui::UIImgLoader>> g_loaders;
 // 4AN：UINode 脚本。
 std::map<std::string, std::unique_ptr<lfw::ui::UINode>> g_nodes;
 
+// 4AP：真 `UILayers` 脚本（台面直建实例，与 `lfw.layers` 的假缝互不干扰）。
+std::unique_ptr<lfw::ui::UILayers> g_real_layers;
+
 std::string node_ref(lfw::ui::UINode* const p) {
   return p != nullptr ? to_ascii(render_value(p->id())) : std::string("u");
+}
+
+lfw::Value id_opts_value(const std::u16string& id) {
+  lfw::Value ret(std::make_shared<lfw::Object>());
+  lfw::as_object(ret)->set(u"id", lfw::Value(id));
+  return ret;
+}
+
+std::string tree_str(const lfw::ui::UINode& n) {
+  const lfw::Value idv = n.id();
+  const std::u16string* const id = std::get_if<std::u16string>(&idv);
+  std::string s = id != nullptr ? to_ascii(*id) : "u";
+  s += "(" + std::to_string(n.children().size()) + ")";
+  if (!n.children().empty()) {
+    s += "[";
+    for (size_t i = 0; i < n.children().size(); ++i) {
+      if (i != 0) s += ",";
+      s += tree_str(*n.children()[i]);
+    }
+    s += "]";
+  }
+  return s;
 }
 
 // 4AD：URL 流程脚本。
@@ -378,6 +405,11 @@ class FakeHost : public lfw::ILfwHost {
     push("snd_play");
   }
   void sounds_play_with_load(const lfw::Value&) override { push("snd_load"); }
+  void sounds_play_preset(const lfw::Value& name, const lfw::Value& x, const lfw::Value& y,
+                          const lfw::Value& z) override {
+    push("snd_preset|" + to_ascii(render_value(name)) + "|" + to_ascii(render_value(x)) + "|" +
+         to_ascii(render_value(y)) + "|" + to_ascii(render_value(z)));
+  }
   void sounds_dispose() override { push("snd_dispose"); }
   void keyboard_dispose() override { push("kbd_dispose"); }
   void pointings_dispose() override { push("pt_dispose"); }
@@ -1335,6 +1367,11 @@ int main(int argc, char** argv) {
         push("nrd|" + nid + "|image|" + to_ascii(render_value(n.image())));
       } else if (what == "color") {
         push("nrd|" + nid + "|color|" + to_ascii(render_value(lfw::Value(n.color))));
+      } else if (what == "kids") {
+        std::string line = "nrd|" + nid + "|kids|" +
+                           std::to_string(n.children().size());
+        for (lfw::ui::UINode* const c : n.children()) line += "|" + node_ref(c);
+        push(line);
       } else {
         std::fprintf(stderr, "unknown nrd '%s'\n", what.c_str());
         return 2;
@@ -1354,6 +1391,155 @@ int main(int argc, char** argv) {
       if (op == "npl") n.on_pointer_leave();
       else n.on_pointer_enter();
       push("np|" + nid + "|" + op);
+    } else if (op == "nmk") {
+      const std::string nid = t[i++];
+      const std::string ptok = t[i++];
+      lfw::ui::UINode* parent = ptok == "-" ? nullptr : g_nodes.at(ptok).get();
+      const lfw::Value data = parse_value(t, i);
+      g_nodes[nid] = lfw::ui::UINode::create(lfw, data, parent);
+    } else if (op == "nlife") {
+      const std::string nid = t[i++];
+      const std::string what = t[i++];
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (what == "start") n.on_start();
+      else if (what == "stop") n.on_stop();
+      else if (what == "resume") n.on_resume();
+      else if (what == "pause") n.on_pause();
+      else {
+        std::fprintf(stderr, "unknown nlife '%s'\n", what.c_str());
+        return 2;
+      }
+    } else if (op == "nclick") {
+      const std::string nid = t[i++];
+      const double btn = to_double(t[i++]);
+      lfw::ui::LFWPointerEvent e(lfw::Vector3(0, 0, 0), btn);
+      g_nodes.at(nid)->on_click(e);
+      push("click|" + nid + "|stop=" + std::to_string(e.stopped()));
+    } else if (op == "nkey") {
+      const std::string nid = t[i++];
+      const std::string dir = t[i++];
+      const std::u16string gk = key_of(t[i++]);
+      const std::u16string key = key_of(t[i++]);
+      const bool pre = i < t.size() && t[i] == "1";
+      if (pre) ++i;
+      lfw::ui::LFWKeyEvent e(std::u16string(), dir == "down", gk, key);
+      if (pre) e.stop_immediate_propagation();
+      lfw::ui::UINode& n = *g_nodes.at(nid);
+      if (dir == "down") n.on_key_down(e);
+      else n.on_key_up(e);
+      push("nkey|" + nid + "|" + dir + "|stop=" + std::to_string(e.stopped()));
+    } else if (op == "nml") {
+      const std::string nid = t[i++];
+      const std::string lt = t[i++];
+      lfw::ui::UILayer* layer = nullptr;
+      if (lt != "-" && g_real_layers) layer = g_real_layers->at(to_double(lt));
+      const lfw::Value data = parse_value(t, i);
+      g_nodes[nid] = lfw::ui::UINode::create(lfw, data, nullptr, layer);
+    } else if (op == "nact") {
+      const std::string nid = t[i++];
+      const lfw::Value action = parse_value(t, i);
+      lfw::ui::actor().act(*g_nodes.at(nid), action);
+    } else if (op == "rlnew") {
+      g_real_layers = std::make_unique<lfw::ui::UILayers>(lfw);
+    } else if (op == "rlpush") {
+      g_real_layers->push_layer();
+    } else if (op == "rlset" || op == "rlpushp") {
+      const double idx = to_double(t[i++]);
+      const std::u16string id = key_of(t[i++]);
+      const lfw::Value opts = id_opts_value(id);
+      if (op == "rlset") g_real_layers->set_page(opts, idx);
+      else g_real_layers->push_page(opts, idx);
+    } else if (op == "rlpop") {
+      const double idx = to_double(t[i++]);
+      const double min_pages = to_double(t[i++]);
+      const bool inclusive = t[i++] == "1";
+      const std::string until = t[i++];
+      lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      lfw::ui::UIPopPageOpts opts;
+      opts.min_pages = min_pages;
+      opts.inclusive = inclusive;
+      if (until != "-") {
+        opts.until = [until](lfw::ui::UINode& n, double, const std::vector<lfw::ui::UINode*>&) {
+          const lfw::Value idv = n.id();
+          const std::u16string* const id = std::get_if<std::u16string>(&idv);
+          return id != nullptr && *id == to_u16(until);
+        };
+      }
+      if (l != nullptr) l->pop(opts);
+    } else if (op == "rldisp") {
+      g_real_layers->dispose();
+    } else if (op == "rlinfo") {
+      std::string line = "rlinfo|" + num(g_real_layers->length());
+      for (lfw::ui::UILayer* const l : g_real_layers->all()) {
+        if (l == nullptr) {
+          line += "|-";
+          continue;
+        }
+        std::string top = "u";
+        if (lfw::ui::UINode* const u = l->ui()) {
+          const lfw::Value idv = u->id();
+          if (const std::u16string* const id = std::get_if<std::u16string>(&idv)) {
+            top = to_ascii(*id);
+          }
+        }
+        line += "|" + num(l->index()) + ":" + num(static_cast<double>(l->pages().size())) +
+                ":" + top;
+      }
+      push(line);
+    } else if (op == "rlui") {
+      const double idx = to_double(t[i++]);
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      lfw::ui::UINode* const u = l != nullptr ? l->ui() : nullptr;
+      push("rlui|" + num(idx) + "|" + node_ref(u) + "|" +
+           (u != nullptr ? num(u->z()) : std::string("u")));
+    } else if (op == "rlz") {
+      const double idx = to_double(t[i++]);
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      const lfw::ui::UINode* const u = l != nullptr ? l->ui() : nullptr;
+      push("rlz|" + num(idx) + "|" + (u != nullptr ? num(u->z()) : std::string("u")));
+    } else if (op == "rlfind") {
+      const double idx = to_double(t[i++]);
+      const std::u16string nid = key_of(t[i++]);
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      lfw::ui::UINode* const u = l != nullptr ? l->ui() : nullptr;
+      lfw::ui::UINode* const hit = u != nullptr ? u->search_node(nid) : nullptr;
+      push("rlfind|" + num(idx) + "|" + node_ref(hit) + "|" +
+           (hit != nullptr ? num(hit->depth()) : std::string("u")));
+    } else if (op == "rlfocus") {
+      const double idx = to_double(t[i++]);
+      const std::u16string nid = key_of(t[i++]);
+      const bool v = t[i++] == "1";
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      lfw::ui::UINode* const u = l != nullptr ? l->ui() : nullptr;
+      lfw::ui::UINode* const hit = u != nullptr ? u->search_node(nid) : nullptr;
+      if (hit != nullptr) hit->set_focused(v);
+    } else if (op == "rlfn") {
+      const double idx = to_double(t[i++]);
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      lfw::ui::UINode* const u = l != nullptr ? l->ui() : nullptr;
+      lfw::ui::UINode* const f =
+          u != nullptr ? u->root().focused_node() : nullptr;
+      push("rlfn|" + num(idx) + "|" + node_ref(f));
+    } else if (op == "rltree") {
+      const double idx = to_double(t[i++]);
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      const lfw::ui::UINode* const u = l != nullptr ? l->ui() : nullptr;
+      push("rltree|" + num(idx) + "|" + (u != nullptr ? tree_str(*u) : std::string("u")));
+    } else if (op == "unpatch") {
+      // C++ 无补丁；占位（TS 侧同 op 复原被改写的 uis/layers 方法）。
+    } else if (op == "uipg") {
+      const std::u16string id = key_of(t[i++]);
+      lfw::Value v = parse_value(t, i);
+      if (lfw::as_object(v) != nullptr) lfw::as_object(v)->set(u"id", lfw::Value(id));
+      lfw.ui_helper().add({v});
+    } else if (op == "rlact") {
+      const double idx = to_double(t[i++]);
+      const std::string ntok = t[i++];
+      const lfw::Value action = parse_value(t, i);
+      const lfw::ui::UILayer* const l = g_real_layers->at(idx);
+      lfw::ui::UINode* u = l != nullptr ? l->ui() : nullptr;
+      if (u != nullptr && ntok != "-") u = u->search_node(key_of(ntok));
+      if (u != nullptr) lfw::ui::actor().act(*u, action);
     } else if (op == "ncb") {
       const std::string nid = t[i++];
       const std::string ev = t[i++];

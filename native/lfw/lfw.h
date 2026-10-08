@@ -137,6 +137,9 @@ class ILfwHost {
   virtual std::function<void()> sounds_play_bgm(const Value& music) = 0;
   virtual void sounds_stop_bgm() = 0;
   virtual void sounds_play(const Value& path, const Value& x, const Value& y, const Value& z) = 0;
+  // `lfw.sounds.play_preset(name, x?, y?, z?)`（预置音效表在宿主，未移植）
+  virtual void sounds_play_preset(const Value& name, const Value& x, const Value& y,
+                                  const Value& z) = 0;
   virtual void sounds_play_with_load(const Value& path) = 0;
   // `lfw.sounds.dispose` / `lfw.keyboard.dispose` / `lfw.pointings.dispose`
   virtual void sounds_dispose() = 0;

@@ -13,6 +13,8 @@ import { LFWKeyEvent } from "../../../../src/LFW/ui/LFWKeyEvent";
 import { LFWPointerEvent } from "../../../../src/LFW/ui/LFWPointerEvent";
 import { UIImgLoader } from "../../../../src/LFW/ui/UIImgLoader";
 import { Style } from "../../../../src/LFW/ui/Style";
+import { UILayers, type IPopPageOpts, type UILayer } from "../../../../src/LFW/ui/UILayer";
+import { actor } from "../../../../src/LFW/ui/action/Actor";
 import { UINode } from "../../../../src/LFW/ui/UINode";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
@@ -74,6 +76,15 @@ const img_nodes = new Map<string, Rec>();
 const loaders = new Map<string, UIImgLoader>();
 // 4AN：UINode 脚本。
 const tnodes = new Map<string, UINode>();
+
+// 4AP：真 `UILayers`（台面直建，与 `lfw.layers` 的补丁面互不干扰）。
+const real_layers: { v: UILayers | null } = { v: null };
+
+function tree_str(n: UINode): string {
+  let s = `${String(n.id ?? "u")}(${n.children.length})`;
+  if (n.children.length) s += "[" + n.children.map((c) => tree_str(c as UINode)).join(",") + "]";
+  return s;
+}
 
 function nref(p: UINode | undefined | null): string {
   return p ? renderValue(p.id) : "u";
@@ -158,6 +169,9 @@ function install_ditto(): void {
     }
     play_with_load(): void {
       push("snd_load");
+    }
+    play_preset(name: unknown, x: unknown, y: unknown, z: unknown): void {
+      push(`snd_preset|${renderValue(name)}|${renderValue(x)}|${renderValue(y)}|${renderValue(z)}`);
     }
   }
   class FakeImageMgr {
@@ -362,7 +376,9 @@ function install_ditto(): void {
       y = 0;
     } as never,
     WorldRender: FakeWorldRender as never,
-    UINodeRenderer: class {} as never,
+    UINodeRenderer: class {
+      del_self(): void {}
+    } as never,
     ImageMgr: FakeImageMgr as never,
     UIInputHandle: FakeUIInputHandle as never,
     XML: {} as never,
@@ -414,6 +430,7 @@ function listen(): void {
         else if (name === "on_ui_loaded") parts.push(String((a as unknown[]).length));
         else if (name === "on_zips_changed")
           parts.push((a as { name: string }[]).map((v) => v.name).join(","));
+        else if (name === "on_broadcast") parts.push("s:" + String(a));
         else if (a === undefined || a === null) parts.push("u");
         else if (a instanceof PlayerInfo) parts.push("pl:" + String(a.id));
         else if (typeof a === "number") parts.push("n:" + num(a));
@@ -940,6 +957,10 @@ async function run_ops(): Promise<void> {
         push(`nrd|${nid}|image|${renderValue(n.image)}`);
       } else if (what === "color") {
         push(`nrd|${nid}|color|${renderValue(n.color)}`);
+      } else if (what === "kids") {
+        let line = `nrd|${nid}|kids|${n.children.length}`;
+        for (const c of n.children) line += `|${nref(c as UINode)}`;
+        push(line);
       } else fail(`unknown nrd '${what}'`);
     } else if (op === "npd" || op === "npm" || op === "npu" || op === "npc") {
       const nid = next();
@@ -970,6 +991,122 @@ async function run_ops(): Promise<void> {
       } else if (ev === "pleave") n.callbacks.on("on_pointer_leave", (node) => push(`cb|${nid}|pleave|${nref(node as never as UINode)}`));
       else if (ev === "penter") n.callbacks.on("on_pointer_enter", (node) => push(`cb|${nid}|penter|${nref(node as never as UINode)}`));
       else fail(`unknown ncb '${ev}'`);
+    } else if (op === "nmk") {
+      const nid = next();
+      const ptok = next();
+      const parent = ptok === "-" ? undefined : tnodes.get(ptok)!;
+      tnodes.set(nid, UINode.create(lfw, parseValue(t, i) as never, parent, undefined));
+    } else if (op === "nlife") {
+      const n = tnodes.get(next())!;
+      const what = next();
+      if (what === "start") n.on_start();
+      else if (what === "stop") n.on_stop();
+      else if (what === "resume") n.on_resume();
+      else if (what === "pause") n.on_pause();
+      else fail(`unknown nlife '${what}'`);
+    } else if (op === "nclick") {
+      const nid = next();
+      const n = tnodes.get(nid)!;
+      const e = new LFWPointerEvent({ x: 0, y: 0, z: 0 }, Number(next()));
+      n.on_click(e);
+      push(`click|${nid}|stop=${e.stopped}`);
+    } else if (op === "nkey") {
+      const nid = next();
+      const dir = next();
+      const gk = nextKey();
+      const key = nextKey();
+      const pre = t[i[0]] === "1";
+      if (pre) ++i[0];
+      const n = tnodes.get(nid)!;
+      const e = new LFWKeyEvent("", dir === "down", gk as never, key);
+      if (pre) e.stop_immediate_propagation();
+      if (dir === "down") n.on_key_down(e);
+      else n.on_key_up(e);
+      push(`nkey|${nid}|${dir}|stop=${e.stopped}`);
+    } else if (op === "nml") {
+      const nid = next();
+      const lt = next();
+      const layer = lt !== "-" ? real_layers.v?.at(Number(lt)) : undefined;
+      tnodes.set(nid, UINode.create(lfw, parseValue(t, i) as never, undefined, layer));
+    } else if (op === "nact") {
+      const n = tnodes.get(next())!;
+      actor.act(n, parseValue(t, i) as never);
+    } else if (op === "rlnew") {
+      real_layers.v = new UILayers(lfw);
+    } else if (op === "rlpush") {
+      real_layers.v!.push();
+    } else if (op === "rlset" || op === "rlpushp") {
+      const idx = Number(next());
+      const id = keyOf(next());
+      if (op === "rlset") real_layers.v!.set_page({ id }, idx);
+      else real_layers.v!.push_page({ id }, idx);
+    } else if (op === "rlpop") {
+      const idx = Number(next());
+      const min_pages = Number(next());
+      const inclusive = next() === "1";
+      const until = next();
+      const l = real_layers.v!.at(idx) as UILayer | undefined;
+      const opts: IPopPageOpts = { min_pages, inclusive };
+      if (until !== "-") opts.until = (u) => u.id === until;
+      l?.pop(opts);
+    } else if (op === "rldisp") {
+      real_layers.v!.dispose();
+    } else if (op === "rlinfo") {
+      let line = `rlinfo|${num(real_layers.v!.length)}`;
+      for (const l of real_layers.v!.all) {
+        if (!l) {
+          line += "|-";
+          continue;
+        }
+        line += `|${num(l.index)}:${num(l.pages.length)}:${l.ui?.id ?? "u"}`;
+      }
+      push(line);
+    } else if (op === "rlui") {
+      const idx = Number(next());
+      const u = real_layers.v!.at(idx)?.ui;
+      push(`rlui|${num(idx)}|${nref(u)}|${u ? num(u.z) : "u"}`);
+    } else if (op === "rlz") {
+      const idx = Number(next());
+      const u = real_layers.v!.at(idx)?.ui;
+      push(`rlz|${num(idx)}|${u ? num(u.z) : "u"}`);
+    } else if (op === "rlfind") {
+      const idx = Number(next());
+      const nid = keyOf(next());
+      const u = real_layers.v!.at(idx)?.ui;
+      const hit = u ? u.search_node(nid) : undefined;
+      push(`rlfind|${num(idx)}|${nref(hit)}|${hit ? num(hit.depth) : "u"}`);
+    } else if (op === "rlfocus") {
+      const idx = Number(next());
+      const nid = keyOf(next());
+      const v = next() === "1";
+      const hit = real_layers.v!.at(idx)?.ui?.search_node(nid);
+      if (hit) hit.focused = v;
+    } else if (op === "rlfn") {
+      const idx = Number(next());
+      const u = real_layers.v!.at(idx)?.ui;
+      push(`rlfn|${num(idx)}|${nref(u ? u.root.focused_node : undefined)}`);
+    } else if (op === "rltree") {
+      const idx = Number(next());
+      const u = real_layers.v!.at(idx)?.ui;
+      push(`rltree|${num(idx)}|${u ? tree_str(u) : "u"}`);
+    } else if (op === "unpatch") {
+      uis["add"] = orig_add;
+      uis["clear"] = orig_clear;
+      delete (uis as Rec)["all"];
+      layers["set_page"] = orig_set_page;
+    } else if (op === "uipg") {
+      const id = keyOf(next());
+      const v = parseValue(t, i) as Rec;
+      v["id"] = id;
+      (lfw.uis as unknown as Rec)["add"](v);
+    } else if (op === "rlact") {
+      const idx = Number(next());
+      const ntok = next();
+      const action = parseValue(t, i) as never;
+      const l = real_layers.v!.at(idx) as UILayer | undefined;
+      let u: UINode | undefined = l?.ui;
+      if (u && ntok !== "-") u = u.search_node(keyOf(ntok));
+      if (u) actor.act(u, action);
     } else if (op === "uinew") {
       ui_vals.set(next(), parseValue(t, i) as Rec);
     } else if (op === "uinest") {

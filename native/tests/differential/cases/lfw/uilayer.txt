@@ -1,0 +1,51 @@
+# 真 UILayers：set/push/pop（层数/洞/保留下限/until/inclusive）、页面 z 偏移、焦点跨页保存与还原
+unpatch
+uipg pg1 o 6 pos a 3 n 0 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 4 start o 2 name s "sound" args a 1 s "g1s" stop o 2 name s "sound" args a 1 s "g1e" resume o 2 name s "sound" args a 1 s "g1r" pause o 2 name s "sound" args a 1 s "g1p" items a 1 o 6 id s "ch1" count n 2 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+uipg pg2 o 5 pos a 3 n 0 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 4 start o 2 name s "sound" args a 1 s "g2s" stop o 2 name s "sound" args a 1 s "g2e" resume o 2 name s "sound" args a 1 s "g2r" pause o 2 name s "sound" args a 1 s "g2p"
+uipg pg3 o 6 pos a 3 n 0 n 0 n 0 size a 3 n 10 n 10 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 4 start o 2 name s "sound" args a 1 s "g3s" stop o 2 name s "sound" args a 1 s "g3e" resume o 2 name s "sound" args a 1 s "g3r" pause o 2 name s "sound" args a 1 s "g3p" items a 1 o 6 id s "ch1" count n 1 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+rlnew
+rlset 0 pg1
+rlinfo
+rlz 0
+rltree 0
+rlset 0 pg1
+rlset 0 pg2
+rlinfo
+rlset 1 pg2
+rlset 2 pg1
+rlz 2
+rlinfo
+rlpush
+rlinfo
+rlset 3 pg3
+rlinfo
+# 层内栈 + 焦点保存/还原
+rlfocus 0 ch1 1
+rlfn 0
+rlpushp 0 pg3
+rlfn 0
+rlinfo
+rlpop 0 0 0 -
+rlfn 0
+rlpop 0 1 0 -
+rlinfo
+rlpop 0 0 0 -
+# until / inclusive
+rlset 0 pg1
+rlpushp 0 pg2
+rlpushp 0 pg3
+rlpop 0 0 0 pg2
+rlinfo
+rlpop 0 0 1 pg1
+rlinfo
+# pop_page 动作：非栈顶页不弹（nx 挂在 layer2 上，但 layer2 栈顶是 pg1）
+nml nx 2 o 5 id s "nx" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nact nx o 1 name s "pop_page"
+rlinfo
+# pop_page 动作（经 actor，作用在 layer2 的栈顶页上）
+rlact 2 - o 1 name s "pop_page"
+rlinfo
+# dispose
+rldisp
+rlinfo
+rlui 0

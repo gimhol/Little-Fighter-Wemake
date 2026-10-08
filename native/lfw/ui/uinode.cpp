@@ -7,6 +7,8 @@
 #include "lfw/core/js_string.h"
 #include "lfw/core/json.h"
 #include "lfw/lfw.h"
+#include "lfw/ui/action/actor.h"
+#include "lfw/ui/uilayer.h"
 #include "lfw/ui/value_spread.h"
 #include "lfw/utils/math/base.h"
 #include "lfw/utils/math/round_float.h"
@@ -590,6 +592,138 @@ void UINode::update(double dt) {
   for (UINode* const child : _children) {
     if (!child->disabled()) child->update(dt);
   }
+}
+
+std::unique_ptr<UINode> UINode::create(LFW& lfw, const Value& info, UINode* parent,
+                                       UILayer* layer) {
+  std::unique_ptr<UINode> ret = std::make_unique<UINode>(lfw, info, parent, layer);
+  // `lfw.factory.create_components` / `component.on_add`：UIComponent 刀再补。
+  const Value* const items = field_of(info, u"items");
+  const Array* const arr = items != nullptr ? as_array(*items) : nullptr;
+  if (arr != nullptr) {
+    for (size_t i = 0; i < arr->size(); ++i) {
+      const Value& item_info = arr->at(i);
+      const Value* const count_p = field_of(item_info, u"count");
+      double count = 1.0;
+      if (count_p != nullptr && std::holds_alternative<double>(*count_p)) {
+        const double c = std::get<double>(*count_p);
+        if (!std::isnan(c) && c > 0.0) count = c;
+      }
+      // TS 是 `while (count) { ...; --count }`：小数 count 步进到负数会继续转（TS 侧死循环，
+      // 用例不覆盖）；这里照抄数值真值语义（NaN/0 停）。
+      while (count != 0.0 && !std::isnan(count)) {
+        std::unique_ptr<UINode> child = create(lfw, item_info, ret.get());
+        ret->add_child(*child);
+        ret->_owned_children.push_back(std::move(child));
+        count -= 1.0;
+      }
+    }
+  }
+  return ret;
+}
+
+void UINode::on_start() {
+  _update_times.reset();
+  _state = Value(std::make_shared<Object>());
+  // TS 把焦点存在 `_state` 上（on_start 直接换新对象），端口同步复位。
+  _state_focused_node = nullptr;
+  for (UINode* const c : _children) c->on_start();
+  const Value* const actions = field_of(_data, u"actions");
+  const Value* const start = actions != nullptr ? field_of(*actions, u"start") : nullptr;
+  if (start != nullptr && truthy(*start)) actor().act(*this, *start);
+}
+
+void UINode::on_stop() {
+  for (UINode* const c : _children) c->on_stop();
+  const Value* const actions = field_of(_data, u"actions");
+  const Value* const stop = actions != nullptr ? field_of(*actions, u"stop") : nullptr;
+  if (stop != nullptr && truthy(*stop)) actor().act(*this, *stop);
+}
+
+void UINode::on_resume() {
+  if (_parent == nullptr) {
+    set_focused_node(_state_focused_node);
+    if (_visible) invoke_all_visible();
+  }
+  for (UINode* const c : _children) c->on_resume();
+  const Value* const actions = field_of(_data, u"actions");
+  const Value* const resume = actions != nullptr ? field_of(*actions, u"resume") : nullptr;
+  if (resume != nullptr && truthy(*resume)) actor().act(*this, *resume);
+}
+
+void UINode::on_pause() {
+  if (_parent == nullptr) {
+    _state_focused_node = focused_node();
+    set_focused_node(nullptr);
+    invoke_all_on_hide();
+  }
+  const Value* const actions = field_of(_data, u"actions");
+  const Value* const pause = actions != nullptr ? field_of(*actions, u"pause") : nullptr;
+  if (pause != nullptr && truthy(*pause)) actor().act(*this, *pause);
+  for (UINode* const c : _children) c->on_pause();
+}
+
+void UINode::on_click(LFWPointerEvent& e) {
+  const Value* const actions = field_of(_data, u"actions");
+  const Value* const click = actions != nullptr ? field_of(*actions, u"click") : nullptr;
+  const Value* const rclick = actions != nullptr ? field_of(*actions, u"rclick") : nullptr;
+  const Value* const mclick = actions != nullptr ? field_of(*actions, u"mclick") : nullptr;
+  if (click != nullptr && truthy(*click) && e.button == 0.0) {
+    actor().act(*this, *click);
+    e.stop_propagation();
+  }
+  if (mclick != nullptr && truthy(*mclick) && e.button == 1.0) {
+    actor().act(*this, *mclick);
+    e.stop_propagation();
+  }
+  if (rclick != nullptr && truthy(*rclick) && e.button == 2.0) {
+    actor().act(*this, *rclick);
+    e.stop_propagation();
+  }
+  // components 空转（UIComponent 刀再补 `if (e.stopped === 2) break;`）。
+  if (callbacks.on_click) callbacks.on_click(e);
+}
+
+void UINode::on_key_down(LFWKeyEvent& e) {
+  if (e.stopped() != 0) return;
+  // components 空转。
+  for (UINode* const c : _children) {
+    c->on_key_down(e);
+    if (e.stopped() == 2) return;
+  }
+  const Value* const actions = field_of(_data, u"actions");
+  const Value* const click = actions != nullptr ? field_of(*actions, u"click") : nullptr;
+  const Value* const rclick = actions != nullptr ? field_of(*actions, u"rclick") : nullptr;
+  const Value* const mclick = actions != nullptr ? field_of(*actions, u"mclick") : nullptr;
+  if (focused() && e.game_key == u"a" && click != nullptr && truthy(*click)) {
+    actor().act(*this, *click);
+    e.stop_immediate_propagation();
+  }
+  if (focused() && e.game_key == u"j" && rclick != nullptr && truthy(*rclick)) {
+    actor().act(*this, *rclick);
+    e.stop_immediate_propagation();
+  }
+  if (focused() && e.game_key == u"d" && mclick != nullptr && truthy(*mclick)) {
+    actor().act(*this, *mclick);
+    e.stop_immediate_propagation();
+  }
+}
+
+void UINode::on_key_up(LFWKeyEvent& e) {
+  if (e.stopped() != 0) return;
+  for (UINode* const c : _children) {
+    c->on_key_up(e);
+    if (e.stopped() == 2) return;
+  }
+  // components 空转。
+}
+
+bool UINode::pop_page(const UIPopPageOpts& opts) {
+  UINode& rt = root();
+  UILayer* const layer = rt._layer;
+  if (layer == nullptr || layer->ui() != &rt) return false;
+  layer->pop(opts);
+  return true;
 }
 
 }

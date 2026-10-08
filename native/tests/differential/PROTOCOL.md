@@ -4744,3 +4744,20 @@ harness op：
   auto-size 的四道拦截（`w&&h` 直用、缺 w/h 测、`raw.size` 拦、无父不调）；`set_text` 的版本分支
   （重复跳过 / `style_touch` 版本变 / `assign` 数据变）、JSON 分支、`texti` 同键跳过与样式变化重调、
   零宽走测、scale 除法与 0 回落 1；`image` 的 `z`/`u`、`color` 默认空串。
+
+### 6.9.147 UI 骨架：页面栈 + 生命周期 + 输入 + 动作（`cases/lfw/uinode_life.txt` 59 行 + `uilayer.txt` 70 行；变异 38/38 全杀）
+
+- 节点 op：`nmk <nid> <parent|-> <data>`（`UINode::create`：items 计数递归）、`nml <nid> <层号|-> <data>`
+  （挂在真层上的"非栈顶"节点）、`nlife <nid> start|stop|resume|pause`、`nclick <nid> <btn>`
+  （打 `click|<nid>|stop=`）、`nkey <nid> down|up <gk> <key> [1=预 stop]`（打 `nkey|…|stop=`）、
+  `nact <nid> <值>`（`actor.act` 直发）、`nrd <nid> kids`（子节点数量 + 引用）。
+- 层 op：`uipg <id> <数据>`（给 `uis` 补页，供真 `UILayers` 查找）、`rlnew`、`rlpush`、
+  `rlset|rlpushp <idx> <id>`、`rlpop <idx> <min_pages> <incl> <until|->`、`rlinfo`（层数 + 每层
+  `idx:pages:topid`，洞打 `-`）、`rlui/rlz <idx>`、`rlfind <idx> <nid>`（id/depth）、`rlfocus`、
+  `rlfn <idx>`（focused_node 引用）、`rltree <idx>`（`id(子数)[…]`）、`rlact <idx> <nid|-> <值>`、
+  `rldisp`；`unpatch`（TS 侧复原 `uis.add/clear/all` 与 `layers.set_page` 补丁；C++ 空操作）。
+- 用例钉住：生命周期 actions 顺序（子先于父 start）/ lifetime 复位 / 焦点的 pause-存 resume-还原 /
+  show-hide 转发 / 鼠标三键与 stop_propagation / 键盘：预 stop 早退、子节点先、焦点才派发、
+  a/j 键位映射 / actor：广播、数组、假值、参数缺省、NaN→undefined、未知 handler warn、
+  set_page 经假缝 / create 计数（非法 count 落 1、嵌套）/ `pop_page` 非栈顶不弹 /
+  层栈：同 id 早退、z 叠层号、min_pages、until、inclusive（只有首个 on_pause）、弹空层、dispose。

@@ -1,0 +1,67 @@
+# 生命周期与 actions：start/stop/resume/pause + 子节点次序 + lifetime/state 复位
+nod l1 o 6 id s "l1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 4 start o 2 name s "sound" args a 1 s "st" stop o 2 name s "sound" args a 1 s "sp" resume o 2 name s "sound" args a 1 s "rs" pause o 2 name s "sound" args a 1 s "pa"
+noc l2 l1 o 6 id s "l2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 1 start o 2 name s "sound" args a 1 s "cst"
+nadd l1 l2
+nset l1 update 1
+nset l1 update 2
+nrd l1 lifetime
+nlife l1 start
+nrd l1 lifetime
+nlife l1 stop
+nlife l1 resume
+nlife l1 pause
+# 焦点保存/恢复（on_pause 存 _state、on_resume 还原）
+nod p o 5 id s "p" pos a 3 n 0 n 0 n 0 size a 3 n 4 n 4 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+noc k p o 5 id s "k" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nadd p k
+ncb p hide
+ncb k hide
+ncb p show
+ncb k show
+ncb k foucs_changed
+nset k focused 1
+nrd p foc
+nlife p pause
+nrd p foc
+nlife p resume
+nrd p foc
+nfn p -
+nrd p foc
+# on_click：三种键位动作 + stop_propagation
+nod c1 o 6 id s "c1" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 3 click o 2 name s "sound" args a 1 s "k0" mclick o 2 name s "sound" args a 1 s "k1" rclick o 2 name s "sound" args a 1 s "k2"
+nclick c1 0
+nclick c1 1
+nclick c1 2
+nclick c1 3
+# on_key_down：子节点先走、stop_immediate 短路
+nod f o 6 id s "f" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 2 click o 2 name s "sound" args a 1 s "fkc" rclick o 2 name s "sound" args a 1 s "fkr"
+noc c2 f o 6 id s "c2" pos a 3 n 0 n 0 n 0 size a 3 n 2 n 2 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 actions o 1 click o 2 name s "sound" args a 1 s "ckc"
+nset f focused 1
+nkey f down a KeyA 1
+nkey f down a KeyA
+nkey f down j KeyJ
+nkey f down d KeyD
+nkey f up a KeyA
+nset c2 focused 1
+nkey f down a KeyA
+nkey c2 down a KeyA
+nfn f -
+# actor 直接派发：广播 / 数组 / 假值 / 参数缺省 / 未知 handler / set_page
+nact l1 o 2 name s "broadcast" args a 1 s "hi"
+nact l1 u
+nact l1 z
+nact l1 o 2 name s "sound" args a 4 s "px" s "1" s "bad" s "3"
+nact l1 a 2 o 2 name s "sound" args a 1 s "a1" o 2 name s "sound" args a 1 s "a2"
+nact l1 o 2 name s "nope" args a 2 s "1" s "2"
+nact l1 o 1 name s "broadcast"
+nact l1 o 1 name s "pop_page"
+nact l1 o 2 name s "set_page" args a 2 s "pgX" s "2"
+# create：items 计数（小数进位 / 非法 count 落 1 / 嵌套）
+nmk m1 - o 6 id s "m1" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 items a 2 o 6 id s "i1" count n 3 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 o 6 id s "i2" count n 2 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nrd m1 kids
+nrd m1 sn "i2"
+nmk m2 - o 6 id s "m2" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 items a 1 o 7 id s "a" count n 2 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 items a 1 o 5 id s "b" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nrd m2 kids
+nrd m2 sn "b"
+nmk m3 - o 6 id s "m3" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 items a 2 o 6 id s "z1" count n 0 pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1 o 6 id s "z2" count s "x" pos a 3 n 0 n 0 n 0 size a 3 n 1 n 1 n 1 center a 3 n 0 n 0 n 0 scale a 3 n 1 n 1 n 1
+nrd m3 kids
