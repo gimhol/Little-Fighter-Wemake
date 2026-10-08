@@ -1,5 +1,7 @@
 #include "lfw/ui/read_info_value.h"
 
+#include "lfw/ui/validate_ui_img_info.h"
+
 namespace lfw::ui {
 
 namespace {
@@ -46,6 +48,8 @@ bool judger_run(UIJudger judger, const Value& v) {
     }
     case UIJudger::UnsafeIsArray:
       return is_array(v);
+    case UIJudger::ValidateUIImgInfo:
+      return validate_ui_img_info(v);
     default:
       return false;
   }

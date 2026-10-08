@@ -4687,3 +4687,16 @@ harness op：
 - 用例钉住：全缺省（key `?x=h:,,,,,,0,0`、ops `[]`）/ 全给（crop 在 flip 前、`{type:'crop',
   ...img}` 键序）/ 只 `flip_y`（op 里 `x:0` 默认）/ `dw=0` 被验证器拦（`positive integer`）/
   `flip_x:0` 在场不触发 flip / 空对象与 `null` 的校验错 / 未脚本化图的失败传播。
+
+### 6.9.143 `cook_ui_info`（lfw 台面 op `ucook`；`cases/lfw/ucook.txt` 35 行；变异 19/19 全杀）
+
+- op：`ucook <-|id> <值>`（parent 走 `uinew`/`uinest` 的脚本表）→ 成功
+  `ucook|<渲染>`、失败 `ucook|err|<esc(消息)>`。
+- 渲染用台面的 `render_cycle_safe`：cook 的 `items` 会挂 parent 成环，环上打 `~circ`
+  （DAG 共用仍照常展开）；TS 侧 catch 取 `{ui, error}.error.message`（严格类型错）或
+  `Error.message`（校验错）。
+- 用例钉住：id/name 的 `''` 回落与 `no_id_N` 计数器 / component 三种来源（裸串、`<id>!f(a,b)`
+  表达式、对象就地补 id/name）+ weight 稳定降序 / actions（数组、对象项、`null` 跳过）/ img
+  字符串与对象两路（`dw ?? w`、校验、`ui_load_img` 的 key）/ size 三档（raw.size → img →
+  屏幕）与 `!h && w` 的 floor 换算 / items 递归（parent 环）与空 items 删键 / 严格类型错的
+  消息文本。

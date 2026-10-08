@@ -8,7 +8,7 @@ import { Factory } from "../../../../src/LFW/Factory";
 import { LFW } from "../../../../src/LFW/LFW";
 import { get_val_getter_from_stage } from "../../../../src/LFW/loader/get_val_getter_from_stage";
 import { PlayerInfo } from "../../../../src/LFW/PlayerInfo";
-import { find_ui_template, merge_ui_template } from "../../../../src/LFW/ui/cook_ui_info";
+import { cook_ui_info, find_ui_template, merge_ui_template } from "../../../../src/LFW/ui/cook_ui_info";
 import { ui_load_img } from "../../../../src/LFW/ui/ui_load_img";
 
 import { esc, keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
@@ -26,6 +26,29 @@ function fail(msg: string): never {
 
 const render_value = (v: unknown): string => renderValue(v);
 const num = (n: number): string => renderValue(n);
+
+// `renderValue` 的环安全版（cook 的 `items` 会挂 parent 指针形成环；DAG 共用照常展开）。
+function render_cycle_safe(v: unknown, stack: Set<unknown> = new Set()): string {
+  if (v !== null && typeof v === "object") {
+    if (stack.has(v)) return "~circ";
+    stack.add(v);
+    let out: string;
+    if (Array.isArray(v)) {
+      out = "[" + v.map((x) => render_cycle_safe(x, stack)).join(",") + "]";
+    } else {
+      const o = v as Record<string, unknown>;
+      out =
+        "{" +
+        Object.keys(o)
+          .map((k) => `${esc(k)}:${render_cycle_safe(o[k], stack)}`)
+          .join(",") +
+        "}";
+    }
+    stack.delete(v);
+    return out;
+  }
+  return renderValue(v);
+}
 
 let clock_ms = 0;
 
@@ -676,6 +699,18 @@ async function run_ops(): Promise<void> {
       const parent = pid === "-" ? undefined : (ui_vals.get(pid) as never);
       const raw = parseValue(t, i) as never;
       push(`uimerge|${renderValue(await merge_ui_template(lfw, raw, parent))}`);
+    } else if (op === "ucook") {
+      const pid = next();
+      const parent = pid === "-" ? undefined : (ui_vals.get(pid) as never);
+      const info = parseValue(t, i);
+      try {
+        const cooked = await cook_ui_info(lfw, info as never, parent);
+        push(`ucook|${render_cycle_safe(cooked)}`);
+      } catch (e) {
+        const rec = e as Rec;
+        const msg = rec && rec["error"] ? (rec["error"] as Error).message : err_msg(e);
+        push(`ucook|err|${esc(msg)}`);
+      }
     } else if (op === "devon") {
       lfw.dev = true;
     } else if (op === "devoff") {

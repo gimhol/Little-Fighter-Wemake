@@ -1,0 +1,23 @@
+# cook_ui_info（4AL）：id/name 补全 / 字段归一 / component 归一+排序 / actions / img / size 三档 / items 递归 / 报错
+dataset screen_w n 320
+dataset screen_h n 240
+ucook - o 2 id s "a" values o 1 k s "v"
+ucook - o 6 id s "b" name s "" visible b 1 count n 2 pos s "1,2" scale a 2 n 1 n 1
+ucook - o 2 id s "c" i18n s "hello"
+ucook - o 2 id s "d" component a 4 s "Label" s "<Btn>!Press(a, b)" o 2 cls s "Panel" weight n 2 o 1 name s "OnlyName"
+ucook - o 2 id s "e" actions o 3 click a 2 s "f(a)" o 2 name s "x" args a 1 s "y" resume s "go" pause z
+imgset i.png?x=h:,,,,,,0,0 o 2 w n 30 h n 40
+ucook - o 2 id s "f" img o 1 path s "i.png"
+imgset j.png?x=h:,,5,6,7,6,0,0 o 2 w n 70 h n 80 scale n 2
+ucook - o 2 id s "g" img o 4 path s "j.png" w n 5 h n 6 dw n 7
+imgset k.png?x=h:,,5,6,5,6,0,0 o 2 w n 5 h n 6
+ucook - o 2 id s "k" img o 3 path s "k.png" w n 5 h n 6
+ucook - o 3 id s "sz" size s "10" img o 3 path s "k.png" w n 5 h n 6
+ucook - o 2 id s "h" size s "10,20"
+ucook - o 2 id s "style" style o 1 color s "red"
+uinew p20 o 1 templates o 1 ttpl o 1 id s "tpl_id"
+ucook p20 o 2 template s "ttpl" id s "kid"
+ucook - o 2 id s "root" items a 2 o 1 id s "kid1" o 2 id s "kid2" items a 1 o 1 id s "kid3"
+ucook - o 0
+ucook - o 1 id s ""
+ucook - o 2 id s "bad" count s "x"

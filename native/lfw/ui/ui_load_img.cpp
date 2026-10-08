@@ -52,9 +52,14 @@ bool ui_load_img(LFW& lfw, const Value& img, Value& out, std::u16string& error) 
   const Value* const dh = field_of(img, u"dh");
   const Value* const flip_x = field_of(img, u"flip_x");
   const Value* const flip_y = field_of(img, u"flip_y");
-  // `flip_x = 0` / `flip_y = 0` 的默认只吃 `undefined`（`null` 留给假值判定）。
-  const Value flip_x_eff = flip_x != nullptr ? *flip_x : Value(0.0);
-  const Value flip_y_eff = flip_y != nullptr ? *flip_y : Value(0.0);
+  // `flip_x = 0` / `flip_y = 0` 的默认吃 `undefined`（**键在但值是 undefined 也算**），
+  // `null` 留给假值判定。
+  const bool flip_x_undef =
+      flip_x == nullptr || std::holds_alternative<std::monostate>(*flip_x);
+  const bool flip_y_undef =
+      flip_y == nullptr || std::holds_alternative<std::monostate>(*flip_y);
+  const Value flip_x_eff = flip_x_undef ? Value(0.0) : *flip_x;
+  const Value flip_y_eff = flip_y_undef ? Value(0.0) : *flip_y;
 
   const Value* const fields[] = {x, y, w, h, dw, dh, &flip_x_eff, &flip_y_eff};
   const std::u16string md5 = lfw.host().md5(join_fields(fields, 8));

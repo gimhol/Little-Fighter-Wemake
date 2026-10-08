@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -37,6 +38,41 @@ std::vector<std::string> g_log;
 void push(const std::string& line) { g_log.push_back(line); }
 
 std::string num(double d) { return to_ascii(render_value(lfw::Value(d))); }
+
+// `render_value` 的环安全版（cook 的 `items` 会挂 parent 指针形成环；DAG 共用照常展开）。
+std::u16string render_cycle_safe(const lfw::Value& v, std::set<const void*>& stack) {
+  if (const lfw::Array* const a = lfw::as_array(v)) {
+    if (stack.count(a) != 0) return u"~circ";
+    stack.insert(a);
+    std::u16string out = u"[";
+    for (size_t i = 0; i < a->size(); ++i) {
+      if (i != 0) out.push_back(u',');
+      out += render_cycle_safe(a->at(i), stack);
+    }
+    out.push_back(u']');
+    stack.erase(a);
+    return out;
+  }
+  if (const lfw::Object* const o = lfw::as_object(v)) {
+    if (stack.count(o) != 0) return u"~circ";
+    stack.insert(o);
+    std::u16string out = u"{";
+    bool first = true;
+    for (const std::u16string& k : o->keys()) {
+      const lfw::Value* const p = o->get(k);
+      if (p == nullptr) continue;
+      if (!first) out.push_back(u',');
+      first = false;
+      out += to_u16(trace::esc(k));
+      out.push_back(u':');
+      out += render_cycle_safe(*p, stack);
+    }
+    out.push_back(u'}');
+    stack.erase(o);
+    return out;
+  }
+  return render_value(v);
+}
 
 std::string s_of(const lfw::Value& v) {
   const std::u16string* const s = std::get_if<std::u16string>(&v);
@@ -962,6 +998,18 @@ int main(int argc, char** argv) {
       const lfw::Value* const parent = pid == "-" ? nullptr : &g_ui_vals.at(pid);
       const lfw::Value raw_info = parse_value(t, i);
       push("uimerge|" + to_ascii(render_value(lfw::ui::merge_ui_template(lfw, raw_info, parent))));
+    } else if (op == "ucook") {
+      const std::string pid = t[i++];
+      const lfw::Value* const parent = pid == "-" ? nullptr : &g_ui_vals.at(pid);
+      const lfw::Value info = parse_value(t, i);
+      lfw::Value out;
+      std::u16string err;
+      if (lfw::ui::cook_ui_info(lfw, info, parent, out, err)) {
+        std::set<const void*> stack;
+        push("ucook|" + to_ascii(render_cycle_safe(out, stack)));
+      } else {
+        push("ucook|err|" + trace::esc(err));
+      }
     } else if (op == "devon") {
       lfw.dev_mode = true;
     } else if (op == "devoff") {

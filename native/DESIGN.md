@@ -8945,3 +8945,33 @@ x/y/w/h/dw/dh 保持原样（nullish → 空串）；key 是 `` `${path}?x=${md5
 **测试**：lfw 台面新 op + 用例 `cases/lfw/uimg.txt` **15 行**；变异 `lfw_uimg.mjs` **9/9 全杀**；
 全量差分 **214/214**、lint 全清。
 
+## 99. 切片 4AL：`cook_ui_info` 本体
+
+`native/lfw/ui/cook_ui_info.cpp` 补上 `cook_ui_info(lfw, info, parent)`：string ⇒ 先
+`find_ui_template`；有 `template` ⇒ 先 merge；id/name 补全（`no_id_${++__new_id}` 进程级计数器）；
+component 归一（字符串走 `parse_call_func_expression`、对象项**就地**补 cls/id/name，按
+`(b.weight||0)-(a.weight||0)` 稳定降序）；`rest_raw` 展开 + 字面量键序；逐字段 `parse_ui_value`
+（类型不符 ⇒ false + 消息）；actions 归一；img 归一 + `ui_load_img`；i18n 走宿主
+`measure_text`；size 三档回落 + img 宽高比换算；items 递归（挂 parent）+ 空删键。配套：
+`UIJudger` 扩 `ValidateUIImgInfo`（= `judger(validate_ui_img_info)`）。
+
+台面：lfw subject 新 op `ucook`；`render_cycle_safe`（cook 的 items 会挂 parent 指针成环，
+DAG 共用仍照常展开，只有真环打 `~circ`）；TS catch 取 `{ui,error}` 的 `.error.message`。
+
+照抄怪癖（编号接 122 → 123）：123. `raw.id || no_id` / `raw.name || id` 是**真值**口径（`''`
+也回落）；component 对象项 `id ||=` / `name ||=` 同款，`cls` 走 `!cls && name`。124. 结果键序 =
+`rest_raw` 的在先，然后按字面量次序补缺（`values,id,name,parent,pos,scale,center,size,img_info,
+txt_info,items,img,component,style,count,…`），`raw` 接在最后；后续赋值只覆盖不动位置。125. size
+三档：`raw.size`（read_nums）→ img（`dw ?? w ?? 0` / `dh ?? h ?? 0`）→ 无 parent 时屏幕
+`[screen_w, screen_h, 0]`；随后按 `img_info || txt_info` 的 `{w,h,scale}` 给零轴补算（floor，
+含 `!w && h` / `!h && w` 两支）。126. img 对象分支 `dw = parse ?? w`、`dh = parse ?? h`
+（nullish 回落，不是假值）；flip 走 `is_0_or_1` judger；nine_patch 字符串走 unsafe_is_object、
+对象走十键 `Number`。127. items 非数组真值 ⇒ 双参 warn；空数组或没长出来最后**删键**
+（`ret.items` 键的有无是渲染可见的）。
+
+偏差记录：`cook_ui_info(null)` / 非对象 component 元素 TS 会抛（属性访问），端口跳过；字符串
+items TS 按字符迭代，端口只告警。
+
+**测试**：用例 `cases/lfw/ucook.txt` **35 行**（17 次 `ucook`）；变异 `lfw_ucook.mjs`
+**19/19 全杀**；全量差分 **215/215**、lint 全清。
+

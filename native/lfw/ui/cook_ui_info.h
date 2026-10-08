@@ -28,5 +28,15 @@ void find_ui_template(LFW& lfw, const Value* parent, const std::u16string& templ
 // `lfw.dev_mode == true` 时两边的 `dev_component` 接在 `component` 尾部。
 Value merge_ui_template(LFW& lfw, const Value& raw_info, const Value* parent);
 
+// `cook_ui_info(lfw, info, parent)`：string ⇒ 先 `find_ui_template`；有 `template` ⇒ 先 merge；
+// 随后 id/name 补全（`no_id_${++__new_id}` 进程级计数器）、component 归一 + 按 weight 降序、
+// 字段逐项 `parse_ui_value`（类型不符 ⇒ false + `error`）、actions 归一、img 归一 +
+// `ui_load_img`、i18n 走宿主 `measure_text`、size 三档回落与 img 宽高比换算、items 递归。
+//
+// 端口差异：TS 对 `cook_ui_info(null)` / 非对象 component 元素会抛（属性访问），端口按
+// 「原样跳过」处理；`raw.items` 是非数组真值（字符串）时 TS 会按字符迭代，端口只告警不迭代。
+bool cook_ui_info(LFW& lfw, const Value& info, const Value* parent, Value& out,
+                  std::u16string& error);
+
 }
 }

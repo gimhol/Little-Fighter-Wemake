@@ -43,8 +43,8 @@ export default {
     {
       note: "flip 的默认 0 丢了（缺省给 undefined）",
       file: "native/lfw/ui/ui_load_img.cpp",
-      from: `  const Value flip_x_eff = flip_x != nullptr ? *flip_x : Value(0.0);`,
-      to: `  const Value flip_x_eff = flip_x != nullptr ? *flip_x : Value();`,
+      from: `  const Value flip_x_eff = flip_x_undef ? Value(0.0) : *flip_x;`,
+      to: `  const Value flip_x_eff = flip_x_undef ? Value() : *flip_x;`,
     },
     {
       note: "pin 不再调用",
