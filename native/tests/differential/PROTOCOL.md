@@ -4773,3 +4773,22 @@ harness op：
   新增 `flset <id>` / `flpush <id>`（驱动 `lfw.layers` 第 0 层，打声效与 `on_ui_changed` 行）。
 - 用例新增：`uipg pgX` + 第 2 层 set_page（建页）/同 id 早退/push_page/再早退；
   `flset/flset/flpush/flset` 覆盖第 0 层（接线层）的建页、早退与 on_push。
+
+### 6.9.149 schema 类类型与惰性实例 + make_schema（`cases/schema/inst.txt` 58 行；变异 29/29 全杀）
+
+- 校验器 op：`nvg <vid>`（getter+setter 钩子；日志 `ig|<vid>|<raw 渲染>|<类名>|<路径 esc>` /
+  `is|<vid>|<值渲染>|<raw 渲染>|<类名>|<路径 esc>`，路径经 esc 所以带引号）、`nvgo <vid>`（只 getter）、
+  `nvso <vid>`（只 setter）；getter 先查 `gres <键> <值>` 表（键两侧都去引号：C++ `key_of`、TS `keyOf`），
+  落空按 `nullable != false` 回 `null`（渲染 `z`）或报错。
+- 值 op：`vset <vvid> <值>` 存值；`valv <vid> <vvid> <sid>`（拿存档值跑 `validate`，打印同 `val`，
+  **不含** `vv` 行—— TS 侧渲染存档会触发访问器）；`gn <vid> <vvid> <键>` 打印
+  `gn|<vid>|<vvid>|<键>|ok|…` 或 `…|err|<esc(消息)>`（TS 读取即触发访问器；C++ 按 target+key 找
+  `DefinedInstance` 后 `get_instance`，找不到就普通读）；`sn` 同理（写触发 setter）。
+- schema op：`mks <sid> <meta>`（`make_schema`；字面里的 `$cls:X` 在 TS 侧还原成假类 `FakeNode`/`FakeComp`，
+  根无 key 的 TS 异常被台面吞成 undefined）、`psch <sid>` 打印
+  `psch|<sid>|k=…;t=…;p=…[;n=…][;props=[名称={…};…]][;items={…}]`（`t` 为类时打 `s"$cls:<名>"`）。
+- 用例钉住：对象属性命中/未命中/nullable 默认/`nullable:false` 报错、钩子缺边的两条文案、
+  数组项按下标记录（不删元素）与越界键回落普通读、`default:` 类类型分支的字符串限制、
+  delete 后重定义（`nullable` 与未命中报错）、嵌套对象里的类属性（内层键被删）、
+  无惰性属性时 `gn/sn` 普通读写；make_schema 的类简写（含裸 `$cls:` 标记）、
+  对象 items 展开（items 自己的 key 盖 meta key）、原始属性跳过、根无 key、path 拼接。

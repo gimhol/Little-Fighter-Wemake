@@ -9125,3 +9125,33 @@ rlinfo/rlui/rlz/rlfind/rlfocus/rlfn/rltree/rlact/rldisp`）、`unpatch`（TS 侧
 **测试**：全 lfw 用例 **15/15**（load 行数 144 → 137，与台面补丁移除同步）；变异
 `lfw_uinode_life.mjs` 新增两条（`on_set`/`on_push` 接线）共 **40/40 全杀**；全量差分 **221/221**。
 
+## 105. 切片 4AR：schema 类类型与惰性实例（instance_getter/setter + make_schema）
+
+`utils/schema/validate_schema.{h,cpp}` 升级：类类型标记 `$cls:<类名>`（`is_class_type` / `class_type_name`——
+TS 的 `type` 可以是构造器（函数），端口的数据表装不下函数）；`instance_getter` / `instance_setter` 钩子 +
+`DefinedInstance` 记录（`ObjectProp` / `ArrayItem`，存 target/key/raw_value/schema）+ `get_instance` / `set_instance`。
+新 `utils/schema/make_schema.{h,cpp}`：`{key, type, ...remains, path, properties}` 拼装。
+
+台面：`nvg _vid_`（getter+setter 钩子；日志 `ig|<vid>|<raw>|<类名>|<path>` / `is|<vid>|<值>|<raw>|<类名>|<path>`）、
+`nvgo`/`nvso`（只 getter / 只 setter）、`gres <键> <值>`（getter 查表，键两侧都去引号）、
+`vset <vvid> <值>` / `valv <vid> <vvid> <sid>`（拿存档值跑 `validate`）、
+`gn`/`sn <vid> <vvid> <键> [值]`（TS 侧访问器在读/写时触发；C++ 按 target+key 找记录后走 `get_instance`/
+`set_instance`，无记录时普通读写）、`mks`/`psch`（`$cls:` 标记在 TS 侧还原成假类 `FakeNode`/`FakeComp`；
+`psch` 打 `psch|<sid>|k=…;t=…;p=…[;n=…][;props=[名={…};…]][;items={…}]`）。用例 `cases/schema/inst.txt` **58 行**。
+
+照抄怪癖（编号接 147 → 148）：148. 对象属性的类类型分支 TS 是 `delete value[k]` + 当场 `defineProperty`
+——端口只留记录 + 删键（读值经 `get_instance`）；数组项分支**不删元素**，只记录（下标键 `"0"`…）。
+149. getter 命中判定是 JS 真值（`if (ret)`），落空才看 `nullable != false`：不满足报
+`[SchemaValidator] <path> not found, value: <raw>`；钩子没设分别报 `instance_getter not set! <path>` /
+`instance_setter not set! <path>`。150. `default:` 类类型分支只收字符串，且错误后**立即** `return false`
+（不吃 `oneof` 尾巴）。151. `make_schema` 的 `type` 缺省只看 `undefined`（`type: null` 保持 null）；
+remains = meta 去 `properties/items/key/type` 后的剩余键（插入序照抄）；items 对象展开是 `{key: meta_key, ...items}`
+——**items 自己的 key 会盖住 meta 的**；根无 key：TS 抛、端口返回 undefined（台面 `mks` 对 TS 异常做吞掉处理）。
+
+偏差记录：TS 侧 `properties/items` 的类简写（函数）在端口里表现为 `$cls:` 字符串/裸标记，
+台面用标记字符串 + 假类抹平；TS `defineProperty` 的惰性求值在此以 `DefinedInstance` 数据建模，
+**读取时**才调 getter（外部可观测行为一致）；`psch` 是台面自造的观测格式，不属端口行为。
+
+**测试**：用例 `cases/schema/inst.txt` **58 行**；变异 `schema_inst.mjs` **29/29 全杀**、
+既有 `schema.mjs` **47/47** 复跑全杀；全量差分 **222/222**。
+

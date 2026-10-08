@@ -1,0 +1,86 @@
+# 4AR：类类型（`$cls:`）+ 惰性实例（instance_getter/setter）+ `make_schema`
+# A 段：对象属性的惰性实例（命中 / 赋值钩子）
+nvg vA
+schv sa o 3 key s "root" type s "object" properties o 1 node o 3 key s "node" type s "$cls:FakeNode" path s "root.node"
+gres "abc" o 1 x n 7
+vset val1 o 1 node s "abc"
+valv vA val1 sa
+gn vA val1 node
+sn vA val1 node n 1
+gn vA val1 node
+# B 段：getter 未命中 + nullable 默认 ⇒ null；getter 返回假值也走 null
+nvg vB
+schv sb o 3 key s "b" type s "object" properties o 1 p o 3 key s "p" type s "$cls:FakeComp" path s "b.p"
+vset val2 o 1 p s "gone"
+valv vB val2 sb
+gn vB val2 p
+gres "zero" n 0
+vset val8 o 1 p s "zero"
+valv vB val8 sb
+gn vB val8 p
+# C 段：nullable=false ⇒ 未命中报错
+nvg vC
+schv sc o 3 key s "c" type s "object" properties o 1 p o 4 key s "p" type s "$cls:FakeComp" path s "c.p" nullable b 0
+vset val3 o 1 p s "gone"
+valv vC val3 sc
+gn vC val3 p
+# D 段：钩子缺一边
+nvgo vD
+schv sd o 3 key s "d" type s "object" properties o 1 p o 3 key s "p" type s "$cls:FakeComp" path s "d.p"
+vset val4 o 1 p s "x"
+valv vD val4 sd
+gn vD val4 p
+sn vD val4 p n 2
+nvso vE
+schv se o 3 key s "e" type s "object" properties o 1 p o 3 key s "p" type s "$cls:FakeComp" path s "e.p"
+vset val5 o 1 p s "x"
+valv vE val5 se
+gn vE val5 p
+sn vE val5 p n 3
+# E 段：数组元素的惰性实例（TS 侧 defineProperty 按下标，不删元素）
+nvg vF
+schv sf o 3 key s "arr" type s "array" items o 3 key s "arr" type s "$cls:FakeNode" path s "arr[]"
+gres "n0" s "hit"
+vset val6 a 2 s "n0" s "n1"
+valv vF val6 sf
+gn vF val6 0
+sn vF val6 1 n 5
+gn vF val6 1
+gn vF val6 5
+vset val7 a 1 s "n0"
+valv vF val7 sf
+gn vF val7 0
+# F 段：default 分支（类类型只收字符串）
+nv vG
+schv sg o 3 key s "node" type s "$cls:FakeNode" path s "node"
+val vG sg n 5
+rz vG
+val vG sg s "s1"
+rz vG
+val vG sg b 1
+rz vG
+# G 段：对象属性的键被 TS `delete` 掉后重定义（验证失败路径也走同一个洞）
+vset valB o 1 node s "abc"
+schv sb2 o 3 key s "root" type s "object" properties o 1 node o 3 key s "node" type s "$cls:FakeNode" path s "root.node" nullable b 0
+valv vA valB sb2
+gn vA valB node
+# H 段：嵌套对象里的类属性
+schv sh o 3 key s "h" type s "object" properties o 1 inner o 4 key s "inner" type s "object" path s "h.inner" properties o 1 q o 2 key s "q" type s "$cls:FakeNode" path s "h.inner.q"
+vset val9 o 1 inner o 1 q s "deep"
+valv vC val9 sh
+gn vC val9 inner
+# I 段：无惰性属性时 gn/sn 走普通读写
+vset valA o 1 a n 1
+sn vA valA a n 2
+gn vA valA a
+# J 段：make_schema（`$cls:` 简写 / 对象 items 展开 / 原始属性跳过 / 根无 key）
+mks sm o 3 key s "root" type s "object" properties o 4 a o 2 key s "a" type s "$cls:FakeNode" b o 3 key s "b" type s "number" nullable b 1 c s "q" d s "$cls:FakeNode"
+psch sm
+mks sm2 o 3 key s "list" type s "array" items o 2 key s "list" type s "$cls:FakeComp"
+psch sm2
+mks sm3 o 3 key s "wrap" type s "object" properties o 1 m o 2 key s "m" items o 1 type s "string"
+psch sm3
+mks sm4 o 1 type s "object"
+psch sm4
+mks sm5 o 3 key s "lst" type s "array" items s "$cls:FakeComp"
+psch sm5

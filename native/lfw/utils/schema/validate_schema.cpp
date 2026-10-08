@@ -129,6 +129,41 @@ SchemaValidator& SchemaValidator::Default() {
   return v;
 }
 
+SchemaValidator& SchemaValidator::instance_getter(InstanceGetter func) {
+  _get_instance = std::move(func);
+  return *this;
+}
+
+SchemaValidator& SchemaValidator::instance_setter(InstanceSetter func) {
+  _set_instance = std::move(func);
+  return *this;
+}
+
+SchemaValidator::InstanceAccess SchemaValidator::get_instance(size_t index) const {
+  const DefinedInstance& d = _defined[index];
+  const std::u16string path = to_string(field(d.schema, u"path"));
+  if (!_get_instance) {
+    return {false, Value(), u"[SchemaValidator] instance_getter not set! " + path};
+  }
+  const Value ret = _get_instance(d.raw_value, class_type_name(field(d.schema, u"type")), d.schema);
+  if (truthy(ret)) return {true, ret, std::u16string()};
+  // `prop_schema.nullable != false`（宽松 `!=`）
+  if (!loose_equals_false(field(d.schema, u"nullable"))) {
+    return {true, Value(NullTag{}), std::u16string()};
+  }
+  return {false, Value(),
+          u"[SchemaValidator] " + path + u" not found, value: " + to_string(d.raw_value)};
+}
+
+std::u16string SchemaValidator::set_instance(size_t index, const Value& v) const {
+  const DefinedInstance& d = _defined[index];
+  if (!_set_instance) {
+    return u"[SchemaValidator] instance_setter not set! " + to_string(field(d.schema, u"path"));
+  }
+  _set_instance(v, d.raw_value, class_type_name(field(d.schema, u"type")), d.schema);
+  return std::u16string();
+}
+
 void SchemaValidator::reset() {
   _errors.clear();
   _warnings.clear();
@@ -181,7 +216,17 @@ bool SchemaValidator::validate(const Value& value, const Value& schema) {
     Array* mut = const_cast<Array*>(arr);
     for (size_t i = 0; i < arr->size(); ++i) {
       Value prop_value = arr->at(i);
-      // TS 的类类型分支（`typeof prop_type === 'function'` ⇒ `Object.defineProperty`）未建形。
+      // 类类型：TS `Object.defineProperty(value, i, {get, set})` + `continue`（不删元素、不浅拷贝）。
+      if (is_class_type(field(items, u"type"))) {
+        DefinedInstance d;
+        d.kind = DefinedInstance::Kind::ArrayItem;
+        d.target = value;
+        d.key = number_to_string(static_cast<double>(i));
+        d.raw_value = prop_value;
+        d.schema = items;
+        _defined.push_back(std::move(d));
+        continue;
+      }
       if (const Array* inner = as_array(prop_value)) {
         // `value[i] = [...prop_value]`：先给槽位换一个浅拷贝，验证仍跑在**原数组**上。
         mut->at(i) = Value(std::make_shared<Array>(inner->items()));
@@ -208,7 +253,18 @@ bool SchemaValidator::validate(const Value& value, const Value& schema) {
         if (pp == nullptr) continue;
         const Value& prop_schema = *pp;
         Value prop_value = get_prop(value, k);
-        // TS 的类类型分支（`delete value[k]` + `defineProperty`）未建形，见头注。
+        // 类类型：TS `delete value[k]` + `Object.defineProperty(value, k, {get, set})` + `continue`。
+        if (is_class_type(field(prop_schema, u"type"))) {
+          DefinedInstance d;
+          d.kind = DefinedInstance::Kind::ObjectProp;
+          d.target = value;
+          d.key = k;
+          d.raw_value = prop_value;
+          d.schema = prop_schema;
+          _defined.push_back(std::move(d));
+          if (Object* obj = const_cast<Object*>(as_object(value))) obj->remove(k);
+          continue;
+        }
         if (const Array* inner = as_array(prop_value)) {
           // `prop_value = [...prop_value]`：局部换浅拷贝，验证跑在拷贝上；
           // 成功后再整体写回（失败则丢弃）。
@@ -221,8 +277,14 @@ bool SchemaValidator::validate(const Value& value, const Value& schema) {
         // `else if (prop_value && typeof prop_type === 'object')`：死代码（同上），不落地。
       }
     }
+  } else if (is_class_type(type)) {
+    // `default:` 的类类型分支：值必须是字符串，否则错误 + 直接 `return false`。
+    if (!std::holds_alternative<std::u16string>(value)) {
+      _errors.push_back(u"'" + to_string(field(schema, u"path")) +
+                        u"' must be a string, but got " + to_string(value));
+      return false;
+    }
   }
-  // `default:`（`typeof schema.type === 'function'`）未建形，见头注。
 
   const Value& oneof = field(schema, u"oneof");
   if (const Array* one = as_array(oneof)) {

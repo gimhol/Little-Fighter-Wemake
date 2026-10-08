@@ -194,6 +194,7 @@ add_library(lfw_core STATIC
   utils/js_add.cpp
   utils/times.cpp
   utils/read_nums.cpp
+  utils/schema/make_schema.cpp
   utils/schema/validate_schema.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp
