@@ -8,6 +8,7 @@ import { Factory } from "../../../../src/LFW/Factory";
 import { LFW } from "../../../../src/LFW/LFW";
 import { get_val_getter_from_stage } from "../../../../src/LFW/loader/get_val_getter_from_stage";
 import { PlayerInfo } from "../../../../src/LFW/PlayerInfo";
+import { find_ui_template, merge_ui_template } from "../../../../src/LFW/ui/cook_ui_info";
 
 import { keyOf, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
 
@@ -30,6 +31,10 @@ let clock_ms = 0;
 // `imp`/`lzadd` 的 kind 迷你语言（两侧一致）：`-`/`o`/`a`/`k:<name>`/`str:<v>`/`e`（失败，抛 "boom"）。
 const imports = new Map<string, () => unknown>();
 const import_fails = new Map<string, string>();
+// 4AJ：`find_ui_template` 要吞的「ImportError 形状」失败（C++ 侧就是 `impfail`）。
+const import_soft_fails = new Set<string>();
+// 4AJ：`uinew`/`uinest` 的 UI 值脚本。
+const ui_vals = new Map<string, Rec>();
 
 // 4AD：URL 流程脚本。
 const zip_stored = new Map<string, string>(); // `zip_url|md5` → blob token
@@ -195,11 +200,15 @@ function install_ditto(): void {
       for (const url of urls) {
         const key = url.split("?")[0]!;
         push(`imp:json|${key}`);
+        if (import_soft_fails.has(key)) throw { is_make_import_error: true, message: "soft" };
         const fail = import_fails.get(key);
         if (fail !== undefined) throw fail;
         if (imports.has(key)) return [imports.get(key)!(), url];
       }
       throw "unscripted import";
+    },
+    async import_as_text(_urls: string[]) {
+      throw { is_make_import_error: true, message: "no text" };
     },
   };
   const clock = {
@@ -624,6 +633,28 @@ async function run_ops(): Promise<void> {
     } else if (op === "impfail") {
       const key = next();
       import_fails.set(key, i[0] < t.length ? next() : "boom");
+    } else if (op === "impsoft") {
+      import_soft_fails.add(next());
+    } else if (op === "uinew") {
+      ui_vals.set(next(), parseValue(t, i) as Rec);
+    } else if (op === "uinest") {
+      const cid = next();
+      const pid = next();
+      (ui_vals.get(cid) as Rec)["parent"] = ui_vals.get(pid);
+    } else if (op === "uifind") {
+      const id = next();
+      const name = nextKey();
+      const out = await find_ui_template(lfw, ui_vals.get(id) as never, name);
+      push(`uifind|${renderValue(out)}`);
+    } else if (op === "uimerge") {
+      const pid = next();
+      const parent = pid === "-" ? undefined : (ui_vals.get(pid) as never);
+      const raw = parseValue(t, i) as never;
+      push(`uimerge|${renderValue(await merge_ui_template(lfw, raw, parent))}`);
+    } else if (op === "devon") {
+      lfw.dev = true;
+    } else if (op === "devoff") {
+      lfw.dev = false;
     } else if (op === "zips") {
       const zs = (lfw as unknown as Rec)["zips"].zips as { name: string }[];
       const infos = (lfw as unknown as Rec)["zips"].data_infos as Rec[];

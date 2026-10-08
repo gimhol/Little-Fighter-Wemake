@@ -4664,3 +4664,14 @@ harness op：
   逗号分/trim、ACTION_PLACES 外不进）、components（cls 回落 tag、args 空串不建键、weight
   `Number`、properties 子元素）、style（数值转换就地覆盖、空 style 元素给 `undefined`）、
   img（空 path 回落 src、`dw=0` 回落 w、x 缺省 NaN）、template（id > name > `''`）。
+
+### 6.9.141 `find_ui_template` / `merge_ui_template`（lfw 台面新 op；`cases/lfw/cook.txt` 35 行；变异 14/14 全杀）
+
+- op：`uinew <id> <值>`（登 UI 对象）/ `uinest <子> <父>`（挂 `parent` 链）/ `uifind <id> <模板名>`
+  / `uimerge <-|id> <原值>` / `devon`/`devoff`（翻 `lfw.dev`）/ `impsoft <key>`（TS 抛
+  ImportError 形状、C++ 记 `impfail` —— find 都要吞掉才算「找不到」）。
+- 用例钉住：父链真值命中 / null 命中继续走 / 候选次序（json5 先、显式扩展名排最前）/ `@/` 替换 /
+  `{}` 不算命中 / 三次候选全失败 + warn + `{}` / merge 无 template 原样返回 / 展开键序
+  （`id, component, values, template, template_values`）/ dev 两轮拼接 / values 浅并（余下赢）。
+- TS 侧假 importer 配套：`import_as_text` 静默抛 ImportError 形状（C++ 侧 `import_as_text`
+  同样不落日志）；`.ui.xml` 候选只测失败路。

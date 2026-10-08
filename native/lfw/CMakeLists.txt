@@ -36,6 +36,7 @@ add_library(lfw_core STATIC
   buff/registry.cpp
   loader/stage_val_getters.cpp
   ui/color.cpp
+  ui/cook_ui_info.cpp
   ui/cross_info.cpp
   ui/read_info_value.cpp
   ui/style.cpp

@@ -8904,3 +8904,23 @@ null 不报错）；ui 三连校验（falsy / 数组 / 非对象）的报错文�
 **测试**：xml 台面新 op `x2ui` + 用例 `cases/xml/ui.txt` **193 行**（15 次 `x2ui`）；变异
 `xml_ui.mjs` **16/16 全杀**；全量差分 **212/212**、lint 全清。
 
+## 97. 切片 4AJ：`find_ui_template` / `merge_ui_template`（`cook_ui_info` 前两件）
+
+`native/lfw/ui/cook_ui_info.{h,cpp}`：TS 同名模块的 find/merge（`cook_ui_info` 本体随 UI 节点族
+再补）。测试挂 **lfw 台面**（新 op `uinew` / `uinest` / `uifind` / `uimerge` / `devon` / `devoff`
++ 软失败脚本 `impsoft`；TS 侧给假 importer 补 `import_as_text` 与 ImportError 形状的软失败）。
+
+照抄怪癖（编号接 117 → 118）：118. `find_ui_template` 的链命中要**真值**（`templates[name]`
+为 null 不算，继续走）；文件候选按 `['.ui.json5', '.ui.json', '.ui.xml']`，显式带扩展名时该
+路径排最前且后续去重；命中还要求 `Object.keys(...)` 非空（`{}` 不算）。119.
+`merge_ui_template` 的合并是 `{...模板, ...余下, template, component, values,
+template_values}` —— component 先模板后余下、dev 时再各接一轮 `dev_component`
+（`lfw.dev_mode` 严格 true）；`values` / `template_values` 浅并（余下赢）；`remain` 摘掉
+`template` 键（键序影响渲染）。
+
+偏差记录：TS `ImportError.is(e)` 分「import 失败吞掉 / 其余重抛」——端口无异常，`resources`
+失败一律吞；`template_name` 非字符串 TS 会抛（`startsWith`），端口按找不到处理。
+
+**测试**：lfw 台面新 op 一族 + 用例 `cases/lfw/cook.txt` **35 行**；变异 `lfw_cook.mjs`
+**14/14 全杀**；全量差分 **213/213**、lint 全清。
+

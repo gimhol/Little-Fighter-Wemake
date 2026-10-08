@@ -15,6 +15,7 @@
 #include "lfw/lfw.h"
 #include "lfw/loader/stage_val_getters.h"
 #include "lfw/player_info.h"
+#include "lfw/ui/cook_ui_info.h"
 #include "lfw/utils/container_help/field_or.h"
 
 #include "trace_util.h"
@@ -223,6 +224,9 @@ std::string dump_info(const lfw::IDataInfo& info) {
 // `imp` 脚本：URL（不含 `?time=` 的部分）→ 值；`has_import` 标记失败脚本。
 std::map<std::string, lfw::Value> g_imports;
 std::map<std::string, std::string> g_import_fails;
+
+// 4AJ：`uinew`/`uinest` 的 UI 值脚本（`uifind`/`uimerge` 的 parent 链用）。
+std::map<std::string, lfw::Value> g_ui_vals;
 
 // 4AD：URL 流程脚本。
 std::map<std::string, std::string> g_stored;       // `zip_url|md5` → blob token
@@ -917,6 +921,32 @@ int main(int argc, char** argv) {
       std::u16string err;
       if (!lfw.load_zip_from_url(info_url, z, err)) push("url|fail|" + to_ascii(err));
       else push("url|ok|" + to_ascii(z.zip->name()) + "|" + dump_info(z.info));
+    } else if (op == "uinew") {
+      const std::string id = t[i++];
+      g_ui_vals[id] = parse_value(t, i);
+    } else if (op == "uinest") {
+      const std::string cid = t[i++];
+      const std::string pid = t[i++];
+      lfw::Object* const child = lfw::as_object(g_ui_vals.at(cid));
+      child->set(u"parent", g_ui_vals.at(pid));
+    } else if (op == "uifind") {
+      const std::string id = t[i++];
+      const std::u16string name = key_of(t[i++]);
+      lfw::Value out;
+      lfw::ui::find_ui_template(lfw, &g_ui_vals.at(id), name, out);
+      push("uifind|" + to_ascii(render_value(out)));
+    } else if (op == "uimerge") {
+      const std::string pid = t[i++];
+      const lfw::Value* const parent = pid == "-" ? nullptr : &g_ui_vals.at(pid);
+      const lfw::Value raw_info = parse_value(t, i);
+      push("uimerge|" + to_ascii(render_value(lfw::ui::merge_ui_template(lfw, raw_info, parent))));
+    } else if (op == "devon") {
+      lfw.dev_mode = true;
+    } else if (op == "devoff") {
+      lfw.dev_mode = false;
+    } else if (op == "impsoft") {
+      const std::string key = t[i++];
+      g_import_fails[key] = "soft";
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
       return 2;

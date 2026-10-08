@@ -1,0 +1,49 @@
+# find_ui_template / merge_ui_template（4AJ）
+# 父链命中：templates 的真值才算
+uinew p1 o 1 templates o 1 tpl o 3 id s "from_parent" component a 1 s "TplComp" values o 1 a s "tplv"
+uinew p3 o 0
+uinest p3 p1
+uifind p1 tpl
+uifind p3 tpl
+# 假值命中不算：p4.templates.hit = null，随后文件候选补位
+uinew p4 o 1 templates o 1 hit z
+imp hit.ui.json5 k:file_hit
+uifind p4 hit
+# 候选次序：无扩展名 → json5 先于 json（命中即停）
+uinew p5 o 0
+imp order.ui.json5 k:first
+imp order.ui.json k:second
+uifind p5 order
+# 显式扩展名排最前
+uinew p6 o 0
+imp pick.ui.json k:explicit
+imp pick.ui.json5 k:later
+uifind p6 pick.ui.json
+# @/ 前缀替换
+uinew p7 o 0
+imp builtin_data/launch/at.ui.json5 k:at
+uifind p7 "@/at"
+# {} 键数守卫：json5 给 {} 不算命中，json 给非空才命中
+uinew p8 o 0
+imp empty.ui.json5 o
+imp empty.ui.json k:nonempty
+uifind p8 empty
+# 找不到：三个候选（json5/json 软失败、xml 静默失败）+ warn + {}
+uinew p9 o 0
+impsoft nf_zzz.ui.json5
+impsoft nf_zzz.ui.json
+uifind p9 nf_zzz
+# merge：无 template ⇒ 原样返回
+uimerge - o 2 id s "raw" values o 1 k s "v"
+# merge：命中父链模板；component 拼接、values 浅并、键定位
+uimerge p1 o 4 template s "tpl" id s "raw2" values o 1 a n 1 component a 2 s "Local" o 1 cls s "C"
+# merge：dev_component（devoff 时忽略 / devon 时接在 component 尾部）
+uinew p10 o 1 templates o 1 dtpl o 2 id s "dtpl" dev_component a 1 s "TplDev"
+uimerge p10 o 3 template s "dtpl" component a 1 s "Local" dev_component a 1 s "LocalDev"
+devon
+uimerge p10 o 3 template s "dtpl" component a 1 s "Local" dev_component a 1 s "LocalDev"
+devoff
+# merge：模板找不到 ⇒ 空模板合并 + warn
+impsoft missing_tpl.ui.json5
+impsoft missing_tpl.ui.json
+uimerge p9 o 2 template s "missing_tpl" values o 1 x s "y"
