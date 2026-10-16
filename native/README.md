@@ -1125,6 +1125,44 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
   端口的解码是同步的，读不到就报一行 `[godot] sounds: read failed:`；`[godot] sounds:` 那一行只在
   你给了 `--every` 时逐次变化打（`--play` 自己玩的时候只在收尾打一行，免得刷屏）。
 
+* **"测试用例没法看"** —— 主页那个「测试模式」按钮（`btn_test_cases` → `push_page(test_cases_page)`）
+  点进去是**空的**：那一页的 `component: ["Tests"]` 在端口里没注册（`TestCases` 整棵 54 个文件 /
+  2610 行没移植）⇒ 页面只有它自己的两个文字节点（`test_case_name` + 底部快捷键行）。
+  这一片把它整棵搬过来了：
+  * `native/lfw/ui/component/tests/`：`test_case.{h,cpp}`（= TS `TestCase.ts`，用例基类）、
+    `tests.{h,cpp}`（= TS `Tests.ts`：17 组 `CASE_GROUPS` + FSM + 左右/上下/攻击的按键规则 +
+    页面上那行 `Case: …`），以及 13 个目录下 **105 个用例类**（ball / bat / bg / bot / firen /
+    firezen / freeze / jan / julian / louis / others / rudolf / weapons）—— 与 TS 文件、类名一一对应。
+    注册：`regist_components()` 里 `regist_one<Tests>(u"Tests")`。
+  * 三处**形状**改写（写在 `test_case.h` 的头注释里）：① TS 的子类用
+    `override readonly director = new ActionDirector()…` **换掉**基类那一份，C++ 不能覆盖数据成员
+    ⇒ 基类给虚访问器 `director()`、子类自己持一份成员覆写它；② TS 的 `oid: string | string[]`
+    ⇒ 一律换 `std::vector<std::u16string>`；③ `hori_3/hori_2/verti_3` 是**箭头函数字段**
+    （缺省参数里绑 `this.midX/midZ`）⇒ 端口用 `std::optional` 表达"没给就用 midX/midZ"。
+  * `ActionDirector` **复用**已有的那一份（`ui/component/action_director.{h,cpp}`，
+    `LittleFunnyAutoGame` 也在用它）—— 我一开始另写了一份，链接期 `LNK2005`（同一个类两个定义）
+    把它抓了出来；顺带把 39 处 `.sort()` 改成那份的名字 `sort_actions()`。
+  * 两个**踩过的坑**：① `using UIComponent::UIComponent;` 的继承构造会实例化本类的析构 ⇒
+    成员里放 `std::vector<std::unique_ptr<TestCase>>` 时 `TestCase` 是**不完整类型**，
+    MSVC 直接 `C2338 can't delete an incomplete type`（报在 `<memory>` 里、指到 `tests.h` 的
+    `using` 那一行）⇒ 改成裸指针 + `~Tests()` 里统一 delete；
+    ② `World::clear()` 是"把所有实体设成 `gone_frame_info`"（不是立刻删表）⇒ 切用例那一帧的
+    `entities=` 会先掉到新用例自己那一个再涨回来，看诊断行时别当成没清干净。
+  * 实测（`--ui-page test_cases_page`，`--zip prel --zip data` 两个包）：
+    ```text
+    初始（0-0，TS 的裸 TestCase）：entities=0、test_case_name = "None"
+    --key d（= 游戏键 R）        ：Case: 0-1 All Fighters，entities=26 hp=13000（24 个战士两排 + 2）
+    --key s ×2                  ：Case: 2-0 Firezen D^A 0（Firzen 反复 D^A，火球来去 ⇒ 4…8 起伏）
+    --key s ×16 再 --key w      ：Case: 15-6 Dropped Weapon: Pick Up & Throw Still Hurts
+                                  ← 「Up 取上一组的**最后**一个用例」这条规则对上了
+    ```
+    与 Web 版对拍那一页的**初始态**：两侧都是"整屏黑 + 顶部 `None` + 底部快捷键行"（Web 侧
+    `native\build\web\web-ui-page-test_cases_page.png`）✓。⚠ **再往后的用例对不了**：Web 那边的
+    抓图工具（`native/tools/web_shots.mjs`）没有注入按键的口子 ⇒ 只能比初始态，其余靠上面这些数字。
+    存图：`shots/test-cases-case-none-1191x675.png`（初始态）/
+    `shots/test-cases-all-fighters-1191x675.png`（0-1：两排战士）/ `shots/test-cases-bat-duj-1191x675.png`
+    （3-0：Bat 的 D^J，空中一串残影）。三条宿主摘要逐位不变（差分 261/261 照过）。
+
 ## 验收：宿主三条摘要（改完必跑）
 
 同一份数据、同一命令**逐位可复现**；三条都过才算没打破 headless 行为：
@@ -1244,6 +1282,7 @@ id 取自烹饪好的 UI 表，缺省用数据自己的首页 `init`）与 `--ui
 | 4宿主 | 步骤 4 **宿主接入（M1：headless 可运行）**：`host/` 的 `FsZip`（目录当 zip）+ `HeadlessHost`（`ILfwHost` 最小实现：读盘 import / `ToolXML` / 手动时钟 / 空渲染）+ `lfw_run`（装包 → 起世界 → 手动推帧 → 摘要） | ✅ 通过（`prel` 包：2 个 gim 起 `tutorial` 舞台，300 帧逐位可复现；lint 9776/0）。`Entity.ts` 底部那四句模块级 `Factory.register_entity` 与 `IWorldLfw::acquire_entity` 缝 |
 | 4XML | 步骤 4 **`ToolXML::parse`（XML 文本 → `IXMLElement`）**：fast-xml-parser 那套选项的形状口径（直接文本保留空白并按序拼、属性走 `String(value)`、无值属性 `"true"`、`ns:` 前缀去掉、CDATA 原样、只解五个命名实体），注释先剥、声明/PI/DOCTYPE 跳过 | ✅ 通过（完整 `data.zip` 现在能装：`fighters=26 weapons=19 balls=24 entities=5 stages=28 bg=16`；`--fighter 1 --fighter 4 --stage 1` 900 帧逐位可复现；lint 9776/0）。细节见 DESIGN §141 |
 | 4主干 | 步骤 4 **主干**（宿主层：`stage/` 与 `World` / `LFW` / `Factory` / `Resources` / `Camera` / `Keys` **之前**能单独搬的部分，按依赖序：`I18N` → `loader/get_import_fallbacks` → `PlayerInfo` → `Camera` → `ZipMgr` → `Resources` → `Factory` → `stage/*` → `World` → `LFW`） | 进行中（`I18N` + `loader/get_import_fallbacks` ✅ 262 行；`PlayerInfo` ✅ 270 行；`ZipMgr` ✅ 114 行；`Camera` ✅ 369 行；`Resources` ✅ 136 行；`Factory` ✅ 92 行；`stage/Expressions` + `stage/Status` + `bg/{Background,Layer}` ✅ 70 + 83 行；`stage/Item` ✅ 622 行；`stage/Stage` ✅ 1045 行；`World`（状态与查询那半）✅ 638 行；`World::step` + `update_once` + `catch_up` + `start_update` + `Entity::release`（**非碰撞配对**那半；配对与 `collision_get` / `collisions_keeper.handle` 留给 4L）✅ 用例 315 行） |
+| UI-T | **测试模式整棵**（`ui/component/Tests/**`，54 个 TS 文件 / 2610 行 → `native/lfw/ui/component/tests/**`：`TestCase` 基类 + `Tests` 页面 + 105 个用例类） | ✅ 落地（不在差分台面上——它是「按数据摆实体 + 定时按键」的宿主侧演示；验收靠 Godot 宿主 + Web 初始态对拍，见「2026-10-16」那条） |
 
 **步骤 2–4 是修正过的。** 把 `import type` 排除后算运行时依赖图，得到两个关键事实：
 

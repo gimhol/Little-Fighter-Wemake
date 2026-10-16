@@ -288,6 +288,45 @@ add_library(lfw_core STATIC
   ui/component/player_score_cell.cpp
   ui/component/player_score_player_name.cpp
   ui/component/team_situation_text.cpp
+  ui/component/tests/test_case.cpp
+  ui/component/tests/tests.cpp
+  ui/component/tests/ball/ball.cpp
+  ui/component/tests/bat/bat_duj.cpp
+  ui/component/tests/bg/moon.cpp
+  ui/component/tests/bot/bot_avoiding.cpp
+  ui/component/tests/bot/weapon_picking1.cpp
+  ui/component/tests/bot/weapon_picking2.cpp
+  ui/component/tests/firen/firen_dfa.cpp
+  ui/component/tests/firen/firen_dfj.cpp
+  ui/component/tests/firen/firen_duj.cpp
+  ui/component/tests/firen/firen_dvj.cpp
+  ui/component/tests/firezen/firzen_dua.cpp
+  ui/component/tests/firezen/firzen_fusion.cpp
+  ui/component/tests/freeze/freeze_dfa.cpp
+  ui/component/tests/freeze/freeze_dfj.cpp
+  ui/component/tests/freeze/freeze_duj.cpp
+  ui/component/tests/freeze/freeze_dvj.cpp
+  ui/component/tests/jan/jan_dua.cpp
+  ui/component/tests/jan/jan_duj.cpp
+  ui/component/tests/julian/julian_dfa.cpp
+  ui/component/tests/julian/julian_dfj.cpp
+  ui/component/tests/julian/julian_duj.cpp
+  ui/component/tests/louis/louis_jump_attack.cpp
+  ui/component/tests/others/all_fighters.cpp
+  ui/component/tests/others/armor_test.cpp
+  ui/component/tests/others/bottoms_up.cpp
+  ui/component/tests/others/come.cpp
+  ui/component/tests/others/criminal_saving.cpp
+  ui/component/tests/others/faster_slower_stand_up.cpp
+  ui/component/tests/others/follow.cpp
+  ui/component/tests/others/move_stay_come.cpp
+  ui/component/tests/rudolf/rudolf_dfj.cpp
+  ui/component/tests/weapons/blue_book.cpp
+  ui/component/tests/weapons/boomerang.cpp
+  ui/component/tests/weapons/dropping.cpp
+  ui/component/tests/weapons/green_book.cpp
+  ui/component/tests/weapons/red_book.cpp
+  ui/component/tests/weapons/throw.cpp
   ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp

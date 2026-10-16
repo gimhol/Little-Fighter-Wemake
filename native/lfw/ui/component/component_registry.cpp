@@ -80,6 +80,7 @@
 #include "lfw/ui/component/player_score_cell.h"
 #include "lfw/ui/component/player_score_player_name.h"
 #include "lfw/ui/component/team_situation_text.h"
+#include "lfw/ui/component/tests/tests.h"
 #include "lfw/ui/component/vertical_layout.h"
 #include "lfw/ui/component/wrap_content.h"
 
@@ -184,6 +185,8 @@ void regist_components() {
   regist_one<LaunchPageLogic>(u"LaunchPage");
   regist_one<LittleFunnyAutoGame>(u"LittleFunnyAutoGame");
   regist_one<DanmuGameLogic>(u"DanmuGameLogic");
+  // 测试模式那一页（`test_cases_page.ui.json5` 的 `component: ["Tests"]`）。
+  regist_one<Tests>(u"Tests");
 }
 
 }

@@ -10695,3 +10695,41 @@ DOCTYPE/闭合/开标签），属性值解命名实体，`convert()` 按 `_conve
   血量不动）。下一步要么顺着 `BotController` 查「为什么不出招」，要么改走「喂键盘输入」那条
   路（`LocalController` + `Keys`）——后者还能顺手把「可复现的对打录像」立起来。
 
+
+## 142. 测试模式（`ui/component/Tests/**`）
+
+**是什么**：主页菜单那个「测试模式」按钮（`main_page` 的 `btn_test_cases` → `push_page(test_cases_page)`）
+进去的页面：`test_cases_page.ui.json5` 的 `component: ["Tests"]`，页面节点只有两个
+（`test_case_name` + 底部快捷键行），**内容全在那个组件里** —— 它把 TS `Tests.ts` 的 17 组
+`CASE_GROUPS`（105 个用例）建成一个 FSM（每个用例就是一个 `IState`），左右切用例、上下切组、
+`Attack` 重放；`on_state_changed` 把 `Case: <x>-<y> <name>` 写进 `test_case_name`。
+
+**移植形状**（TS `TestCase.ts` 的三个"JS 特有"写法在端口怎么落）：
+* `override readonly director = new ActionDirector()…`（子类**换掉**基类那一份）⇒ C++ 不能覆盖数据成员
+  ⇒ 基类 `TestCase` 给虚访问器 `director()`，子类自己持一份 `_director` 覆写它，配置写在构造函数体里。
+* `oid: string | string[]` ⇒ 端口统一 `std::vector<std::u16string>`（单个写 `{oid::kBat}`）。
+* `director` 链的可变参数 ⇒ `std::vector<ActionDirector::Work>`（`offset(500, {w1, w2})`）。
+  ⚠ `repeat/offset` 的 delay 是**每个 work 各推进一次**（TS 的 `time += delay` 在循环里）——
+  连着的两个 work 差一个 delay，别按"整块一次"读。
+* `hori_3/hori_2/verti_3` 在 TS 里是**箭头函数字段**（缺省参数绑 `this.midX/midZ`）⇒ 端口用
+  `std::optional` 表达"没给就用 midX/midZ"。
+* `Tests` 每次 `on_start` 都**重建**一遍用例（TS 的 GC 语义）：`TestCase::key_counter = -1` ⇒
+  key 从 0 重数 ⇒ `FSM::add` 按 key 覆盖上一轮那批。端口把**每一轮**的指针都留在
+  `_retired` 里（`FSM::_prev_state` 还指着上一轮的对象，提前析构会在下一次切状态时读悬垂）。
+* ⚠ 继承构造坑：`using UIComponent::UIComponent;` 会让 MSVC 实例化本类析构 ⇒ 成员里放
+  `std::vector<std::unique_ptr<TestCase>>` 时 `TestCase` 是**不完整类型**，直接
+  `C2338 can't delete an incomplete type`；端口改成裸指针 + `~Tests()` 里 delete。
+
+**`ActionDirector` 复用**：`ui/component/action_director.{h,cpp}` 是 4AH 就落下的那一份
+（`LittleFunnyAutoGame` 的自动对局在用，§138 记了语义与台面探针）—— 测试模式直接用它，
+**没有再写一份**（曾经写重了，链接期 `LNK2005` 把两个定义抓出来）。它把 TS 的 `sort()` 叫
+`sort_actions()`（台面按这个名字探），用例文件照这个名字调。
+
+**`World::clear()` 的语义**（切用例那一帧会用到）：它不是"立刻清表"，而是把所有实体设成
+`gone_frame_info`（+ 换 VOID 舞台/背景）⇒ 切完用例的那几帧里 `entities=` 会先掉到新用例自己
+那几个再涨回来，看诊断时别误判成"没清干净"。
+
+**验收**（不在差分台面上：它是"按数据摆实体 + 定时喂按键"的宿主侧演示，台面只覆盖核心）：
+Godot 宿主 `--ui-page test_cases_page` 的 `entities=/test_case_name` + Web 侧**初始态**对拍
+（`web_shots.mjs --ui-page test_cases_page`），细节与数字见 `native/README.md`「2026-10-16」。
+⚠ Web 那个抓图工具**没有注入按键的口子** ⇒ 只能比初始态（0-0 裸 `TestCase`）。
