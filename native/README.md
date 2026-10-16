@@ -1163,6 +1163,32 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
     `shots/test-cases-all-fighters-1191x675.png`（0-1：两排战士）/ `shots/test-cases-bat-duj-1191x675.png`
     （3-0：Bat 的 D^J，空中一串残影）。三条宿主摘要逐位不变（差分 261/261 照过）。
 
+* **"（上面那条修完之后）用鼠标点「测试模式」就崩"** —— 点**任何**一个主页菜单按钮（甚至只是在
+  主页空白处晃一下鼠标）都会 `signal 11`，而同样的按钮用键盘（焦点 + `Attack`）激活却没事。
+  根因在**指针状态的节点寿命**：`cmds/cmd_pointer_events.cpp` 的 `on_uis` / `down_uis` 会**跨帧
+  持有 `UINode*`**（TS 的 `Set<UINode>` 同理）。TS 那边这些对象被集合引用着、GC 不会回收 ⇒ 页面
+  销毁后对它们派发 `leave` 只是"给孤儿对象清个标志"（没有任何可见效果）；端口这边页面一 `delete`
+  就是**悬垂指针**，下一次指针事件里那句 `ui->on_pointer_leave()` 直接崩。
+  实测的触发链（临时在 `cmd_pointer_move` 里打点，一条命令复现）：
+  ```text
+  [ptrtrace] MOVE ... --paths=0,0,8|0,0,3|0,0|0,0,0 --pages=init|init|init|init   ← 点一下 init 页，4 个节点进了 on_uis
+  ...（init 页随后被 destroy）...
+  [ptrtrace] MOVE ... --b=-1 --pos=7381.7,1700  on_uis=4          ← 之后再动一下
+  [ptrtrace]   -> on_pointer_leave 000001B8EBABC330 id=undefined  ← 读已释放的节点 ⇒ signal 11
+  ```
+  ⇒ 修法：`UINode` 的构造/析构维护一份**活着的节点集合**（`live_uinodes()`，`ui/uinode.{h,cpp}`），
+  指针状态里那三个"跨帧派发"的循环（`POINTER_MOVE` 的 leave、`POINTER_UP`/`POINTER_CANCEL` 的
+  cancel、`POINTER_ENTER` 的 leave）改成先 `live_items()` 筛一遍（死掉的顺手从集合里删掉）。
+  这条**与测试模式无关**（是端口里早就有的雷）：以前没人用鼠标点过会换页的按钮 —— 之前几刀全是
+  `--key`（焦点 + `Attack`）或"点了不换页"的按钮，正好绕开了它。
+  修完实测：`--click '397,225@10' --key 'j@450' --click '397,315@600'`（**鼠标**点「测试模式」）
+  进得去，进去之后再晃鼠标、再点、再 `--key d` 都正常：
+  ```text
+  [godot frame 600] pages=0:test_cases_page
+  [godot] hover-win @frame 700 at=(595.0,150.0) pages=0:test_cases_page
+  [ui] ui/test_case_name … text=20/Case: 1-0 Julian D^J      ← 菜单点进来之后按两次 d 也照切
+  ```
+
 ## 验收：宿主三条摘要（改完必跑）
 
 同一份数据、同一命令**逐位可复现**；三条都过才算没打破 headless 行为：

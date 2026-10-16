@@ -18,6 +18,13 @@
 
 namespace lfw::ui {
 
+std::unordered_set<const UINode*>& live_uinodes() {
+  // ⚠ 故意**不析构**（`new` 出来就不管）：`UINode` 的析构要来这里删自己，而静态对象里也有节点
+  //（台面的假 UI 就有）⇒ 用普通函数内静态量会在"静态析构早于节点析构"时踩到已销毁的表。
+  static std::unordered_set<const UINode*>* const nodes = new std::unordered_set<const UINode*>();
+  return *nodes;
+}
+
 namespace {
 
 // 静态初始化即注册（`$cls:UINode` 标记复原用）。
@@ -57,12 +64,13 @@ bool loose_str_equals(const Value& v, const std::u16string& text) {
 
 }
 
-UINode::~UINode() = default;
+UINode::~UINode() { live_uinodes().erase(this); }
 
 UINode::UINode(LFW& lfw, const Value& data, UINode* parent, UILayer* layer)
     : _lfw(&lfw), _data(data), _raw(field_of(data, u"raw") != nullptr ? *field_of(data, u"raw")
                                                                       : Value()),
       _parent(parent), _layer(layer) {
+  live_uinodes().insert(this);
   _root = parent != nullptr ? &parent->root() : this;
   _disabled = equals(field_of(data, u"disabled") != nullptr ? *field_of(data, u"disabled")
                                                             : Value(),

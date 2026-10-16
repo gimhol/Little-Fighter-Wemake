@@ -10733,3 +10733,17 @@ DOCTYPE/闭合/开标签），属性值解命名实体，`convert()` 按 `_conve
 Godot 宿主 `--ui-page test_cases_page` 的 `entities=/test_case_name` + Web 侧**初始态**对拍
 （`web_shots.mjs --ui-page test_cases_page`），细节与数字见 `native/README.md`「2026-10-16」。
 ⚠ Web 那个抓图工具**没有注入按键的口子** ⇒ 只能比初始态（0-0 裸 `TestCase`）。
+### 142.1. 指针状态的节点寿命（端口的雷，2026-10-16 修）
+
+`cmds/cmd_pointer_events.cpp` 的 `IPointerState`（`on_uis` / `down_uis`）**跨帧持有 `UINode*`**
+（对齐 TS 的 `Set<UINode>`）。TS 那边这没问题：集合引用着对象、GC 不回收 ⇒ 页面销毁之后对它们派发
+`on_pointer_leave()` 只是给孤儿对象清个标志（无可见效果）；端口这边页面一 `delete` 就是**悬垂指针**，
+下一次指针事件里那句派发直接 `signal 11`。
+
+症状是「鼠标点任何会换页的按钮 ⇒ 崩」（键盘激活不崩 —— 键盘路径不经过 `on_uis`），所以之前几刀
+（全用 `--key` 或"点了不换页"的按钮）从没碰到。
+
+修法（端口专用，不引入新语义）：`UINode` 构造/析构维护 `live_uinodes()`（`ui/uinode.h` 的
+`is_live_uinode()`），指针状态里那三个跨帧派发循环改成先 `UiSet::live_items()` 筛一遍
+（已销毁的顺手从集合里删掉）。**没有**改 `IPointerState` 的结构或派发次序 ⇒ 活着的节点拿到的
+leave/cancel 次数与次序与以前逐条一致。

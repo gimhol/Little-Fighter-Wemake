@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "lfw/core/value.h"
@@ -53,9 +54,7 @@ class UINode {
   static const ClazzTag* class_tag();
   virtual const ClazzTag* clazz() const { return class_tag(); }
 
-  UINode(LFW& lfw, const Value& data, UINode* parent = nullptr, UILayer* layer = nullptr);
-  // 定义在 .cpp：`_owned_components` 里的 `unique_ptr<UIComponent>` 需要完整类型才能析构。
-  // `virtual`：本类是台面 `fx::FakeUi` 之类的多态基，而 `_owned_children` 与 `UILayer` 的
+  UINode(LFW& lfw, const Value& data, UINode* parent = nullptr, UILayer* layer = nullptr);  // 定义在 .cpp：`_owned_components` 里的 `unique_ptr<UIComponent>` 需要完整类型才能析构。  // `virtual`：本类是台面 `fx::FakeUi` 之类的多态基，而 `_owned_children` 与 `UILayer` 的
   // `unique_ptr<UINode>` 都经基类指针删除 ⇒ 非虚析构会漏掉派生析构（clang
   // `-Wdelete-non-abstract-non-virtual-dtor`）。写法与 `UIComponent` 一致。
   virtual ~UINode();
@@ -339,6 +338,14 @@ class UINode {
   int _click_flag = 0;
   Times _update_times;
 };
+
+// 端口专用（TS 没有这一套）：**活着的 `UINode` 集合**。
+// 指针状态（`cmds/cmd_pointer_events.cpp` 的 `on_uis` / `down_uis`）会跨帧持有节点指针：TS 那边
+// 这些对象被 `Set` 引用着、GC 不会回收 ⇒ 页面销毁之后对它们派发 `leave` 只是"给孤儿对象设个标志"
+//（没有任何可见效果）；端口这边页面一 `delete` 就是**悬垂指针**，再派发就是崩。
+// 所以：派发前先用它筛一遍（死掉的顺手从集合里删掉）。
+std::unordered_set<const UINode*>& live_uinodes();
+inline bool is_live_uinode(const UINode* node) { return live_uinodes().count(node) != 0; }
 
 }
 }
