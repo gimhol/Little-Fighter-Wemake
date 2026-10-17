@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="bots" name="Bots">
+  <director name="Bot Chasing/Avoiding">
+    <actors>
+      <actor id="bandit" oid="bandit" count="2" ctrl="bot" player_id="$new_id">
+        <layout type="line" axis="x" x="midX" z="midZ" length="500" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="blinking" type="nums" value="0,9007199254740991" />
+          <value name="invulnerable" type="nums" value="0,9007199254740991" />
+          <value name="as_key_role" type="bool" value="true" />
+          <value name="name" type="strs" value="Avoiding,Chasing" />
+        </values>
+      </actor>
+    </actors>
+  </director>
+  <director name="Weapon Picking 1 (Weapon Spawn Earlier)" bg="bg_1">
+    <actors>
+      <actor id="weapon" oid="weapon0,weapon1,weapon2,weapon3,weapon4,weapon5,weapon6,weapon7,weapon8,weapon9,weapon10,weapon11" count="12">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="100" />
+      </actor>
+      <actor id="fighter" oid="jack" count="12" group="fighters">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="100" />
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="1000">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry repeat="9999" interval="1500">
+        <entry>
+          <input target="@fighters">
+            <step key_down="L" />
+            <step key_up="R" />
+          </input>
+        </entry>
+        <entry>
+          <input target="@fighters">
+            <step key_down="R" />
+            <step key_up="L" />
+          </input>
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Weapon Picking 2 (Fighter Spawn Earlier)" bg="bg_1">
+    <actors>
+      <actor id="fighter" oid="jack" count="12" group="fighters">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="100" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+      <actor id="weapon" oid="weapon0,weapon1,weapon2,weapon3,weapon4,weapon5,weapon6,weapon7,weapon8,weapon9,weapon10,weapon11" count="12">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="100" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="1000">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry repeat="9999" interval="1500">
+        <entry>
+          <input target="@fighters">
+            <step key_down="L" />
+            <step key_up="R" />
+          </input>
+        </entry>
+        <entry>
+          <input target="@fighters">
+            <step key_down="R" />
+            <step key_up="L" />
+          </input>
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="CriminalSaving 1">
+    <actors>
+      <actor id="criminal" oid="criminal" count="6">
+        <layout type="line" axis="x" x="midX" z="midZ" length="700" />
+      </actor>
+      <actor id="fighter" oid="rudolf,dennis,firen,davis,deep,henry" count="6" group="fighters">
+        <layout type="line" axis="x" x="midX - 30" z="midZ" length="700" />
+        <values>
+          <value name="name" type="strs" value="Rudolf √,Weapon Swing √,&quot;Ball&quot; ×,Punch √,Weapon Threw ×,Arrow √" />
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="stick" oid="weapon_stick" at="fighter[1]" />
+      <actor id="baseball" oid="weapon_baseball" at="fighter[4]" dx="-50" />
+    </actors>
+    <setup>
+      <move target="fighter[4]" dx="-50" />
+    </setup>
+    <timeline>
+      <entry after="300">
+        <input target="fighter[1]" click="a" />
+        <input target="fighter[4]" click="a" />
+      </entry>
+      <entry after="300">
+        <input target="fighter[0]">
+          <step key_down="D" />
+          <step key_down="a" />
+        </input>
+        <input target="fighter[1]" key_down="a" />
+        <input target="fighter[2]" click="d,U,j" />
+        <input target="fighter[3]" key_down="a" />
+        <input target="fighter[4]">
+          <step key_down="R" />
+          <step key_down="a" />
+        </input>
+        <input target="fighter[5]">
+          <step key_down="D" />
+          <step key_down="a" />
+        </input>
+      </entry>
+      <entry after="300">
+        <input target="fighter" key_up="all" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Armor Test 1">
+    <actors>
+      <actor id="julian_far" oid="julian" count="2">
+        <layout type="line" axis="x" x="midX" z="far" length="600" />
+        <values>
+          <value name="name_visible" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="julian_near" oid="julian" count="5">
+        <layout type="line" axis="x" x="midX" z="near" length="600" />
+        <values>
+          <value name="name_visible" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="fighter" oid="rudolf,henry" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX - 30" z="far" length="600" />
+        <values>
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+          <value name="name" type="strs" value="3rd atk hit,3rd atk hit" />
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="fighter" oid="deep,dennis,julian,bandit,davis" count="5" group="fighters">
+        <layout type="line" axis="x" x="midX - 30" z="near" length="600" />
+        <values>
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+          <value name="name" type="strs" value="2rd atk hit,2rd atk hit,2rd atk hit,3rd atk hit,3rd atk hit" />
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry wait="300" />
+      <entry repeat="999" interval="3">
+        <entry>
+          <input target="@fighters" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+</directors>

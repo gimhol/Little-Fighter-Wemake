@@ -1,0 +1,89 @@
+{
+  "directors": [
+    {
+      "id": "misc",
+      "name": "Misc",
+      "file": "directors/00_misc.director.xml"
+    },
+    {
+      "id": "julian",
+      "name": "Julian",
+      "file": "directors/01_julian.director.xml"
+    },
+    {
+      "id": "firzen",
+      "name": "Firzen",
+      "file": "directors/02_firzen.director.xml"
+    },
+    {
+      "id": "bat",
+      "name": "Bat",
+      "file": "directors/03_bat.director.xml"
+    },
+    {
+      "id": "jan",
+      "name": "Jan",
+      "file": "directors/04_jan.director.xml"
+    },
+    {
+      "id": "henry",
+      "name": "Henry",
+      "file": "directors/05_henry.director.xml"
+    },
+    {
+      "id": "rudolf",
+      "name": "Rudolf",
+      "file": "directors/06_rudolf.director.xml"
+    },
+    {
+      "id": "firen",
+      "name": "Firen",
+      "file": "directors/07_firen.director.xml"
+    },
+    {
+      "id": "freeze",
+      "name": "Freeze",
+      "file": "directors/08_freeze.director.xml"
+    },
+    {
+      "id": "louis",
+      "name": "Louis",
+      "file": "directors/09_louis.director.xml"
+    },
+    {
+      "id": "moon",
+      "name": "Moon",
+      "file": "directors/10_moon.director.xml"
+    },
+    {
+      "id": "others",
+      "name": "Others",
+      "file": "directors/11_others.director.xml"
+    },
+    {
+      "id": "bots",
+      "name": "Bots",
+      "file": "directors/12_bots.director.xml"
+    },
+    {
+      "id": "balls",
+      "name": "Balls",
+      "file": "directors/13_balls.director.xml"
+    },
+    {
+      "id": "boomerangs",
+      "name": "Boomerangs",
+      "file": "directors/14_boomerangs.director.xml"
+    },
+    {
+      "id": "weapons",
+      "name": "Weapons & Dropping",
+      "file": "directors/15_weapons.director.xml"
+    },
+    {
+      "id": "books",
+      "name": "Books",
+      "file": "directors/16_books.director.xml"
+    }
+  ]
+}

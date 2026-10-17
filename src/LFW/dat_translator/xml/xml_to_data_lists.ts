@@ -1,6 +1,7 @@
 import type { IDataLists } from "../../defines/IDataLists";
 import type { IXMLElement } from "../../ditto/xml/IXMLElement";
 import { xml_2_dat_index } from "./xml_x_dat_index";
+import { xml_2_director_index } from "./xml_x_director";
 
 
 export function xml_2_data_lists(el: IXMLElement): IDataLists {
@@ -10,5 +11,6 @@ export function xml_2_data_lists(el: IXMLElement): IDataLists {
     stages: el.children_by_tag("stages").map(xml_2_dat_index),
     bots: el.children_by_tag("bot").map(xml_2_dat_index),
     moves: el.children_by_tag("moves").map(xml_2_dat_index),
+    directors: el.children_by_tag("directors").map(xml_2_director_index),
   };
 }

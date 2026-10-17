@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="moon" name="Moon">
+  <director name="Bg Override Gravity Test, Normal Jump / Jump + Defend / Small Jump" bg="bg_moon">
+    <actors>
+      <actor id="louis" oid="louiseX" count="3">
+        <layout type="line" axis="x" x="midX" z="midZ" length="200" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <cmd name="DIST_CAM" args="midX - modernScreenW / 2" />
+    </setup>
+    <timeline times="999">
+      <entry after="100">
+        <input target="louis[0]">
+          <step key_down="j" />
+          <step key_down="a" />
+        </input>
+        <input target="louis[1]">
+          <step key_down="j" />
+          <step key_down="a" />
+        </input>
+        <input target="louis[2]">
+          <step click="j" />
+          <step key_down="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="louis[0]" key_up="all" />
+        <input target="louis[1]">
+          <step key_up="all" />
+          <step key_down="d" />
+        </input>
+        <input target="louis[2]" key_up="all" />
+      </entry>
+      <entry after="500">
+        <input target="louis" key_up="all" />
+      </entry>
+      <entry wait="1000" />
+    </timeline>
+  </director>
+</directors>

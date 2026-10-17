@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="louis" name="Louis">
+  <director name="Normal Jump / Small Jump">
+    <actors>
+      <actor id="louis1" oid="louis" x="midX - 125" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit1" oid="bandit" x="midX - 95" z="midZ">
+        <values>
+          <value name="team" type="str" value="4" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="facing" type="num" value="-1" />
+        </values>
+      </actor>
+      <actor id="louis2" oid="louis" x="midX + 75" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit2" oid="bandit" x="midX + 105" z="midZ">
+        <values>
+          <value name="team" type="str" value="4" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="facing" type="num" value="-1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="9999">
+      <entry after="1000">
+        <input target="louis1">
+          <step key_down="j" />
+          <step key_down="a" />
+        </input>
+        <input target="louis2">
+          <step click="j" />
+          <step key_down="a" />
+        </input>
+        <input target="bandit1" click="d" />
+        <input target="bandit2" click="d" />
+      </entry>
+      <entry after="200">
+        <input target="louis1" key_up="j,a" />
+        <input target="louis2" key_up="j,a" />
+      </entry>
+      <entry wait="3800" />
+    </timeline>
+  </director>
+</directors>

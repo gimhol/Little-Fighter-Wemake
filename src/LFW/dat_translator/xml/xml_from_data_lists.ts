@@ -1,6 +1,9 @@
 import type { IDataLists } from "../../defines/IDataLists";
+import type { IDatIndex } from "../../defines/IDatIndex";
+import type { IDirectorIndex } from "../../defines/IDirectorIndex";
 import type { IXMLElement, IXML } from "../../ditto/xml";
 import { xml_x_dat_index } from "./xml_x_dat_index";
+import { xml_x_director_index } from "./xml_x_director";
 
 /**
  * 序列化整个数据索引列表为 XML
@@ -36,18 +39,21 @@ import { xml_x_dat_index } from "./xml_x_dat_index";
 export function xml_from_data_lists(xml: IXML, lists: IDataLists): IXMLElement {
   const root = xml.create("data");
 
-  const groups: [string, IDataLists[keyof IDataLists]][] = [
+  const groups: [string, (IDatIndex | IDirectorIndex)[] | undefined][] = [
     ["obj", lists.objects],
     ["background", lists.backgrounds],
     ["stages", lists.stages],
     ["bot", lists.bots],
     ["moves", lists.moves],
+    ["directors", lists.directors],
   ];
 
   for (const [tag, items] of groups) {
     if (!items?.length) continue;
     for (const item of items) {
-      root.insert(xml_x_dat_index(xml, item, tag));
+      root.insert(tag === "directors"
+        ? xml_x_director_index(xml, item as IDirectorIndex, tag)
+        : xml_x_dat_index(xml, item as IDatIndex, tag));
     }
   }
 

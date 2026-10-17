@@ -6,7 +6,16 @@ import { xml_2_data_lists } from "../dat_translator/xml/xml_to_data_lists";
 import { xml_2_bg_data, xml_x_bg_data } from "../dat_translator/xml/xml_x_bg_data";
 import { xml_2_entity_data, xml_x_entity_data } from "../dat_translator/xml/xml_x_entity_data";
 import { xml_to_stage_info_list } from "../dat_translator/xml/xml_x_stage_info";
-import { type IBgData, type IBotData, type IDataLists, type IEntityData, type IMoveListData, type IStageInfo } from "../defines";
+import { xml_to_directors } from "../dat_translator/xml/xml_x_director";
+import {
+  type IBgData,
+  type IBotData,
+  type IDataLists,
+  type IDirectorGroupData,
+  type IEntityData,
+  type IMoveListData,
+  type IStageInfo,
+} from "../defines";
 import { EntityEnum } from "../defines/EntityEnum";
 import { Defines } from "../defines/defines";
 import { Ditto } from "../ditto";
@@ -20,6 +29,7 @@ import { Randoming } from "../helper/Randoming";
 import { is_non_blank_str, is_str } from "../utils/type_check";
 import type { IEntityDataContext } from "./IEntityDataContext";
 import { check_stage_info } from "./check_stage_info";
+import { make_director_group } from "./normalize_directors";
 import { preprocess_bg_data } from "./preprocess_bg_data";
 import { preprocess_bot_data } from "./preprocess_bot_data";
 import { preprocess_entity_data } from "./preprocess_entity_data";
@@ -62,6 +72,7 @@ class Inner {
   stages: IStageInfo[] = [Defines.VOID_STAGE];
   bot_map = new Map<string, IBotData>();
   moves_map = new Map<string, IMoveListData>();
+  directors: IDirectorGroupData[] = [];
   randomings = new Map<string, Randoming<IEntityData>>();
   bg_randomings = new Map<string, Randoming<IBgData>>();
 
@@ -164,7 +175,7 @@ class Inner {
   }
   private async solve_index_files(index_files: string[]): Promise<IDataLists> {
     this.check_cancelled();
-    const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [], moves: [] }
+    const data: IDataLists = { objects: [], backgrounds: [], stages: [], bots: [], moves: [], directors: [] }
     for (const file of index_files) {
       this.check_cancelled();
 
@@ -182,12 +193,13 @@ class Inner {
         continue;
       }
       this.check_cancelled();
-      const { objects = [], backgrounds = [], stages = [], bots = [], moves = [] } = partial;
+      const { objects = [], backgrounds = [], stages = [], bots = [], moves = [], directors = [] } = partial;
       data.objects.push(...objects)
       data.backgrounds.push(...backgrounds)
       data.stages.push(...stages)
       data.bots.push(...bots)
       data.moves!.push(...moves)
+      data.directors!.push(...directors)
     }
     return data;
   }
@@ -210,7 +222,12 @@ class Inner {
     }
     const data = await this.solve_index_files(index_files);
     if (this.cancelled) throw new Error("cancelled");
-    const total = data.bots.length + (data.moves?.length ?? 0) + data.objects.length + data.backgrounds.length + data.stages.length;
+    const total = data.bots.length
+      + (data.moves?.length ?? 0)
+      + (data.directors?.length ?? 0)
+      + data.objects.length
+      + data.backgrounds.length
+      + data.stages.length;
     let loaded = 0;
     const report = (file: string) => this.lfw.emit_progress(`${file}`, total ? Math.floor((loaded * 100) / total) : 0);
     for (const { id, file, skipped } of data.bots) {
@@ -309,6 +326,21 @@ class Inner {
       if (idx < 0) this.stages.push(stage);
       this.stages[idx] = stage;
     }
+
+    for (const director_index of data.directors ?? []) {
+      loaded++;
+      if (director_index.skipped) continue;
+      report(director_index.file);
+      try {
+        const raw = director_index.file.endsWith(".xml")
+          ? xml_to_directors((await this.lfw.resources.import_xml(director_index.file, true)).data)
+          : await this.lfw.resources.import_json(director_index.file, true).then(r => r.data);
+        if (this.cancelled) throw new Error("cancelled");
+        this.directors.push(make_director_group(director_index, raw));
+      } catch (e) {
+        Ditto.warn(`FAILED TO LOAD DIRECTOR DATA: ${director_index.file}`, e);
+      }
+    }
   }
 }
 
@@ -363,6 +395,12 @@ export class DatMgr {
   }
   get stages(): IStageInfo[] {
     return this._inner.stages;
+  }
+  get directors(): IDirectorGroupData[] {
+    return this._inner.directors;
+  }
+  find_director(id: string): IDirectorGroupData | undefined {
+    return this._inner.directors.find(v => v.id === id || v.file === id);
   }
 
   find(id: string): IEntityData | undefined {

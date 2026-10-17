@@ -4,7 +4,7 @@ import { OID } from "../../../defines/OID";
 import { Entity } from "../../../entity";
 import { cos, sin } from "../../../utils/math/base";
 import { round_float } from "../../../utils/math/round_float";
-import { ActionDirector } from "./ActionDirector";
+import { ActionDirector } from "../../../director/ActionDirector";
 import type { Tests } from "./Tests";
 
 export class TestCase implements IState<number> {
@@ -127,3 +127,4 @@ export class TestCase implements IState<number> {
   }
 
 }
+

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="weapons" name="Weapons &amp; Dropping">
+  <director name="Baseball_1_1" bg="pixel_ruler">
+    <actors>
+      <actor id="weapon" oid="weapon_baseball" count="4">
+        <layout type="line" axis="z" x="20" z="midZ" length="300" />
+      </actor>
+      <actor id="fighter" oid="mark,deep,davis,jan" count="4" group="fighters">
+        <layout type="line" axis="z" x="20" z="midZ" length="300" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="@fighters">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="@fighters" key_up="R" />
+        <camera dest="700,0" />
+      </entry>
+      <entry repeat="9999" interval="3000">
+        <entry>
+          <camera dest="600,0" />
+        </entry>
+        <entry>
+          <camera dest="700,0" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Knife_1_1" bg="pixel_ruler">
+    <actors>
+      <actor id="weapon" oid="weapon_knife" count="4">
+        <layout type="line" axis="z" x="20" z="midZ" length="300" />
+      </actor>
+      <actor id="fighter" oid="mark,deep,davis,jan" count="4" group="fighters">
+        <layout type="line" axis="z" x="20" z="midZ" length="300" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="@fighters">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="@fighters" key_up="R" />
+        <camera dest="350,0" />
+      </entry>
+      <entry repeat="9999" interval="3000">
+        <entry>
+          <camera dest="0,0" />
+        </entry>
+        <entry>
+          <camera dest="350,0" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Hoe_1_1" bg="pixel_ruler">
+    <stage player_r="10" />
+    <actors>
+      <actor id="weapon" oid="weapon_hoe" count="4">
+        <layout type="line" axis="z" x="0" z="midZ" length="300" />
+      </actor>
+      <actor id="fighter" oid="mark,deep,davis,jan" count="4" group="fighters">
+        <layout type="line" axis="z" x="0" z="midZ" length="300" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" dbl_click="R" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" key_down="R" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Stick_1_1" bg="pixel_ruler">
+    <stage player_r="10" />
+    <actors>
+      <actor id="weapon" oid="weapon_stick" count="4">
+        <layout type="line" axis="z" x="0" z="midZ" length="300" />
+      </actor>
+      <actor id="fighter" oid="mark,deep,davis,jan" count="4" group="fighters">
+        <layout type="line" axis="z" x="0" z="midZ" length="300" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" dbl_click="R" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" key_down="R" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="100">
+        <input target="@fighters" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Stone_1_1" bg="pixel_ruler">
+    <actors>
+      <actor id="weapon" oid="weapon_stone" count="4">
+        <layout type="line" axis="z" x="20" z="midZ" length="300" />
+      </actor>
+      <actor id="fighter" oid="mark,deep,davis,jan" count="4" group="fighters">
+        <layout type="line" axis="z" x="20" z="midZ" length="300" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="@fighters" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="@fighters" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Dropped Weapon: No Hurt" bg="pixel_ruler">
+    <actors>
+      <actor id="a" oid="mark" x="midX" z="midZ">
+        <values>
+          <value name="name" type="str" value="A: 捡起石头(稍后被攻击)" />
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+      <actor id="stone" oid="weapon_stone" x="midX - 8" z="midZ" />
+      <actor id="c" oid="deep" x="midX - 150" z="midZ">
+        <values>
+          <value name="name" type="str" value="C: 被石头砸到(不应受伤)" />
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="1" />
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+      <actor id="b" oid="davis" x="midX + 40" z="midZ">
+        <values>
+          <value name="name" type="str" value="B: 攻击A" />
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+    </actors>
+    <groups>
+      <group name="fighters" actors="a,b,c" />
+    </groups>
+    <timeline>
+      <entry repeat="9999" interval="1000">
+        <entry>
+          <input target="a" click="a" />
+        </entry>
+        <entry>
+          <place target="c" at="stone" dx="-8" dy="0" dz="0" requires="bearer" />
+        </entry>
+        <entry>
+          <input target="b" click="a" />
+        </entry>
+        <entry />
+        <entry />
+        <entry>
+          <reset />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Dropped Weapon: Pick Up &amp; Throw Still Hurts" bg="pixel_ruler">
+    <actors>
+      <actor id="a" oid="mark" x="midX" z="midZ">
+        <values>
+          <value name="name" type="str" value="A: 捡起石头(稍后被攻击)" />
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+      <actor id="stone" oid="weapon_stone" x="midX - 8" z="midZ" />
+      <actor id="c" oid="deep" x="midX - 150" z="midZ">
+        <values>
+          <value name="name" type="str" value="C: 被石头砸到(不应受伤)" />
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="1" />
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+      <actor id="b" oid="davis" x="midX + 40" z="midZ">
+        <values>
+          <value name="name" type="str" value="B: 攻击A" />
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="stat_bar" type="num" value="0" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+    </actors>
+    <groups>
+      <group name="fighters" actors="a,b,c" />
+    </groups>
+    <timeline>
+      <entry repeat="9999" interval="1000">
+        <entry>
+          <input target="a" click="a" />
+        </entry>
+        <entry>
+          <place target="c" at="stone" dx="-8" dy="0" dz="0" requires="bearer" />
+        </entry>
+        <entry>
+          <input target="b" click="a" />
+        </entry>
+        <entry />
+        <entry>
+          <pickup target="c" weapon="stone" if_empty="true" />
+        </entry>
+        <entry />
+        <entry>
+          <throw_spot target="a" from="c" />
+        </entry>
+        <entry>
+          <face target="c" at="a" />
+          <input target="c" click="a" />
+        </entry>
+        <entry />
+        <entry />
+        <entry>
+          <reset />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+</directors>

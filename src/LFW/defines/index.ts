@@ -75,6 +75,8 @@ export * from "./IStageObjectInfo";
 export * from "./IStagePhaseInfo";
 export * from "./IStyle";
 export * from "./ITerrainInfo";
+export * from "./IDirectorData";
+export * from "./IDirectorIndex";
 export * from "./IVector2";
 export * from "./IVector2Like";
 export * from "./IVector3";
