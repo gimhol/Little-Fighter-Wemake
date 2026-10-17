@@ -11123,3 +11123,48 @@ XML（cwd 就是仓库根，两侧同一份路径）→ 各自的 `parse`（TS `
 `repeat`+`interval` 嵌套、`auto` 的 `when` 组合）都是作者写的，不是我想出来的。
 
 ⚠ 依赖 cwd：两条命令都必须从仓库根启动（`native/tools/native.mjs test` 就是这么起的）。
+## 152. 背景层的 UV 循环 / UV 动画（2026-10-18）
+
+TS 的 `DittoImpl/renderer/BgLayerRender.ts` 把两件事做在**渲染层**（不在 `LFW` 核心）：
+
+```ts
+// uv_loop：目标比源图大 ⇒ 按源图尺寸循环
+const rx = tiling ? Math.max(this.width / this.src_w, 1) : 1;
+// offsetAnim：在同一条时间轴上累积
+this.offsetX += (dt / 1000) * offsetAnimX;
+tex.offset.x = pos_mod(this.offsetX, period_x) / period_x;   // period = min(src, dst)
+```
+
+端口的世界背景那一遍（`GodotWorldRenderer::build_background`）原本只算视差 ⇒ `uv_loop` 与
+`offsetAnimX/Y` 完全没画（灰烬森林的雪/雾层被拉成一张大图、足球场的草地不动）。
+
+### 152.1. 绘制项
+
+`GodotDrawItem` 加：
+
+| 字段 | 含义 |
+|---|---|
+| `uv_tile` | 这一项要按周期平铺（`uv_loop` 或 `offsetAnim` 任一存在）|
+| `uv_px/uv_py` | 平铺周期（**逻辑像素** = `min(源图, 目标)`）|
+| `uv_ox/uv_oy` | 相位（逻辑像素，已按周期取正模）|
+
+### 152.2. 宿主怎么画
+
+Godot 的 `draw_texture_rect_region` 没有"改 UV / 设 repeat"的口子（要独立材质或 shader），
+所以宿主**按周期把同一张图画多份**、整排平移 `-uv_ox/-uv_oy`：
+`for (gy = -oy; gy < h; gy += py) for (gx = -ox; gx < w; gx += px) blit(px×py)`。
+因为 `px = min(源图, 目标)`，这正好等价于 `repeat = 目标/源图` + `offset = 相位/周期`；
+多画出去的那一圈由 `canvas_item_set_clip` 的 content 矩形裁掉。
+
+### 152.3. 时间轴
+
+`GodotWorldRenderer::render(dt)` 里 `_uv_time += dt`（一个标量）：TS 是每个 `BgLayerRender`
+各自 `offsetX += dt/1000*anim`，同一条时间轴 ⇒ 各层只要乘自己的 `offsetAnimX/Y` 即可。
+⚠ 这个 `dt` 是**引擎墙钟**（窗口里 ≈ 仿真步长；headless 验收跑得比仿真快 ⇒ 相位推进更快），
+它不进任何摘要，也不影响确定性断言。
+
+### 152.4. 证据行
+
+`[godot] render: … uv=%d[px,py,ox,oy@tag]`（第一条 UV 项）。ash_forest 实测：
+40 帧 `uv=1[128.0,128.0,10.67,10.67@ash_forest]` → 280 帧 `74.67`；`bg_7`（只有世界坐标
+`loop`）`uv=0[]` 且 `bg_layers=167` ⇒ 两套机制互不影响。

@@ -2707,6 +2707,34 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
     to_center.set_origin(Vector2(x + w * 0.5f, y + h * 0.5f));
     spin_xform = _item_xform * to_center * rot2;
   }
+  // 背景层的 UV 循环 / 偏移动画（TS `BgLayerRender.update_uv`）：宿主没有"改纹理 UV"的口子
+  // （`draw_texture_rect_region` 的 UV 只有一次采样）⇒ 按**周期**平铺贴图，整排整体平移
+  // `-uv_ox/-uv_oy`（相位已取正模），多画的那一圈由 content 裁剪兜住。
+  // 与"改 repeat/offset"逐像素等价：周期 = `min(源图, 目标)`，超出目标的那部分只多画不显示。
+  if (item.uv_tile && !rotated && !item.flip_x) {
+    const double px = item.uv_px > 0.0 ? item.uv_px : item.w;
+    const double py = item.uv_py > 0.0 ? item.uv_py : item.h;
+    if (px > 0.0 && py > 0.0) {
+      const double ox = -std::fmod(item.uv_ox, px);
+      const double oy = -std::fmod(item.uv_oy, py);
+      const auto tile_pass = [&](const Color& c) {
+        for (double gy = oy; gy < item.h; gy += py) {
+          for (double gx = ox; gx < item.w; gx += px) {
+            draw_texture_rect_region(
+                tex, Rect2(static_cast<float>(item.x + gx), static_cast<float>(item.y + gy),
+                           static_cast<float>(px), static_cast<float>(py)),
+                src, c);
+          }
+        }
+      };
+      tile_pass(color);
+      if (item.mix_a > 0.0) {
+        tile_pass(Color(static_cast<float>(item.mix_r), static_cast<float>(item.mix_g),
+                        static_cast<float>(item.mix_b), static_cast<float>(item.mix_a)));
+      }
+      return;
+    }
+  }
   const auto blit = [&](const godot::Ref<godot::ImageTexture>& t, float ox, float oy, const Color& c) {
     if (rotated) {
       godot::Transform2D push;
@@ -2829,14 +2857,14 @@ void LfwGodot::finish() {
         buf, sizeof(buf),
         "[godot] render: bg=%s cam=%.1f,%.1f scale=%.2f,%.2f df=%.3f items=%zu bg_layers=%d "
         "ents=%d hidden=%d no_pic=%d no_file=%d unnamed_tex=%d outline=%d[%s] rot=%d@%.4f "
-        "model=%d[%s] sil=%lld textures=%lld ok/%lld fail",
+        "model=%d[%s] sil=%lld textures=%lld ok/%lld fail uv=%d[%s]",
         f.bg_id.c_str(), f.cam_x, f.cam_y, f.scale_x, f.scale_y, f.dfactor, f.items.size(),
         f.bg_layers, f.drawn_entities, f.hidden_entities, f.no_pic_entities, f.no_file_entities,
         f.unnamed_textures, f.outline_items, f.outline_probe.c_str(), f.rotated_items,
         f.rotated_probe, f.model_items, f.model_probe.c_str(),
         _textures != nullptr ? _textures->silhouettes() : 0,
         _textures != nullptr ? _textures->loaded() : 0,
-        _textures != nullptr ? _textures->failed() : 0);
+        _textures != nullptr ? _textures->failed() : 0, f.uv_items, f.uv_probe.c_str());
     print_line(buf);
     if (_textures != nullptr && !_textures->last_error().empty()) {
       print_line("[godot] last texture error: " + _textures->last_error());

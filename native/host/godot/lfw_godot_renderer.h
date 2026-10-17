@@ -99,6 +99,12 @@ struct GodotDrawItem {
   std::string kind;
   std::string tag;
   double depth = 0;
+  // 背景层的 UV 循环 / 偏移动画（TS `BgLayerRender.update_uv`）：
+  //   `uv_tile` 为真 ⇒ 纹理按 `uv_px × uv_py`（**逻辑像素**的周期 = `min(源图, 目标)`）在矩形里平铺；
+  //   `uv_ox/uv_oy` 是相位（同样逻辑像素，已按周期取正模）。
+  // `uv_loop` 与 `offsetAnimX/Y` 任一存在就要走这条（前者决定"平不平铺"，后者决定"动不动"）。
+  bool uv_tile = false;
+  double uv_px = 0, uv_py = 0, uv_ox = 0, uv_oy = 0;
   // ---- UI 那一遍（DESIGN D4；`lfw_godot_ui_renderer.{h,cpp}` 填这几条）----
   // 五遍次序里 UI 占两遍（D1(a)：**UI 背景 → 背景/实体/前景 → UI 前景**）⇒ 每一遍记一个
   // pass，`_draw()` 按 pass 三趟扫（同一趟内保持收集次序）。
@@ -145,6 +151,9 @@ struct GodotFrame {
   int unnamed_textures = 0;
   int outline_items = 0;              // 带描边的绘制项（诊断）
   std::string outline_probe;          // 第一条描边的 `#rrggbb@alpha,width`（诊断）
+  // 背景层的 UV 循环/偏移动画（诊断）：条目数 + 第一条的 `px,py,ox,oy@tag`
+  int uv_items = 0;
+  std::string uv_probe;
   int rotated_items = 0;              // 带 `pic.rad` 的旋转绘制项（诊断）
   double rotated_probe = 0;           // 第一条旋转项的角度（弧度，诊断）
   int model_items = 0;                // `frame.model` 的 3D 模型项（诊断）
@@ -263,6 +272,9 @@ class GodotWorldRenderer : public IWorldRenderer {
   int _render_count = 0;
   // `dfactor` 的帧内状态（TS `WorldRenderer.utime/dtime/dfactor/dirty`）。
   double _utime = 0, _dtime = 0, _dfactor = 1;
+  // 背景层 UV 偏移动画的时间积分（秒）。TS 是每个 `BgLayerRender` 自己 `offsetX += dt/1000*anim`
+  // —— 同一条时间轴 ⇒ 这里只积一个标量，各层按自己的 `offsetAnimX/Y` 系数乘。
+  double _uv_time = 0;
   bool _dirty = false;
   double _cam_p0_x = 0, _cam_p0_y = 0, _cam_p1_x = 0, _cam_p1_y = 0;
   long long _added = 0, _removed = 0, _duplicate_adds = 0, _stray_removes = 0;

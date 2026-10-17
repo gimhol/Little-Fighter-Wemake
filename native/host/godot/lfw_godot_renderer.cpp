@@ -478,7 +478,34 @@ void GodotWorldRenderer::build_background(const World& world, GodotFrame& frame,
       it.a = ca;
       it.flat = true;
     }
-    if (has_pic || has_color) picked.push_back(One{z, it});
+    if (has_pic || has_color) {
+      // ---- UV 循环 / 偏移动画（TS `BgLayerRender.update_uv`）----
+      //   `uv_loop` ⇒ `repeat = max(目标/源图, 1)`：目标比源图大就按源图周期平铺；
+      //   `offsetAnimX/Y` ⇒ `offset = pos_mod(anim * t, period)`，`period = min(源图, 目标)`。
+      // 两者任一存在 ⇒ 宿主那一遍按周期平铺（`uv_tile`），相位（`uv_ox/uv_oy`）由这里算好。
+      const bool uv_loop = lfw::truthy(lfw::field_or(info, u"uv_loop"));
+      const Value anim_x_v = lfw::field_or(info, u"offsetAnimX");
+      const Value anim_y_v = lfw::field_or(info, u"offsetAnimY");
+      const bool has_anim_x = !std::holds_alternative<std::monostate>(anim_x_v);
+      const bool has_anim_y = !std::holds_alternative<std::monostate>(anim_y_v);
+      const bool anim = has_anim_x || has_anim_y;
+      const double src_w = has_pic ? res.img_w : 0.0;
+      const double src_h = has_pic ? res.img_h : 0.0;
+      const bool tiling = uv_loop && has_pic && src_w > 0.0 && src_h > 0.0;
+      if (tiling || anim) {
+        it.uv_tile = true;
+        it.uv_px = (src_w > 0.0 && dst_w > 0.0) ? lfw::min({src_w, dst_w}) : dst_w;
+        it.uv_py = (src_h > 0.0 && dst_h > 0.0) ? lfw::min({src_h, dst_h}) : dst_h;
+        const double off_x = has_anim_x ? num_or(info, u"offsetAnimX") * _uv_time : 0.0;
+        const double off_y = has_anim_y ? num_or(info, u"offsetAnimY") * _uv_time : 0.0;
+        const double px = it.uv_px > 0.0 ? it.uv_px : dst_w;
+        const double py = it.uv_py > 0.0 ? it.uv_py : dst_h;
+        // `pos_mod`（TS `BgLayerRender.ts:9`）：`((v % p) + p) % p`，负数也落回 `[0, p)`。
+        it.uv_ox = px > 0.0 ? std::fmod(std::fmod(off_x, px) + px, px) : 0.0;
+        it.uv_oy = py > 0.0 ? std::fmod(std::fmod(off_y, py) + py, py) : 0.0;
+      }
+      picked.push_back(One{z, it});
+    }
   }
   // 同一遍内 z 远→近（画家次序）。
   std::stable_sort(picked.begin(), picked.end(),
@@ -486,6 +513,15 @@ void GodotWorldRenderer::build_background(const World& world, GodotFrame& frame,
   for (const One& one : picked) {
     frame.items.push_back(one.item);
     ++frame.bg_layers;
+    if (one.item.uv_tile) {
+      ++frame.uv_items;
+      if (frame.uv_probe.empty()) {
+        char probe[128];
+        std::snprintf(probe, sizeof(probe), "%.1f,%.1f,%.2f,%.2f@%s", one.item.uv_px, one.item.uv_py,
+                      one.item.uv_ox, one.item.uv_oy, one.item.tag.c_str());
+        frame.uv_probe = probe;
+      }
+    }
   }
 }
 
@@ -742,6 +778,8 @@ void GodotWorldRenderer::render(double dt) {
   ++_render_count;
   _ui_stats = GodotUIStats{};
   _ui_dump_lines.clear();
+  // `BgLayerRender.render(dt)` 的 `offsetX += dt/1000*offsetAnimX`：同一条时间轴，积一个标量。
+  if (dt > 0.0) _uv_time += dt;
   World& world = _lfw->world();
   GodotFrame frame;
   frame.valid = true;

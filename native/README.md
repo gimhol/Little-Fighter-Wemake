@@ -2079,3 +2079,25 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   `(2,2)/(2,250)/(1390,250)` 全是 `#0F1219`，改后全是 `#000000`；
   截图留在 `shots/bg-black-probe.png`（1400×500，两侧留边一眼是黑的）。
 * `node native/tools/native.mjs godot` 仍绿（底色不进摘要）。
+---
+
+### 2026-10-18（九）：背景层的 UV 循环 / UV 动画
+
+* 用户报「背景 layer 的 uv 循环失效、uv 动画也失效（灰烬森林前景层、足球场的草地）」。
+  根因：端口的世界背景那一遍（`lfw_godot_renderer.cpp` 的 `build_background`）只算了**视差**，
+  完全没有 `uv_loop` / `offsetAnimX/Y` —— TS 那边由 `BgLayerRender.update_uv` 做：
+  * `uv_loop` ⇒ `repeat = max(目标/源图, 1)`（目标比源图大就按**源图尺寸**循环平铺）；
+  * `offsetAnimX/Y` ⇒ `offsetX += dt/1000*anim`，相位 `pos_mod(offset, period)`，
+    周期 `period = min(源图, 目标)`。
+* 端口补法：绘制项加 `uv_tile / uv_px / uv_py / uv_ox / uv_oy`（`lfw_godot_renderer.h`），
+  渲染器算周期与相位（`_uv_time` 一条时间轴积分 `dt`，与 TS 每层各自累积同一份时间等价），
+  宿主那一遍**按周期平铺**贴图、整体平移 `-uv_ox/-uv_oy`（Godot 的 `draw_texture_rect_region`
+  没有"改 UV"的口子；周期 = `min(源图,目标)`，多画的那一圈由 content 裁剪兜住 ⇒ 与
+  "改 repeat/offset"逐像素等价）。
+* 证据（`[godot] render:` 行新加 `uv=%d[px,py,ox,oy@tag]`）：
+  `--stage tutorial`（bg=ash_forest，前景是 128×128 的雪/雾层，`offsetAnimX/Y = 10`、`uv_loop: 1`）
+  在 40 帧时 `uv=1[128.0,128.0,10.67,10.67@ash_forest]`、280 帧时 `74.67` ⇒ 相位在走；
+  截图 `shots/uv-a.png`（雪点铺满整屏，不再是"一张图被拉满"）。
+* 顺便确认**世界坐标的 `loop`**（`bg_7` 那种 `loop: 144`）本来就是好的：`--stage 40`
+  打印 `bg_layers=167`（声明层数远小于它 ⇒ 副本都在），截图 `shots/bg7-loop.png` 的红地毯无缝平铺。
+* 差分 264/264、lint 9771 anchors、`godot` 门禁全绿（这一遍只动宿主渲染，摘要不变）。
