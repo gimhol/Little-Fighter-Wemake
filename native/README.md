@@ -2209,3 +2209,30 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   真数据里 `julian` 帧 289 / 318 的 opoint `speedz = 3.50`。
 * 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
 
+### 2026-10-17（十四）：数据驱动导演的 `after` 缺省 —— `+= NaN` 让导演每帧乱按
+
+* 用户报「Godot 下 Julian D>A 变成一个个的发，Ball 也失去跟踪」。查下来跟上一片的 Z 轴改动无关（那条只碰
+  oid 229 的 opoint）；真因在**数据驱动导演的时间表编译**：
+
+  ```cpp
+  // 修之前，`lfw/director/director.cpp` 的 `compile()`（= TS `Director._compile` 的 `walk`）
+  time += to_number(field_or(entry, u"after"));   // TS: `time += entry.after ?? 0`
+  ```
+
+  `01_julian.director.xml` 的 D>A 用例是「`after="100"` 的 `click d,R,a`」+「`repeat=1000 interval=50`
+  的 `click a`」，而 **repeat 里的内层 `<entry>` 没有 `after`** ⇒ `to_number(undefined)` = NaN ⇒
+  `time` 变 NaN ⇒ 之后插进 `ActionDirector` 的每个任务 `time` 都是 NaN ⇒ `update()` 里那句
+  `action.time > t` 恒为假 ⇒ **每帧把所有动作全放一遍**（1001 个 `click`，外加那个 `click d,R,a`）。
+* 症状链条：`d`（防御键）每帧都在 `key_hit_duration`（10 帧）窗口内 ⇒ 探针里 `d=-hSE`（hit/start 每帧为真）
+  ⇒ Julian 一进帧 262（`hit_d: 276`）就被顶到 `ball_end`(276) ⇒ 只跑到帧 261 的那一个 opoint
+  ⇒ 每 ~20 帧才出一颗球（"一个个的发"），而且那颗球的 `chase` 还没起作用（"失去跟踪"）。
+* 修法：按 TS 的 `?? 0` 语义（`undefined`/`null` ⇒ 0；`NaN` 不吞）。
+* 实跑证据（headless 测试模式 `Julian D>A`，探针跑完即删）：
+  * 修之前：`d=-hSE`（每帧）；Julian `260 → 261 → 276 → 260 …`，20 帧一轮。
+  * 修之后：`d` 只在开手那一瞬；Julian `260 → 261 → 262 … → 274 → 263 → …`（帧 275 的 `hit_a: 263` 连发），
+    228 球数 1 → 17 一路爬升，飞行帧 `50c/51c/53c`（`c` = 帧上有 `chase`）的 `pos.z` 从 -340 散到 -244。
+* **覆盖缺口**：`Director` 的**运行期**（`_compile` 的时间表 + `update` 的分发）在差分台面上是空的 ——
+  现有用例只覆盖 DSL 读写（`cases/xml/director*`）与 `ui::ActionDirector`（`cases/lfw/lfag.txt`）。
+  下一片该补一个 `wdir` 台面（`new Director` + `start()` 后 dump `action_director.actions()` 的 `time`）。
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
+

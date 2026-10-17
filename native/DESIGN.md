@@ -11392,3 +11392,42 @@ double vz = z_disabled ? 0.0 : to_number(ovz) + o_dvz + o_speedz * ud;
   ⇒ `v.z = ovz + speedz`、`keys 0 -1 0` ⇒ `ovz - speedz`（实测 `5 → 1`）。
 * 端口侧顺手把 `boost_opoints_*` 抽成 `for_each_opoint_in_frame / for_each_opoint_of_frames`，
   两份 opoint 遍历不再各写一遍（`oid` 判定只有一处 ⇒ 变异锚点仍然唯一）。
+
+## 157. 导演时间表的 `after` 缺省：`NaN` 会把「定时」变成「每帧」（2026-10-17）
+
+TS `Director._compile` 的 `walk` 里那行是 `time += entry.after ?? 0`；端口照抄时写成了
+`time += to_number(field_or(entry, u"after"))`。差别只在**没有 `after` 的 entry** 上 ——
+而这种 entry 到处都是：`<entry repeat="N" interval="M"><entry>…</entry></entry>` 里
+**内层 entry 只有 `steps`/`actions`**。
+
+`to_number(undefined)` = NaN ⇒ `time` 从此是 NaN ⇒ 之后 `schedule()` 插进去的每个任务
+`time` 都是 NaN ⇒ `ActionDirector::update` 的
+
+```cpp
+if (action.time > t) break;      // NaN 比较恒为 false ⇒ 永不 break
+```
+
+于是**每帧把整张时间表全放一遍**。`01_julian.director.xml` 的 `Julian D>A` 因此每帧收到
+「`click d,R,a` + 1000 × `click a`」：`d`（防御）每帧都落在 `key_hit_duration`（10 帧）窗口内，
+Julian 一进帧 262（`hit_d: 276`）就被顶到 `ball_end`，D>A 的 4 个 opoint 只剩帧 261 那一个
+—— 表现就是「球一个个地发、还不追人」。
+
+### 157.1. 诊断手法（值得复用）
+
+在 Godot 宿主里给实体打一行探针（`[probe julian] f=… frame=… a=… d=…`），把
+`ctrl->is_hit/is_start/is_end` 四个位一起打出来：
+
+```
+f=301 frame=260 a=-hSE d=-hSE     ← hit + start + end 每帧都为真 = 每帧都被"按下"
+```
+
+`is_start(d)` 每帧为真就说明 `key_down(d)` 每帧都进了控制器的队列 —— 输入是被谁刷的，
+再去看导演即可。
+
+### 157.2. 覆盖缺口（下一步）
+
+`Director` 的**运行期**在差分台面上没有用例：`cases/xml/director*` 只对 DSL 读写，
+`cases/lfw/lfag.txt` 对的是另一个类（`ui::ActionDirector`，4BU 之前的旧那份）。
+`Director::action_director` 是 public、`director::ActionDirector` 又带 `actions()/end_time()`，
+所以补一个 `wdir` op（`new Director(world, data)` → `start()` → dump 每个 `action.time`）
+就能把这条钉住 —— `tests/differential/subjects/world.{ts,cpp}` 里加，用例走 `cases/world/`。

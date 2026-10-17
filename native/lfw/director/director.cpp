@@ -265,7 +265,11 @@ void Director::compile() {
           if (children != nullptr) walk(*children, inner);
         }
       } else {
-        time += to_number(field_or(entry, u"after"));
+        // TS：`time += entry.after ?? 0` —— 内层的 `<entry>` 往往没有 `after`，
+        // 少了这个缺省就会 `+= NaN`，之后的每个定时任务的 time 都成 NaN ⇒
+        // `action.time > t` 恒为假 ⇒ **每帧把所有动作全放一遍**（导演一路乱按）。
+        const Value after = field_or(entry, u"after");
+        time += is_nullish(after) ? 0.0 : to_number(after);
         schedule(field_or(entry, u"actions"));
       }
     }
