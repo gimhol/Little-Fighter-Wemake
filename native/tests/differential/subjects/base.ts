@@ -9,6 +9,8 @@ import { Ticker } from "../../../../src/LFW/base/Ticker";
 import { ValExpression } from "../../../../src/LFW/base/ValExpression";
 import { Ditto } from "../../../../src/LFW/ditto/Instance";
 import { preprocess_opoint } from "../../../../src/LFW/loader/preprocess_opoint";
+import { make_buring_smoke } from "../../../../src/LFW/dat_translator/make_buring_smoke";
+import { spawn_ice_piece } from "../../../../src/LFW/state/spawn_ice_piece";
 import { MersenneTwister } from "../../../../src/LFW/utils/math/MersenneTwister";
 
 import { bitsHex, esc, f64FromBits, parseJsStringLiteral, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
@@ -31,7 +33,9 @@ let selfAddKey = "";
 
 const mt = new MersenneTwister(0);
 const frame = { width: 0, height: 0, centerx: 0, centery: 0 };
-const fake = { frame, lfw: { mt } } as never;
+// `data`：闭包开头 `is_object(emitter)`（= `is_object_data(e.data)`）的判据。
+const fakeData = { type: 4 };
+const fake = { frame, data: fakeData, lfw: { mt } } as never;
 const customVars: Record<string, (e: unknown) => number> = {};
 const vexprs: ValExpression[] = [];
 let opoint: Record<string, unknown> = {};
@@ -336,6 +340,25 @@ function main(): void {
       frame.height = Number(t[idx[0]!++]!);
       frame.centerx = Number(t[idx[0]!++]!);
       frame.centery = Number(t[idx[0]!++]!);
+    } else if (op === "gf") {
+      // `World::gen_field`（`lfw/entity/gen_field.cpp`）：TS 是 `__gen_*` 上的函数对象，
+      // 端口是「闭包侧表 + `gen_*` 现编译」两条。`e` 用当前 `opoint`、`ice`/`smoke` 用
+      // 引擎自己造的那两个对象（闭包型）。
+      const which = t[idx[0]!++]!;
+      const field = t[idx[0]!++]!;
+      let holder: any;
+      if (which === "e") holder = opoint;
+      else if (which === "ice") holder = spawn_ice_piece("130");
+      else if (which === "smoke") holder = make_buring_smoke(1).action;
+      else { process.stderr.write(`unknown gf holder '${which}'\n`); process.exit(2); }
+      let got: number | undefined;
+      if (holder && typeof holder[field]?.get === "function") {
+        got = holder[field].get(fake);
+      } else if (holder && typeof holder[field.slice(2)] === "string" && holder[field.slice(2)]) {
+        const e = new ValExpression(holder[field.slice(2)], { tag: field.slice(2) });
+        if (e.err === undefined) got = e.get(fake);
+      }
+      out.push(line("GF", which, field, got === undefined ? "u" : bitsHex(got as number)));
     } else if (op === "var") {
       const name = t[idx[0]!++]!;
       const v = Number(t[idx[0]!++]!);

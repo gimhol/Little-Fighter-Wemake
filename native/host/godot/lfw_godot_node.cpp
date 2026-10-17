@@ -51,6 +51,7 @@
 #include "lfw/core/js_string.h"
 #include "lfw/core/value.h"
 #include "lfw/defines/cmd.h"
+#include "lfw/entity/gen_field.h"
 #include "lfw/ui/uilayer.h"
 #include "lfw/ui/uinode.h"
 #include "lfw/ui/value_spread.h"
@@ -2876,6 +2877,14 @@ void LfwGodot::finish() {
         _textures != nullptr ? _textures->loaded() : 0,
         _textures != nullptr ? _textures->failed() : 0, f.uv_items, f.uv_probe.c_str());
     print_line(buf);
+    // `opoint.__gen_*`（表达式编译 / 闭包侧表）的累计账：模型与特效「生成出来没速度」这类
+    // 问题，第一眼要看的数（见 README「opoint 的 `gen_*`」一节）。
+    {
+      const lfw::GenFieldStats& gen = lfw::gen_field_stats();
+      std::snprintf(buf, sizeof(buf), "[godot] gen_field: calls=%lld resolved=%lld closures=%lld",
+                    gen.calls, gen.resolved, gen.closures);
+      print_line(buf);
+    }
     if (_textures != nullptr && !_textures->last_error().empty()) {
       print_line("[godot] last texture error: " + _textures->last_error());
     }

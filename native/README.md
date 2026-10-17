@@ -2147,3 +2147,30 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   `model=1[…book_red.glb|@461.0,242.0 rot=0.5000,0.5000,-0.0000 scale=15.000,15.000,15.000 face=1]`。
 * 差分 264/264、lint anchors 9771 未动（只动宿主渲染与诊断，三条摘要不含它）。
 
+
+### 2026-10-17（十二）：opoint 的 `__gen_*`（生成器）—— 之前是个空壳
+
+* 用户报「opoint 产生的物体似乎没有正确的赋予速度」。查下来是**整条生成器链没接**：
+  `World::gen_field` 一直是个 `return std::nullopt` 的空实现，于是 `opoint.__gen_dvx` /
+  `__gen_x` / `__gen_spread_*` **全部落空**，`Entity::on_spawn` 一律回落到 `opoint.dvx`（0）：
+  冰片（`spawn_ice_piece`）的 16 块碎冰原地重叠、没有初速；燃烧烟雾（`make_buring_smoke`）
+  的 `gen_x/gen_y` 不生效（全从一个点冒）；蝙蝠/火球（`make_fb_*`）的扩散也不生效。
+  差分台面测不到它 —— 台面用 `on_gen_field` 注册常量发生器，把 `World::gen_field` 绕过去了。
+* TS 里这些是**挂在数据对象上的函数对象**（`Value` 装不下函数，DESIGN §4.40）⇒ 端口按两条来路实现
+  （新模块 `lfw/entity/gen_field.{h,cpp}`）：
+  1. **表达式型**（`gen_x` / `gen_dvx` / `gen_spread_*` 这九个）：`__gen_*` → 同名 `gen_*` 源
+     字符串，用**发射者当前帧**（`w/h/cx/cy`）+ 世界 `mt`（`rand/pick/bag/flip`，`mark` = 字段名）
+     现编译求值。TS 是在 `preprocess_opoint` 里编译，这里按需编译并缓存（键 = 对象地址 + 字段，
+     源文本变了就重编译）；解析失败 ≡ 没有该字段。
+  2. **闭包型**（吃 `mt` / 帧尺寸，表达式表达不了）：冰片那四个 + 燃烧烟雾的 `action.__gen_facing`。
+     用一张「对象地址 → 口味」的侧表，表项**持有对象本身**（`shared_ptr`）⇒ 地址不会被复用。
+* `World::gen_field` 现在只是 `gen_field_eval(holder, kind, emitter.frame, emitter.data(), *mt())`；
+  `emitter.data()` 是必须带的 —— 闭包开头的 `is_object(e)`（= `is_object_data(e.data)`）是守卫。
+* **新增钉子**：`cases/base/gen_field.txt`（40 行，差分 264 → **265/265**）—— 覆盖帧变量、`rand/round`、
+  「没有 / 非字符串 / 空串 / 解析失败」四种落空、同一字段连抽两次的值与 `mdraw` 抽查顺序、
+  冰片四个闭包、烟雾 `__gen_facing` 的 `pick([-1,1])`。台面新增 op `gf e|ice|smoke <field>`。
+* **实跑证据**（headless 验收）：证据行新增一行 `[godot] gen_field: calls=… resolved=… closures=…`。
+  火人组（`s`×8）`calls=966 resolved=521 closures=515`；冰人组（`s`×9）`calls=28 resolved=9 closures=3`
+  —— 修之前两处都是 `resolved=0`。
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
+

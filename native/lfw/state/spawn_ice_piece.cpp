@@ -5,6 +5,7 @@
 
 #include "lfw/defines/oid.h"
 #include "lfw/entity/entity_type_check.h"
+#include "lfw/entity/gen_field.h"
 #include "lfw/helper/randoming.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/base.h"
@@ -57,7 +58,11 @@ Value spawn_ice_piece(const std::u16string& id) {
   opoint.set(u"ghost", Value(1.0));
   opoint.set(u"speedz", Value(0.0));
   opoint.set(u"unimportant", Value(1.0));
-  return Value(std::make_shared<Object>(std::move(opoint)));
+  // TS 在这个对象上挂了四个 `__gen_*` 闭包（随机初速 + 帧尺寸内的随机落点）⇒ 端口登记到
+  // `gen_field` 的侧表里（`Value` 装不下函数，见 `lfw/entity/gen_field.h`）。
+  Value ret(std::make_shared<Object>(std::move(opoint)));
+  register_gen_closure(ret, GenClosure::IcePiece);
+  return ret;
 }
 
 const std::vector<Value>& ice_piece_opoints() {

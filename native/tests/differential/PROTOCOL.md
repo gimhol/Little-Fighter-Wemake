@@ -3307,7 +3307,8 @@ harness op：
     （`fallbacks.push(fallbacks[len-1] || 0)`），所以把它也渲染出来才看得见。
 - ⚠️ **剥键表扩了**：除 `__tester` / `__judger` / `tester` 之外还要剥九个 `__gen_*` 与
   `__gen_facing`（`make_buring_smoke` 的 `action.__gen_facing` 与 `preprocess_opoint` 的九个
-  `__gen_*` 都是编译产物，端口不落地 —— 宿主按 `IEntityHost::gen_or(...)` 现解析）。
+  `__gen_*` 都是编译产物，端口不落地 —— 真实现是 `World::gen_field`（`lfw/entity/gen_field.cpp`：
+  表达式型按需编译 + 闭包型走侧表，见 DESIGN §155 与 `cases/base/gen_field.txt`）。
 - ⚠️ **`data.processed != false` 是松散门**：只有 `false` / `0` / `""` / `null` 才算「未处理」，
   才会进 ball / weapon 两段；`undefined != false` 为真 ⇒ **缺省数据的走法是空分支**。
   fighter 段是**独立的 `if`**，不受它管。用例里 weapon 那组必须显式带 `processed` 才算覆盖。

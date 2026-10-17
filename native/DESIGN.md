@@ -11276,3 +11276,71 @@ TS `WorldRenderer` 用 `AmbientLight(0xffffff, 0.7)` + `DirectionalLight(0xfffff
 model=1[weapons/book_bundle/book_red.glb|@461.0,242.0 rot=0.5000,0.5000,-0.0000 scale=15.000,15.000,15.000 face=1]
 ```
 
+
+## 155. opoint 的 `__gen_*`：从空壳到两条来路（2026-10-17）
+
+用户报「opoint 产生的物体似乎没有正确的赋予速度」。真因不是速度公式（`on_spawn` 那段有差分覆盖），
+而是**整条生成器链没接**：
+
+```cpp
+// 修之前，`lfw/world.cpp`
+std::optional<Value> World::gen_field(const Value& holder, const std::u16string& kind,
+                                      Entity& emitter) {
+  (void)holder; (void)kind; (void)emitter;
+  return std::nullopt;          // ⇒ 每个 `__gen_*` 都落空，`on_spawn` 一律回落 opoint.dvx
+}
+```
+
+受影响的是**所有**带生成器的生成物：
+
+| 生成器 | 谁在用 | 症状 |
+|---|---|---|
+| `__gen_dvx` / `__gen_dvy` | `state::spawn_ice_piece` | 16 块碎冰原地重叠、初速恒 0 |
+| `__gen_x` / `__gen_y` | `spawn_ice_piece`、`make_buring_smoke` | 落点不再是帧尺寸内的随机 |
+| `gen_x` / `gen_y`（表达式） | `make_buring_smoke` | 烟雾全从同一个点冒 |
+| `gen_spread_x/y/z` | `make_fb_{bat_chase,firzen_disater,jan_chase,julian_ball}_start` | 蝙蝠/火球不扩散 |
+| `action.__gen_facing` | `make_buring_smoke` | 烟雾朝向恒定 |
+
+### 155.1. 为什么差分没拦住
+
+台面（`tests/differential/subjects/entity.cpp`）用 `TestWorld::on_gen_field` 注册**常量**发生器，
+把 `World::gen_field` 整个绕过去了 ⇒ 台面绿、真机空。这次顺手补了 `gf` op 专门打真实现
+（`cases/base/gen_field.txt`）。
+
+### 155.2. 两条来路（`lfw/entity/gen_field.{h,cpp}`）
+
+TS 把生成器当**函数对象**挂在数据对象上，`Value` 装不下函数（§4.40）⇒ 端口分两类：
+
+1. **表达式型**：`__gen_x` → 同名 `gen_x` 源字符串，用发射者当前帧与世界的 `mt` 现编译求值。
+   * Ctx 只有两面：`frame_var("width"/"height"/"centerx"/"centery")` 与 `mt()`（`ValExpression`
+     的既有 Ctx 概念）；帧缺字段 ⇒ `NaN`（TS 那边是 `undefined` 参与算术）。
+   * 编译缓存键 = (对象地址, `__gen_*` 名)，值里带**源文本**做校验：地址被重用但文本不同就重编译
+     （文本相同 ⇒ 表达式相同，缓存依旧成立）；超过 4096 条整体清空。
+   * 解析失败 ≡ 没有该字段（TS 的 `compile_gen(...) ?? undefined`）。
+2. **闭包型**：冰片四个（吃 `Randoming` / 帧尺寸）与烟雾的 `action.__gen_facing`（吃 `mt.pick`）。
+   `Value` 装不下 ⇒ 用「对象地址 → 口味」的侧表，表项**持有对象本身**（`shared_ptr`）⇒ 登记过的
+   对象不会被释放，地址也就不会被复用，查表不会串味。
+
+`World::gen_field` 缩成一行：
+
+```cpp
+return gen_field_eval(holder, kind, emitter.frame, emitter.data(), *lfw().mt());
+```
+
+⚠ `emitter.data()` 必须带：闭包开头那句 `is_object(e)`（= `is_object_data(e.data)`）是守卫，
+少了它冰片会老老实实返回 0（这个坑在写第一版时踩到了）。
+
+### 155.3. 钉子与实跑
+
+`cases/base/gen_field.txt`（40 行）钉住：帧变量与 `rand/round`、「没有 / 非字符串 / 空串 / 解析失败」
+四种落空、同一字段连抽两次的值 + 随后的 `mdraw`（**抽取顺序**也要一致）、冰片四个闭包、
+烟雾 `pick([-1,1])`。台面 op：`gf e|ice|smoke <field>`。
+
+实跑（headless 验收，测试模式）：证据行新增
+`[godot] gen_field: calls=… resolved=… closures=…`：
+
+| 场景 | 修之前 | 修之后 |
+|---|---|---|
+| 火人组（`s`×8，`--frames 3000`） | `resolved=0` | `calls=966 resolved=521 closures=515` |
+| 冰人组（`s`×9） | `resolved=0` | `calls=28 resolved=9 closures=3` |
+

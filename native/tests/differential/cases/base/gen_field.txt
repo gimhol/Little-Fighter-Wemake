@@ -1,0 +1,64 @@
+# `World::gen_field`（`lfw/entity/gen_field.cpp`）：`opoint.__gen_*?.get(emitter)` 的两条来路。
+# TS 里它们都是**挂在数据对象上的函数对象**，`Value` 装不下函数（DESIGN §4.40）⇒ 端口改成
+#   1. `__gen_*` → 同名 `gen_*` 源表达式，用发射者当前帧 + 世界的 `mt` **现编译**求值
+#      （TS 是 `preprocess_opoint` 在装载期编译，语义一致：解析失败 ≡ 没有该字段）；
+#   2. 手写闭包（`spawn_ice_piece` 的 `__gen_dvx/dvy/x/y`、`make_buring_smoke` 的
+#      `action.__gen_facing`）—— 它们要吃 `mt` / 帧尺寸，表达式表达不了 ⇒ 「对象地址 → 口味」侧表。
+# 观察点：值的 f64 位模式；随机抽了几次、按什么顺序抽，用随后的 `mdraw` 钉死。
+
+frame 80 60 40 30
+mtseed 7
+
+# --- 表达式型：帧变量 w/h/cx/cy + rand/round（`make_buring_smoke` 的两条真身）---
+po
+ps gen_x s "round(rand(round(w/4), round(3*w/4)))"
+ps gen_y s "round(cy + rand(-round(h/2), 0))"
+gf e __gen_x
+mdraw 0 1000
+gf e __gen_y
+mdraw 0 1000
+ps gen_x s "round(cx + rand(-round(w/6), round(w/6)))"
+ps gen_y s "round(cy + rand(-round(3*h/4), 0))"
+gf e __gen_x
+gf e __gen_y
+mdraw 0 1000
+
+# --- 没有 `gen_*` ⇒ `u`（调用方回落到 `opoint.x` / `opoint.dvx`）---
+gf e __gen_z
+
+# --- `gen_*` 不是字符串 / 空串 / 解析失败 ⇒ 同样 `u` ---
+ps gen_z n 5
+gf e __gen_z
+ps gen_z s ""
+gf e __gen_z
+ps gen_z s "1+"
+gf e __gen_z
+
+# --- 每次求值都真抽一次：同一个字段连求两次，值跟着 mt 变 ---
+ps gen_dvx s "rand(-3, 3)"
+gf e __gen_dvx
+gf e __gen_dvx
+mdraw 0 1000
+
+# --- 闭包型①：冰片（随机初速 + 帧尺寸内的随机落点）---
+gf ice __gen_dvx
+gf ice __gen_dvy
+gf ice __gen_x
+gf ice __gen_y
+mdraw 0 1000
+gf ice __gen_dvx
+gf ice __gen_dvy
+gf ice __gen_x
+gf ice __gen_y
+mdraw 0 1000
+
+# 冰片不提供的字段 ⇒ `u`
+gf ice __gen_facing
+
+# --- 闭包型②：燃烧烟雾的 `action.__gen_facing`（`mt.pick([-1,1]) ?? 0`）---
+gf smoke __gen_facing
+gf smoke __gen_facing
+gf smoke __gen_facing
+mdraw 0 1000
+gf smoke __gen_facing
+gf smoke __gen_dvx

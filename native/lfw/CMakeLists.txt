@@ -97,6 +97,7 @@ add_library(lfw_core STATIC
   entity/face_helper.cpp
   entity/find_frame_direction.cpp
   entity/entity_dataset.cpp
+  entity/gen_field.cpp
   entity/entity.cpp
   entity/summary.cpp
   entity/entity_ref.cpp

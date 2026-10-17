@@ -23,6 +23,7 @@
 #include "lfw/defines/weapon_type.h"
 #include "lfw/entity/entity_ref.h"
 #include "lfw/entity/entity_type_check.h"
+#include "lfw/entity/gen_field.h"
 #include "lfw/ui/uilayer.h"
 #include "lfw/ui/uinode.h"
 #include "lfw/utils/container_help/field_or.h"
@@ -134,10 +135,9 @@ std::vector<Entity*> World::puppets_values() {
 
 std::optional<Value> World::gen_field(const Value& holder, const std::u16string& kind,
                                       Entity& emitter) {
-  (void)holder;
-  (void)kind;
-  (void)emitter;
-  return std::nullopt;
+  // TS 的 `opoint.__gen_dvx?.get(emitter)`：闭包型走侧表、表达式型现编译，细节在
+  // `lfw/entity/gen_field.cpp`。
+  return gen_field_eval(holder, kind, emitter.frame, emitter.data(), *lfw().mt());
 }
 
 // TS `Entity.play_sound` 的收尾那两行（`World` 侧接的一次缝，TS 里是直接 `this.lfw.sounds.play`）：

@@ -15,7 +15,11 @@
 #include "lfw/base/team_color.h"
 #include "lfw/base/ticker.h"
 #include "lfw/base/val_expression.h"
+#include "lfw/dat_translator/make_buring_smoke.h"
+#include "lfw/defines/all_enums.h"
+#include "lfw/entity/gen_field.h"
 #include "lfw/loader/preprocess_opoint.h"
+#include "lfw/state/spawn_ice_piece.h"
 #include "lfw/utils/math/mersenne_twister.h"
 
 #include "trace_util.h"
@@ -513,6 +517,39 @@ int main(int argc, char** argv) {
       g_ctx.h = to_double(t[i++]);
       g_ctx.cx = to_double(t[i++]);
       g_ctx.cy = to_double(t[i++]);
+
+    } else if (op == "gf") {
+      // `World::gen_field`（`lfw/entity/gen_field.cpp`）：TS 是挂在对象上的函数对象，端口是
+      // 「闭包侧表 + `gen_*` 现编译」两条。`e` = 当前 `g_opoint`、`ice`/`smoke` = 引擎自己
+      // 造的那两个对象（闭包型）。
+      const std::string which = t[i++];
+      const std::u16string field = to_u16(t[i++]);
+      lfw::Value holder;
+      if (which == "e") {
+        holder = lfw::Value(std::make_shared<lfw::Object>(g_opoint));
+      } else if (which == "ice") {
+        holder = lfw::state::spawn_ice_piece(u"130");
+      } else if (which == "smoke") {
+        holder = lfw::field_or(lfw::dat_translator::make_buring_smoke(1), u"action");
+      } else {
+        std::fprintf(stderr, "line %d: unknown gf holder '%s'\n", lineno, which.c_str());
+        return 2;
+      }
+      lfw::Object frame_obj;
+      frame_obj.set(u"width", lfw::Value(g_ctx.w));
+      frame_obj.set(u"height", lfw::Value(g_ctx.h));
+      frame_obj.set(u"centerx", lfw::Value(g_ctx.cx));
+      frame_obj.set(u"centery", lfw::Value(g_ctx.cy));
+      // 闭包开头那个 `is_object(emitter)` 守卫看的是 `emitter.data.type` ⇒ 给一份「普通实体」。
+      lfw::Object data_obj;
+      data_obj.set(u"type", lfw::Value(static_cast<double>(lfw::EntityEnum::Entity)));
+      const std::optional<lfw::Value> got = lfw::gen_field_eval(
+          holder, field, lfw::Value(std::make_shared<lfw::Object>(std::move(frame_obj))),
+          lfw::Value(std::make_shared<lfw::Object>(std::move(data_obj))), g_mt);
+      Line out;
+      out.add(std::string_view("GF")).add(which).add(to_ascii(field));
+      out.add(got.has_value() ? trace::bits_hex(lfw::to_number(*got)) : std::string("u"));
+      out.out();
 
     } else if (op == "var") {
       const std::u16string name = to_u16(t[i++]);
