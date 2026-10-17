@@ -2427,7 +2427,11 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
   }
 
   const Value speedz_field = field_or(opoint, u"speedz");
-  const double o_speedz = to_number(or_nullish(speedz_field, Value(0.0)));
+  // `opoint.speedz ?? (z_launch ? DEFAULT_OPOINT_SPEED_Z : 0)` —— `z_launch` 在下面按生成物
+  // 首帧状态算出来，这里先用占位值，真正的兜底在 `vz` 那一行。
+  const bool has_speedz = !std::holds_alternative<std::monostate>(speedz_field) &&
+                          !std::holds_alternative<NullTag>(speedz_field);
+  const double speedz_explicit = to_number(has_speedz ? speedz_field : Value(0.0));
   double o_dvx =
       num_of(or_nullish(emitter.gen_or(opoint, u"__gen_dvx", field_or(opoint, u"dvx")), Value(0.0)));
   double o_dvy =
@@ -2477,6 +2481,14 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
   const Value result_state = field_or(field_or(result, u"frame"), u"state");
   const bool z_disabled = equals(result_state, Value(static_cast<double>(StateEnum::Normal))) ||
                           equals(result_state, Value(static_cast<double>(StateEnum::Burning)));
+  // TS `on_spawn`：`opoint.speedz` 没写时按**生成物首帧**的状态补默认 Z 初速
+  // （弹道类才给）。`Entity::on_spawn` 里 `vz += o_speedz * ud` ⇒ 发射时按上下键球会斜飞；
+  // 显式写了 `speedz`（含 `0`，如冰片/烟雾/JanChase 尾迹）的不动。
+  const bool z_launch =
+      equals(result_state, Value(static_cast<double>(StateEnum::Ball_Flying))) ||
+      equals(result_state, Value(static_cast<double>(StateEnum::Ball_3006))) ||
+      equals(result_state, Value(static_cast<double>(StateEnum::Weapon_Throwing))) ||
+      equals(result_state, Value(static_cast<double>(StateEnum::HeavyWeapon_InTheSky)));
 
   const Value ovx = Value(offset_velocity.x);
   const Value ovy = Value(offset_velocity.y);
@@ -2485,6 +2497,8 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
   else o_dvx = o_dvx / weight + std::abs(offset_velocity.z / 2);
   double vx = to_number(ovx) + o_dvx * facing_value;
   double vy = to_number(ovy) + o_dvy + dvy_now;
+  const double o_speedz =
+      has_speedz ? speedz_explicit : (z_launch ? defines::num(u"Defines.DEFAULT_OPOINT_SPEED_Z") : 0.0);
   double vz = z_disabled ? 0 : to_number(ovz) + o_dvz + o_speedz * ud;
   if (equals(vxm, Value(static_cast<double>(SpeedMode::Fixed)))) vx = dvx_now;
   if (equals(vym, Value(static_cast<double>(SpeedMode::Fixed)))) vy = dvy_now;

@@ -11470,3 +11470,37 @@ opoint 生成 → 实体 ctrl == nullptr
   `create_ctrl`（TS 那边工厂没注册 ⇒ 不多记一行）。
 * `subjects/collision_ball_frozen.cpp` 的 `Lfw::create_entity_with_bot` 直接转
   `create_entity`（那个台面只关心"造出来了没"与 `A:spawn:` 那一行）。
+
+## 159. 发射初速的 Z：按生成物判定，`speedz` 显式值优先（2026-10-18）
+
+LF2 的规则是「发射瞬间按住上下键，弹道物会往上/下飞」。LFW 里这条落在
+`Entity.on_spawn` 的 `vz = ovz + o_dvz + o_speedz * ud`（`ud` 取发射者的 `ctrl.UD`），
+但 `o_speedz` 的**默认值**原来只看发射者帧的 state：
+
+```ts
+// preprocess_opoint / cook_opoint（旧）
+switch (frame.state) {          // ← frame 是**发射者**的帧
+  case Ball_Flying: case Ball_3006:
+  case Weapon_Throwing: case HeavyWeapon_InTheSky:
+    opoint.speedz ??= Defines.DEFAULT_OPOINT_SPEED_Z;
+}
+```
+
+斗士站在 `Attacking`(3) 里发波时永远进不去 ⇒ `o_speedz = 0` ⇒ 上下键对球无效
+（唯一例外是 `FirenFlame`：`cook_opoint` 里显式给了 0.5，所以"D^J 喷火能上下、D>A 火球不能"）。
+
+改成在 `on_spawn` 里按**生成物首帧**的 state 兜底（两侧同改，`entity.ts` / `entity.cpp`）：
+
+```ts
+const spawn_state = result?.frame?.state;
+const o_speedz = speedz_field ?? (弹道状态 ? Defines.DEFAULT_OPOINT_SPEED_Z : 0);
+```
+
+* 名单沿用旧的那四个（`Ball_Flying` / `Ball_3006` / `Weapon_Throwing` /
+  `HeavyWeapon_InTheSky`），与 `StateEnum` 注释里那句"弹道类可按上下键加 Z 速度、
+  `Ball_Hit`/`Rebounding`/`Disappear` 不行"一致。
+* `speedz_field ?? …`：显式值（含 `0`）优先 ⇒ 冰片、燃烧烟雾、JanChase 尾迹这些
+  "故意不给 Z 初速"的生成物不受影响。
+* `z_disabled`（`Normal`/`Burning` 的生成物 Z 恒 0）保持原样，两者共用 `spawn_state`。
+* 钉子：`cases/entity/spawn.txt` 尾段（`ud=0 → 0` / `D → +3.5` / `U → -3.5` /
+  `speedz: 0 → 0` / `state: 0 → 0`）。

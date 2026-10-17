@@ -983,7 +983,23 @@ export class Entity {
     if (result) this.enter_frame(result.which);
     else this.enter_frame(Defines.NEXT_FRAME_AUTO);
 
-    const { speedz: o_speedz = 0 } = opoint;
+    const { speedz: speedz_field } = opoint;
+    /** 生成物首帧的状态（`z_disabled` / `o_speedz` 的默认值都看它） */
+    const spawn_state = result?.frame?.state;
+    /**
+     * 发射时按上下键给的 Z 初速（`vz = … + o_speedz * ud`）。
+     * opoint 没写 `speedz` 时按**生成物首帧**的状态补默认值 —— 弹道类（球 / 投掷 / 天降重物）
+     * 才给 `DEFAULT_OPOINT_SPEED_Z`，其余仍是 0；显式写了 `speedz`（含 0，如冰片 / 烟雾 /
+     * JanChase 尾迹）的一律照用。
+     */
+    const o_speedz =
+      speedz_field ??
+      (spawn_state === StateEnum.Ball_Flying ||
+        spawn_state === StateEnum.Ball_3006 ||
+        spawn_state === StateEnum.Weapon_Throwing ||
+        spawn_state === StateEnum.HeavyWeapon_InTheSky
+        ? Defines.DEFAULT_OPOINT_SPEED_Z
+        : 0);
     let o_dvx = (opoint.__gen_dvx ? opoint.__gen_dvx.get(emitter) : opoint.dvx) ?? 0
     let o_dvy = (opoint.__gen_dvy ? opoint.__gen_dvy.get(emitter) : opoint.dvy) ?? 0
     const o_dvz = (opoint.__gen_dvz ? opoint.__gen_dvz.get(emitter) : opoint.dvz) ?? 0
@@ -1010,8 +1026,8 @@ export class Entity {
 
     /* TODO: 要想办法尽量摆脱 State 判定，保持数据行为透明 - Gim*/
     const z_disabled =
-      result?.frame?.state === StateEnum.Normal ||
-      result?.frame?.state === StateEnum.Burning;
+      spawn_state === StateEnum.Normal ||
+      spawn_state === StateEnum.Burning;
 
     const { x: ovx, y: ovy, z: ovz } = offset_velocity;
     if (o_dvx > 0) o_dvx = o_dvx / weight - abs(ovz / 2);

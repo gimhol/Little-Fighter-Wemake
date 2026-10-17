@@ -2274,3 +2274,27 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   * `subjects/collision_ball_frozen.cpp` 的 `Lfw::create_entity_with_bot` 与它的
     `create_entity` 同一条路（那个台面只关心"造出来了没"）。
 * 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
+
+### 2026-10-18（十六）：发射时的 Z 初速按「生成物」而不是「发射者」判定
+
+* 用户报「Firen 的 D^J 喷火能按上下键 Z 轴发射了，但 D>A 不行，其他角色发波也一样」。
+  D^J 之所以能：`cook_opoint` 的 `case OID.FirenFlame` 显式给了
+  `speedz = DEFAULT_FIREN_FLAME_SPEED_Z`（0.5）。其它角色的波没写 `speedz`，而
+  `preprocess_opoint` 的 `speedz ??= DEFAULT_OPOINT_SPEED_Z` 只看**发射者帧的 state**
+  （`Ball_Flying` / `Ball_3006` / `Weapon_Throwing` / `HeavyWeapon_InTheSky`）——
+  斗士站在 `Attacking` 里放波，永远轮不到这条默认值 ⇒ `o_speedz = 0` ⇒ 上下键白按。
+* 改成在 `Entity.on_spawn` / `Entity::on_spawn` 里按**生成物首帧**的状态兜底：
+
+  ```ts
+  const spawn_state = result?.frame?.state;
+  const o_speedz = speedz_field ?? (是弹道状态 ? Defines.DEFAULT_OPOINT_SPEED_Z : 0);
+  ```
+
+  四个状态与 `preprocess_opoint` 那份名单一致；显式写了 `speedz`（含 `0`：冰片 / 燃烧烟雾 /
+  JanChase 尾迹）的一律照用，所以那些"生成物不该有 Z 初速"的地方不受影响。
+* 顺带：README（十三）给 Julian D>J 加的那条 `opoint.speedz = 3.5` 现在与这条通用规则同值，
+  留着当显式数据（`cases/fighters_special` 仍钉着它）。
+* 新钉子（`cases/entity/spawn.txt` 尾段）：弹道类生成物 + 无 `speedz` 时
+  `ud=0 → v.z=0`、`D → +3.5`、`U → -3.5`；显式 `speedz: 0` 与 `state: 0` 的仍是 0。
+  两条变异锚点（`entity.mjs`）跟着改到新表达式上。
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。

@@ -156,3 +156,22 @@ run keys 0 -1 0
 run spawnv o 7 oid a 1 s "p1" action o 1 id s "0" speedz n 2 dvy n 8 x n 1 y n 1 z n 1 n 1 n 2 n 3 n -1
 run spawndump
 run keys 0 0 0
+
+# --- 弹道类生成物：opoint 没写 `speedz` 时按**生成物首帧状态**补 `DEFAULT_OPOINT_SPEED_Z`
+# （= 发射时按上下键给 Z 初速）；显式 `speedz: 0` 与非弹道状态一律不补。
+env data s "b3000" o 6 id s "b3000" type n 32 name s "B" base o 1 name s "BB" frames o 1 "0" o 3 id s "0" state n 3000 wait n 2 indexes o 1 throwings a 1 s "zz"
+env data s "b0" o 6 id s "b0" type n 32 name s "B0" base o 1 name s "B0B" frames o 1 "0" o 3 id s "0" state n 0 wait n 2 indexes o 1 throwings a 1 s "zz"
+run keys 0 0 0
+run spawn o 5 oid a 1 s "b3000" action o 1 id s "0" x n 1 y n 1 z n 1
+run spawndump
+run keys 0 1 0
+run spawn o 5 oid a 1 s "b3000" action o 1 id s "0" x n 1 y n 1 z n 1
+run spawndump
+run keys 0 -1 0
+run spawn o 5 oid a 1 s "b3000" action o 1 id s "0" x n 1 y n 1 z n 1
+run spawndump
+run spawn o 6 oid a 1 s "b3000" action o 1 id s "0" speedz n 0 x n 1 y n 1 z n 1
+run spawndump
+run spawn o 5 oid a 1 s "b0" action o 1 id s "0" x n 1 y n 1 z n 1
+run spawndump
+run keys 0 0 0

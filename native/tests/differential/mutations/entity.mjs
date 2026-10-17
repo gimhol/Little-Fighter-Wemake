@@ -3006,8 +3006,8 @@ export default {
         {
       "note": "the missing opoint speedz default is not zero",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  const double o_speedz = to_number(or_nullish(speedz_field, Value(0.0)));",
-      "to": "  const double o_speedz = to_number(or_nullish(speedz_field, Value(1.0)));"
+      "from": "  const double o_speedz =\n      has_speedz ? speedz_explicit : (z_launch ? defines::num(u\"Defines.DEFAULT_OPOINT_SPEED_Z\") : 0.0);",
+      "to": "  const double o_speedz =\n      has_speedz ? speedz_explicit : (z_launch ? defines::num(u\"Defines.DEFAULT_OPOINT_SPEED_Z\") : 1.0);"
     },
         {
       "note": "set_state ignores the registry",
@@ -4789,8 +4789,8 @@ export default {
     {
       note: "on_spawn：speedz 直接置 0",
       file: "native/lfw/entity/entity.cpp",
-      from: `  const double o_speedz = to_number(or_nullish(speedz_field, Value(0.0)));`,
-      to: `  const double o_speedz = 0.0;`,
+      from: `      has_speedz ? speedz_explicit : (z_launch ? defines::num(u"Defines.DEFAULT_OPOINT_SPEED_Z") : 0.0);`,
+      to: `      0.0;`,
     },
     {
       note: "on_spawn：__gen_dvx 被忽略",
