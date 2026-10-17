@@ -2008,3 +2008,23 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
 * **覆盖状态**：这一片只到"编译 + 与 TS 同形"，**还没有差分台面** —— `Director` 要真跑得先有
   ③ 的 `DatMgr` 装载和 ④ 的 `DirectorTestCase`（那时 `prel_data/directors/*.xml` 的 17 份真实
   数据会成为它的输入）。差分 263/263、lint 9771 anchors、927 clean 都没动。
+---
+
+### 2026-10-18（五）：导演数据的装载（818f6f5c1 第四片）
+
+* **`loader/normalize_directors.{h,cpp}`**：`to_director_list(raw)`（数组 / `{directors:[…]}` /
+  单个对象三种写法统一成数组，只留「有 `name` 字符串」的）+ `make_director_group(index, raw, file)`
+  （`{ id, file, directors }`，`name` 取索引的再取数据的）。
+* **`DatMgr`**：索引解析多收 `directors` 一栏（`xml_2_data_lists` 的第六个键）、`total` 计入、
+  装载循环照 TS 的 try/catch 语义——单份导演数据失败只 `warn`（`FAILED TO LOAD DIRECTOR DATA: …`）
+  并继续，不往上抛；`.xml` 走 `xml_to_directors`，其余走 `import_json`。公开面加了
+  `datas().directors()` 与 `datas().find_director(id)`（`v.id === id || v.file === id`）。
+  ⚠ 索引文件不需要额外登记：`LFW::load` 本来就把 zip 里**所有** `*.index.(json5|xml)` 收进来
+  （`data/data.index.*` 排最前），`directors/directors.index.json5` 自然在内。
+* **实测（真数据）**：`lfw_run --root dist --zip …/prel --zip …/data --frames 60` →
+  `loaded: … moves=24 directors=17`，**没有**任何 `FAILED TO LOAD DIRECTOR DATA` 警告
+  ⇒ 17 份 `prel_data/directors/*.xml` 全部走通 `xml_to_directors` + `make_director_group`。
+  （`native/build/host-data/prel` 是解包副本，会静默过期：这次它只有 161 个文件、缺 directors，
+  重新从 `dist/prel.zip` 解包后是 179 个。）
+* 宿主摘要行两处加了 `directors=%zu`（`lfw_run` 与 Godot），方便以后一眼看出装载没装载。
+* 差分 263/263、lint 9771 anchors 未动。

@@ -11037,3 +11037,37 @@ cam_l/cam_r/enemy_l/enemy_r/drink_l/drink_r/phase_time/dialog_time`。
 这一片**没有差分台面**：`Director` 要真跑起来需要 ③ 的 `DatMgr`（读 `directors.index.json5`
 + 17 份 `prel_data/directors/*.xml`）与 ④ 的 `DirectorTestCase`。等 ④ 落地后，`Director` 的
 行为会经由测试模式的既有台面（`lfw` subject 的 `lfg`/`rlnew` 那一套）间接被差分覆盖。
+## 149. 导演数据的装载（2026-10-18）
+
+### 149.1. 链路的四段
+
+```
+zip 里的 *.index.(json5|xml)      ← LFW::load 全量收集（data/data.index.* 排最前）
+        ↓  solve_index_files
+IDataLists.directors[]            ← xml_2_data_lists 的第六个键（§144.2）/ JSON partial 同名键
+        ↓  逐个 file
+xml_to_directors(root)            ← §147（.xml）；JSON 走 import_json
+        ↓  make_director_group(index, raw)
+IDirectorGroupData { id, file, name?, directors: IDirectorData[] }   ← datas().directors()
+```
+
+`make_director_group` 的 `name` 取舍：索引的 `name` 优先，没有再用数据的 `name`，都没有就不写键。
+`to_director_list` 认三种写法（裸数组 / `{directors:[…]}` / 单个对象），只留 `name` 是字符串的对象
+——这几条都照 `normalize_directors.ts` 逐字搬。
+
+### 149.2. 失败处理
+
+TS 是 `try { … } catch { Ditto.warn('FAILED TO LOAD DIRECTOR DATA: …', e) }`：**单份**导演数据坏掉
+不影响整包装载。端口同义（`host->warn` + 清 `error` + `continue`），且 `skipped` 的索引直接跳过。
+
+### 149.3. 为什么要重解 `native/build/host-data/prel`
+
+那是从 `dist/prel.zip` 解出来的**构建产物**（`.gitignore` 里），不会自己更新。这次它比 zip 少
+17 份 director XML + `directors.index.json5` ⇒ 装载数 0 也不报错（索引都不在，循环没跑）。
+记住：**`dist/prel.zip` 更新后要重新解包**，否则「代码对了、数据没进来」。
+
+### 149.4. 实测
+
+`lfw_run --root dist --zip …/prel --zip …/data --frames 60` →
+`loaded: fighters=26 weapons=19 balls=24 entities=5 stages=28 bg=21 bots=22 moves=24 directors=17`，
+`warns=1`（那条 `id duplicated` 是数据本身的老问题，与本片无关）。

@@ -14,6 +14,7 @@
 #include "lfw/dat_translator/value_builder.h"
 #include "lfw/dat_translator/xml/xml_to_data_lists.h"
 #include "lfw/dat_translator/xml/xml_x_bg_data.h"
+#include "lfw/dat_translator/xml/xml_x_director.h"
 #include "lfw/dat_translator/xml/xml_x_entity_data.h"
 #include "lfw/dat_translator/xml/xml_x_stage_info.h"
 #include "lfw/defines/defines.h"
@@ -21,6 +22,7 @@
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/factory.h"
 #include "lfw/loader/check_stage_info.h"
+#include "lfw/loader/normalize_directors.h"
 #include "lfw/loader/preprocess_bg_data.h"
 #include "lfw/loader/preprocess_bot_data.h"
 #include "lfw/loader/preprocess_entity_data.h"
@@ -183,6 +185,7 @@ struct DatMgr::Inner {
     datas.push_back({u"objects", {}});
     datas.push_back({u"bots", {}});
     datas.push_back({u"moves", {}});
+    datas.push_back({u"directors", {}});
     if (const Value* const void_stage = defines::find(u"Defines.VOID_STAGE")) {
       stages.push_back(*void_stage);
     }
@@ -370,6 +373,7 @@ struct DatMgr::Inner {
     std::vector<Value> stages_out;
     std::vector<Value> bots_out;
     std::vector<Value> moves_out;
+    std::vector<Value> directors_out;
     Resources& resources = host->resources();
     for (const std::u16string& file : index_files) {
       if (!check_cancelled(error)) return false;
@@ -398,6 +402,7 @@ struct DatMgr::Inner {
       if (!append_items(partial, u"stages", stages_out, error)) return false;
       if (!append_items(partial, u"bots", bots_out, error)) return false;
       if (!append_items(partial, u"moves", moves_out, error)) return false;
+      if (!append_items(partial, u"directors", directors_out, error)) return false;
     }
     out = dat_translator::make_obj({
         {u"objects", make_arr_of(objects)},
@@ -405,6 +410,7 @@ struct DatMgr::Inner {
         {u"stages", make_arr_of(stages_out)},
         {u"bots", make_arr_of(bots_out)},
         {u"moves", make_arr_of(moves_out)},
+        {u"directors", make_arr_of(directors_out)},
     });
     return true;
   }
@@ -437,9 +443,10 @@ struct DatMgr::Inner {
     const Array* const objects_list = as_array(field_or(data, u"objects"));
     const Array* const bgs_list = as_array(field_or(data, u"backgrounds"));
     const Array* const stages_list = as_array(field_or(data, u"stages"));
+    const Array* const directors_list = as_array(field_or(data, u"directors"));
     const double total = static_cast<double>(bots_list->size() + moves_list->size() +
-                                             objects_list->size() + bgs_list->size() +
-                                             stages_list->size());
+                                             directors_list->size() + objects_list->size() +
+                                             bgs_list->size() + stages_list->size());
     double loaded = 0;
     const auto report = [&](const Value& file) {
       host->emit_progress(to_string(file),
@@ -648,6 +655,43 @@ struct DatMgr::Inner {
         stages[idx] = stage;
       }
     }
+
+    // `for (const director_index of data.directors ?? [])` —— TS 用 try/catch 兜住单份
+    // 导演数据的失败（`Ditto.warn` + 继续），端口同样不把错误往上抛。
+    for (size_t i = 0; i < directors_list->size(); ++i) {
+      const Value item = directors_list->at(i);
+      loaded += 1;
+      if (truthy(field_or(item, u"skipped"))) continue;
+      const std::u16string file = to_string(field_or(item, u"file"));
+      report(Value(file));
+      Value raw;
+      if (ends_with(file, u".xml")) {
+        ImportResult result;
+        if (!resources.import_xml(file, true, result, error)) {
+          host->warn({Value(u"FAILED TO LOAD DIRECTOR DATA: " + file)});
+          error.clear();
+          continue;
+        }
+        if (result.xml_root == nullptr) {
+          host->warn({Value(u"FAILED TO LOAD DIRECTOR DATA: " + file)});
+          continue;
+        }
+        const std::vector<Value> list = dat_translator::xml::xml_to_directors(*result.xml_root);
+        Value arr(std::make_shared<Array>(list));
+        raw = arr;
+      } else {
+        ImportResult result;
+        if (!resources.import_json(file, true, result, error)) {
+          host->warn({Value(u"FAILED TO LOAD DIRECTOR DATA: " + file)});
+          error.clear();
+          continue;
+        }
+        raw = result.data;
+      }
+      if (!check_cancelled(error)) return false;
+      list_ref(u"directors").push_back(
+          loader::make_director_group(item, raw, to_string(field_or(item, u"file"))));
+    }
     return true;
   }
 };
@@ -664,6 +708,15 @@ bool DatMgr::load(const std::vector<std::u16string>& index_files, std::u16string
 void DatMgr::dispose() { _inner = std::make_shared<Inner>(this, ++_inner_id); }
 
 void DatMgr::clear() { _inner = std::make_shared<Inner>(this, ++_inner_id); }
+
+const std::vector<Value>& DatMgr::directors() const { return _inner->list_ref(u"directors"); }
+
+const Value* DatMgr::find_director(const Value& id) const {
+  for (const Value& v : _inner->list_ref(u"directors")) {
+    if (strict_equals(field_or(v, u"id"), id) || strict_equals(field_or(v, u"file"), id)) return &v;
+  }
+  return nullptr;
+}
 
 const std::vector<Value>& DatMgr::bots() const { return _inner->list_ref(u"bots"); }
 

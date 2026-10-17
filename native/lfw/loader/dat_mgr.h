@@ -65,6 +65,11 @@ class DatMgr {
   const std::vector<Value>& backgrounds() const;
   const std::vector<Value>& stages() const;
 
+  // `get directors`（4CJ）：`IDirectorGroupData[]` —— `{ id, file, name?, directors: IDirectorData[] }`。
+  const std::vector<Value>& directors() const;
+  // `find_director(id)`：`v.id === id || v.file === id`。
+  const Value* find_director(const Value& id) const;
+
   // `find(id)`：先查别名表、再查 id 表（`??` 语义：别名表没命中才落到 id 表）。
   const Value* find(const Value& id) const;
   const Value* find_bot(const Value& id) const;

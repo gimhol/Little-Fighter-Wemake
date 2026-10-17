@@ -441,10 +441,11 @@ int main(int argc, char** argv) {
   }
   std::printf(
       "[lfw_run] loaded: fighters=%zu weapons=%zu balls=%zu entities=%zu stages=%zu bg=%zu bots=%zu "
-      "moves=%zu\n",
+      "moves=%zu directors=%zu\n",
       lfw.datas().fighters().size(), lfw.datas().weapons().size(), lfw.datas().balls().size(),
       lfw.datas().entities().size(), lfw.datas().stages().size(),
-      lfw.datas().backgrounds().size(), lfw.datas().bots().size(), lfw.datas().moves().size());
+      lfw.datas().backgrounds().size(), lfw.datas().bots().size(), lfw.datas().moves().size(),
+      lfw.datas().directors().size());
   if (args.dump) {
     const auto dump = [](const char* tag, const std::vector<Value>& list) {
       for (size_t i = 0; i < list.size() && i < 2; ++i) {

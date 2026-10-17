@@ -173,6 +173,7 @@ add_library(lfw_core STATIC
   loader/preprocess_stage.cpp
   loader/preprocess_ball_frame.cpp
   loader/preprocess_frame.cpp
+  loader/normalize_directors.cpp
   loader/preprocess_bg_data.cpp
   loader/resolve_prefab.cpp
   loader/preprocess_action.cpp

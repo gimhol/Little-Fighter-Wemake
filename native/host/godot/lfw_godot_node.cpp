@@ -567,11 +567,12 @@ bool LfwGodot::setup() {
     char buf[320];
     std::snprintf(buf, sizeof(buf),
                   "[godot] loaded: fighters=%zu weapons=%zu balls=%zu entities=%zu stages=%zu "
-                  "bg=%zu bots=%zu moves=%zu",
+                  "bg=%zu bots=%zu moves=%zu directors=%zu",
                   _lfw->datas().fighters().size(), _lfw->datas().weapons().size(),
                   _lfw->datas().balls().size(), _lfw->datas().entities().size(),
                   _lfw->datas().stages().size(), _lfw->datas().backgrounds().size(),
-                  _lfw->datas().bots().size(), _lfw->datas().moves().size());
+                  _lfw->datas().bots().size(), _lfw->datas().moves().size(),
+                  _lfw->datas().directors().size());
     print_line(buf);
   }
   // 证据行：UI 用到了哪些字族、引擎最后给的是哪个字体（`style.font` 里的 `Arial` 解析没解析到）。

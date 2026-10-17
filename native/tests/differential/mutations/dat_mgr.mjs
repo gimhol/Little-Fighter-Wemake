@@ -365,10 +365,11 @@ export default {
       note: "load：total 少算背景表",
       file: "native/lfw/loader/dat_mgr.cpp",
       from: `    const double total = static_cast<double>(bots_list->size() + moves_list->size() +
-                                             objects_list->size() + bgs_list->size() +
-                                             stages_list->size());`,
+                                             directors_list->size() + objects_list->size() +
+                                             bgs_list->size() + stages_list->size());`,
       to: `    const double total = static_cast<double>(bots_list->size() + moves_list->size() +
-                                             objects_list->size() + stages_list->size());`,
+                                             directors_list->size() + objects_list->size() +
+                                             stages_list->size());`,
     },
     {
       note: "load：进度用 ceil 不用 floor",
