@@ -2067,3 +2067,15 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   每组的 digest 都不同 ⇒ 导演都在动，没有"空壳组"。截图
   `shots/cases-books.png`（第 16 组）：顶栏 `Case: 16-0 Red Book: GroupAttack`、场上
   justin + 6 个 bandit 两排 + 悬浮的红书 ⇒ 数据里的 `actors` / `layout` / `values` / `setup` 都在生效。
+---
+
+### 2026-10-18（八）：Godot 窗口底色改纯黑
+
+* 用户报「godot 底色应该纯黑，现在是灰色的」：`project.godot` 里
+  `rendering/environment/defaults/default_clear_color` 之前是 `Color(0.06, 0.07, 0.1, 1)`
+  （**#0F1219** 的深蓝灰），在非 16:9 的窗口里两侧留边、以及导演数据没给 `bg` 的空场就露出它。
+  TS 那边画布外面是页面黑底 ⇒ 端口改成 `Color(0, 0, 0, 1)`。
+* 验证方式（可复用）：`--screenshot` 之后用像素探针读边缘点。改前
+  `(2,2)/(2,250)/(1390,250)` 全是 `#0F1219`，改后全是 `#000000`；
+  截图留在 `shots/bg-black-probe.png`（1400×500，两侧留边一眼是黑的）。
+* `node native/tools/native.mjs godot` 仍绿（底色不进摘要）。

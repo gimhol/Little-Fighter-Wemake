@@ -30,8 +30,11 @@ window/stretch/mode="disabled"
 
 [rendering]
 
-; 世界之外的底色（背景层没盖住时看到的就是它）。
-environment/defaults/default_clear_color=Color(0.06, 0.07, 0.1, 1)
+; 世界之外的底色（背景层没盖住时看到的就是它）。**必须是纯黑**：TS 那边画布外面就是页面黑底；
+; 之前写的是 `Color(0.06, 0.07, 0.1, 1)`（#0F1219 的深蓝灰），在 1400×500 这种非 16:9 的窗口里
+; 两侧留边、以及导演数据没给 `bg` 的空场，一眼就是"灰条"（用户报的"底色应该纯黑"）。
+; 实测（截图像素探针）：改前边缘 #0F1219、改后 #000000。
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 
 [debug]
 
