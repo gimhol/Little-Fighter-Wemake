@@ -674,6 +674,22 @@ void GodotWorldRenderer::emit_model(GodotFrame& frame, const Entity& e, const Va
   spec.reverse = lfw::truthy(lfw::field_or(model, u"reverse"));
   spec.hold_last = lfw::truthy(lfw::field_or(model, u"hold_last"));
 
+  // 模型轮廓：判据与精灵那一遍逐条一致（`update_model_outline`：`!ghosted && outline_color &&
+  // outline_alpha && outline_enabled`）。
+  const std::string moc = to_utf8(e.outline_color());
+  const double moa = e.outline_alpha();
+  const double mow = e.outline_width();
+  if (!moc.empty() && moa > 0.0 && lfw::truthy(e.outline_enabled()) && mow > 0.0) {
+    double cr = 0, cg = 0, cb = 0, ca = 1;
+    if (parse_color(e.outline_color(), cr, cg, cb, ca)) {
+      spec.outline_r = cr;
+      spec.outline_g = cg;
+      spec.outline_b = cb;
+      spec.outline_a = moa;
+      spec.outline_w = mow;
+    }
+  }
+
   GodotDrawItem it;
   it.kind = "model";
   it.tag = to_utf8(e.id);

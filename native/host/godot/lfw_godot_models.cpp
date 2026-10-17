@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <algorithm>
 #include <utility>
 
 #include <godot_cpp/classes/animation.hpp>
@@ -13,8 +14,11 @@
 #include <godot_cpp/classes/environment.hpp>
 #include <godot_cpp/classes/gltf_document.hpp>
 #include <godot_cpp/classes/gltf_state.hpp>
+#include <godot_cpp/classes/material.hpp>
 #include <godot_cpp/classes/mesh.hpp>
 #include <godot_cpp/classes/mesh_instance3d.hpp>
+#include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/packed_scene.hpp>
@@ -58,6 +62,58 @@ godot::AnimationPlayer* find_player(godot::Node* node) {
   return nullptr;
 }
 
+// 模型轮廓（TS `update_model_outline`）：反向外壳 —— 每个表面挂一个 `next_pass`，
+// 它 `grow`（沿法线外扩）+ **只画背面**（`cull_front`）+ 不受光照（纯色），于是看上去就是一圈
+// 描边。外扩量在**网格局部单位**里，所以按模型缩放折回去：`(width + 1) / k`（`+1` 是 TS 的
+// `width_world = outline_width + 1`）。
+void apply_outline_to_meshes(godot::Node* node, bool on, const godot::Color& color, float width_world) {
+  if (node == nullptr) return;
+  godot::MeshInstance3D* const mi = godot::Object::cast_to<godot::MeshInstance3D>(node);
+  if (mi != nullptr) {
+    const godot::Ref<godot::Mesh> mesh = mi->get_mesh();
+    if (!mesh.is_null()) {
+      // ⚠ `grow` 在**网格局部单位**里：TS 按 `hull.parent.getWorldScale()` 折回，这里按这个
+      // `MeshInstance3D` 的全局缩放折回（glb 里常有一层 0.01 / 100 的骨架缩放，用节点自身的
+      // 缩放会算错 100 倍 —— 外扩直接炸成一屏碎片）。
+      const godot::Vector3 gs = mi->get_global_transform().basis.get_scale();
+      const double k = std::max(std::max(std::fabs(static_cast<double>(gs.x)),
+                                         std::fabs(static_cast<double>(gs.y))),
+                                1e-4);
+      const float grow = static_cast<float>(static_cast<double>(width_world) / k);
+      const int32_t surfaces = mesh->get_surface_count();
+      for (int32_t i = 0; i < surfaces; ++i) {
+        godot::Ref<godot::Material> own = mi->get_surface_override_material(i);
+        if (own.is_null()) {
+          const godot::Ref<godot::Material> shared = mesh->surface_get_material(i);
+          if (shared.is_null()) continue;
+          // ⚠ 材质是 `PackedScene` 里的**共享**资源（同一路径的多个实例共用）⇒ 必须先复制一份
+          // 再挂 `next_pass`，否则给一个实体开轮廓就等于给全部开。
+          const godot::Ref<godot::Resource> dup = shared->duplicate();
+          own = godot::Ref<godot::Material>(godot::Object::cast_to<godot::Material>(dup.ptr()));
+          if (own.is_null()) continue;
+          mi->set_surface_override_material(i, own);
+        }
+        if (!on) {
+          own->set_next_pass(godot::Ref<godot::Material>());
+          continue;
+        }
+        godot::Ref<godot::StandardMaterial3D> outline;
+        outline.instantiate();
+        outline->set_shading_mode(godot::BaseMaterial3D::SHADING_MODE_UNSHADED);
+        outline->set_albedo(color);
+        if (color.a < 1.0f) outline->set_transparency(godot::BaseMaterial3D::TRANSPARENCY_ALPHA);
+        outline->set_cull_mode(godot::BaseMaterial3D::CULL_FRONT);
+        outline->set_grow_enabled(true);
+        outline->set_grow(grow);
+        own->set_next_pass(outline);
+      }
+    }
+  }
+  for (int32_t i = 0; i < node->get_child_count(); ++i) {
+    apply_outline_to_meshes(node->get_child(i), on, color, width_world);
+  }
+}
+
 // 模型自带的包围盒（诊断：查"模型单位 / 缩放 / 原点对不对"用）。
 void merge_mesh_aabb(godot::Node* node, godot::AABB& box, bool& first) {
   if (node == nullptr) return;
@@ -91,6 +147,10 @@ struct GodotModelBank::Slot {
   bool reverse = false;
   bool hold_last = false;
   bool seen = false;     // 本帧有没有被 sync 到
+  // 轮廓当前生效的那一组（变了才重建材质；见 `apply_outline`）。
+  bool outline_on = false;
+  double outline_r = 0, outline_g = 0, outline_b = 0, outline_a = 0, outline_w = 0;
+  double outline_scale = 1;
 };
 
 GodotModelBank::GodotModelBank(std::function<bool(const std::string&, std::string&)> load)
@@ -168,13 +228,18 @@ GodotModelBank::Slot& GodotModelBank::ensure_slot(const std::string& tag) {
                                            static_cast<int32_t>(kModelViewport)));
   slot->viewport->set_transparent_background(true);
   slot->viewport->set_update_mode(godot::SubViewport::UPDATE_ALWAYS);
+  // 自己一份 `World3D`：宿主那个场景是 2D 的，不隔离的话模型的相机/光照会跟着别的东西跑
+  //（同时也就不会去碰场景里可能存在的其它 3D 节点）。
+  slot->viewport->set_use_own_world_3d(true);
   if (_parent != nullptr) _parent->add_child(slot->viewport);
 
   // 相机：正交，竖直方向覆盖 `kModelViewport` 个世界单位（= 逻辑像素）⇒ 画布中心就是原点。
+  // ⚠ near **必须很小**：模型是围着原点摆的（厚度可正可负），相机放在 z=+512 时若 near 也取 512，
+  // 整个 z > 0 的那一半就被**近裁剪面**切掉了 —— 表现是"只剩一层壳、像 Z 向被截了"
+  //（robot 那种带厚度的模型一眼就能看出来）。far 给足（8 倍画布）⇒ 远的也切不到。
   slot->camera = memnew(godot::Camera3D);
   slot->camera->set_projection(godot::Camera3D::PROJECTION_ORTHOGONAL);
-  slot->camera->set_orthogonal(static_cast<float>(kModelViewport),
-                               static_cast<float>(kModelViewport),
+  slot->camera->set_orthogonal(static_cast<float>(kModelViewport), 0.05f,
                                static_cast<float>(kModelViewport * 8.0));
   slot->camera->set_position(godot::Vector3(0.0f, 0.0f, static_cast<float>(kModelViewport)));
   slot->viewport->add_child(slot->camera);
@@ -265,6 +330,27 @@ bool GodotModelBank::apply_slot(Slot& slot, const GodotModelSpec& spec) {
       slot.player->stop();
       slot.anim.clear();
     }
+  }
+  // 模型轮廓（TS `update_model_outline`）：参数变了才重建材质。
+  const bool outline_on = spec.outline_w > 0.0 && spec.outline_a > 0.0;
+  const double k = std::max(std::max(std::fabs(spec.sx), std::fabs(spec.sy)), 1e-6);
+  if (outline_on != slot.outline_on || spec.outline_r != slot.outline_r ||
+      spec.outline_g != slot.outline_g || spec.outline_b != slot.outline_b ||
+      spec.outline_a != slot.outline_a || spec.outline_w != slot.outline_w || k != slot.outline_scale) {
+    slot.outline_on = outline_on;
+    slot.outline_r = spec.outline_r;
+    slot.outline_g = spec.outline_g;
+    slot.outline_b = spec.outline_b;
+    slot.outline_a = spec.outline_a;
+    slot.outline_w = spec.outline_w;
+    slot.outline_scale = k;
+    const godot::Color color(static_cast<float>(spec.outline_r), static_cast<float>(spec.outline_g),
+                             static_cast<float>(spec.outline_b),
+                             static_cast<float>(spec.outline_a));
+    // `width_world = outline_width + 1`：T` 的 `outline_width` 是逻辑像素 = 世界单位（1 单位 = 1
+    // 逻辑像素），`+1` 也是 TS 的原式。
+    apply_outline_to_meshes(slot.instance, outline_on, color,
+                            static_cast<float>(spec.outline_w + 1.0));
   }
   return true;
 }

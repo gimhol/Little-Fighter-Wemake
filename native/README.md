@@ -1246,8 +1246,23 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
     ⇒ 红书在手里显示正常（存图 `shots/model-book-295.png` + `-zoom`/`-close` 放大）；
     `--fighter robot` 那一局 `characters/robot/robot.glb(anims=14)` 也加载得到（14 个片段：
     Idle/Punch/Running/…）。
-  * **没做**（数据里也没有）：`model.pose` 的骨骼姿态混合（`grep '"pose"'` = 0）、模型轮廓
-    （TS `build_model_hulls`）、`model.seek/time_scale`（数据里为 0 条）。
+  * **没做**（数据里也没有）：`model.pose` 的骨骼姿态混合（`grep '"pose"'` = 0）、
+    `model.seek/time_scale`（数据里为 0 条）。模型轮廓**做了**（见下面那条）。
+* **（补）3D 模型的近裁剪面把模型"锯"掉一半** —— 第一次接上模型时相机是
+  `set_orthogonal(512, 512, 4096)`（near 也写成了 512），相机又在 z=+512 ⇒ 整个 `z > 0` 的那一半
+  被**近裁剪面**切了。robot 这种带厚度的模型一眼就看出来（用户原话："像是 Z 深的部分被截了"，
+  截图里只剩一小团黄色碎片）。修法：`near = 0.05`、`far = 8×画布`，相机继续放在 z=+512
+  ⇒ 可见 z 区间够 ±512。顺手把每个模型的 `SubViewport` 设成 `use_own_world_3d`（宿主那个场景是
+  2D 的，隔离掉省得跟别的 3D 东西互相打扰）。
+  修完实测（`--fighter robot --fighter 1 --stage 1 --ui-page center_pause_label --key 'j@100'`）：
+  `model=1[characters/robot/robot.glb|Running]`，机器人整个身子（黄壳 + 白头盔 + 两只圆眼睛 +
+  跑动姿势）都在，`shots/model-robot-104e.png`。
+* **（补）模型轮廓** —— TS `update_model_outline` 是"反向外壳"（`BackSide` + `uOutline =
+  (outline_width+1)/k`，`k` 取 hull 父节点的**世界**缩放）。Godot 侧的等价做法：每个表面复制一份
+  材质、挂一个 `next_pass`（`StandardMaterial3D`：`unshaded` + `cull_front` + `grow`），`grow` 按
+  那个 `MeshInstance3D` 的**全局**缩放折回网格局部单位（÷100 那一层骨架缩放就在这儿：
+  一开始按节点缩放算，外扩量大了 100 倍 ⇒ 屏幕上炸出一片蓝色碎片）。
+  ⚠ 材质是 `PackedScene` 里的共享资源 ⇒ 先 `duplicate()` 再改，否则给一个实体开轮廓等于全开。
 * 诊断面顺带加了三样（`[godot] render:` 那一行，不进摘要）：`rot=<条数>@<角度>`、
   `model=<条数>[<path>|<anim>]`、以及加载报告 `[godot] models: loaded/failed/live + 每个 glb 的
   (anims=N,box=…)`。

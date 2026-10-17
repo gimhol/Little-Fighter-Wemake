@@ -10825,3 +10825,17 @@ TS 是 three.js 场景里挂 `model_node`（和 2D mesh 在同一个场景、按
   画面不需要确定性，三条摘要只覆盖模拟，所以不引入"逐帧确定"的额外机制。
 * **没做**：`model.pose` 骨骼姿态混合（TS 的 `apply_pose_blend`，数据里 0 条）、模型轮廓
   （`build_model_hulls`）、`seek` 帧段驱动（数据里 0 条）。
+
+### 143.5. （补）模型的两个"看着像模型没做完"的坑
+
+**近裁剪面**：`Camera3D::set_orthogonal(size, near, far)` 的第二个参数是**近裁剪距离**。第一版把
+near 写成画布尺寸（512）、相机又放在 `z = +512` ⇒ 可见区间是 `z ∈ [0, -3584]`，模型里所有
+`z > 0` 的顶点全被切掉 —— 表现是"只剩一层壳 / 像 Z 向被截了"。现在 near 取 0.05、far 取 8 倍画布，
+相机留在 `z = +512` ⇒ 可见区间 `z ∈ [-3584, +511.95]`，围着原点摆的模型整个都在。
+
+**轮廓的外扩量**：`StandardMaterial3D::grow` 的偏移发生在**网格局部**空间，而 TS 的
+`uOutline = (outline_width + 1) / getWorldScale()` 折的是**世界**缩放。glb 里常见一层 0.01/100 的
+骨架缩放 ⇒ 用"模型节点缩放"去折会大出两个数量级（实测：屏幕上一片蓝色碎片）。按
+`MeshInstance3D::get_global_transform().basis.get_scale()` 折回才是 TS 的口径。
+另外材质在 `PackedScene` 里是**共享**的（同一路径的多个实体共用一份）⇒ 挂 `next_pass` 之前必须
+`duplicate()`，否则一个实体开轮廓会把同路径的其它实体一起带上。

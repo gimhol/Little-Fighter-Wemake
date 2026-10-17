@@ -60,6 +60,9 @@ struct GodotModelSpec {
   double px = 0, py = 0, pz = 0;
   double sx = 1, sy = 1, sz = 1;
   double rx = 0, ry = 0, rz = 0;
+  // 模型轮廓（TS `update_model_outline`：反向外壳）。`outline_w > 0 && outline_a > 0` 才画；
+  // 宽度是**逻辑像素**（与精灵描边同一个口径），内部会除以模型缩放折回网格局部单位。
+  double outline_r = 0, outline_g = 0, outline_b = 0, outline_a = 0, outline_w = 0;
 };
 
 // 一条绘制项。字段全部是通用图形名词（矩形 / 裁剪 / 纹理路径 / 颜色 / 次序）。
