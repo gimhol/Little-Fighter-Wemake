@@ -71,7 +71,7 @@ export const entity_val_getters: Record<E_Val, (e: Entity) => any> = {
   [E_Val.TransformListSize]: e => e.transforms?.length || 0,
   [E_Val.IsOnGround]: e => e.is_on_ground ? 1 : 0,
   [E_Val.TransformIndex]: e => e.transform_index,
-  [E_Val.IsSurvialRankMode]: e => e.world.lfw.survival_rank_available ? 1 : 0
+  [E_Val.IsSurvialRankMode]: e => e.world.lfw.survival_rank_mode ? 1 : 0
 }
 export const entity_world_val_getters = new Map<string, undefined | IValGetter<Entity>>();
 
