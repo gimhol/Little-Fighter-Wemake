@@ -69,6 +69,8 @@ export class BgLayerRender {
     if (!this.src_texture && color !== void 0) m.color.set(color)
     m.transparent = true;
     m.opacity = 1;
+    m.depthTest = false;
+    m.depthWrite = false;
     this.shared_material = m;
 
     const geo = get_static_plane_geometry(dst_w, dst_h, dst_w / 2, -dst_h / 2);
@@ -180,6 +182,8 @@ export class BgLayerRender {
     const material = new MeshBasicMaterial({
       transparent: true,
       opacity,
+      depthTest: false,
+      depthWrite: false,
     });
     if (with_uv && src) {
       const texture = src.clone();

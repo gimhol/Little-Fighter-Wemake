@@ -315,7 +315,7 @@ export class ImageMgr implements IImageMgr {
   }
 
   /** 翻转 ImageBitmap，兼容 Safari < 16.4 */
-  private flip_bitmap(bitmap: ImageBitmap): ImageBitmap | HTMLCanvasElement {
+  private flip_bitmap(bitmap: ImageBitmap): ImageBitmap | HTMLCanvasElement | OffscreenCanvas {
     const w = bitmap.width, h = bitmap.height;
     if (ImageMgr.CAN_TRANSFER) {
       const off = new OffscreenCanvas(w, h);
@@ -323,7 +323,7 @@ export class ImageMgr implements IImageMgr {
       ctx.translate(0, h);
       ctx.scale(1, -1);
       ctx.drawImage(bitmap, 0, 0);
-      return off.transferToImageBitmap();
+      return off;
     }
     // Safari < 16.4：回退 DOM Canvas
     const cvs = document.createElement('canvas');
