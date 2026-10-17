@@ -368,6 +368,7 @@ add_library(lfw_core STATIC
   dat_translator/xml/xml_x_chase.cpp
   dat_translator/xml/xml_x_dat_index.cpp
   dat_translator/xml/xml_x_difficulty_map.cpp
+  dat_translator/xml/xml_x_director.cpp
   dat_translator/xml/xml_x_map.cpp
   dat_translator/xml/xml_x_hit_key_map.cpp
   dat_translator/xml/xml_x_partial_world_dataset.cpp

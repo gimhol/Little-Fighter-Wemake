@@ -1905,3 +1905,31 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
 ⇒ TS 找得到 `dist\builtin_data\launch\bg.png`。端口原先缺这一档（只试 `<root>/<路径>`），所以得靠
 多加一个 `--root dist\builtin_data` 绕过；**现在 `HeadlessHost::resolve` 已按同一口径补上第二档**
 （`headless_host.cpp`），`--root dist` 一处就够：`ui: … drawn=8 items=227 missing_img=0`。
+
+---
+
+### 2026-10-18：差分台面复位 + 数据索引里的 `directors`（4CJ 前置）
+
+* **"差分台面在基线上就是红的"** —— TS 那次「数据驱动的 TestCases，不再代码写各种测试」
+  （`818f6f5c1`）把 `ActionDirector` 从 `src/LFW/ui/component/Tests/` 搬到了 `src/LFW/director/`，
+  台面 `subjects/lfw.ts` 的头文件 import 还指着老路径 ⇒ **整个 TS bundle 解析失败**
+  （`Could not resolve "…/ui/component/Tests/ActionDirector"`），`lfw/lfag` 连带十来个 subject
+  报 `C++ failed`，基线 `50 failed`。改一行 import（`src/LFW/director/ActionDirector`）即可复原；
+  台面里那套 `adnew/adins/adoff/adrep/adwait/adt/adsort/adreset/adup/adp/addump` 用的全是
+  **新 API**（`sort()`、`lifetime`、`end_time` 与私有 `_action_idx/_curr/_times/_actions`），
+  所以那 15 条 `action_director.cpp` 变异锚点原样保留，覆盖没丢。
+  口径教训：**台面依赖 TS 源码文件的位置**，TS 挪文件时台面要跟着改（移植体的
+  `lfw::ui::ActionDirector` 仍留在 `ui/component/`，但头注释已标明 TS 新位置）。
+* **`IDataLists.directors`** —— TS 把"关卡导演"也做成数据（`prel_data/directors/*.xml` +
+  `directors.index.json5`），`xml_2_data_lists` / `xml_from_data_lists` 多出第 6 个键
+  （`xml/entity` 台面因此 drift：C++ 少一个 `"directors":[]`）。本次补的是**索引那一层**：
+  新文件 `dat_translator/xml/xml_x_director.{h,cpp}` 里的 `xml_2_director_index` /
+  `xml_x_director_index`（`id`/`file` 带 `?? ""` 缺省，`name`/`skipped` 有则加、无则无键；
+  反写固定四属性），两个 `*_data_lists` 都接上（`directors` 走 `xml_x_director_index`）。
+  ⚠ `xml_2_director` / `xml_to_directors` / `xml_x_director*`（745 行那份 DSL）**尚未移植**，
+  下一个切片（4CJ）才做；现在若文件里真有 `<director>` 子节点，端口只会给出空对象列表
+  —— 现有台面没有这种输入。
+* **`IsSurvialRankMode` 取值对齐** —— TS 的 getter 从 `survival_rank_available` 改成
+  `survival_rank_mode`（`get_val_from_entity.ts:74`），端口跟着改
+  （`get_val_from_entity.cpp` 的 `is_survial_rank_mode`），变异锚点反向重写为
+  "读 available 而非 mode"。实测差分 **261/261**，lint 锚点 9749 ok / 0 bad。

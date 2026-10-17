@@ -10839,3 +10839,40 @@ near 写成画布尺寸（512）、相机又放在 `z = +512` ⇒ 可见区间�
 `MeshInstance3D::get_global_transform().basis.get_scale()` 折回才是 TS 的口径。
 另外材质在 `PackedScene` 里是**共享**的（同一路径的多个实体共用一份）⇒ 挂 `next_pass` 之前必须
 `duplicate()`，否则一个实体开轮廓会把同路径的其它实体一起带上。
+
+## 144. 差分台面复位 + 数据索引的 `directors`（2026-10-18）
+
+### 144.1. 台面红线：TS 挪了 `ActionDirector`
+
+TS `818f6f5c1`「数据驱动的 TestCases」把 `src/LFW/ui/component/Tests/ActionDirector.ts`
+搬成 `src/LFW/director/ActionDirector.ts`。台面 `tests/differential/subjects/lfw.ts` 的
+import 还指老路径 ⇒ **TS bundle 解析失败**（不是某条用例的问题），`lfw/lfag` 及其下游十几个
+subject 一起报 `C++ failed`，基线 `50 failed`。台面的 AD 操作块本来就已经用新 API
+（`sort()` / `lifetime` / `end_time` + 私有 `_action_idx`/`_curr`/`_times`/`_actions`），
+所以只改 import 一行就恢复，15 条 `action_director.cpp` 变异锚点全部保留。
+**口径**：台面是"TS 源码的消费者"，TS 挪文件 / 改公开面时台面必须同步；移植体
+`lfw::ui::ActionDirector` 暂时仍在 `ui/component/`（头注释标了 TS 新位置），改名
+`sort_actions() → sort()` 会牵动 `ui/component/tests/**` 里几十处调用，留到那次大搬迁一起做。
+
+### 144.2. `IDataLists` 第 6 个键：`directors`
+
+TS 把"关卡导演"也做成数据（`lf2s/origin/prel_data/directors/*.xml` 17 份 +
+`directors.index.json5`），于是 `xml_to_data_lists.ts` / `xml_from_data_lists.ts` 多出
+`directors`（**恒有**、可能空；反写时 `items?.length` 为 0 就整组跳过）。
+本次只补**索引层**（`dat_translator/xml/xml_x_director.{h,cpp}`）：
+
+| TS | C++ | 口径 |
+|---|---|---|
+| `xml_2_director_index` | `xml_2_director_index` | `id`/`file` 取属性、缺则 `""`；`name`/`skipped` **有则加键、无则无键** |
+| `xml_x_director_index` | `xml_x_director_index` | 固定写 `id/file/name/skipped`（undefined 的 `set_attr` 自然跳过） |
+
+`xml_2_data_lists` / `xml_from_data_lists` 的组表从 5 项扩到 6 项，第 6 项走 `xml_x_director_index`。
+⚠ 745 行的 director DSL（`xml_2_director` / `xml_to_directors` / `xml_x_director*`、布局表达式、
+timeline/auto 规则）**尚未移植** —— 那个输入现在不在任何台面里，端口若遇到 `<director>` 子节点
+只会产出空索引（明确留待 4CJ）。
+
+### 144.3. `IsSurvialRankMode` 对齐
+
+TS `get_val_from_entity.ts:74` 从 `survival_rank_available` 改成 `survival_rank_mode`
+⇒ 端口 `get_val_from_entity.cpp` 的 `is_survial_rank_mode` 同步；`mutations/get_val.mjs`
+那条锚点反向重写（"读 available 而非 mode"），仍被 `sran 1` 后的 `gv survial_rank_mode` 杀掉。

@@ -341,10 +341,10 @@ export default {
 }`,
     },
     {
-      note: "IsSurvialRankMode 读 survival_rank_mode",
+      note: "IsSurvialRankMode 读 available 而非 mode",
       file: "native/lfw/loader/get_val_from_entity.cpp",
-      from: `  return flag_of(e.lfw().survival_rank_available());`,
-      to: `  return flag_of(e.lfw().survival_rank_mode());`,
+      from: `  return flag_of(e.lfw().survival_rank_mode());`,
+      to: `  return flag_of(e.lfw().survival_rank_available());`,
     },
     {
       note: "表里 trend_x 指向 press_lr",

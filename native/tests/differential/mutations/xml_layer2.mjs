@@ -335,8 +335,8 @@ export default {
     {
       note: "xml_from_data_lists(): stages 组写成 'stage'",
       file: "native/lfw/dat_translator/xml/xml_from_data_lists.cpp",
-      from: `  static const char16_t* const kTags[5] = {u"obj", u"background", u"stages", u"bot", u"moves"};`,
-      to: `  static const char16_t* const kTags[5] = {u"obj", u"background", u"stage", u"bot", u"moves"};`,
+      from: `  static const char16_t* const kTags[6] = {u"obj", u"background", u"stages", u"bot", u"moves", u"directors"};`,
+      to: `  static const char16_t* const kTags[6] = {u"obj", u"background", u"stage", u"bot", u"moves", u"directors"};`,
     },
     {
       note: "xml_2_data_lists(): stages/moves 的键换位",

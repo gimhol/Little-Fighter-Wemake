@@ -254,7 +254,7 @@ Value transform_index(const Entity& e, const std::u16string&, BinOp) {
 }
 
 Value is_survial_rank_mode(const Entity& e, const std::u16string&, BinOp) {
-  return flag_of(e.lfw().survival_rank_available());
+  return flag_of(e.lfw().survival_rank_mode());
 }
 
 }

@@ -6,7 +6,8 @@
 namespace lfw {
 namespace ui {
 
-// TS `ui/component/Tests/ActionDirector.ts`：定时工作队列（`repeat`/`offset`/`insert`/
+// TS `src/LFW/director/ActionDirector.ts`（4BU 之后从 `ui/component/Tests/` 迁到 `director/`）：
+// 定时工作队列（`repeat`/`offset`/`insert`/
 // `wait` 按 `end_time` 顺序落表，`update` 用「当前指针 + 一次性 min(end_time, time)」
 // 分发；`_lifetime` 到点回卷）。
 class ActionDirector {
