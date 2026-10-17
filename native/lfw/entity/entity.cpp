@@ -2356,7 +2356,12 @@ Entity* Entity::spawn(const Value& opoint, const Vector3& offset_velocity, doubl
   if (!truthy(oid)) return nullptr;
   const Value data = world().lfw().datas_find(Value(std::u16string(to_string(oid))));
   if (std::holds_alternative<std::monostate>(data)) return nullptr;
-  Entity* entity = world().lfw().create_entity(world(), data);
+  // TS：`this.lfw.factory.create_entity_with_bot("", this.world, data)` —— **不是**
+  // `create_entity`：`with_bot` 会按 data.id 建控制器（球 → `BallController`、斗士 → bot）。
+  // 少了这一步，opoint 生成出来的球 `ctrl == nullptr` ⇒ `World::update` 里
+  // `is_ball_ctrl(ctrl)` 恒假 ⇒ `update_lookup` 从不跑 ⇒ `chasing` 永远空
+  // ⇒ `BallController::update_chasing` 只走「Hover 自己出生点」那条分支（D>A 的球不追人）。
+  Entity* entity = world().lfw().create_entity_with_bot(u"", world(), data);
   if (entity == nullptr) return nullptr;
   entity->on_spawn(*this, opoint, offset_velocity, facing_value).attach(field_or(opoint, u"ghost"));
   if (strict_equals(field_or(entity->data(), u"id"), field_or(_data, u"id"))) {

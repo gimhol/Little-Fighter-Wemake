@@ -2236,3 +2236,41 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   下一片该补一个 `wdir` 台面（`new Director` + `start()` 后 dump `action_director.actions()` 的 `time`）。
 * 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
 
+
+### 2026-10-17（十五）：opoint 生成物没有控制器 —— D>A 的球「不追人」
+
+* 用户报「Julian D>A 的 Ball 失去跟踪」。上一片修了导演的每帧乱按之后连发正常了，但球仍不拐弯。
+* 探针（临时计数，跑完即删）把它钉死在一处：
+
+  ```
+  [probe chase] world_ball_lookup=0 calls=0 ... iters=5490 ballctrl=0
+  ```
+
+  `World::update` 的实体循环跑了 5490 次，**一次都没见到 ball 控制器**。根因在
+  `Entity::spawn`（= TS 的 `spawn`）：
+
+  ```cpp
+  // 修之前
+  Entity* entity = world().lfw().create_entity(world(), data);          // 只造实体
+  // TS
+  const entity = this.lfw.factory.create_entity_with_bot("", this.world, data);  // 造实体 + 建控制器
+  ```
+
+  `create_entity` 不建控制器 ⇒ opoint 生成出来的球 `ctrl == nullptr`
+  ⇒ `World::update` 里 `is_ball_ctrl(ctrl)` 恒假 ⇒ `BallController::update_lookup` 一次都不跑
+  ⇒ `chasing` 永远是空 ⇒ `update_chasing` 只走「Hover 自己出生点」那条分支
+  （球只在出生点附近蹭，看着就是"不追人"）。
+* 修：`Entity::spawn` 改用 `create_entity_with_bot(u"", world(), data)`（与 TS 同一入口；
+  球拿 `BallController`、斗士拿 bot、其余拿 invalid）。修后同一探针：
+
+  ```
+  [probe chase] world_ball_lookup=542 calls=542 nochase=149 found=393 nofound=0 should=936 iters=5513 ballctrl=1093
+  ```
+
+  393 次抓到目标（`should_chase` 命中 936 次候选）。
+* 台面：`Entity::spawn` 换了入口 ⇒ 两个 subject 的假 `lfw` 要跟着对齐：
+  * `subjects/entity.cpp` 新增 `create_entity_with_bot` 覆写（记 TS 那一行
+    `create_entity_with_bot:<data>`，不转去假 `create_ctrl`）。
+  * `subjects/collision_ball_frozen.cpp` 的 `Lfw::create_entity_with_bot` 与它的
+    `create_entity` 同一条路（那个台面只关心"造出来了没"）。
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。

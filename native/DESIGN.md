@@ -11431,3 +11431,42 @@ f=301 frame=260 a=-hSE d=-hSE     ← hit + start + end 每帧都为真 = 每帧
 `Director::action_director` 是 public、`director::ActionDirector` 又带 `actions()/end_time()`，
 所以补一个 `wdir` op（`new Director(world, data)` → `start()` → dump 每个 `action.time`）
 就能把这条钉住 —— `tests/differential/subjects/world.{ts,cpp}` 里加，用例走 `cases/world/`。
+
+## 158. opoint 生成物必须走 `create_entity_with_bot`（控制器是「球会不会追人」的前提）（2026-10-17）
+
+TS `Entity.spawn` 用的是 **`factory.create_entity_with_bot("", world, data)`**，端口抄成了
+`create_entity(world, data)`。差别只有一个：前者会再 `set_ctrl(create_ctrl(data.id, …))`。
+
+少了这一步的后果是一条**静默失效链**（没有断言、没有日志，球照飞、也照打人）：
+
+```
+opoint 生成 → 实体 ctrl == nullptr
+  → World::update 里 is_ball_ctrl(ctrl) 恒假 → 不调 ctrl.update_lookup()
+    → BallController::chasing 永远空
+      → update_chasing() 只走 `chase.lost & Hover` 那条分支（朝自己出生点按方向键）
+        → 数据里的 `chase{flag:EnemyFighter}` 形同虚设：球不追人
+```
+
+诊断用的临时计数（`World::update` 的实体循环 / `update_lookup` 的入出口）：
+
+| | 修之前 | 修之后（Julian D>A，460 帧） |
+|---|---|---|
+| 循环里见到的 ball 控制器 | 0 | 1093 |
+| `update_lookup` 调用 | 0 | 542（`lifetime % 2` 那一半） |
+| 抓到目标（`chasing` 被填） | 0 | 393（候选里 `should_chase` 命中 936 次） |
+
+### 158.1. 台面为什么没拦住
+
+`cases/entity/spawn.txt` 里的 `spawnDump` 本来就打 `ball=`（是不是 ball 控制器）与
+`chasing=`——但台面的假 `lfw` 里**没注册任何 oid 的 ctrl creator**，真 `Factory::create_ctrl`
+回 null，所以两侧都是 `ball=b0`，看不出差别。真机里数据 ctrl 是注册过的（`dat_mgr` 按
+`is_ball_data` 注册 `ball_controller_creator`），差别只在真机上显形 —— 与 §145 的
+「薄引用」、§155 的 `gen_field` 空壳是同一类：**台面的假缝把真实现整个绕过去了**。
+
+### 158.2. 台面对齐
+
+* `subjects/entity.cpp` 的假 `lfw` 新增 `create_entity_with_bot(player_id, world, data)`：
+  记 TS 那一行 `create_entity_with_bot:<data>`、复用 `g_make_entity`；**不要**转去假
+  `create_ctrl`（TS 那边工厂没注册 ⇒ 不多记一行）。
+* `subjects/collision_ball_frozen.cpp` 的 `Lfw::create_entity_with_bot` 直接转
+  `create_entity`（那个台面只关心"造出来了没"与 `A:spawn:` 那一行）。

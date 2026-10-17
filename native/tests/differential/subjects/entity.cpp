@@ -673,6 +673,15 @@ struct EntityLfw : fx::FakeLfw {
   // `IWorldLfw::create_entity`）：新实体的 id 来自 `new_id()`（与 TS 的 `lfw.new_id`
   // 同一个计数器）。真正的构造挂在 `g_make_entity` 上（空间上它后面才定义）。
   Entity* create_entity(lfw::World& world, const Value& data) override {
+    return create_entity_with_bot(std::u16string(), world, data);
+  }
+
+  // TS 台面的假 `lfw.factory.create_entity_with_bot` 只记一行 `create_entity_with_bot:<data>`
+  // 然后造实体（工厂里没注册任何 oid ⇒ 真 `create_ctrl` 回 null、也不记 `acquire_ctrl`）。
+  // 端口这边同理：**不要**转去假的 `create_ctrl`（那会多记一行 `create_ctrl:`）。
+  Entity* create_entity_with_bot(const std::u16string& player_id, lfw::World& world,
+                                 const Value& data) override {
+    (void)player_id;
     (void)world;
     g_log.push_back("create_entity_with_bot:" + render(data));
     return g_make_entity != nullptr ? g_make_entity(data) : nullptr;
