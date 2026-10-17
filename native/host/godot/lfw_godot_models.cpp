@@ -248,19 +248,24 @@ GodotModelBank::Slot& GodotModelBank::ensure_slot(const std::string& tag) {
   slot->root = memnew(godot::Node3D);
   slot->viewport->add_child(slot->root);
 
-  // 光照照抄 TS `WorldRenderer`：环境光 0.7 + 平行光 1.4（位置 -300,400,600 指向原点）。
+  // 光照对齐 three.js `WorldRenderer`：环境光 0.7 + 平行光 1.4（位置 -300,400,600 指向原点）。
+  // ⚠ 两个能量都要**除以 π**：three.js 的 `AmbientLight` / `DirectionalLight` 的 `intensity` 是
+  // 辐照度，Lambert 的 `1/π` 由着色器里的 `BRDF_Lambert` 提供；Godot 的光照能量是直接当辐亮度
+  // 乘 albedo 用的。照抄 0.7 / 1.4 会让模型整体亮 π 倍（红书的封面被打成粉色、R 通道顶到 255，
+  // 实测 239,63,98 vs 浏览器 163,38,66；除 π 后逐通道落在 165,39,67）。
   godot::Ref<godot::Environment> env;
   env.instantiate();
   env->set_background(godot::Environment::BG_CLEAR_COLOR);
   env->set_ambient_source(godot::Environment::AMBIENT_SOURCE_COLOR);
   env->set_ambient_light_color(godot::Color(1.0f, 1.0f, 1.0f));
-  env->set_ambient_light_energy(0.7f);
+  env->set_ambient_light_energy(static_cast<float>(0.7 / 3.14159265358979323846));
   godot::WorldEnvironment* const world_env = memnew(godot::WorldEnvironment);
   world_env->set_environment(env);
   slot->viewport->add_child(world_env);
 
   godot::DirectionalLight3D* const light = memnew(godot::DirectionalLight3D);
-  light->set_param(godot::Light3D::PARAM_ENERGY, 1.4f);
+  light->set_param(godot::Light3D::PARAM_ENERGY,
+                   static_cast<float>(1.4 / 3.14159265358979323846));
   slot->viewport->add_child(light);
   light->look_at_from_position(godot::Vector3(-300.0f, 400.0f, 600.0f), godot::Vector3(),
                                godot::Vector3(0.0f, 1.0f, 0.0f));

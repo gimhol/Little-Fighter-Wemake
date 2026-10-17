@@ -11206,11 +11206,73 @@ if (dt > 0.0) _uv_time += dt / 1000.0;   // 秒
 | `--frames 300` | `t=5.00s`、`ox = anim × 5` |
 
 ash_forest 的雪/雾层 `offsetAnimX/Y = 10`、周期 128 ⇒ 10 px/s、12.8 s 走完一个周期。
-### 152.5. 两个符号（2026-10-18 修）
+### 152.5. 两个符号（2026-10-18 修，当日更正）
 
 * **UV 的 y**：`uv_oy` 与 TS `tex.offset.y` 同号，而 TS 的 v 轴**向上**、屏幕 y **向下** ⇒
   屏幕位移 = `+uv_oy`（x 一圈不用翻：`-uv_ox`）。tile 循环的起点取 `fmod(uv_oy,py) - py`，
   落在 `(-py, 0]`，保证第一块盖住上边缘。
-* **Model 旋转**：`facing < 0` 的镜像只做一次（`scale.x` 取负），旋转**不要**再翻 `ry/rz`。
-  3D 画布（`SubViewport` + 正交相机在 +Z 看向原点）本身就是 y 向上，不存在 2D 那条
-  "屏幕 y = h - 世界 y" 的镜像。
+* **Model 旋转**：照抄 TS —— `rotation.set(ex, facing < 0 ? -ey : ey, facing < 0 ? -ez : ez)`：
+  左右镜像由 `scale.x = facing` 完成，绕 **y/z 的角度**跟着取反，绕 x 不动。
+  ⚠ 这一条早先被误判过两轮（先删掉取反、再改成无条件取反），真因见 §154：
+  `euler_xyz_from_quat` 把 `m23`/`m32` 写反了 ⇒ **`rx` 的符号**一直是错的。
+
+## 154. 3D 模型的姿态与光照对齐 three.js（2026-10-18）
+
+用户给出「浏览器（图一，对）／Godot（图二，错）」的对照截图后，去掉猜测、**用数值钉死**：
+在 Node 里用仓库自带的 `three`（0.181.2）跑同一套算式，与端口逐元素比矩阵。
+
+### 154.1. 真因：`euler_xyz_from_quat` 把 m23/m32 写反
+
+`Quaternion → XYZ 欧拉角` 的那段是从 three.js `Euler.setFromRotationMatrix` 抄的，但旋转矩阵的
+两个元素抄串了行：
+
+```cpp
+- const double m23 = yz + wx;   // 应当 yz - wx
+- const double m32 = yz - wx;   // 应当 yz + wx
++ const double m23 = yz - wx;
++ const double m32 = yz + wx;
+```
+
+`ry = asin(m13)`、`rz = atan2(-m12, m11)` 用到的元素没错，只有 `rx = atan2(-m23, m33)` 错 ⇒
+**只有「绕 x 的倾角」符号反了**：红书（`book_red` 的帧数据是 `rotation="-0.5,0,…"`，只有 x 的
+倾角 + 绕 z 的自转）翻过来看的就是书的**背面**，而「mirror 之后绕 z 的自转」在被镜像的空间里
+方向也跟着反 —— 这两条症状都来自同一个符号。
+
+复算（`node`，私用脚本，不进仓库）：940 组输入——红书 56 个真实帧 × facing ±1、400 组随机
+`base×frame`、万向锁附近 16 组——端口算出的 `R·S`（含 `scale.x = facing`）与 three.js
+`Object3D` 的 `matrix` **逐元素完全相同**（最大差 0）。
+
+### 154.2. 归属：镜像只做一次
+
+TS `EntityMainRender.update_model_visual`：
+
+```ts
+this.model_node.scale.set(facing * sx, sy, sz)
+this.model_node.rotation.set(e.x, facing < 0 ? -e.y : e.y, facing < 0 ? -e.z : e.z)
+```
+
+即「`scale.x` 取负做镜像」+「`ry/rz` 取反补偿」，`rx` 不动。端口原先删掉过这两处取反（误判为
+翻两次），又改成过无条件取反 ⇒ 两次都错。**按 TS 原样**：`if (e.facing < 0) { ry=-ry; rz=-rz; }`。
+
+### 154.3. 光照：能量要除 π
+
+TS `WorldRenderer` 用 `AmbientLight(0xffffff, 0.7)` + `DirectionalLight(0xffffff, 1.4)`（后者挂在
+`(-300,400,600)` 指向原点）。Godot 侧原来照抄 0.7 / 1.4，结果红书被打成**粉色**且 R 通道顶到 255。
+
+口径差一个 `π`：three.js 的 `intensity` 是**辐照度**，Lambert 的 `1/π` 在着色器的
+`BRDF_Lambert` 里；Godot 的光照能量直接当**辐亮度**乘 albedo。两个能量都除 `π` 之后：
+
+| 采样（红书封面最亮的一片） | 值 |
+|---|---|
+| 浏览器（参考） | `163,38,66` |
+| 端口（除以 π 前） | `255,71,115`（R 已削顶） |
+| 端口（除以 π 后） | `165,39,67` |
+
+### 154.4. 证据行
+
+`[godot] render: … model=N[%s]` 的探针补上**摆位与变换后的姿态**，模型方向出问题时一眼可见：
+
+```
+model=1[weapons/book_bundle/book_red.glb|@461.0,242.0 rot=0.5000,0.5000,-0.0000 scale=15.000,15.000,15.000 face=1]
+```
+

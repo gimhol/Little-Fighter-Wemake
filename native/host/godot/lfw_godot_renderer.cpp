@@ -112,8 +112,8 @@ void euler_xyz_from_quat(const Quat& q, double& ox, double& oy, double& oz) {
   const double m12 = xy - wz;
   const double m13 = xz + wy;
   const double m22 = 1.0 - (xx + zz);
-  const double m23 = yz + wx;
-  const double m32 = yz - wx;
+  const double m23 = yz - wx;
+  const double m32 = yz + wx;
   const double m33 = 1.0 - (xx + yy);
   const double clamped = m13 > 1.0 ? 1.0 : (m13 < -1.0 ? -1.0 : m13);
   oy = std::asin(clamped);
@@ -686,10 +686,14 @@ void GodotWorldRenderer::emit_model(GodotFrame& frame, const Entity& e, const Va
   if (missing(lfw::field_or(model, u"rotation"))) fz = num_or(model, u"rad");
   const Quat qa = quat_mul(quat_from_euler_xyz(bx, by, bz), quat_from_euler_xyz(fx, fy, fz));
   euler_xyz_from_quat(qa, spec.rx, spec.ry, spec.rz);
-  // ⚠ **不要**再按 `facing` 翻 y/z：模型的镜像已经由 `spec.sx = facing * …`（负 x 缩放）
-  // 带出来了（TS 也是 `model_node.scale.x = facing * …` 之后再 `rotation.set(...)`）——
-  // 两者都翻等于翻两次，旋转方向就反了（用户报的"Model 的旋转似乎也反了"）。
-  // 3D 画布本身是 y 向上的（相机 +Z 看向原点）⇒ 也没有"屏幕 y 向下"的镜像要补。
+  // TS `model_node.rotation.set(ex, facing < 0 ? -ey : ey, facing < 0 ? -ez : ez)`：
+  // 左右镜像由 `scale.x = facing` 完成，绕 y/z 的角度要跟着取反（绕 x 不动），
+  // 这样「先镜像再转」才和 TS 逐位一致。之前这里漏了 rx 的符号（`euler_xyz_from_quat`
+  // 把 m23/m32 写反了），表现是红书的倾角朝反方向 ⇒ 看到的是书的背面、自转也跟着反。
+  if (e.facing < 0) {
+    spec.ry = -spec.ry;
+    spec.rz = -spec.rz;
+  }
 
   const double b_sx = num_sub(info, u"scale", u"x", 1.0);
   const double b_sy = num_sub(info, u"scale", u"y", 1.0);
@@ -740,7 +744,16 @@ void GodotWorldRenderer::emit_model(GodotFrame& frame, const Entity& e, const Va
   it.x = cx - it.w / 2.0;
   it.y = cy - it.h / 2.0;
   ++frame.model_items;
-  if (frame.model_probe.empty()) frame.model_probe = it.model.path + "|" + it.model.anim;
+  if (frame.model_probe.empty()) {
+    // 诊断：路径 + 片段 + 摆位 + **变换后的欧拉角/缩放**（模型方向出问题时第一个要看的东西）。
+    char pose[256];
+    std::snprintf(pose, sizeof(pose),
+                  "%s|%s@%.1f,%.1f rot=%.4f,%.4f,%.4f scale=%.3f,%.3f,%.3f face=%d",
+                  it.model.path.c_str(), it.model.anim.c_str(), cx, cy, it.model.rx, it.model.ry,
+                  it.model.rz, it.model.sx, it.model.sy, it.model.sz,
+                  static_cast<int>(e.facing));
+    frame.model_probe = pose;
+  }
   frame.items.push_back(std::move(it));
 }
 
