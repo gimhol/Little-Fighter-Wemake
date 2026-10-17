@@ -10876,3 +10876,48 @@ timeline/auto 规则）**尚未移植** —— 那个输入现在不在任何台
 TS `get_val_from_entity.ts:74` 从 `survival_rank_available` 改成 `survival_rank_mode`
 ⇒ 端口 `get_val_from_entity.cpp` 的 `is_survial_rank_mode` 同步；`mutations/get_val.mjs`
 那条锚点反向重写（"读 available 而非 mode"），仍被 `sran 1` 后的 `gv survial_rank_mode` 杀掉。
+## 145. `is_ray_hit` 收真 `Entity`（2026-10-18）
+
+### 145.1. 为什么要动这条缝
+
+`bot/*` 的只读工具函数在 TS 里收的是 `Entity`（`is_ray_hit(a: Entity, b: Entity, ray)`），
+端口却收 `CtrlEnv` 投影出来的 `Value` 快照（`ref_of(e)`）。读取路径变成
+`field_or(ref, "position") → field_or(pos, "x")`，任何一环不对（缺名、类型不是数、
+投影没带该字段）就静默成 `0`：`facing * dx` 恒 `0`、`abs(dz)` 恒 `0` ⇒ 射线判定恒真/恒假，
+表现就是 **Bot 行为整片不触发**（这类 bug 差分台面抓不到，因为台面自己造快照）。
+
+### 145.2. 缝的形状
+
+```cpp
+struct CtrlEnv {
+  ...
+  std::function<Entity*(const Value&)> resolve;  // ref_of() 的引用 → 真实体
+};
+```
+
+* `Entity` 只以**指针/引用**出现在 `controller/base_controller.h`（前置声明），
+  `Entity` ⇄ `controller` 的包含环不受影响。
+* 绑定在 `Entity::refresh_ctrl_env`：引用里只有 `id`（`entity_ref.h`）⇒
+  `world().find_entity(id)`；查不到给 `nullptr`。
+* 调用点（`bot_controller.cpp`）先 `resolve` 再判空，拿不到就当作"没命中"
+  （`should_defend → 0`、`handle_action → false`）——这与 DS 里"引用解不出实体"的语义一致。
+
+### 145.3. 返回值必须是 `Value`
+
+TS 的三个早退是 `return reverse;`（不是 `return !!reverse`）——`reverse` 可以是任意值。
+收成 `bool` 之后差分在 `bot_helpers/all` 第 78 行立刻分叉：TS 打 `n7`，C++ 打 `b1`。
+所以签名是 `Value is_ray_hit(const Entity&, const Entity&, const Value&)`，
+只有最后一条 `return Value(truthy(reverse) ? !hit : hit);` 是布尔。
+
+### 145.4. 台面
+
+`subjects/bot_helpers.cpp` 的 `ray` 操作改用 `fx::StubEntity`（`g_ent_real` 懒建缓存，
+`position`/`facing` 从快照灌，`put_ent`/`del_ent` 使其失效重建）。
+`mutations/bot_helpers.mjs` 里 5 条锚点（facing 读 b、dx/dz 反号、dx/dz 不 rounding）
+跟着新函数体重写 —— 语义不变，锚点必须落在真实代码行上。
+
+### 145.5. 同类待改（同一套做法）
+
+`is_enter_goto_range` / `is_leave_goto_range` / `guess_entity_pos` / `closest` /
+`nearest*` / `helper/manhattan_xz`：都是"TS 收 `Entity`、端口收 `Value` 快照"的形状，
+逐个改成 `Entity&`/`Entity*` + `env().resolve`，并同步台面。

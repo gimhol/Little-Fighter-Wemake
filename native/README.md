@@ -1933,3 +1933,26 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   `survival_rank_mode`（`get_val_from_entity.ts:74`），端口跟着改
   （`get_val_from_entity.cpp` 的 `is_survial_rank_mode`），变异锚点反向重写为
   "读 available 而非 mode"。实测差分 **261/261**，lint 锚点 9749 ok / 0 bad。
+---
+
+### 2026-10-18（二）：`is_ray_hit` 收真 `Entity`（bot 射线检测为啥整片不触发）
+
+* **症状**：Bot 行为（`should_defend` 的射线防御、`handle_action` 里 `e_ray` 的视线判定）几乎不触发。
+* **根因**：TS 的 `is_ray_hit(a: Entity, b: Entity, ray)` 直接读 `a.position` / `a.facing` / `b.position`；
+  端口收的是 `ref_of()` 造出来的 **`Value` 快照**（`field_or(a, "position")` 等）。快照里
+  `position` / `facing` 一旦缺名或类型不是数（控制器投影 `CtrlEnv` 里就是这样），
+  `dx` / `dz` / `facing` 全成 `0` ⇒ 射线恒真或恒假。
+* **改法**：`is_ray_hit(const Entity& a, const Entity& b, const Value& ray)`（返回值仍是
+  **`Value`** —— TS 的三个早退是 `return reverse;`，`reverse` 可以是任意值，收成 `bool` 会把
+  `reverse: 7` 这类用例压成 `true`，差分立刻抓到）。控制器侧新增一条缝：
+  `CtrlEnv::resolve(const Value&) -> Entity*`（`ref_of()` 的引用只带 `id`，照 `id` 去
+  `world().find_entity` 解回真实体），由 `Entity::refresh_ctrl_env` 绑好。
+  `bot_controller.cpp` 两处调用点改成"先 `resolve`、拿不到就按"没命中"返回"
+  （主射线 `is_ray_hit(*target, *self, ray)`，`e_ray` 循环 `is_ray_hit(*self_e, *en_e, r)`）。
+* **台面**：`subjects/bot_helpers.cpp` 新增 `g_ent_real`（`fx::StubEntity` 懒建缓存，字段从
+  快照灌 `position`/`facing`，`put_ent`/`del_ent` 让它失效重建），`ray` 操作改用真实体；
+  5 条变异锚点跟着新函数体重写。差分 261/261、lint 9764 ok。
+* **口径**：`Entity` 在控制器侧只出现**指针/引用**（`CtrlEnv` 里前置声明即可），
+  所以这条缝不破 `Entity` ⇄ `controller` 的包含环。⚠ 同类"`Value` 快照"还有 `is_enter_goto_range` /
+  `is_leave_goto_range` / `guess_entity_pos` / `closest` / `nearest*` / `helper/manhattan_xz`，
+  下一步按同一套改（各自加 `resolve` 调用点 + 台面真实体）。

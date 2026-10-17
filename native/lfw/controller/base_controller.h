@@ -52,6 +52,10 @@ struct CtrlEnv {
   Value data_pre_seq_map;
   Value data_post_seq_map;
   std::function<Value(const Value&)> get_next_frame;
+  // `ref_of(e)` 的实体引用 → 真实体。`bot/*` 里只读字段的函数（`is_ray_hit` 这一族）直接收
+  // `Entity&`，靠这条缝把引用解回实体（`Entity` 在控制器侧只出现指针/引用 ⇒ 前置声明就够，
+  // 不破 `Entity` ⇄ `controller` 的包含环）。
+  std::function<Entity*(const Value&)> resolve;
   std::function<void(double, double, double, const std::u16string&)> world_etc;
   std::function<void(const std::u16string&, double, double, double)> team_come;
   std::function<void(const std::u16string&)> team_stay;

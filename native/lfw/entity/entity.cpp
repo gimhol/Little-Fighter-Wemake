@@ -3276,6 +3276,13 @@ void Entity::refresh_ctrl_env() {
     env.set_position = [this](const Value& x, const Value& y, const Value& z) {
       set_position(x, y, z);
     };
+    // `ref_of(e)` 的引用 → 真实体：只读字段的 bot 函数（`is_ray_hit` 那一族）要真 `Entity`。
+    // 引用里只有 `id`（`entity_ref.h`），照它查世界表。
+    env.resolve = [this](const Value& ref) -> Entity* {
+      const Value id_v = field_or(ref, u"id");
+      const std::u16string* const id_p = std::get_if<std::u16string>(&id_v);
+      return id_p != nullptr ? world().find_entity(*id_p) : nullptr;
+    };
     env.bg_width = to_number(world().bg_value(u"width"));
     env.bg_near = to_number(world().bg_value(u"near"));
     env.bg_far = to_number(world().bg_value(u"far"));

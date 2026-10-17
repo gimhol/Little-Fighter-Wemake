@@ -10,6 +10,7 @@
 #include "lfw/base/expression.h"
 #include "lfw/bot/bot_env.h"
 #include "lfw/bot/is_ray_hit.h"
+#include "lfw/entity/entity.h"
 #include "lfw/bot/state/bot_state_keys.h"
 #include "lfw/core/js_string.h"
 #include "lfw/defines/defines_data.h"
@@ -729,7 +730,10 @@ int BotController::should_defend(const Value& e_ref) {
     o.set(u"max_z", Value(max(abs(10 * vz), 2 * q)));
     return Value(std::make_shared<Object>(o));
   }();
-  const Value hit = is_ray_hit(e_ref, self_ref(), ray);
+  Entity* const target = env() != nullptr && env()->resolve ? env()->resolve(e_ref) : nullptr;
+  Entity* const self = env() != nullptr && env()->resolve ? env()->resolve(self_ref()) : nullptr;
+  if (target == nullptr || self == nullptr) return 0;
+  const Value hit = is_ray_hit(*target, *self, ray);
   if (!truthy(hit)) return 0;
 
   const Value itrs = field_or(field_or(e_ref, u"frame"), u"itr");
@@ -945,10 +949,13 @@ Value BotController::handle_action(const std::u16string& where, const Value& act
   if (truthy(e_ray)) {
     const Value en_ref = en();
     if (!truthy(en_ref) || !entity::is_fighter(en_ref)) return Value(false);
+    Entity* const self_e = env() != nullptr && env()->resolve ? env()->resolve(self_ref()) : nullptr;
+    Entity* const en_e = env() != nullptr && env()->resolve ? env()->resolve(en_ref) : nullptr;
+    if (self_e == nullptr || en_e == nullptr) return Value(false);
     bool ray_hit = false;
     if (const Array* rays = as_array(e_ray)) {
       for (const Value& r : rays->items()) {
-        ray_hit = truthy(is_ray_hit(self_ref(), en_ref, r));
+        ray_hit = truthy(is_ray_hit(*self_e, *en_e, r));
         if (ray_hit) break;
       }
     }
