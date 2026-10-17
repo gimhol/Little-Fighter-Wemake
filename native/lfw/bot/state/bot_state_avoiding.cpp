@@ -7,6 +7,7 @@
 #include "lfw/bot/bot_controller.h"
 #include "lfw/bot/state/bot_state_keys.h"
 #include "lfw/defines/defines_data.h"
+#include "lfw/defines/difficulty.h"
 #include "lfw/defines/state_enum.h"
 #include "lfw/defines/weapon_type.h"
 #include "lfw/utils/container_help/field_or.h"
@@ -18,6 +19,9 @@ namespace lfw {
 namespace bot {
 
 namespace {
+
+constexpr double kZKeepPadNum = 3.0;
+constexpr double kZKeepPadDen = 2.0;
 
 bool frame_state_is(const controller::CtrlEnv& e, StateEnum s) {
   return strict_equals(state_of_env(e), Value(static_cast<double>(s)));
@@ -148,10 +152,12 @@ std::optional<Value> BotState_Avoiding::update(double dt) {
     const double z_min = c.dataset.num(u"w_atk_min_z");
     const double z_max = c.dataset.num(u"w_atk_max_z");
     const double z_pad = abs(z_max - z_min);
-    if (between(rz, z_min, z_max)) {
+    const double z_keep_pad = round((z_pad * kZKeepPadNum) / kZKeepPadDen);
+    const bool keep_z = difficulty >= static_cast<double>(Difficulty::Difficult);
+    if (keep_z && between(rz, z_min, z_max)) {
       c.key_down({z_forwrd_key});
       c.key_up({z_backward_key});
-    } else if (between(rz, z_min - z_pad, z_max + z_pad)) {
+    } else if (keep_z && between(rz, z_min - z_keep_pad, z_max + z_keep_pad)) {
       c.key_up({u"U", u"D"});
     } else {
       hold_UD(rz, z_min, z_max);
