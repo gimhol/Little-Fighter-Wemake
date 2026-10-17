@@ -517,8 +517,8 @@ void GodotWorldRenderer::build_background(const World& world, GodotFrame& frame,
       ++frame.uv_items;
       if (frame.uv_probe.empty()) {
         char probe[128];
-        std::snprintf(probe, sizeof(probe), "%.1f,%.1f,%.2f,%.2f@%s", one.item.uv_px, one.item.uv_py,
-                      one.item.uv_ox, one.item.uv_oy, one.item.tag.c_str());
+        std::snprintf(probe, sizeof(probe), "%.1f,%.1f,%.2f,%.2f,t=%.2fs@%s", one.item.uv_px,
+                      one.item.uv_py, one.item.uv_ox, one.item.uv_oy, _uv_time, one.item.tag.c_str());
         frame.uv_probe = probe;
       }
     }
@@ -778,8 +778,9 @@ void GodotWorldRenderer::render(double dt) {
   ++_render_count;
   _ui_stats = GodotUIStats{};
   _ui_dump_lines.clear();
-  // `BgLayerRender.render(dt)` 的 `offsetX += dt/1000*offsetAnimX`：同一条时间轴，积一个标量。
-  if (dt > 0.0) _uv_time += dt;
+  // `BgLayerRender.render(dt)` 是 `offsetX += dt/1000*offsetAnimX`（**dt 是毫秒**；
+  // 端口的 `render(dt)` 收到的正是 `step_ms`）⇒ 这里积**秒**。
+  if (dt > 0.0) _uv_time += dt / 1000.0;
   World& world = _lfw->world();
   GodotFrame frame;
   frame.valid = true;

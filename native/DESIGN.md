@@ -11168,3 +11168,41 @@ Godot 的 `draw_texture_rect_region` 没有"改 UV / 设 repeat"的口子（要�
 `[godot] render: … uv=%d[px,py,ox,oy@tag]`（第一条 UV 项）。ash_forest 实测：
 40 帧 `uv=1[128.0,128.0,10.67,10.67@ash_forest]` → 280 帧 `74.67`；`bg_7`（只有世界坐标
 `loop`）`uv=0[]` 且 `bg_layers=167` ⇒ 两套机制互不影响。
+## 153. 开放模式的节拍与 UV 的时间基（2026-10-18）
+
+### 153.1. 节拍
+
+`LfwGodot::_process` 的 `pacing` 决定"这一帧往累加器里放多少秒"，固定步长永远是
+`_host->step_ms()`（`1000/UPS`）。原来的写法是 `_args.delta > 0 ? _args.delta : p_delta`：
+只要命令行给了 `--delta`（验收惯例给 0.017），**开放模式**也被钉成"每帧 17ms"，
+而窗口里 `_process` 一秒钟能跑几百次 ⇒ 模拟直接几十倍速（用户实测 8 秒 1440 帧）。
+
+```cpp
+const bool real_time = _args.frames <= 0;      // `--play` ⇒ frames = 0
+double pacing = real_time ? p_delta : (_args.delta > 0.0 ? _args.delta : p_delta);
+```
+
+* **开放模式**：真墙钟 ⇒ 1 秒现实 = 1 秒游戏（实测 10 秒 600 步）。
+* **验收模式**：`--delta` 固定节拍 ⇒ `--frames N` 恰好 N 步，与机器快慢无关（三条摘要靠这条）。
+
+### 153.2. UV 的时间基
+
+TS `BgLayerRender.render(dt)` 里 `dt` 是**毫秒**（`this.offsetX += (dt / 1000) * offsetAnimX`）。
+端口的 `IWorldRenderer::render(dt)` 收到的也是 `step_ms`（毫秒）⇒ 累加时必须除 1000：
+
+```cpp
+if (dt > 0.0) _uv_time += dt / 1000.0;   // 秒
+```
+
+写成 `+= dt` 会让 UV 动画快 1000 倍（相位每帧绕好几圈，肉眼看就是"乱跳"）。
+
+### 153.3. 怎么验 UV 速度
+
+证据行带时间：`[godot] render: … uv=1[px,py,ox,oy,t=%.2fs@tag]`。
+
+| 命令 | 期望 |
+|---|---|
+| `--frames 60 --delta 0.017`（60 ups） | `t=1.00s`、`ox = anim × 1` |
+| `--frames 300` | `t=5.00s`、`ox = anim × 5` |
+
+ash_forest 的雪/雾层 `offsetAnimX/Y = 10`、周期 128 ⇒ 10 px/s、12.8 s 走完一个周期。

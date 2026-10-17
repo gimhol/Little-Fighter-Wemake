@@ -862,7 +862,12 @@ void LfwGodot::_process(double p_delta) {
     return;
   }
   // 节拍只决定「这一帧推几步」；固定步长永远是 `_host->step_ms()`（§G3 第 3 条）。
-  double pacing = _args.delta > 0.0 ? _args.delta : p_delta;
+  // ⚠ 开放模式（`--play`，`frames = 0`）必须用**真墙钟**（`p_delta`）：用 `--delta` 的话，
+  // 窗口里 `_process` 跑几百 fps 时读作"每帧固定 17ms"⇒ 游戏按几十倍速跑（用户报的
+  // "为什么游戏速度这么快"）。验收模式仍用 `--delta` 固定节拍：`--frames N` 必须恰好 N 步，
+  // 与机器快慢无关。
+  const bool real_time = _args.frames <= 0;
+  double pacing = real_time ? p_delta : (_args.delta > 0.0 ? _args.delta : p_delta);
   if (!(pacing > 0.0)) pacing = 1.0 / 60.0;  // 节拍兜底：别让 0 delta 把验收卡死
   _host->accumulate(pacing);
 
