@@ -11206,3 +11206,11 @@ if (dt > 0.0) _uv_time += dt / 1000.0;   // 秒
 | `--frames 300` | `t=5.00s`、`ox = anim × 5` |
 
 ash_forest 的雪/雾层 `offsetAnimX/Y = 10`、周期 128 ⇒ 10 px/s、12.8 s 走完一个周期。
+### 152.5. 两个符号（2026-10-18 修）
+
+* **UV 的 y**：`uv_oy` 与 TS `tex.offset.y` 同号，而 TS 的 v 轴**向上**、屏幕 y **向下** ⇒
+  屏幕位移 = `+uv_oy`（x 一圈不用翻：`-uv_ox`）。tile 循环的起点取 `fmod(uv_oy,py) - py`，
+  落在 `(-py, 0]`，保证第一块盖住上边缘。
+* **Model 旋转**：`facing < 0` 的镜像只做一次（`scale.x` 取负），旋转**不要**再翻 `ry/rz`。
+  3D 画布（`SubViewport` + 正交相机在 +Z 看向原点）本身就是 y 向上，不存在 2D 那条
+  "屏幕 y = h - 世界 y" 的镜像。

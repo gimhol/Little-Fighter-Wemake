@@ -862,11 +862,12 @@ void LfwGodot::_process(double p_delta) {
     return;
   }
   // 节拍只决定「这一帧推几步」；固定步长永远是 `_host->step_ms()`（§G3 第 3 条）。
-  // ⚠ 开放模式（`--play`，`frames = 0`）必须用**真墙钟**（`p_delta`）：用 `--delta` 的话，
-  // 窗口里 `_process` 跑几百 fps 时读作"每帧固定 17ms"⇒ 游戏按几十倍速跑（用户报的
-  // "为什么游戏速度这么快"）。验收模式仍用 `--delta` 固定节拍：`--frames N` 必须恰好 N 步，
-  // 与机器快慢无关。
-  const bool real_time = _args.frames <= 0;
+  // ⚠ **有窗口就必须真墙钟**：以前一律用 `--delta`（验收惯例 0.017）当节拍，窗口里
+  // `_process` 跑几百 fps 时就读作"每帧固定 17ms"⇒ 游戏按几十倍速跑（用户报的
+  // "为什么游戏速度这么快"）。headless（验收 / 截图）保持固定节拍：`--frames N` 要飞快跑完，
+  // 与机器快慢无关（步数与 `--frames` 一一对应，摘要只看步数）。
+  const bool real_time =
+      _args.frames <= 0 || godot::DisplayServer::get_singleton()->get_name() != "headless";
   double pacing = real_time ? p_delta : (_args.delta > 0.0 ? _args.delta : p_delta);
   if (!(pacing > 0.0)) pacing = 1.0 / 60.0;  // 节拍兜底：别让 0 delta 把验收卡死
   _host->accumulate(pacing);
@@ -2721,7 +2722,11 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
     const double py = item.uv_py > 0.0 ? item.uv_py : item.h;
     if (px > 0.0 && py > 0.0) {
       const double ox = -std::fmod(item.uv_ox, px);
-      const double oy = -std::fmod(item.uv_oy, py);
+      // ⚠ y 是**反的**：`uv_oy` 是纹理 v 方向的相位（与 TS 的 `tex.offset` 同号、v 向上），
+      // 屏幕 y 向下 ⇒ 屏幕位移取 **+uv_oy**。写成 `-` 会让雪/雾往上飘（用户报的"垂直方向反了"）。
+      // 循环起点压到 `(-py, 0]`（减一个周期，等价），否则第一块下面会留一条空档。
+      double oy = std::fmod(item.uv_oy, py);
+      if (oy > 0.0) oy -= py;
       const auto tile_pass = [&](const Color& c) {
         for (double gy = oy; gy < item.h; gy += py) {
           for (double gx = ox; gx < item.w; gx += px) {

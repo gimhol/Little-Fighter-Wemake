@@ -686,10 +686,10 @@ void GodotWorldRenderer::emit_model(GodotFrame& frame, const Entity& e, const Va
   if (missing(lfw::field_or(model, u"rotation"))) fz = num_or(model, u"rad");
   const Quat qa = quat_mul(quat_from_euler_xyz(bx, by, bz), quat_from_euler_xyz(fx, fy, fz));
   euler_xyz_from_quat(qa, spec.rx, spec.ry, spec.rz);
-  if (e.facing < 0) {
-    spec.ry = -spec.ry;
-    spec.rz = -spec.rz;
-  }
+  // ⚠ **不要**再按 `facing` 翻 y/z：模型的镜像已经由 `spec.sx = facing * …`（负 x 缩放）
+  // 带出来了（TS 也是 `model_node.scale.x = facing * …` 之后再 `rotation.set(...)`）——
+  // 两者都翻等于翻两次，旋转方向就反了（用户报的"Model 的旋转似乎也反了"）。
+  // 3D 画布本身是 y 向上的（相机 +Z 看向原点）⇒ 也没有"屏幕 y 向下"的镜像要补。
 
   const double b_sx = num_sub(info, u"scale", u"x", 1.0);
   const double b_sy = num_sub(info, u"scale", u"y", 1.0);
