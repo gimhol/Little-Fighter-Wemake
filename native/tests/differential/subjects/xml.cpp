@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <functional>
 #include <map>
 #include <memory>
@@ -35,6 +36,7 @@
 #include "lfw/dat_translator/xml/xml_x_dialog_info.h"
 #include "lfw/dat_translator/xml/xml_x_difficulty_map.h"
 #include "lfw/dat_translator/xml/xml_x_director.h"
+#include "lfw/utils/utf8.h"
 #include "lfw/dat_translator/xml/xml_x_drink_info.h"
 #include "lfw/dat_translator/xml/xml_x_entity_data.h"
 #include "lfw/dat_translator/xml/xml_x_entity_info.h"
@@ -518,6 +520,24 @@ int main(int argc, char** argv) {
     } else if (op == "ddel") {
       lfw::Object* o = lfw::as_object(g_data[t[i++]]);
       o->remove(key_of(t[i++]));
+    } else if (op == "dxml") {
+      // 真实数据：读仓库里的 XML 文件（cwd = 仓库根）→ `ToolXML::parse` → `xml_to_directors`。
+      const std::string name = t[i++];
+      const std::string file = t[i++];
+      std::ifstream input(file, std::ios::binary);
+      if (!input) {
+        std::fprintf(stderr, "cannot open '%s' at line %d\n", file.c_str(), lineno);
+        return 2;
+      }
+      const std::string text((std::istreambuf_iterator<char>(input)),
+                             std::istreambuf_iterator<char>());
+      const std::vector<uint8_t> bytes(text.begin(), text.end());
+      const std::shared_ptr<lfw::IXMLElement> root = g_xml.parse(lfw::decode_utf8(bytes));
+      const std::vector<lfw::Value> list = lfw::dat_translator::xml::xml_to_directors(*root);
+      push("dxml|" + name + "|n=" + std::to_string(list.size()));
+      for (size_t j = 0; j < list.size(); ++j) {
+        push("dir|" + name + "|" + std::to_string(j) + "|" + to_ascii(render_value(list[j])));
+      }
     } else if (op == "ddump") {
       const std::string name = t[i++];
       push("ddump|" + name + "|" + to_ascii(render_value(data_of(name))));

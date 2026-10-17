@@ -2051,3 +2051,15 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   是 TS `typeof raw === "object"` 的错译 —— JS 里**数组也是 object**，端口的 `as_object`
   对数组给 `nullptr` ⇒ XML 那一路（拿到的是 `Array`）被判成"不是对象"，
   `cases=0`（页面能开、用例一个都没有）。修法：先判 `as_array`，再判对象。
+---
+
+### 2026-10-18（七）：17 份真实导演数据的往返钉子
+
+* 新 op `dxml <name> <path>`（`subjects/xml.{ts,cpp}` 各一份）：读仓库里的 XML 文件
+  （cwd = 仓库根）→ `ToolXML::parse` / `XMLParser` → `xml_to_directors` →
+  逐个 `render_value` dump（`dxml|<name>|n=<count>` + `dir|<name>|<i>|<render>`）。
+* 新用例 `cases/xml/directors_real.txt`：`lf2s/origin/prel_data/directors/` 的**全部 17 份**
+  真实 XML，一次跑出 **99 行**逐字节对齐（含 82 份 `IDirectorData` 的完整结构：actors / 布局表达式 /
+  setup / auto / timeline）。这条钉子补的正是 TS 那份 `src/Tests/director_xml.test.ts` 单测在
+  端口侧的空白 —— 之前只有我手写的小样（`cases/xml/director.txt`）。
+* 差分 **264/264**、lint 9771 anchors。

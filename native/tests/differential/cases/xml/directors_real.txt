@@ -1,0 +1,18 @@
+# 17 份真实导演数据：parse → xml_to_directors → dump（逐字节比 TS）
+dxml 00_misc lf2s/origin/prel_data/directors/00_misc.director.xml
+dxml 01_julian lf2s/origin/prel_data/directors/01_julian.director.xml
+dxml 02_firzen lf2s/origin/prel_data/directors/02_firzen.director.xml
+dxml 03_bat lf2s/origin/prel_data/directors/03_bat.director.xml
+dxml 04_jan lf2s/origin/prel_data/directors/04_jan.director.xml
+dxml 05_henry lf2s/origin/prel_data/directors/05_henry.director.xml
+dxml 06_rudolf lf2s/origin/prel_data/directors/06_rudolf.director.xml
+dxml 07_firen lf2s/origin/prel_data/directors/07_firen.director.xml
+dxml 08_freeze lf2s/origin/prel_data/directors/08_freeze.director.xml
+dxml 09_louis lf2s/origin/prel_data/directors/09_louis.director.xml
+dxml 10_moon lf2s/origin/prel_data/directors/10_moon.director.xml
+dxml 11_others lf2s/origin/prel_data/directors/11_others.director.xml
+dxml 12_bots lf2s/origin/prel_data/directors/12_bots.director.xml
+dxml 13_balls lf2s/origin/prel_data/directors/13_balls.director.xml
+dxml 14_boomerangs lf2s/origin/prel_data/directors/14_boomerangs.director.xml
+dxml 15_weapons lf2s/origin/prel_data/directors/15_weapons.director.xml
+dxml 16_books lf2s/origin/prel_data/directors/16_books.director.xml

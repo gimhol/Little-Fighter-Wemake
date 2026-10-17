@@ -44,6 +44,8 @@
 //   xml_2_t_next_frame <tag> / xml_2_qube [outvar|-] / xml_to_velocity_info [outvar|-] /
 //   parse_rect_qube；写口 fn：xml_x_bdy / xml_x_itr / xml_x_armor_info / xml_x_chase /
 //   xml_x_bpoint / xml_x_wpoint / xml_x_cpoint / xml_x_next_frame / xml_x_colli_action。
+import { readFileSync } from "node:fs";
+
 import { merge_by_tag } from "../../../../src/LFW/dat_translator/xml/merge_by_tag";
 import { non_empty, one_or_arr } from "../../../../src/LFW/dat_translator/xml/one_or_arr";
 import { parse_rect_qube } from "../../../../src/LFW/dat_translator/xml/parse_rect_qube";
@@ -400,6 +402,15 @@ function main(): void {
     } else if (op === "ddel") {
       const o = data.get(next()) as Record<string, unknown>;
       delete o[keyOf(next())];
+    } else if (op === "dxml") {
+      // 真实数据的一次性覆盖：读仓库里的 XML 文件（cwd = 仓库根）→ parse → `xml_to_directors`
+      // 逐个 dump。第 4CJ 的 17 份 `prel_data/directors/*.xml` 全靠这条钉子。
+      const name = next();
+      const file = next();
+      const root = xml.parse(readFileSync(file, "utf8"));
+      const list = xml_to_directors(root as never);
+      log.push(`dxml|${name}|n=${list.length}`);
+      for (let j = 0; j < list.length; ++j) log.push(`dir|${name}|${j}|${renderValue(list[j])}`);
     } else if (op === "ddump") {
       const name = next();
       log.push(`ddump|${name}|${renderValue(data.get(name))}`);

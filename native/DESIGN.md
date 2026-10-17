@@ -11111,3 +11111,15 @@ Godot headless + `--ui-page test_cases_page`：
 `groups=17 cases=82`（临时 warn 打印，验证后已删）→ 第一组第一例 "None" `entities=0`
 → 按 `d` 切到 0-1「All Fighters」→ `entities=26 hp=13000`。
 三条宿主摘要（300/prel、900/stage 1、600/vs stage 0）不经过测试页 ⇒ 逐位不变。
+### 151. 真实导演数据的往返钉子（2026-10-18）
+
+`dxml <name> <path>`（`subjects/xml.{ts,cpp}`）：`readFileSync` / `std::ifstream` 读仓库里的
+XML（cwd 就是仓库根，两侧同一份路径）→ 各自的 `parse`（TS `fast-xml-parser` / 端口
+`ToolXML::parse`）→ `xml_to_directors` → 逐个 `render_value` 打 `dir|<name>|<i>|<render>`。
+
+用例 `cases/xml/directors_real.txt` 把 `lf2s/origin/prel_data/directors/` 下**全部 17 份**都钉上，
+输出 99 行、82 份 `IDirectorData`。这比手写小样（`cases/xml/director.txt`，四块十六行）强的地方在于：
+真实数据里的写法（`values` 里 `team`/`mp`/`hp` 混排、`layout` 的表达式字符串、`timeline` 的
+`repeat`+`interval` 嵌套、`auto` 的 `when` 组合）都是作者写的，不是我想出来的。
+
+⚠ 依赖 cwd：两条命令都必须从仓库根启动（`native/tools/native.mjs test` 就是这么起的）。
