@@ -1266,6 +1266,21 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
 * 诊断面顺带加了三样（`[godot] render:` 那一行，不进摘要）：`rot=<条数>@<角度>`、
   `model=<条数>[<path>|<anim>]`、以及加载报告 `[godot] models: loaded/failed/live + 每个 glb 的
   (anims=N,box=…)`。
+* **（补）"血条应该是多层的"** —— 不是代码问题，是**本地数据包过期**：`dist/prel.zip` 是
+  **2026-09-30** 的，而 `lf2s/origin/prel_data/ui/fighter_stat_l|r|s.ui.json5` 在 **2026-10-07**
+  的提交「血条！」里才改成 **5 段**（`hp_t0..hp_t4` = `#f53535`/`#ffaa25`/`#27ee27`/`#4682B4`/`#a7beff`，
+  `dark_hp_t0..t4` 同理）⇒ 端口解压出来的 `native/build/host-data/prel` 里 `hp` 只有一块
+  `#EE3F3A`，按 TS 的规则（`FighterStatBar.update_tiers` 要求 `children.length >= 2`，每 500 血一段）
+  自然一动不动、也不分层。
+  修法（不是改代码）：`npm run build:prel`（产物在 `public/prel.zip`，vite build 再拷进 `dist/`）
+  → 覆盖 `dist/prel.zip` → 重新解压 `native/build/host-data/prel`。实测：
+  * 新布局里 `hp_t0..t4` / `dark_hp_t0..t4` 都在 ⇒ 2500 血的 Stage Mode 是**五段彩色**、掉血从
+    第 5 段开始缩；
+  * 三条宿主摘要**逐位不变**（prel 只影响 UI/启动资源，不进模拟）；
+  * 差分 261/261 照过。
+  ⚠ **踩坑记录**：`native/build/host-data/{prel,data}` 是**构建产物**（git 忽略），只在自己解压时
+  更新 —— 数据源在 `lf2s/` 里改了，端口会**悄悄继续跑旧数据**，表现就是"Web 版有、Godot 没有"。
+  改了 `lf2s/origin/**` 之后记得 `npm run build:prel`/`build:data` + 重解压。
 * lint 基线更新：**923 clean / 0 failed / 94 warnings**（多的 84 条来自 `tests.cpp` 里那张
   裸指针用例表 —— `Tests` 的 `_owned/_retired` 为了"不完整类型"故意用裸指针，见类头注释）。
 
