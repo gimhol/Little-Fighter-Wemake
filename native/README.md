@@ -2062,4 +2062,8 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   真实 XML，一次跑出 **99 行**逐字节对齐（含 82 份 `IDirectorData` 的完整结构：actors / 布局表达式 /
   setup / auto / timeline）。这条钉子补的正是 TS 那份 `src/Tests/director_xml.test.ts` 单测在
   端口侧的空白 —— 之前只有我手写的小样（`cases/xml/director.txt`）。
-* 差分 **264/264**、lint 9771 anchors。
+* 差分 **264/264**、lint 9771 anchors。* **17 组实跑（Godot headless，`--ui-page test_cases_page`，每 25 帧按一次 `s`）**：各组生成实体数依次为
+  `9, 1, 9, 9, 57, 2, 11, 11, 4, 3, 32, 2, 2, 2, 8, 9, 0`（第 17 次回到 0 组 "None"、本来就是空场），
+  每组的 digest 都不同 ⇒ 导演都在动，没有"空壳组"。截图
+  `shots/cases-books.png`（第 16 组）：顶栏 `Case: 16-0 Red Book: GroupAttack`、场上
+  justin + 6 个 bandit 两排 + 悬浮的红书 ⇒ 数据里的 `actors` / `layout` / `values` / `setup` 都在生效。
