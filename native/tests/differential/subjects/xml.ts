@@ -71,6 +71,14 @@ import {
 } from "../../../../src/LFW/dat_translator/xml/xml_x_colli_action";
 import { xml_2_cpoint, xml_x_cpoint } from "../../../../src/LFW/dat_translator/xml/xml_x_cpoint";
 import { xml_2_dat_index, xml_x_dat_index } from "../../../../src/LFW/dat_translator/xml/xml_x_dat_index";
+import {
+  xml_2_director,
+  xml_2_director_index,
+  xml_to_directors,
+  xml_x_director,
+  xml_x_director_index,
+  xml_x_directors,
+} from "../../../../src/LFW/dat_translator/xml/xml_x_director";
 import { xml_2_dialog_info, xml_x_dialog_info } from "../../../../src/LFW/dat_translator/xml/xml_x_dialog_info";
 import {
   xml_2_difficulty_map,
@@ -174,6 +182,9 @@ const readers: Record<string, ReaderFn> = {
     xml_to_velocity_info(e as never, reader_arg_data(a, 0) as never),
   parse_rect_qube: (e) => parse_rect_qube(e as never),
   xml_2_dat_index: (e) => xml_2_dat_index(e as never),
+  xml_2_director: (e) => xml_2_director(e as never),
+  xml_2_director_index: (e) => xml_2_director_index(e as never),
+  xml_to_directors: (e) => xml_to_directors(e as never),
   xml_2_difficulty_map: (e, a) => xml_2_difficulty_map(e as never, keyOf(a[0]!)),
   xml_2_map: (e, a) =>
     xml_2_map(e as never, keyOf(a[0]!), (parsers[a[1]!] ?? fail(`unknown map reader '${a[1]}'`)) as never),
@@ -226,6 +237,7 @@ const parsers: Record<string, ParserFn> = {
   xml_2_next_frame: (c) => xml_2_next_frame(c) as never,
   xml_2_colli_action: (c) => xml_2_colli_action(c) as never,
   xml_2_dat_index: (c) => xml_2_dat_index(c) as never,
+  xml_2_director: (c) => xml_2_director(c as never) as never,
   xml_2_picture_info: (c) => xml_2_picture_info(c) as never,
   xml_2_frame_pic: (c) => xml_2_frame_pic(c) as never,
   xml_2_model_info: (c) => xml_2_model_info(c) as never,
@@ -255,6 +267,9 @@ const writers: Record<string, WriterFn> = {
   xml_x_next_frame: (x, d, tag) => xml_x_next_frame(x, d as never, tag),
   xml_x_colli_action: (x, d, tag) => xml_x_colli_action(x, d as never, tag),
   xml_x_dat_index: (x, d, tag) => xml_x_dat_index(x, d as never, tag === "-" ? undefined : tag),
+  xml_x_director: (x, d, tag) => xml_x_director(x, d as never, tag === "-" ? undefined : tag),
+  xml_x_directors: (x, d) => xml_x_directors(x, d as never),
+  xml_x_director_index: (x, d, tag) => xml_x_director_index(x, d as never, tag),
   xml_x_picture_info: (x, d, tag) => xml_x_picture_info(x, d as never, tag),
   xml_x_frame_pic: (x, d, tag) => xml_x_frame_pic(x, d as never, tag),
   xml_x_model_info: (x, d, tag) => xml_x_model_info(x, d as never, tag),

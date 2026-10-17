@@ -34,6 +34,7 @@
 #include "lfw/dat_translator/xml/xml_x_dat_index.h"
 #include "lfw/dat_translator/xml/xml_x_dialog_info.h"
 #include "lfw/dat_translator/xml/xml_x_difficulty_map.h"
+#include "lfw/dat_translator/xml/xml_x_director.h"
 #include "lfw/dat_translator/xml/xml_x_drink_info.h"
 #include "lfw/dat_translator/xml/xml_x_entity_data.h"
 #include "lfw/dat_translator/xml/xml_x_entity_info.h"
@@ -124,6 +125,11 @@ std::shared_ptr<lfw::IXMLElement> call_writer(const std::string& fn, lfw::IXML& 
   if (fn == "xml_x_dat_index") {
     return use_default_tag ? xml_x_dat_index(xml, d) : xml_x_dat_index(xml, d, tag);
   }
+  if (fn == "xml_x_director") {
+    return use_default_tag ? xml_x_director(xml, d) : xml_x_director(xml, d, tag);
+  }
+  if (fn == "xml_x_directors") return xml_x_directors(xml, d);
+  if (fn == "xml_x_director_index") return xml_x_director_index(xml, d, tag);
   if (fn == "xml_x_picture_info") return xml_x_picture_info(xml, d, tag);
   if (fn == "xml_x_frame_pic") return xml_x_frame_pic(xml, d, tag);
   if (fn == "xml_x_model_info") return xml_x_model_info(xml, d, tag);
@@ -201,6 +207,15 @@ lfw::Value call_reader(const std::string& fn, lfw::IXMLElement* e,
   }
   if (fn == "parse_rect_qube") return parse_rect_qube(*e);
   if (fn == "xml_2_dat_index") return xml_2_dat_index(*e);
+  if (fn == "xml_2_director") return xml_2_director(*e);
+  if (fn == "xml_2_director_index") return xml_2_director_index(*e);
+  if (fn == "xml_to_directors") {
+    auto arr = std::make_shared<lfw::Array>();
+    for (const lfw::Value& v : lfw::dat_translator::xml::xml_to_directors(*e)) {
+      arr->push_back(v);
+    }
+    return lfw::Value(std::move(arr));
+  }
   if (fn == "xml_2_difficulty_map") return xml_2_difficulty_map(*e, key(0));
   if (fn == "xml_2_map") return xml_2_map(*e, {key(0)}, parser_by_name(args.at(1)));
   if (fn == "xml_2_map2") {
@@ -260,6 +275,9 @@ std::function<lfw::Value(const lfw::IXMLElement&)> parser_by_name(const std::str
   }
   if (fn == "xml_2_dat_index") {
     return [](const lfw::IXMLElement& e) { return xml_2_dat_index(e); };
+  }
+  if (fn == "xml_2_director") {
+    return [](const lfw::IXMLElement& e) { return xml_2_director(e); };
   }
   if (fn == "xml_2_picture_info") {
     return [](const lfw::IXMLElement& e) { return xml_2_picture_info(e); };

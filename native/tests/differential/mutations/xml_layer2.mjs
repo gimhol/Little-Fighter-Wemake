@@ -431,5 +431,24 @@ export default {
       from: `  o->set(u"on_dead", xml_2_t_next_frame(el->children_by_tag(u"on_dead")));`,
       to: `  o->set(u"on_dead", xml_2_t_next_frame(el->children_by_tag(u"on_dead2")));`,
     },
+    // ------------------------------------------------------------ director
+    {
+      note: "director：velocity 的 null 不再保留",
+      file: "native/lfw/dat_translator/xml/xml_x_director.cpp",
+      from: `      ret->set(key, trim_str(*raw) == u"null" ? Value(NullTag{}) : to_expr(*raw));`,
+      to: `      ret->set(key, to_expr(*raw));`,
+    },
+    {
+      note: "director：key_up=all 不经特例",
+      file: "native/lfw/dat_translator/xml/xml_x_director.cpp",
+      from: `  if (std::u16string(name) == u"key_up" && trim_str(*raw) == u"all") return str_value(u"all");`,
+      to: `  if (std::u16string(name) == u"never") return str_value(u"all");`,
+    },
+    {
+      note: "director：表达式不再分辨纯数字",
+      file: "native/lfw/dat_translator/xml/xml_x_director.cpp",
+      from: `  return is_expr_number(text) ? Value(string_to_number(text)) : Value(raw);`,
+      to: `  return Value(raw);`,
+    },
   ],
 };

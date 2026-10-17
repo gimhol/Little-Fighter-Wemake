@@ -1926,9 +1926,7 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   新文件 `dat_translator/xml/xml_x_director.{h,cpp}` 里的 `xml_2_director_index` /
   `xml_x_director_index`（`id`/`file` 带 `?? ""` 缺省，`name`/`skipped` 有则加、无则无键；
   反写固定四属性），两个 `*_data_lists` 都接上（`directors` 走 `xml_x_director_index`）。
-  ⚠ `xml_2_director` / `xml_to_directors` / `xml_x_director*`（745 行那份 DSL）**尚未移植**，
-  下一个切片（4CJ）才做；现在若文件里真有 `<director>` 子节点，端口只会给出空对象列表
-  —— 现有台面没有这种输入。
+  （同一天的下一刀把 745 行 DSL 全量补齐，见本节末尾。）
 * **`IsSurvialRankMode` 取值对齐** —— TS 的 getter 从 `survival_rank_available` 改成
   `survival_rank_mode`（`get_val_from_entity.ts:74`），端口跟着改
   （`get_val_from_entity.cpp` 的 `is_survial_rank_mode`），变异锚点反向重写为

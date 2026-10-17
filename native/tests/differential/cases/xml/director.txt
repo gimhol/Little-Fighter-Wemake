@@ -1,0 +1,30 @@
+# 数据驱动的关卡导演（director DSL）：写→读往返（xml_x_director / xml_2_director）
+# 覆盖 stage / actors（line+circle 布局、values）/ groups / setup（各 op）/ auto / timeline
+
+# ---- 1) 全量 director ----
+dv d1 o 8 name s "demo" bg s "bg_x" stage o 3 left n 100 right n 300 near n 50 actors a 2 o 8 id s "a1" oid a 2 s "julian" s "firen" source s "fighters" half s "first" count n 2 at s "mid" x s "midX - 50" layout o 4 type s "line" axis s "x" x s "midX" length s "width - 120" o 6 id s "a2" x n 5 y n 10 z s "midZ" group s "g1" ctrl s "bot" groups o 1 g1 a 2 s "@fighters" s "a2" setup a 3 o 3 op s "input" target s "@fighters" actions a 2 o 1 click a 1 s "A" o 2 key_down a 2 s "U" s "D" key_up s "all" o 3 op s "set" target s "@fighters" values o 2 team s "2" hp n 100 o 3 op s "camera" dest a 2 s "midX" s "0" unlock b 1 auto a 1 o 3 target s "@fighters" when o 2 mp_gt n 50 frame_hit s "x" actions a 1 o 1 click a 1 s "J" timeline o 2 times n 3 entries a 3 o 1 wait n 100 o 3 repeat n 2 interval n 500 entries a 1 o 1 wait n 50 o 2 after n 200 actions a 1 o 1 op s "reset"
+wrv d1e xml_x_director d1 -
+dvp d1p xml_2_director d1e
+ddump d1p
+
+# ---- 2) 每种 action 的往返 ----
+dv d2 o 2 name s "acts" setup a 14 o 2 op s "bg" id s "bg2" o 2 op s "stage" values o 2 width n 100 depth n 50 o 4 op s "place" target s "@a" at s "mid" dx s "dx+1" o 3 op s "move" target s "@a" dz n 5 o 3 op s "face" target s "@a" at s "left" o 4 op s "velocity" target s "@a" x n 1 z z o 3 op s "frame" target s "@a" id s "f3" o 4 op s "pickup" target s "@a" weapon s "w1" if_empty b 1 o 4 op s "cycle" target s "@a" property s "team" values a 3 s "1" s "2" s "3" o 3 op s "throw_spot" target s "@a" from s "hand" o 1 op s "reset" o 3 op s "cmd" name s "spawn" args a 2 s "x" s "y" o 3 op s "move" target s "@a" dy s "dy*2" o 4 op s "place" target s "@a" at s "mid" requires s "w1"
+wrv d2e xml_x_director d2 -
+dvp d2p xml_2_director d2e
+ddump d2p
+
+# ---- 3) 空壳 director / 圆的布局 / 分组索引 ----
+dv d3 o 3 name s "" actors a 1 o 3 id s "a1" x n 1 layout o 4 type s "circle" radius n 100 rx n 10 rz n 20 auto a 1 o 2 target s "a1" actions a 1 o 1 key_down a 1 s "U"
+wrv d3e xml_x_director d3 -
+dvp d3p xml_2_director d3e
+ddump d3p
+
+# ---- 4) <directors> 组 + 索引 ----
+dv g1 o 3 id s "misc" name s "Misc" directors a 2 o 1 name s "None" o 2 name s "All Fighters" bg s "bg1"
+wrv g1e xml_x_directors g1 -
+dvp g1p xml_to_directors g1e
+ddump g1p
+dv idx o 4 id s "misc" file s "dir/misc.xml" name s "Misc" skipped s "1"
+wrv ixe xml_x_director_index idx directors
+dvp ixp xml_2_director_index ixe
+ddump ixp

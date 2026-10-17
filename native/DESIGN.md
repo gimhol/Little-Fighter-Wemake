@@ -10867,9 +10867,7 @@ TS 把"关卡导演"也做成数据（`lf2s/origin/prel_data/directors/*.xml` 17
 | `xml_x_director_index` | `xml_x_director_index` | 固定写 `id/file/name/skipped`（undefined 的 `set_attr` 自然跳过） |
 
 `xml_2_data_lists` / `xml_from_data_lists` 的组表从 5 项扩到 6 项，第 6 项走 `xml_x_director_index`。
-⚠ 745 行的 director DSL（`xml_2_director` / `xml_to_directors` / `xml_x_director*`、布局表达式、
-timeline/auto 规则）**尚未移植** —— 那个输入现在不在任何台面里，端口若遇到 `<director>` 子节点
-只会产出空索引（明确留待 4CJ）。
+（DSL 全量已在同一天的下一刀补齐，见 §147。）
 
 ### 144.3. `IsSurvialRankMode` 对齐
 
@@ -10953,3 +10951,37 @@ factor := ('+'|'-') factor | '(' expr ')' | \d+(\.\d+)? | [A-Za-z_][A-Za-z0-9_]*
 `subjects/helpers.{ts,cpp}` 的 `evctx` / `evn` 两个 op：`evn` 收 `parseValue` 的带标签值
 （`u`/`z`/`n`/`s`），出错打 `evn:err`；用例 `cases/helpers/eval.txt` 覆盖四则 + 优先级 + 括号 +
 一元 + 名字 + decimal + 五种语法错。4 条变异锚点在 `mutations/helpers.mjs`。
+## 147. `xml_x_director` 全量（数据驱动导演 DSL，2026-10-18）
+
+`src/LFW/dat_translator/xml/xml_x_director.ts`（745 行）整支搬成
+`native/lfw/dat_translator/xml/xml_x_director.{h,cpp}`，数据形状是 `Value`（`Object` 保插入序，
+与 TS 的对象字面量同序 —— 序不对 `render_value` 的 dump 就对不上）。
+
+### 147.1. 两层
+
+| 读 | 写 | 说明 |
+|---|---|---|
+| `xml_2_director_index` | `xml_x_director_index` | 索引：`id`/`file`（`?? ""`）+ 可选 `name`/`skipped` |
+| `xml_2_director` / `xml_to_directors` | `xml_x_director` / `xml_x_directors` | 整份导演数据 → 元素 / 反向 |
+
+### 147.2. 几个容易漏的口径
+
+* **`TNumberExpr`**：`expr_attr` 只在**整串**匹配 `^-?\d+(\.\d+)?$` 时给 `double`，否则原字符串
+  留给 `utils/eval_number`（§146）。`-0`/`1.`/`1.5e3` 里的 `1.` 与科学计数法都**不算**数字。
+* **`str_or_strs`**：一个值给 `string`，多个给 `string[]`（`oid="a,b"` ⇒ `[a,b]`，`oid="a"` ⇒ `a`）。
+* **`key_up="all"`**：只有 `key_up` 这一个属性有 `"all"` 这个特例（其余键按逗号切）。
+* **`velocity` 的 `"null"`**：`x/y/z` 里写字面量 `null` ⇒ JS `null`（`NullTag`），
+  不是字符串 `"null"`，也不是"缺省"。写回时再变回字符串 `"null"`。
+* **`parse_values`**：`<values json="…">` 先 `Object.assign`、再按属性逐条、最后 `<value>` 子元素；
+  键序=插入序（重复键原位覆盖）。
+* **`<value type>`**：`num` / `bool`（`"true"`/`"1"`）/ `strs` / `nums` / `json` / 其余按 `str`。
+  `strs` 缺属性时回落 `text.split(",")`；`nums` 同理逐个 `Number()`。
+
+### 147.3. 台面
+
+`subjects/xml.{ts,cpp}` 的 `wrv`/`dvp` 函数表各加 5 个名字
+（`xml_x_director` / `xml_x_directors` / `xml_x_director_index` / `xml_2_director` /
+`xml_2_director_index` / `xml_to_directors`），新用例 `cases/xml/director.txt`
+四块：全量 director（stage/actors+两种布局/groups/setup/auto/timeline）、
+每种 action 的往返、空壳+圆布局、`<directors>` 组 + 索引。差分 **263/263**。
+⚠ 真实 `prel_data/directors/*.xml`（17 份）还没进台面 —— 那是下一刀 `DatMgr` 装载时的事。
