@@ -660,5 +660,26 @@ void Stage::update() {
   check_dialog_end();
 }
 
+
+// `Object.assign(stage, {near, far})`（导演的 `stage` 动作）：TS 的两个裸字段在端口是
+// `_near` / `_far`（`near` / `far` 是 `<windows.h>` 的宏名），这里是唯一写口。
+void Stage::assign_number(const std::u16string& key, double v) {
+  if (key == u"left") { left = v; return; }
+  if (key == u"right") { right = v; return; }
+  if (key == u"near") { _near = v; return; }
+  if (key == u"far") { _far = v; return; }
+  if (key == u"width") { width = v; return; }
+  if (key == u"depth") { depth = v; return; }
+  if (key == u"player_l") { player_l = v; return; }
+  if (key == u"player_r") { player_r = v; return; }
+  if (key == u"cam_l") { cam_l = v; return; }
+  if (key == u"cam_r") { cam_r = v; return; }
+  if (key == u"enemy_l") { enemy_l = v; return; }
+  if (key == u"enemy_r") { enemy_r = v; return; }
+  if (key == u"drink_l") { drink_l = v; return; }
+  if (key == u"drink_r") { drink_r = v; return; }
+  if (key == u"phase_time") { phase_time = v; return; }
+  if (key == u"dialog_time") { dialog_time = v; return; }
+}
 }
 }

@@ -1,4 +1,4 @@
-#include "lfw/ui/component/action_director.h"
+#include "lfw/director/action_director.h"
 
 #include <algorithm>
 #include <cmath>
@@ -6,7 +6,7 @@
 #include "lfw/utils/math/base.h"
 
 namespace lfw {
-namespace ui {
+namespace director {
 
 double ActionDirector::end_time() const {
   return !_actions.empty() ? _actions.back().time : 0.0;

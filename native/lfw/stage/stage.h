@@ -60,6 +60,9 @@ class Stage {
   // `virtual` 只为台面脚本化，语义与原来一样）----
   virtual double far_plane() const { return _far; }
   virtual double near_plane() const { return _near; }
+  // `Object.assign(stage, {near, far})`（导演的 `stage` 动作）：TS 的两个裸字段
+  // 在端口是 `_near` / `_far`（`near` / `far` 是 `<windows.h>` 的宏名），这里是唯一写口。
+  void assign_number(const std::u16string& key, double v);
   virtual Value team() const { return Value(_team); }
   virtual bool all_boss_dead();
   virtual Value difficulty() const;

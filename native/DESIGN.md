@@ -10985,3 +10985,55 @@ factor := ('+'|'-') factor | '(' expr ')' | \d+(\.\d+)? | [A-Za-z_][A-Za-z0-9_]*
 四块：全量 director（stage/actors+两种布局/groups/setup/auto/timeline）、
 每种 action 的往返、空壳+圆布局、`<directors>` 组 + 索引。差分 **263/263**。
 ⚠ 真实 `prel_data/directors/*.xml`（17 份）还没进台面 —— 那是下一刀 `DatMgr` 装载时的事。
+## 148. `director/Director`（数据驱动导演的运行期，2026-10-18）
+
+`src/LFW/director/Director.ts` → `native/lfw/director/director.{h,cpp}`。同一天把
+`ActionDirector` 也从 `ui/component/` 搬进 `director/`（与 TS 同形），旧路径留一层
+`using` 转发头，这样 `ui/component/tests/**`（105 个手写用例）与 15 条变异锚点不用逐个改。
+
+### 148.1. 生命周期
+
+```
+start()  → ActionDirector.reset → camera.undest/unlock → _compile → _setup_scene
+restart()→ _compiled = false 后再 start
+stop()   → ActionDirector.reset + 清 actors/groups/spawned
+update(dt)→ world.paused 就直接返回；否则 ActionDirector.update(dt) + _update_auto
+```
+
+`_compile` 把 `timeline` 摊平：`wait` 推进时间并插一个空 work、`repeat` 以 `interval` 反复走
+子条目、其余按 `after` 推进并把 `actions` 逐个插进**同一时刻**；`times` 设轮数，最后 `sort()`。
+
+### 148.2. `resolve` 的选择器语法
+
+| 写法 | 含义 |
+|---|---|
+| `"@all"` | 本导演生成过的全部实体（`_spawned`） |
+| `"@fighters"` | 组（`groups` 里定义的、或 actor 的 `group` 带进来的） |
+| `"julian"` | 该 actor id 的全部实例 |
+| `"julian[-1]"` | 该 actor 的第 `n` 个实例（负数从尾数） |
+
+先全部展开再**去重保序**（TS 的 `ret.filter((e,i) => ret.indexOf(e) === i)`）。
+
+### 148.3. 与 TS 的三处有意偏差
+
+1. **`values` 是动态属性赋值**（`(e as any)[key] = value`），端口没有这种口子 ⇒ 按 17 份
+   `prel_data/directors/*.xml` 里**实际出现**的键做映射（`team`/`facing`/`mp`/`mp_max`/`hp`/
+   `hp_r`/`hp_max`/`name`/`name_visible`/`ctrl_visible`/`stat_bar`/`blinking`/`invulnerable`/
+   `wakeup_invuln`/`as_key_role`）。新增键要在 `apply_values` 里补一行，否则静默忽略。
+2. **`requires`**：TS 是 `ref[action.requires]` 的真值判断，端口只支持 `bearer`/`catcher`/
+   `holding` 三个（数据里只出现 `bearer`）。
+3. **`eval_number` 写错**：TS `throw`（整局崩），端口取 0（`nullopt` 留给装载期报警）。
+   另外 `_cycle` 的 `property` 只支持 `team`（数据里只用 team）。
+
+### 148.4. `Stage::assign_number`
+
+`Object.assign(this.world.stage, values)` 需要写 stage 的 16 个数值字段；`near`/`far` 在端口是
+`_near`/`_far`（宏名冲突），且是 `private` ⇒ 给 `Stage` 加了一个公开写口
+`assign_number(key, value)`，`switch` 覆盖 `left/right/near/far/width/depth/player_l/player_r/
+cam_l/cam_r/enemy_l/enemy_r/drink_l/drink_r/phase_time/dialog_time`。
+
+### 148.5. 覆盖状态（重要）
+
+这一片**没有差分台面**：`Director` 要真跑起来需要 ③ 的 `DatMgr`（读 `directors.index.json5`
++ 17 份 `prel_data/directors/*.xml`）与 ④ 的 `DirectorTestCase`。等 ④ 落地后，`Director` 的
+行为会经由测试模式的既有台面（`lfw` subject 的 `lfg`/`rlnew` 那一套）间接被差分覆盖。

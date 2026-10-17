@@ -281,7 +281,8 @@ add_library(lfw_core STATIC
   ui/component/move_table/move_table_logic.cpp
   ui/component/game_prepare_logic.cpp
   ui/component/launch_page_logic.cpp
-  ui/component/action_director.cpp
+  director/action_director.cpp
+  director/director.cpp
   ui/component/little_funny_auto_game.cpp
   ui/component/danmu_game_logic.cpp
   ui/component/fighter_stat_bar.cpp

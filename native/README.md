@@ -1977,3 +1977,34 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
     4 条变异锚点。差分 **262/262**、lint **9768 ok / 0 bad anchors**。
   * ⚠ TS 那边 `eval_number` 的 `ctx` 是 `Record<string, number>`（不是 `Map`）——
     台面一开始传 `Map` 直接全 err，这是**台面**的口径错，不是端口的。
+---
+
+### 2026-10-18（四）：`director/Director` 运行期（818f6f5c1 第三片）
+
+* **`ActionDirector` 回家**：`ui/component/action_director.{h,cpp}` 搬到
+  `director/action_director.{h,cpp}`（命名空间 `lfw::ui` → `lfw::director`），与 TS 的
+  `src/LFW/director/` 同形；`ui/component/action_director.h` 变成**转发头**
+  （`namespace lfw::ui { using ActionDirector = ::lfw::director::ActionDirector; }`），
+  所以 `ui/component/tests/**` 那一批 include 与 15 条变异锚点只需改 `file:` 路径。
+  ⚠ 搬命名空间后**必须全量重建**：`ninja` 只认被改的文件，旧 `.obj` 里还是
+  `lfw::ui::ActionDirector::reset` 的符号，链接期一片 LNK2001。
+* **`director/director.{h,cpp}`**：`src/LFW/director/Director.ts`（500 行）整支搬过来 ——
+  `start/restart/stop/update`、`_compile`（timeline → `ActionDirector`：`wait` / `repeat`+`interval` /
+  `after`+`actions`，最后按 `times` 设轮数并排序）、`_setup_scene`（`world.clear()` → `change_bg`
+  → 覆盖 stage → 生成 actors → 建 groups → 跑 setup）、`_run_action`（14 种 op）、
+  `_match_auto`、`_apply_keys`、`_enter_frame`、`_cycle`、`_throw_spot`。
+  布局表达式走 `utils/eval_number`（§146），`resolve()` 支持 `@all` / `@组名` / `id[下标]`
+  （负下标从尾数）且**去重保序**。
+* **`Stage::assign_number(key, v)`**：TS 的 `Object.assign(this.world.stage, values)` 在端口
+  要有写口 —— `near`/`far` 是 `<windows.h>` 的宏名（端口存 `_near`/`_far`），所以给了这个方法。
+* **与 TS 的三处有意差异**（都写进 DESIGN §148）：
+  1. `values` 的 `(e as any)[key] = value` 在端口按**导演数据里实际出现的 16 个键**映射到
+     各自 setter（`team`/`facing`/`mp`/`mp_max`/`hp`/`hp_r`/`hp_max`/`name`/`name_visible`/
+     `ctrl_visible`/`stat_bar`/`blinking`/`invulnerable`/`wakeup_invuln`/`as_key_role`）；
+  2. `requires="bearer"` 这类"看实体某字段"在端口只认 `bearer`/`catcher`/`holding`
+     （17 份导演数据里只用到 `bearer`）；
+  3. 表达式写错时 TS `throw` 整局崩，端口按 `eval_number` 的 `nullopt` 取 0（数据错误留给
+     装载期报警）。
+* **覆盖状态**：这一片只到"编译 + 与 TS 同形"，**还没有差分台面** —— `Director` 要真跑得先有
+  ③ 的 `DatMgr` 装载和 ④ 的 `DirectorTestCase`（那时 `prel_data/directors/*.xml` 的 17 份真实
+  数据会成为它的输入）。差分 263/263、lint 9771 anchors、927 clean 都没动。
