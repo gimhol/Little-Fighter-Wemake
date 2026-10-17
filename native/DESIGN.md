@@ -10921,3 +10921,35 @@ TS 的三个早退是 `return reverse;`（不是 `return !!reverse`）——`rev
 `is_enter_goto_range` / `is_leave_goto_range` / `guess_entity_pos` / `closest` /
 `nearest*` / `helper/manhattan_xz`：都是"TS 收 `Entity`、端口收 `Value` 快照"的形状，
 逐个改成 `Entity&`/`Entity*` + `env().resolve`，并同步台面。
+## 146. `utils/eval_number`（数据驱动导演的表达式求值，2026-10-18）
+
+`818f6f5c1` 的 director DSL 里所有几何量（`x="midX - 50"`、`length="width - 120"`）都是
+**数字表达式**，求值器就是 `src/LFW/utils/eval_number.ts`（73 行递归下降）。
+
+### 146.1. 语法（逐字照 TS）
+
+```
+expr   := term (('+'|'-') term)*
+term   := factor (('*'|'/') factor)*
+factor := ('+'|'-') factor | '(' expr ')' | \d+(\.\d+)? | [A-Za-z_][A-Za-z0-9_]*
+```
+
+* token 之间只吃 **空格/制表符**（不是全部 JS 空白）；首尾走 `String.prototype.trim` 的空白集
+  （端口 `is_str_white_space`）。
+* 名字查 `ctx`（TS `Record<string, number>` ⇒ 端口 `std::map<std::u16string, double>`）。
+
+### 146.2. 两处有意的口径差异
+
+| TS | 端口 | 为什么 |
+|---|---|---|
+| 出错 `throw new Error("[eval_number] invalid expression: …")` | 返回 `std::nullopt` | `native/lfw` 里**没有异常**（lint 规则 `throw - lfw has no exceptions`）|
+| `Number("12.5")` | `std::from_chars`（`<charconv>`） | `<cstdlib>` 是禁的（`strtod` 用不了）；`from_chars` 同样是正确舍入且不抛 |
+
+`nullopt` 的语义是"这行数据写错了"，**不等于 0**：调用方（将来的 `Director` 装载 / 布局）
+要自己决定报警还是跳过。`nullish` 与空串仍然是货真价实的 0（TS 同义）。
+
+### 146.3. 台面
+
+`subjects/helpers.{ts,cpp}` 的 `evctx` / `evn` 两个 op：`evn` 收 `parseValue` 的带标签值
+（`u`/`z`/`n`/`s`），出错打 `evn:err`；用例 `cases/helpers/eval.txt` 覆盖四则 + 优先级 + 括号 +
+一元 + 名字 + decimal + 五种语法错。4 条变异锚点在 `mutations/helpers.mjs`。

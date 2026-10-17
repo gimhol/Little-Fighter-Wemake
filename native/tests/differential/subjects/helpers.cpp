@@ -38,6 +38,7 @@
 #include "lfw/helper/join_queue.h"
 #include "lfw/helper/ui_helper.h"
 #include "lfw/helper/weapons_helper.h"
+#include "lfw/utils/eval_number.h"
 #include "lfw/keys.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/mersenne_twister.h"
@@ -62,6 +63,8 @@ inline double to_double(const std::u16string& s) {
 }
 
 std::vector<std::string> g_log;
+// `eval_number` 的具名量上下文（`evctx` op 填，跨行保留）。
+lfw::utils::EvalContext g_ev_ctx;
 
 void push(const std::string& line) { g_log.push_back(line); }
 
@@ -556,6 +559,15 @@ int main(int argc, char** argv) {
       }
       const lfw::Value ret = lfw::helper::pick_join_team(counts, caps, fallen_ptr, order);
       push("pick:" + fmt_id(ret));
+    } else if (op == "evctx") {
+      const std::u16string name = key_of(t[i++]);
+      const double v = to_double(t[i++]);
+      g_ev_ctx[name] = v;
+      push("evctx:" + to_ascii(name) + "=" + num(v));
+    } else if (op == "evn") {
+      const lfw::Value v = parse_value(t, i);
+      const std::optional<double> ret = lfw::utils::eval_number(v, g_ev_ctx);
+      push("evn:" + (ret ? num(*ret) : std::string("err")));
     } else {
       std::fprintf(stderr, "unknown op '%s'\n", op.c_str());
       return 2;

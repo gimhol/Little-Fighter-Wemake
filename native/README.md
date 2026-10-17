@@ -1956,3 +1956,26 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   所以这条缝不破 `Entity` ⇄ `controller` 的包含环。⚠ 同类"`Value` 快照"还有 `is_enter_goto_range` /
   `is_leave_goto_range` / `guess_entity_pos` / `closest` / `nearest*` / `helper/manhattan_xz`，
   下一步按同一套改（各自加 `resolve` 调用点 + 台面真实体）。
+---
+
+### 2026-10-18（三）：把最近的 TS 提交搬过来（`1c5d1cb0d` / `302ce9ffd` / `818f6f5c1` 第一片）
+
+* **`1c5d1cb0d`「修复无法爆甲的问题」**：`E_Val.IsSurvialRankMode` 的取值从
+  `survival_rank_available` 改成 `survival_rank_mode`（已在上一刀
+  `b2046460b` 里跟着改了 `get_val_from_entity.cpp`）。
+* **`302ce9ffd`「Bot 仅在困难及以上难度进行 Z 轴拉距」**：`BotState_Avoiding` 里
+  "贴着武器 Z 窗口移动"那一支加了难度门槛（`Difficulty.Difficult` 及以上），外围缓冲从
+  `z_pad` 换成 `round(z_pad * 3 / 2)`。端口按同一口径改（`kZKeepPadNum/Den = 3/2`
+  + `lfw::round` + `difficulty() >= Difficulty::Difficult`），非困难难度退回 `hold_UD`。
+* **`818f6f5c1`「数据驱动的 TestCases」第一片：`utils/eval_number`**：新
+  `native/lfw/utils/eval_number.{h,cpp}`，照 `src/LFW/utils/eval_number.ts`：
+  nullish ⇒ 0、number ⇒ 原值、string ⇒ `trim()` 后按
+  `expr/term/factor`（`+ - * /`、括号、一元正负、`\d+(\.\d+)?`、`[A-Za-z_]\w*` 查 ctx）解析。
+  * **两处口径差异（有意）**：TS 出错是 `throw new Error`，`native/lfw` 里没有异常（lint 规则）
+    ⇒ 返回 `std::optional<double>`（`nullopt` = 写错），调用方自己报警；
+    `#include <cstdlib>` 是禁的 ⇒ 数字走 `<charconv>` 的 `from_chars`（正确舍入、无异常）。
+  * 台面：`subjects/helpers.{ts,cpp}` 新增 `evctx <name> <n> <值>` / `evn <tagged-value>` 两个 op
+    （`evn` 出错打 `evn:err`），新用例 `cases/helpers/eval.txt`（优先失败 23 行），
+    4 条变异锚点。差分 **262/262**、lint **9768 ok / 0 bad anchors**。
+  * ⚠ TS 那边 `eval_number` 的 `ctx` 是 `Record<string, number>`（不是 `Map`）——
+    台面一开始传 `Map` 直接全 err，这是**台面**的口径错，不是端口的。

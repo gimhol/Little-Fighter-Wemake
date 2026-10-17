@@ -1,0 +1,28 @@
+# eval_number：数据驱动导演（directors/*.xml）里的数字表达式求值。
+# nullish/空串 ⇒ 0；四则 + 括号 + 一元正负；名字查 ctx；语法错 ⇒ err。
+# ---- 0) 上下文 ----
+evctx width 1200
+evctx height 600
+evctx midX 600
+evn s "width/2 - 100"
+evn s "(width-200)/2"
+evn s " -height * 0.5 "
+evn s "midX"
+evn s "2*(3+4)/7"
+evn s " +(+3) - -2 "
+evn s "midX/width*100"
+# ---- 1) 数字 / nullish / 空串 ----
+evn n 3.5
+evn n 0
+evn n -0
+evn z
+evn u
+evn s ""
+evn s "   "
+# ---- 2) 语法错 ⇒ err（名字不认识 / 括号不配 / 缺操作数 / 收尾多余） ----
+evn s "nope"
+evn s "(width"
+evn s "1 +"
+evn s "width/"
+evn s "width 1"
+evn s "width*2)"

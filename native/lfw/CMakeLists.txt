@@ -194,6 +194,7 @@ add_library(lfw_core STATIC
   utils/math/probability.cpp
   utils/math/project_to_line.cpp
   utils/utf8.cpp
+  utils/eval_number.cpp
   utils/js_add.cpp
   utils/times.cpp
   utils/read_nums.cpp
