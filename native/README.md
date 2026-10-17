@@ -2174,3 +2174,38 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   —— 修之前两处都是 `resolved=0`。
 * 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
 
+### 2026-10-18（十三）：Julian D>J 的球按上下键 Z 轴发射
+
+* 用户报「Julian D>J 的 ball 应该可以 Z 轴上下」，并指明「第一、第四个 Ball 不 Z 轴发射」——
+  对应测试数据 `01_julian.director.xml` 的六条 timeline：第 1、4 条只有 `d,R,j` / `d,L,j`，
+  其余四条各多按着 `D` / `U`，期望就是"按上下键的那几个才往上下飞"。
+* **先排除了两条错路**（`git log` + 数据/代码两侧都查过）：
+  1. `julian_ball2`（oid 229）**数据里没有任何 Z 字段** —— `dvz: 0`、`hit_j: 0`、没有 `ctrl_z`、
+     没有 `hit_Fa`（对比：D>A 的 oid 228 有 `hit_Fa: 14` ⇒ `make_fb_julian_ball` 才给了
+     `ctrl_z` + `dvz` + `acc_z` + `chase`）。所以它不是"少抄了一条"，是本来就没有。
+  2. 帧级补 `ctrl_z + dvz + acc_z` 也**无效**：`Entity::update_velocity` 里那条
+     `ctrl_z == Control && UD != 0` 分支的 `UD` 来自**球自己的控制器**，而球没有按键输入；
+     oid 228 能上下是因为它的 `chase` 让 `BallController::update_chasing` 去按 `U`/`D`。
+     一个不追敌的球永远 `UD == 0`。
+* 真正的机制是**发射瞬间的 Z 初速**：`Entity::on_spawn` 里
+  `vz = ovz + o_dvz + o_speedz * ud`，`ud = is_fighter(emitter) ? emitter.ctrl.UD : 0`
+  （U = -1 / D = +1）。所以只要给 Julian 那两个 oid 229 的 opoint 落 `speedz`，
+  扔球时按着上下键球就斜着飞；没按（第 1、4 条 timeline）`ud == 0`，还是直线。
+* 改动很小，两侧各一处（都在 `make_fighter_data_julian` 里，TS 原本就有遍历 opoint 的循环）：
+  * TS `fighters/make_fighter_data_julian.ts`：`opoint.oid === OID.JulianBall2` ⇒
+    `opoint.speedz = Defines.DEFAULT_OPOINT_SPEED_Z`（3.5）。
+  * 端口 `dat_translator/fighters/fighters.cpp`：顺手把 `boost_opoints_*` 抽成
+    `for_each_opoint_in_frame/of_frames`（oid 判定只看字符串，`===` 语义）再挂一层
+    `set_opoint_speedz_of_frames`，避免两份一模一样的遍历。
+  * `julian` 的两处 opoint 都会命中：帧 289（扔出去的球）与帧 318（球自己炸出来的那颗，
+    它的发射者是球 ⇒ `ud` 恒 0，不受影响）。
+* **新增钉子**：`cases/fighters_special/all.txt` 加一行 —— oid `"229"` 落 `speedz: 3.5`，
+  而 oid `"228"` 与**数字** `229` 不动（TS 是 `===`，字符串/数字不相等）。
+  发射那条路本来就有钉子（`cases/entity/spawn.txt` 尾段：fighter 发射者 + `keys 0 -1 0`
+  ⇒ `v.z = ovz + speedz * ud`，实测 `5 → 1`）。
+* 实跑证据（headless，测试模式走 `julian` 组第 2 例 `Julian D>J`）：六个 timeline 各自扔出的球
+  在探针里分成三种 —— 没按上下键的 `vel=9.0,0.0,0.0`（`z` 恒 -340 直线），按住 `D` 的
+  `vel.z=+3.5`，按住 `U` 的 `vel.z=-3.5`（`pos.z` 一路减）。数据侧探针（跑完即删）另证
+  真数据里 `julian` 帧 289 / 318 的 opoint `speedz = 3.50`。
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
+

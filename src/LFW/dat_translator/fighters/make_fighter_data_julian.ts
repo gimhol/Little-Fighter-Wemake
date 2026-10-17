@@ -20,6 +20,11 @@ export function make_fighter_data_julian(data: IEntityData) {
         opoint.hp = opoint.max_hp = 20;
         opoint.mp = opoint.max_mp = 150;
       }
+      if (opoint.oid === OID.JulianBall2) {
+        // D>J 的球：发射时按住上下键给它一个 Z 初速（`Entity.on_spawn` 里的 `speedz * ud`），
+        // 没按上下键时 `ud` 为 0 ⇒ 还是直着飞
+        opoint.speedz = Defines.DEFAULT_OPOINT_SPEED_Z;
+      }
     });
   }
   return data;

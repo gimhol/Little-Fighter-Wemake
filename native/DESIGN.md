@@ -11344,3 +11344,51 @@ return gen_field_eval(holder, kind, emitter.frame, emitter.data(), *lfw().mt());
 | 火人组（`s`×8，`--frames 3000`） | `resolved=0` | `calls=966 resolved=521 closures=515` |
 | 冰人组（`s`×9） | `resolved=0` | `calls=28 resolved=9 closures=3` |
 
+
+## 156. Julian D>J 的球：Z 轴靠「发射初速」而不是帧上的 `ctrl_z`（2026-10-18）
+
+需求：`D>J`（`julian` 帧 289 的 opoint，oid **229** `julian_ball2`）要能按上下键往上下飞，
+而"没按上下键的那几个"（测试导演里的第 1、4 条 timeline）保持直线。
+
+### 156.1. 数据侧本来就没有 Z
+
+`julian_ball2` 四张飞行帧是 `state 3006/3006/3000/3000`、`dvx: 18`、`dvz: 0`、`hit_j: 0`、
+没有 `ctrl_z`、没有 `hit_Fa`。对照 `julian_ball`（oid 228，D>A）有 `hit_Fa: 14` ⇒
+`make_fb_julian_ball` 才给它 `ctrl_z = 1` + `dvz = DEFAULT_OPOINT_SPEED_Z` + `acc_z = 0.05` +
+`chase{flag: EnemyFighter, lost: Hover, overshoot: 80}`。所以 229 不是漏抄，是本来没有。
+
+### 156.2. 为什么「帧级补 `ctrl_z`」不成立
+
+`Entity::update_velocity` 里那条 `control_z == SpeedCtrl::Control && UD != 0` 的 `UD` 来自
+**实体自己的控制器**（`this._ctrl`）。球由 `BallController` 驱动，而球没有键盘 ⇒ `UD` 恒 0。
+228 能上下，是因为它的 `chase` 让 `BallController::update_chasing` 按 `U`/`D`：
+`dir_z = calc_dir(p1.z, p2.z, overshoot.z)` ⇒ `key_down(U/D)` ⇒ 才走那条分支。
+**给一个不追敌的球挂 `ctrl_z` 是死代码**（`dvz=0` 时 `calc_v` 本来也保留 `vz`，行为零变化）。
+
+### 156.3. 真正的机制：`on_spawn` 的 `speedz * ud`
+
+```cpp
+// Entity::on_spawn
+const double ud = is_fighter(emitter) ? emitter.ctrl().UD : 0.0;   // U = -1 / D = +1
+double vz = z_disabled ? 0.0 : to_number(ovz) + o_dvz + o_speedz * ud;
+```
+
+`o_speedz` 就是 opoint 的 `speedz`。所以：**给 Julian 那两个 oid 229 的 opoint 落 `speedz`**
+（两侧都在 `make_fighter_data_julian` 的 opoint 循环里，值取 `Defines.DEFAULT_OPOINT_SPEED_Z`
+= 3.5）⇒ 扔球时按着上下键得到 `vz = ±3.5` 的斜飞；没按 `ud == 0`，还是直线。
+
+* `z_disabled`（球的帧是 `Normal`/`Burning` 才禁）在这里为假：229 的首帧是 3006。
+* 帧 318 那颗（球自己炸出来的、`action 40`）也会命中同一条规则，但它的发射者是**球**，
+  `is_fighter` 为假 ⇒ `ud` 恒 0，不受影响。
+* 球的 `dvz` 为 0、`ctrl_z` 未设 ⇒ `update_velocity` 走 `calc_v(vz, 0, undefined, …)` 的
+  `default` 分支，返回 `current`：初速不会被抹掉；`handle_velocity_decay` 只在贴地时调用，
+  飞行中的球也不会被衰减。
+
+### 156.4. 钉子
+
+* `cases/fighters_special/all.txt`：oid `"229"` 落 `speedz: 3.5`，oid `"228"` 与**数字** `229`
+  不动（TS 是 `===`：字符串与数字不相等）。
+* `cases/entity/spawn.txt` 尾段（既有）盯住 `speedz * ud`：fighter 发射者 + `keys 0 1 0`
+  ⇒ `v.z = ovz + speedz`、`keys 0 -1 0` ⇒ `ovz - speedz`（实测 `5 → 1`）。
+* 端口侧顺手把 `boost_opoints_*` 抽成 `for_each_opoint_in_frame / for_each_opoint_of_frames`，
+  两份 opoint 遍历不再各写一遍（`oid` 判定只有一处 ⇒ 变异锚点仍然唯一）。

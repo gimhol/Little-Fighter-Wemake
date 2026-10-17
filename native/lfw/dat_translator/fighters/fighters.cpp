@@ -16,6 +16,7 @@
 #include "lfw/defines/armor_enum.h"
 #include "lfw/defines/bdy_kind.h"
 #include "lfw/defines/collision_val.h"
+#include "lfw/defines/defines_data.h"
 #include "lfw/defines/entity_group.h"
 #include "lfw/defines/entity_val.h"
 #include "lfw/defines/hit_flag.h"
@@ -78,7 +79,10 @@ void set_armor(Value& data, const Value& armor) {
   base->set(u"armor", armor);
 }
 
-void boost_opoints_in_frame(Value& frame, const char16_t* oid_text) {
+// TS 里那几个 `frames[k].opoint?.forEach(op => op.oid === X && …)` 的公共骨架：
+// 遍历所有帧的所有 opoint，oid 命中（`===`，故只认字符串）就交给 `fn`。
+void for_each_opoint_in_frame(Value& frame, const char16_t* oid_text,
+                              const std::function<void(Object*)>& fn) {
   Value* opoints = member(frame, u"opoint");
   if (opoints == nullptr || !truthy(*opoints)) return;
   Array* a = as_array(*opoints);
@@ -90,19 +94,39 @@ void boost_opoints_in_frame(Value& frame, const char16_t* oid_text) {
     if (op == nullptr) continue;
     const Value* oid = op->get(u"oid");
     if (oid == nullptr || !strict_equals(*oid, target)) continue;
-    op->set(u"max_hp", n(20));
-    op->set(u"hp", n(20));
-    op->set(u"max_mp", n(150));
-    op->set(u"mp", n(150));
+    fn(op);
   }
 }
 
-void boost_opoints_of_frames(Value& data, const char16_t* oid_text) {
+void for_each_opoint_of_frames(Value& data, const char16_t* oid_text,
+                               const std::function<void(Object*)>& fn) {
   Value* frames = member(data, u"frames");
   if (frames == nullptr) return;
-  traversal(*frames, [oid_text](const std::u16string&, Value& frame) {
-    boost_opoints_in_frame(frame, oid_text);
+  traversal(*frames, [oid_text, &fn](const std::u16string&, Value& frame) {
+    for_each_opoint_in_frame(frame, oid_text, fn);
   });
+}
+
+// `julian` / `rudolf` 分身出来的自己：opoint 生成时压低血量与蓝条。
+void boost_opoint(Object* op) {
+  op->set(u"max_hp", n(20));
+  op->set(u"hp", n(20));
+  op->set(u"max_mp", n(150));
+  op->set(u"mp", n(150));
+}
+
+void boost_opoints_in_frame(Value& frame, const char16_t* oid_text) {
+  for_each_opoint_in_frame(frame, oid_text, boost_opoint);
+}
+
+void boost_opoints_of_frames(Value& data, const char16_t* oid_text) {
+  for_each_opoint_of_frames(data, oid_text, boost_opoint);
+}
+
+// TS `make_fighter_data_julian`：给指 oid 的 opoint 落 `speedz`（发射时按上下键给的 Z 初速）。
+void set_opoint_speedz_of_frames(Value& data, const char16_t* oid_text, double speedz) {
+  for_each_opoint_of_frames(
+      data, oid_text, [speedz](Object* op) { op->set(u"speedz", n(speedz)); });
 }
 
 void for_each_running_frame(Value& data, const std::function<void(Object&)>& fn) {
@@ -382,6 +406,8 @@ Value make_fighter_data_julian(Value& data) {
                        {u"toughness_resting", n(18)},
                    }));
   boost_opoints_of_frames(data, oid::kJulian);
+  set_opoint_speedz_of_frames(data, oid::kJulianBall2,
+                              defines::num(u"Defines.DEFAULT_OPOINT_SPEED_Z"));
   return data;
 }
 
