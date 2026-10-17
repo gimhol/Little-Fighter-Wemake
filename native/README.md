@@ -2028,3 +2028,26 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   重新从 `dist/prel.zip` 解包后是 179 个。）
 * 宿主摘要行两处加了 `directors=%zu`（`lfw_run` 与 Godot），方便以后一眼看出装载没装载。
 * 差分 263/263、lint 9771 anchors 未动。
+---
+
+### 2026-10-18（六）：测试模式改成数据驱动（818f6f5c1 收尾）
+
+* **`DirectorTestCase`**（新 `ui/component/tests/director_test_case.{h,cpp}`）：一个用例 =
+  一份 `IDirectorData`；`enter → playback.start()`、`update → playback.update(dt)`、
+  `leave → playback.stop() + TestCase::leave()`，`name` 取数据的 `name`。
+* **`Tests::on_start`**：`CASE_GROUPS`（那份 105 个手写用例的静态表）换成
+  `lfw().datas().directors()`（17 组），一组一份 `director` → 一个 `DirectorTestCase`；
+  数据里一份都没有时退回 `[[new TestCase(this)]]`（与 TS 的 `else` 分支同义）。
+  页面上 `Case: <x>-<y> <name>` 的写法没变。
+* **删掉 78 个文件**（`tests/{ball,bat,bg,bot,firen,firezen,freeze,jan,julian,louis,others,rudolf,weapons}/**`
+  与 37 条 CMake 条目）—— TS 那边 `818f6f5c1` 已经把这批用例类删了，端口这堆**没有 oracle**
+  的存量跟着退役。`test_case.{h,cpp}` / `tests.{h,cpp}` 保留（`TestCase` 仍是基类，`Director`
+  用的 `spawn`/`midX` 那套工具还在）。
+* **实测（真数据，Godot headless）**：`--ui-page test_cases_page` → `groups=17 cases=82`
+  （第一组 `misc` 的 "None" 用例 `entities=0`）；按 `d` 切到 0-1「All Fighters」→
+  **`entities=26 hp=13000`** ⇒ 导演真的按 XML 生成了一整排斗士。差分 263/263、
+  lint 860 clean（原来 927，少的就是被删的用例）/ 9771 anchors、`all` 全绿。
+* **踩到一个 port-only 的坑**：`to_director_list` 的第一句 `if (as_object(raw) == nullptr) return {};`
+  是 TS `typeof raw === "object"` 的错译 —— JS 里**数组也是 object**，端口的 `as_object`
+  对数组给 `nullptr` ⇒ XML 那一路（拿到的是 `Array`）被判成"不是对象"，
+  `cases=0`（页面能开、用例一个都没有）。修法：先判 `as_array`，再判对象。

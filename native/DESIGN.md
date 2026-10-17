@@ -11071,3 +11071,43 @@ TS 是 `try { … } catch { Ditto.warn('FAILED TO LOAD DIRECTOR DATA: …', e) }
 `lfw_run --root dist --zip …/prel --zip …/data --frames 60` →
 `loaded: fighters=26 weapons=19 balls=24 entities=5 stages=28 bg=21 bots=22 moves=24 directors=17`，
 `warns=1`（那条 `id duplicated` 是数据本身的老问题，与本片无关）。
+## 150. 测试模式改成数据驱动（2026-10-18）
+
+### 150.1. 形状
+
+`Tests::on_start` 不再读静态的 `CASE_GROUPS`，而是：
+
+```
+lfw().datas().directors()            →  17 组 `IDirectorGroupData`
+  每组 `directors[]` 里每份 `IDirectorData` → `new DirectorTestCase(owner, data)`
+  （数据为空 ⇒ `[[new TestCase(owner)]]`，与 TS 的 else 分支同义）
+name = `${x}-${y} ${data.name}`      →  页面 `Case: …`
+```
+
+`DirectorTestCase` 只是 `Director` 的壳：`enter→start()`、`update→update(dt)`、
+`leave→stop()+TestCase::leave()`。⚠ `_playback` 在**成员初始化列表**里构造
+（`Director(World&, Value)`），所以 `world()` 只能从构造参数里的 `owner` 取。
+
+### 150.2. 退役的那批
+
+`ui/component/tests/{ball,bat,bg,bot,firen,firezen,freeze,jan,julian,louis,others,rudolf,weapons}/**`
+78 个文件 + 37 条 CMake 条目全删。它们在 TS 侧对应 `818f6f5c1` 删掉的用例类 ⇒ **没有 oracle**，
+留着只会让 `Cases` 分组与数据对不上。留下的只有 `test_case.{h,cpp}`（基类：`spawn` / `circle` /
+`hori` / `verti` / `bandits_*` 那套摆位工具，`Director` 也还在用同形的表达式求值）、
+`tests.{h,cpp}`、`director_test_case.{h,cpp}`。
+
+### 150.3. port-only 的坑：数组也是对象
+
+`normalize_directors.ts` 第一句是 `if (!raw || typeof raw !== "object") return []`。
+端口若直译成 `if (as_object(raw) == nullptr) return {}` 就错了 —— **JS 里数组是 object**，
+而 `lfw::as_object` 对 `Array` 给 `nullptr`。XML 那一路拿到的正是 `Array`
+（`xml_to_directors` 的返回值），于是每组都被判成「不是对象」⇒ `groups=17 cases=0`：
+页面正常、用例一个都没有。正确写法是先 `as_array` 再判对象。
+（这也是为什么 ④ 的验证必须真跑 Godot：差分台面根本不经过 `Tests`。）
+
+### 150.4. 验收口径
+
+Godot headless + `--ui-page test_cases_page`：
+`groups=17 cases=82`（临时 warn 打印，验证后已删）→ 第一组第一例 "None" `entities=0`
+→ 按 `d` 切到 0-1「All Fighters」→ `entities=26 hp=13000`。
+三条宿主摘要（300/prel、900/stage 1、600/vs stage 0）不经过测试页 ⇒ 逐位不变。

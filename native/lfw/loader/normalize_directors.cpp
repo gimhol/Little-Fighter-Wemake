@@ -22,7 +22,8 @@ const std::u16string* str_of(const Value& v) { return std::get_if<std::u16string
 }
 
 std::vector<Value> to_director_list(const Value& raw) {
-  if (as_object(raw) == nullptr) return {};
+  // ⚠ TS 的 `typeof raw === "object"` 对数组也成立，端口的 `as_object` 对数组给 nullptr
+  // ⇒ 先判数组，再判对象（否则 XML 那一路（`Array`）会被当成"不是对象"直接吞掉）。
   std::vector<Value> ret;
   auto keep = [&ret](const Array& arr) {
     for (const Value& v : arr.items()) {
@@ -33,6 +34,7 @@ std::vector<Value> to_director_list(const Value& raw) {
     keep(*arr);
     return ret;
   }
+  if (as_object(raw) == nullptr) return ret;
   if (const Array* const directors = as_array(field_or(raw, u"directors"))) {
     keep(*directors);
     return ret;
