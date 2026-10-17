@@ -10747,3 +10747,81 @@ Godot 宿主 `--ui-page test_cases_page` 的 `entities=/test_case_name` + Web �
 `is_live_uinode()`），指针状态里那三个跨帧派发循环改成先 `UiSet::live_items()` 筛一遍
 （已销毁的顺手从集合里删掉）。**没有**改 `IPointerState` 的结构或派发次序 ⇒ 活着的节点拿到的
 leave/cancel 次数与次序与以前逐条一致。
+## 143. 音效 / buff env / 逐图旋转 / 3D 模型帧（2026-10-17 那一刀）
+
+### 143.1. `frame.sound`：把空转的宿主缝接上
+
+`World::play_sound(sounds, pos)` 从 4C 起就是**空转**的（`(void)sounds; (void)pos;`，注释写着
+"音频切片未移植"）。这次把它接成 TS 的形状，但**分成两层**，因为端口在 `Entity::play_sound` 这层
+多缝了一刀（台面靠它记 `play_sound:<sounds>@<pos>`）：
+
+| 层 | 谁 | 干什么 |
+|---|---|---|
+| `Entity::play_sound(sounds, pos = position)` | 核心（`entity.cpp`） | TS 的 Message 帧 x 夹取；非 Message 帧把 `pos` **原样**转发 |
+| `World::play_sound(sounds, pos)` | 核心（`world.cpp`，`virtual`） | 数组逐条 / 单条 → `lfw().sounds_play(path, x, y, z)`；`!sounds?.length` 早退；台面覆写它 |
+
+为什么 `pos` 非 Message 帧不能重建：台面（`entity` 那一族）覆写的是 `World::play_sound`，
+TS 侧覆写的是 `Entity.play_sound`；两边日志形状都是 `(sounds, pos)`。端口若在非 Message 帧
+把 `pos` 拆成 `{x,y,z}` 再塞回去，日志里的数字格式（整/浮点）就可能变 —— 261 条差分立刻红。
+
+`entity.cpp` 原来有四处**直接**调 `world().play_sound(...)`（`dead_sounds` / `frame.sound` /
+`flags.sound` / `drop_sounds`），绕过了实体方法 ⇒ Message 帧的夹取会丢。改成 `play_sound(...)`
+后与 TS 的 `this.play_sound(...)` 一一对上，且日志（`position_value(position)` 那份）逐位不变。
+
+### 143.2. buff 的 `BuffEnv` 谁负责装
+
+TS 的 `Buff` 构造就拿 `lfw`（`new B(lfw, id, B.KIND)`），实例里的 `this.lfw.world...` 永远有效。
+端口的 `Buff` 收 `const BuffEnv*`，而 `Factory::create_buff(kind, lfw, id)` 手里只有 `LFW*`
+（拿不到 env）⇒ 工厂造出来的 buff 是 `env == nullptr` 的。`mount()` 的第一句
+`_env->world_buffs_set(...)` 于是必崩。
+
+定下来的归属：**发牌时装**（`grant_buff` 里 `buf->set_env(env)`，早于任何 `_env` 使用），
+外加 `WorldCollisionHost::create_buff` 让新 buff **出生即带** `&_buff_env`（那条只判空的
+`create_buff(...) != nullptr` 分支拿到的东西也不会是"不能碰的对象"）。
+
+⚠ 差分台面**抓不到**这一类：`buff` 台面自己造 `TestBuff(&g_env, …)`，并把 `env->create_buff`
+换成台面自己的 lambda ⇒ 真工厂 + 真 `WorldCollisionHost` 这条路在台面上一次都没跑过。
+这是"台面绿 ≠ 装配对"的又一个实例：**缝的两头都得有人验**（这里的验证手段只有"真跑游戏"）。
+
+### 143.3. `pic.rad`：角度符号是怎么定的
+
+TS `EntityMainRender.update_mesh_position` 算的是**局部**位置：pivot `P = (cx + ox, cy - oy)`，
+把 mesh 的**中心**绕 `P` 转 `±rad`（`_sin` 在 `facing < 0` 时取反），再 `mesh.rotation.z = ±rad`。
+
+端口的绘制项是**屏幕系**（y 向下）。TS 的世界 y 向上 → 屏幕是
+`screen_y = h - world_y`（`WorldRenderer.ts` 的 `camera.top = h; camera.bottom = 0`），
+这是一次**镜像** ⇒ 角度反号（`M R(θ) M⁻¹ = R(−θ)`）。于是：
+
+```
+theta_screen = facing < 0 ? +rad : -rad      // TS 面朝左时 rotation.z 与 _sin 一起翻
+中心绕 pivot：与 theta_screen 同一个角
+```
+
+宿主只做"绕矩形中心转 `theta_screen`"（`Transform2D`：平移到中心 → 旋转 → **局部**镜像），
+两次旋转叠加 = 绕 pivot 转一次，与 TS 逐位同形状。镜像必须在**局部**系里（先镜像后转）：
+那正好等价于 TS 的 UV 镜像（`material.flip_x`），而"先转后绕屏幕竖轴镜像"是另一件事
+（θ 项符号不同）。描边的四邻偏移也放进这个局部系 ⇒ 轮廓跟着图一起转（TS 的 outline 是着色器，
+本来就在局部 texel 空间）。
+
+### 143.4. `frame.model`：每个实体一份离屏 3D 画布
+
+TS 是 three.js 场景里挂 `model_node`（和 2D mesh 在同一个场景、按 z 排序，`has_model` 时逐实体
+深度隔离）。端口的宿主是 2D `CanvasItem` + `_draw()`，所以走 **`SubViewport` 离屏 3D → 当纹理 blit**：
+
+* **一份一个实体**：`_slots[tag]`（tag = 实体 id）⇒ 2D 与 3D 的**次序**天然对（模型项插在实体
+  循环里，排到哪画到哪），不需要全局深度缓冲。
+* **1 世界单位 = 1 逻辑像素**：画布 `kModelViewport = 512`，正交相机竖直 512、原点在画布中心
+  ⇒ 模型局部原点落在"实体画到的那个点"上；舞台缩放由 blit 时乘 `frame.scale_x/scale_y` 补上。
+* **光照照抄** TS `WorldRenderer`：环境光 0.7 + 平行光 1.4（-300,400,600 → 原点）。glb 的 PBR
+  材质没有光就是黑的，这一条不能省。
+* **实例化**：`GLTFDocument::append_from_buffer` → `generate_scene` → `PackedScene::pack` 存模板，
+  每个实体 `instantiate()`（Godot 的实例化会给蒙皮重绑骨架 —— 等价于 TS 的 `SkeletonUtils.clone`；
+  直接 `add_child` 共享模板会"后挂的把前一个抢走"，TS 注释里也踩过这条）。
+* **旋转**：`base.models[id].rotation × frame.model.rotation`（帧缺 `rotation` 时 `z` 回退 `rad`）
+  按 three.js 的 `Euler('XYZ')` 做四元数乘法再拆回 XYZ，面朝左时 `y/z` 取反；Godot 的
+  `Node3D` 默认次序是 **YXZ** ⇒ 不能直接塞欧拉角，得自己拼四元数。
+* **动画**：交给引擎的 `AnimationPlayer`（片段名 = `model.anim`，`loop` 改 `Animation::set_loop_mode`，
+  `reverse` 用负 `speed_scale`）。⚠ TS 是按实体 lifetime 差推进（逐帧确定），这里是真 delta ——
+  画面不需要确定性，三条摘要只覆盖模拟，所以不引入"逐帧确定"的额外机制。
+* **没做**：`model.pose` 骨骼姿态混合（TS 的 `apply_pose_blend`，数据里 0 条）、模型轮廓
+  （`build_model_hulls`）、`seek` 帧段驱动（数据里 0 条）。

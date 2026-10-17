@@ -1189,6 +1189,71 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
   [ui] ui/test_case_name … text=20/Case: 1-0 Julian D^J      ← 菜单点进来之后按两次 d 也照切
   ```
 
+### 2026-10-17：用户玩的时候报的（第二批，都已修）
+
+* **"背景音乐有，但没 frame.sound"** —— `World::play_sound` 从第一刀起就是**空转**的宿主缝
+  （`(void)sounds; (void)pos;`），所以帧音效 / 受击音效 / 落地音效一个都没响过。补的正是 TS 那一支：
+  * `Entity::play_sound(sounds, pos)` 照 `Entity.ts:2311` 的 `play_sound` 做 **Message 帧的 x 夹取**
+    （`centerx` / `width` / `facing`、`world.camera.position.x`、`world.dataset.screen_w / (bg.zoom_x ?? 1)`）；
+    非 Message 帧把 `pos` **原样**转发（不重建 `Value` —— 台面靠 `world().play_sound(sounds, pos)`
+    记 `play_sound:<sounds>@<pos>`，重建会让日志形状变）。
+  * `World::play_sound` 的默认实现：数组逐条、单条一条，`!sounds?.length`（空串 / null / 数字）
+    什么都不做 ⇒ `lfw().sounds_play(path, x, y, z)`（宿主那个 `h:sound=` 缝 / Godot 的音频槽）。
+  * `entity.cpp` 里四处**绕过实体方法**直接调 `world().play_sound(...)` 的地方（`dead_sounds`、
+    `frame.sound`、`flags.sound`、`drop_sounds`）改成走 `play_sound(...)` —— TS 就是 `this.play_sound(...)`
+    （顺带把 Message 帧的夹取也带上了）。
+  * 实测（`--ui-page test_cases_page` + 16 次 `s` 到 16-0 Red Book: GroupAttack，700 帧）：
+    `[godot] sounds: … play=39 … last=data/012.wav.mp3`（帧音效 012/038 在响），差分 261/261，
+    三条宿主摘要**逐位不变**（音频不进模拟）。
+* **"Buff 会导致游戏崩溃"** —— 真凶是**没人给 buff 装 env**：`buff/registry.cpp` 的
+  `BuffCreator<B>::create` 造的是 `new B(nullptr, id, kind)`（`Factory::create_buff` 手里只有 `LFW*`、
+  拿不到 `BuffEnv`），`grant_buff` 拿到之后也没补 ⇒ `mount()` 的第一句
+  `_env->world_buffs_set(...)` 就是空指针解引用。实测复现：`--ui-page test_cases_page` 十六次 `s`
+  到 16-0（Red Book: GroupAttack）后跑到第 700 帧 `signal 11`（`EXITCODE=-1073741819`）。
+  修法两处（都很小）：`grant_buff` 在"发牌"那一刻 `buf->set_env(env)`（新造的、从 `world.buffs`
+  复用的都一样）；`WorldCollisionHost::create_buff` 让新 buff **出生即带** `&_buff_env`。
+  ⚠ 差分台面为什么一直没抓到：`buff` 台面自己造 `TestBuff(&g_env, …)`、并且把
+  `env->create_buff` 换成了台面自己的 lambda ⇒ **真工厂这条路一次都没被走到**（又一个"台面绿 ≠
+  装配对"）。修完实测：同一条命令 700 帧 `EXITCODE=0`、`entities=9 hp=4411`。
+* **"没支持 frame.pic 的旋转"** —— `pic.rad`（`loader/preprocess_pic.cpp` 早就算出 `rad/deg/__cos_r/__sin_r`）
+  之前只算不用。现在 `emit_sprite` 照 TS `EntityMainRender.update_mesh_position`：
+  * pivot = 矩形左上角 + `(ox, oy)`（缺省各 `w/2`、`h/2`），把**矩形中心**绕 pivot 转一次，
+    角度交给宿主的 `GodotDrawItem::rot` 再绕矩形中心转一次（两次叠加 = 绕 pivot 转一次）；
+  * **符号**：TS 的 mesh 位置算在 y 向上的局部系里、端口的绘制项是 y 向下的屏幕系（差一个镜像）
+    ⇒ 屏幕角度取反；面朝左时 TS 的 `rotation.z` 与 `_sin` 一起翻 ⇒ 再反一次
+    （`theta = facing < 0 ? rad : -rad`）；
+  * 宿主 `draw_item` 用 `Transform2D`（平移到中心 → 旋转 → **局部**镜像）画，
+    `flip_x` 在局部系里做恰是 TS 的 UV 镜像；描边的四邻偏移也放进这个局部系 ⇒ 轮廓跟着图转。
+  * 实测（16-1 Green Book: Electrify，绿光环）：`render: … rot=1@-5.8905`
+    （数据里那一帧 `rad: 5.890486` ✓），存图 `shots/rot-aura-497.png`（+ `-zoom` 放大）。
+* **"没显示 frame.model"** —— 3D 模型帧整支接上了（新文件 `host/godot/lfw_godot_models.{h,cpp}`）：
+  * 加载：`GLTFDocument::append_from_buffer` 读字节（数据包 → 根目录，与纹理同一条 `read_resource`），
+    `generate_scene` 后 `PackedScene::pack` 缓存；同一路径的多个实体各自 `instantiate()`（Godot 的
+    实例化会给蒙皮重绑骨架，等价于 TS 的 `SkeletonUtils.clone`）。
+  * 画布：**每个实体一份** `SubViewport`（512×512、透明底、`UPDATE_ALWAYS`）+ 正交 `Camera3D`
+    （竖直 512 世界单位）+ `WorldEnvironment`（环境光 0.7）+ `DirectionalLight3D`（1.4，位置
+    -300,400,600 指向原点）—— 三个数字都是照 TS `WorldRenderer` 抄的。画布中心 = 模型局部原点
+    ⇒ **1 世界单位 = 1 逻辑像素**，缩放由宿主 blit 时乘 `frame.scale_x/scale_y`。
+  * 摆位：`base.models[id]` 的 `path/scale/offset/rotation` 与帧 `model` 的
+    `id/anim/loop/reverse/hold_last/scale/offset/rotation`（`rad` 兜底 `rotation.z`）——
+    旋转按 TS 的**四元数乘积**（base × frame）再拆回 XYZ 欧拉角（three.js 的次序，和 Godot 默认的
+    YXZ 不同，所以自己算），面朝左时 y/z 取反。
+  * 动画：交给 `AnimationPlayer`（glb 的片段名就是 `model.anim`），`loop` 改片段循环模式、
+    `reverse` 用负速度。⚠ 与 TS 的差别：TS 按**实体 lifetime 差**推进（逐帧确定），这里按真 delta —
+    画面不需要确定性（三条摘要只覆盖模拟）。
+  * 实测：16-0 局里 `render: … model=1[weapons/book_bundle/book_red.glb|]`、
+    `[godot] models: loaded=1 failed=0 live=1 weapons/book_bundle/book_red.glb(anims=0,…)`
+    ⇒ 红书在手里显示正常（存图 `shots/model-book-295.png` + `-zoom`/`-close` 放大）；
+    `--fighter robot` 那一局 `characters/robot/robot.glb(anims=14)` 也加载得到（14 个片段：
+    Idle/Punch/Running/…）。
+  * **没做**（数据里也没有）：`model.pose` 的骨骼姿态混合（`grep '"pose"'` = 0）、模型轮廓
+    （TS `build_model_hulls`）、`model.seek/time_scale`（数据里为 0 条）。
+* 诊断面顺带加了三样（`[godot] render:` 那一行，不进摘要）：`rot=<条数>@<角度>`、
+  `model=<条数>[<path>|<anim>]`、以及加载报告 `[godot] models: loaded/failed/live + 每个 glb 的
+  (anims=N,box=…)`。
+* lint 基线更新：**923 clean / 0 failed / 94 warnings**（多的 84 条来自 `tests.cpp` 里那张
+  裸指针用例表 —— `Tests` 的 `_owned/_retired` 为了"不完整类型"故意用裸指针，见类头注释）。
+
 ## 验收：宿主三条摘要（改完必跑）
 
 同一份数据、同一命令**逐位可复现**；三条都过才算没打破 headless 行为：

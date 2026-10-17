@@ -648,6 +648,12 @@ bool LfwGodot::setup() {
       GodotWorldRenderer* const renderer = _host->world_renderer();
       return renderer != nullptr && renderer->read_resource(path, out);
     });
+    // `frame.model` 的离屏画布池：与纹理缓存同一份资源读（数据包 → 根目录）。
+    _models = std::make_unique<GodotModelBank>([this](const std::string& path, std::string& out) {
+      GodotWorldRenderer* const renderer = _host->world_renderer();
+      return renderer != nullptr && renderer->read_resource(path, out);
+    });
+    _models->set_parent(this);
   }
   if (_host->world_renderer() != nullptr) _host->world_renderer()->set_ui_dump(_args.ui_dump);
   return true;
@@ -910,7 +916,17 @@ void LfwGodot::render_world_frame(long long renders_before) {
   if (renderer == nullptr) return;
   // 世界自己渲染过（`sync_render == Sync/Half`）就不要再补一次。
   if (renderer->renders() == renders_before) world.render_once(_host->step_ms());
-  renderer->take_frame();  // 双缓冲：把写好的那一帧翻给 `_draw` 读
+  const GodotFrame& frame = renderer->take_frame();  // 双缓冲：把写好的那一帧翻给 `_draw` 读
+  // `frame.model`：这一帧出现的模型项各同步一次实例（摆位 + 动画），纹理留给 `_draw` blit。
+  if (_models != nullptr) {
+    _model_textures.clear();
+    for (const GodotDrawItem& item : frame.items) {
+      if (!item.has_model) continue;
+      godot::Ref<godot::ViewportTexture> tex = _models->sync(item.tag, item.model);
+      if (!tex.is_null()) _model_textures[item.tag] = tex;
+    }
+    _models->end_frame();
+  }
 }
 
 // ---- 指针：平台事件 → `LfwPointingEvent` → `POINTER_*` 命令 ----
@@ -2636,6 +2652,13 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
   const float y = static_cast<float>(item.y);
   const float w = static_cast<float>(item.w);
   const float h = static_cast<float>(item.h);
+  // 3D 模型项：`_process` 里已经把这个实体的离屏画布同步好了，这里只是一次 blit。
+  if (item.has_model) {
+    const auto found = _model_textures.find(item.tag);
+    if (found == _model_textures.end() || found->second.is_null()) return;
+    draw_texture_rect(found->second, Rect2(x, y, w, h), false);
+    return;
+  }
   const float alpha = static_cast<float>(item.a);
   const Color color(static_cast<float>(item.r), static_cast<float>(item.g),
                     static_cast<float>(item.b), alpha);
@@ -2666,7 +2689,32 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
   // ⚠ `draw_set_transform*` 是**绝对**的：这里只能叠在 `_item_xform`（= 当前这一层的 contain 矩阵）
   // 之上，画完再换回来。直接 `draw_set_transform()` + `draw_set_transform_matrix(单位阵)` 会把 contain
   // 缩放整条冲掉 —— 镜像项**自己**以及它之后的所有项都会按逻辑像素 1:1 画进窗口（窗口越大越离谱）。
+  // 旋转项（`item.rot`）：矩形记的是**旋转后的中心落点** ⇒ 先平移回中心，再转，再在局部系里
+  // 镜像（`rot * mirror` = 先镜像后转 —— TS 的 `flip_x` 是 UV 镜像，两者逐位等价）。描边的四邻
+  // 偏移也放进这个局部系，于是轮廓跟着图一起转（TS 里那是着色器在局部 texel 空间做的）。
+  const bool rotated = item.rot != 0.0;
+  godot::Transform2D spin_xform;
+  if (rotated) {
+    godot::Transform2D rot2;
+    rot2.set_rotation(static_cast<godot::real_t>(item.rot));
+    if (item.flip_x) {
+      godot::Transform2D local_mirror;
+      local_mirror.set_scale(Vector2(-1.0f, 1.0f));
+      rot2 = rot2 * local_mirror;
+    }
+    godot::Transform2D to_center;
+    to_center.set_origin(Vector2(x + w * 0.5f, y + h * 0.5f));
+    spin_xform = _item_xform * to_center * rot2;
+  }
   const auto blit = [&](const godot::Ref<godot::ImageTexture>& t, float ox, float oy, const Color& c) {
+    if (rotated) {
+      godot::Transform2D push;
+      push.set_origin(Vector2(ox, oy));
+      draw_set_transform_matrix(spin_xform * push);
+      draw_texture_rect_region(t, Rect2(-w * 0.5f, -h * 0.5f, w, h), src, c);
+      draw_set_transform_matrix(_item_xform);
+      return;
+    }
     if (item.flip_x) {
       godot::Transform2D mirror;
       mirror.set_scale(Vector2(-1.0f, 1.0f));
@@ -2779,17 +2827,26 @@ void LfwGodot::finish() {
     std::snprintf(
         buf, sizeof(buf),
         "[godot] render: bg=%s cam=%.1f,%.1f scale=%.2f,%.2f df=%.3f items=%zu bg_layers=%d "
-        "ents=%d hidden=%d no_pic=%d no_file=%d unnamed_tex=%d outline=%d[%s] sil=%lld "
-        "textures=%lld ok/%lld fail",
+        "ents=%d hidden=%d no_pic=%d no_file=%d unnamed_tex=%d outline=%d[%s] rot=%d@%.4f "
+        "model=%d[%s] sil=%lld textures=%lld ok/%lld fail",
         f.bg_id.c_str(), f.cam_x, f.cam_y, f.scale_x, f.scale_y, f.dfactor, f.items.size(),
         f.bg_layers, f.drawn_entities, f.hidden_entities, f.no_pic_entities, f.no_file_entities,
-        f.unnamed_textures, f.outline_items, f.outline_probe.c_str(),
+        f.unnamed_textures, f.outline_items, f.outline_probe.c_str(), f.rotated_items,
+        f.rotated_probe, f.model_items, f.model_probe.c_str(),
         _textures != nullptr ? _textures->silhouettes() : 0,
         _textures != nullptr ? _textures->loaded() : 0,
         _textures != nullptr ? _textures->failed() : 0);
     print_line(buf);
     if (_textures != nullptr && !_textures->last_error().empty()) {
       print_line("[godot] last texture error: " + _textures->last_error());
+    }
+    if (_models != nullptr && (!_models->last_error().empty() || _models->loaded() > 0)) {
+      char mline[512];
+      std::snprintf(mline, sizeof(mline),
+                    "[godot] models: loaded=%lld failed=%lld live=%lld %s%s",
+                    _models->loaded(), _models->failed(), _models->live(),
+                    _models->report().c_str(), _models->last_error().c_str());
+      print_line(mline);
     }
     // UI 那一遍（D4 第二半，本切片新增的观测量；不进三条摘要）。
     const GodotUIStats& ui = renderer->ui_stats();

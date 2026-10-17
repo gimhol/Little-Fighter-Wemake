@@ -256,6 +256,10 @@ buff::Buff* WorldCollisionHost::create_buff(const std::u16string& kind,
                                             const std::u16string& id) {
   buff::Buff* const b = _world->lfw().create_buff(kind, id);
   if (b == nullptr) return nullptr;
+  // 出生即带 env（TS 的 `Buff` 构造就有 `lfw`）：`Factory::create_buff` 那一路只能给出
+  // env=nullptr 的实例，`grant_buff` 虽也会补一次，但直接走 `create_buff` 的调用方（例如
+  // 那些只判空的分支）拿到的对象在此之前是**不能碰**的。
+  b->set_env(&_buff_env);
   bool replaced = false;
   for (size_t i = 0; i < _world->buffs.size(); ++i) {
     if (_world->buffs[i].first == id) {

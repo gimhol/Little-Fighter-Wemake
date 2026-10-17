@@ -28,10 +28,11 @@
 //     （`native/lfw/loader/get_import_fallbacks`，与 TS 同一张表）。
 //
 // **没画的**（数据在、实现没做，见报告）：3D 模型帧（`frame.model`）、名字/血条（要字体度量）、
-// 调试指标层（`entity_flags`，缺省 0）、九宫格/UV 动画、`greyscale`（要逐像素着色器）、逐图旋转
-// （`pic.rad`）。⚠ 一处**近似**：`mix_color` 用第二遍 `modulate` 叠（对最常见的"受击闪白"等价，
-// 别的颜色偏暗）。描边已经按 TS 的判据落（白剪影 + 纯色 `modulate`，四邻偏移 —— 见
-// `lfw_godot_node.cpp::draw_item`）。`UI` 那一遍（`IUINodeRenderer`）本宿主仍回 `nullptr`。
+// 调试指标层（`entity_flags`，缺省 0）、九宫格/UV 动画、`greyscale`（要逐像素着色器）。
+// ⚠ 一处**近似**：`mix_color` 用第二遍 `modulate` 叠（对最常见的"受击闪白"等价，别的颜色偏暗）。
+// 逐图旋转（`pic.rad`）已画：绘制项带 `rot`（绕矩形中心，屏幕空间弧度），宿主自己转。描边已经按
+// TS 的判据落（白剪影 + 纯色 `modulate`，四邻偏移 —— 见 `lfw_godot_node.cpp::draw_item`）。`UI`
+// 那一遍（`IUINodeRenderer`）本宿主仍回 `nullptr`。
 #pragma once
 
 #include <cstddef>
@@ -46,6 +47,21 @@ namespace lfw::host {
 
 class HeadlessHost;
 
+// `frame.model`（3D 模型帧）的一份快照：渲染器只把**参数**填好（原样照 TS 的 `model_node`
+// 摆位 + 动画驱动），加载 glb 与真正出像素是引擎那一侧的事（`lfw_godot_models.{h,cpp}`）。
+struct GodotModelSpec {
+  std::string path;  // `base.models[id].path`（已剥掉 `!` 精确 / `?` 模糊前缀）
+  bool exact = true;
+  // 动画：`anim` 是片段名（空 ⇒ 不播）；`loop` / `reverse` / `hold_last` 同 TS。
+  std::string anim;
+  bool loop = false, reverse = false, hold_last = false;
+  // 模型节点（TS `model_node`）：局部位置（y 向上、z 朝观众）、缩放（x 已乘 `facing`）、
+  // 欧拉角（弧度，XYZ；面朝左时 y/z 取反 —— 与 TS 的 `rotation.set(...)` 一致）。
+  double px = 0, py = 0, pz = 0;
+  double sx = 1, sy = 1, sz = 1;
+  double rx = 0, ry = 0, rz = 0;
+};
+
 // 一条绘制项。字段全部是通用图形名词（矩形 / 裁剪 / 纹理路径 / 颜色 / 次序）。
 struct GodotDrawItem {
   // 目标矩形（逻辑屏幕像素，左上原点、y 向下）。
@@ -57,9 +73,16 @@ struct GodotDrawItem {
   double sx = 0, sy = 0, sw = 0, sh = 0;
   bool flip_x = false;
   bool flip_y = false;
+  // 逐图旋转（`pic.rad`）：绕**矩形中心**的屏幕空间弧度（y 向下 ⇒ 正角在屏幕上是顺时针）。
+  // `x/y/w/h` 记的是旋转**之后**矩形中心的落点（矩形本身不变），宿主自己绕中心转。
+  double rot = 0;
   // 纯色块（UI 的覆盖色 / `background` / `foreground`）：直接拿 `r/g/b/a` 填矩形 —— 不去查纹理，
   // 也不画"取不到图"的占位色块（占位色块是实体那一遍的诊断）。
   bool flat = false;
+  // 3D 模型项（`frame.model`）：这一项不是 blit，而是「把某个实体的模型实例渲染到 `x/y/w/h`
+  // 这个（逻辑像素、屏幕系）矩形里」。`model.path` 非空 ⇒ 这一项是模型项。
+  GodotModelSpec model;
+  bool has_model = false;
   // 颜色（0..1）：`r/g/b` 是 `modulate`、`a` 是不透明度（影子用它）。
   double r = 1, g = 1, b = 1, a = 1;
   // 换色（`mix_color` + `mix_strength`）：`mix_a > 0` ⇒ 宿主再叠一遍 `modulate`
@@ -92,6 +115,11 @@ struct GodotDrawItem {
   double clip_x0 = 0, clip_y0 = 0, clip_x1 = 0, clip_y1 = 0;
 };
 
+// `frame.model`（3D 模型帧）每个模型实例一张**正方形**离屏画布：逻辑像素 = 世界单位，
+  // 模型的局部原点落在画布中心（⇒ 1 单位 = 1 逻辑像素，与 2D 精灵同一口径）。
+  // 取 512 是因为数据里最大的模型（书 15 倍 / 机器人 16.96 倍）在 ±128 单位以内。
+  inline constexpr double kModelViewport = 512.0;
+
 // 一帧的绘制项（按绘制次序排好：先画的在前）。
 struct GodotFrame {
   bool valid = false;
@@ -114,6 +142,10 @@ struct GodotFrame {
   int unnamed_textures = 0;
   int outline_items = 0;              // 带描边的绘制项（诊断）
   std::string outline_probe;          // 第一条描边的 `#rrggbb@alpha,width`（诊断）
+  int rotated_items = 0;              // 带 `pic.rad` 的旋转绘制项（诊断）
+  double rotated_probe = 0;           // 第一条旋转项的角度（弧度，诊断）
+  int model_items = 0;                // `frame.model` 的 3D 模型项（诊断）
+  std::string model_probe;            // 第一个模型项的 `path|anim`（诊断）
 };
 
 // UI 那一遍的观测面（D4 第二半的诊断；不进三条摘要）。逐帧清零。
@@ -209,6 +241,9 @@ class GodotWorldRenderer : public IWorldRenderer {
                    double world_y, double anchor_x, double anchor_y, const Resolved& res,
                    const std::string& kind);
   void emit_entity_shadow(const World& world, GodotFrame& frame, const Entity& e, const Live& live);
+  // `frame.model` 的一条绘制项（TS `EntityMainRender` 的 `model_node` 摆位 + 动画参数）。
+  void emit_model(GodotFrame& frame, const Entity& e, const Value& model, double world_x,
+                  double world_y, double shaking_x);
 
   LFW* _lfw = nullptr;
   HeadlessHost* _host = nullptr;

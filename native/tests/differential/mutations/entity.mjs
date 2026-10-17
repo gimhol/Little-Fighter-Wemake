@@ -3873,8 +3873,8 @@ export default {
         {
       "note": "handle_next_frame_result takes the else branch with a frame",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  if (truthy(frame_v)) {\n    world().play_sound(field_or(frame_v, u\"sound\"), position_value(position));",
-      "to": "  if (!truthy(frame_v)) {\n    world().play_sound(field_or(frame_v, u\"sound\"), position_value(position));"
+      "from": "  if (truthy(frame_v)) {\n    play_sound(field_or(frame_v, u\"sound\"));",
+      "to": "  if (!truthy(frame_v)) {\n    play_sound(field_or(frame_v, u\"sound\"));"
     },
         {
       "note": "handle_next_frame_result skips the frame swap",
@@ -3921,8 +3921,8 @@ export default {
         {
       "note": "handle_next_frame_result plays any truthy sound",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  if (as_array(sound) != nullptr) world().play_sound(sound, position_value(position));",
-      "to": "  if (truthy(sound)) world().play_sound(sound, position_value(position));"
+      "from": "  if (as_array(sound) != nullptr) play_sound(sound);",
+      "to": "  if (truthy(sound)) play_sound(sound);"
     },
         {
       "note": "handle_next_frame_result drops the blink truthy gate",

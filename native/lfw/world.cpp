@@ -140,10 +140,23 @@ std::optional<Value> World::gen_field(const Value& holder, const std::u16string&
   return std::nullopt;
 }
 
-// `this.play_sound(...)`：音频切片未移植 ⇒ 宿主缝（`World::play_sound` 的默认实现空转）。
+// TS `Entity.play_sound` 的收尾那两行（`World` 侧接的一次缝，TS 里是直接 `this.lfw.sounds.play`）：
+// 数组逐条播、单条播；`!sounds?.length`（空串 / null / 数字）什么都不做。位置是三个数
+// （TS 的调用形状 `play(name, x, y, z)`）。
 void World::play_sound(const Value& sounds, const Value& pos) {
-  (void)sounds;
-  (void)pos;
+  const double x = to_number(field_or(pos, u"x"));
+  const double y = to_number(field_or(pos, u"y"));
+  const double z = to_number(field_or(pos, u"z"));
+  if (const Array* const arr = as_array(sounds)) {
+    if (arr->size() == 0) return;
+    for (size_t i = 0; i < arr->size(); ++i) {
+      lfw().sounds_play(arr->at(i), Value(x), Value(y), Value(z));
+    }
+    return;
+  }
+  if (!std::holds_alternative<std::u16string>(sounds)) return;
+  if (std::get<std::u16string>(sounds).empty()) return;
+  lfw().sounds_play(sounds, Value(x), Value(y), Value(z));
 }
 
 // ---- `Stage` 要的 `world.*` 面（4CR：`IStageWorld` 退役后并入本类）----

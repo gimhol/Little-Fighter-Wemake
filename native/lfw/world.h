@@ -138,7 +138,9 @@ class World {
   // 宿主按 `(holder, kind, emitter)` 回答；`nullopt` 表示没有该字段 ⇒ 调用方回落。
   virtual std::optional<Value> gen_field(const Value& holder, const std::u16string& kind,
                                         Entity& emitter);
-  // `this.play_sound(...)`：`lfw.sounds.play` 属音频切片，宿主只拿 `(sounds, pos)`。
+  // `this.play_sound(...)`：TS 里 `Entity.play_sound` 收尾就调 `lfw.sounds.play`（数组展开也在
+  // 这里）；端口把那次调用收成 `World::play_sound(sounds, pos)` 这一条缝 —— 缺省实现即
+  // `lfw().sounds_play(...)`（宿主记录 `h:sound=` 的那个面），台面覆写它记 `play_sound:...@...`。
   virtual void play_sound(const Value& sounds, const Value& pos);
   state::States* states() const { return states_; }
   // 碰撞那一刀的宿主（`World::step` 的配对 / `collisions_keeper.handle` 都要它）。

@@ -529,7 +529,7 @@ void Entity::set_hp(double v) {
         frame_id_of(*this) != std::u16string(frame_id::kGone) &&
         array_length(brokens) > 0) {
       apply_opoints(brokens);
-      world().play_sound(field_or(base_of(_data), u"dead_sounds"), position_value(position));
+      play_sound(field_or(base_of(_data), u"dead_sounds"));
     }
     const Value nf = next_frame_of(field_or(frame, u"on_dead"), field_or(_data, u"on_dead"));
     if (truthy(nf)) enter_frame(nf);
@@ -1180,8 +1180,29 @@ void Entity::set_dismiss_time(const Value& v) {
   dismiss_time = to_number(v);
 }
 
+// TS `Entity.play_sound(sounds, pos = this.position)`：Message 帧（`StateEnum.Message` 那类
+// 飘字实体）的音效要把 x 夹进「镜头可视范围」，其余帧原样透传；数组/单值的展开与 `lfw.sounds.play`
+// 在 `World::play_sound`（宿主的记录缝）那一侧做。**非** Message 帧必须把 `pos` 原样转发
+// （不重建 Value）—— 台面靠 `world().play_sound(sounds, pos)` 记录 `play_sound:<sounds>@<pos>`。
 void Entity::play_sound(const Value& sounds, const Value& pos) {
-  world().play_sound(sounds, pos);
+  if (to_number(field_or(frame, u"state")) != static_cast<double>(StateEnum::Message)) {
+    world().play_sound(sounds, pos);
+    return;
+  }
+  const double centerx = to_number(field_or(frame, u"centerx"));
+  const double width = to_number(field_or(frame, u"width"));
+  double cam_x = world().camera().position.x;
+  const Background* const bg = world().bg();
+  const double zoom_x = bg != nullptr ? bg->zoom_x() : 1.0;
+  double cam_r = cam_x + to_number(world().dataset.get(u"screen_w")) / zoom_x;
+  const double offset_x = facing == 1 ? centerx : width - centerx;
+  cam_r -= width - offset_x;
+  cam_x += offset_x;
+  Object o;
+  o.set(u"x", Value(clamp(to_number(field_or(pos, u"x")), cam_x, cam_r)));
+  o.set(u"y", field_or(pos, u"y"));
+  o.set(u"z", field_or(pos, u"z"));
+  world().play_sound(sounds, Value(std::make_shared<Object>(o)));
 }
 
 void Entity::play_sound(const Value& sounds) {
@@ -1663,7 +1684,7 @@ EnterFrameResult Entity::handle_next_frame_result(const Value& result, bool fall
     if (truthy(hp)) set_hp(_hp - to_number(hp));
   }
   if (truthy(frame_v)) {
-    world().play_sound(field_or(frame_v, u"sound"), position_value(position));
+    play_sound(field_or(frame_v, u"sound"));
     set_frame(frame_v);
   } else {
     const Value* empty_frame = defines::find(u"EMPTY_FRAME_INFO");
@@ -1675,7 +1696,7 @@ EnterFrameResult Entity::handle_next_frame_result(const Value& result, bool fall
     facing = handle_facing_flag(facing_flag);
   if (truthy(frame_v)) wait = handle_wait_flag(field_or(flags, u"wait"), frame_v);
   const Value sound = field_or(flags, u"sound");
-  if (as_array(sound) != nullptr) world().play_sound(sound, position_value(position));
+  if (as_array(sound) != nullptr) play_sound(sound);
   const Value blink_time = field_or(flags, u"blink_time");
   if (truthy(blink_time)) set_blinking(to_number(blink_time));
   // `this.ctrl.reset_key_list()` has no optional chain in TS (a missing controller
@@ -3014,7 +3035,7 @@ void Entity::update_landable() {
     if (_state != nullptr && _state->on_landing) {
       _state->on_landing(*this, position_value(_temp_v));
     }
-    world().play_sound(field_or(base_of(_data), u"drop_sounds"), position_value(position));
+    play_sound(field_or(base_of(_data), u"drop_sounds"));
     if (truthy(Value(throwinjury))) {
       set_hp(hp() - throwinjury);
       set_hp_r(hp_r() - round(throwinjury * (1 - num_of(dataset(u"hp_recoverability")))));

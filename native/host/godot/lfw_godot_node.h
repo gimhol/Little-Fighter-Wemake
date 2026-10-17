@@ -64,6 +64,7 @@
 #include "host/fs_zip.h"
 #include "host/godot/lfw_godot_font.h"
 #include "host/godot/lfw_godot_host.h"
+#include "host/godot/lfw_godot_models.h"
 #include "host/godot/lfw_godot_renderer.h"
 #include "host/godot/lfw_godot_textures.h"
 #include "host/godot/lfw_godot_titlebar.h"
@@ -342,6 +343,10 @@ class LfwGodot : public Node2D {
   // 顶栏那 11 个 `btn_*.png` 的缓存：**另一份** `GodotTextureCache`（同一份实现、换一个
   // `load` —— 字节来自仓库里的 `src/assets`，不是数据包/根目录）。
   std::unique_ptr<GodotTextureCache> _icons;
+  // `frame.model`（3D 模型帧）的离屏画布池（一个实体一份 `SubViewport`；见 `lfw_godot_models.h`）。
+  std::unique_ptr<GodotModelBank> _models;
+  // 本帧每个实体（`tag` = 实体 id）该 blit 的模型纹理（`_process` 里同步、`_draw` 里用）。
+  std::map<std::string, godot::Ref<godot::ViewportTexture>> _model_textures;
   std::string _icons_dir;      // 解析出来的图标目录（空 = 没找到 ⇒ 画不出来）
   std::string _icon_report;    // 上一次打过的可见集合（变了才再打一行）
   // 字体解析与缓存（`style.font` 的 CSS 简写 → 引擎的 `Font`；见 `lfw_godot_font.h`）。

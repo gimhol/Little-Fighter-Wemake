@@ -282,6 +282,12 @@ Buff* grant_buff(const BuffEnv* env, const std::u16string& kind, Entity* attacke
   if (env->world_buffs_get) buf = env->world_buffs_get(id);
   if (buf == nullptr && env->create_buff) buf = env->create_buff(kind, id);
   if (buf == nullptr) return nullptr;
+  // TS 的 `new B(lfw, id, B.KIND)` 在**构造时**就把 `lfw`/`world` 存进实例，所以 `mount()` /
+  // `update()` / `attacter()` 里的 `this.lfw...` 永远有值；端口的 `Buff` 改收 `const BuffEnv*`，
+  // 而 `Factory::create_buff` 手里只有 `LFW*`（没有 env）⇒ env 只能在「发牌」这一刻补上。
+  // 不补就是**空指针解引用**：`mount()` 的第一句 `_env->world_buffs_set(...)` 直接崩
+  // （`Factory::create_buff` 那条路造的 buff 全是 env=nullptr 的，见 `buff/registry.cpp`）。
+  buf->set_env(env);
   buf->set_lifetime(0);
   buf->set_duration(duration);
   buf->set_level(buf->level() + 1);

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -56,6 +57,11 @@ double num_at(const Value& v, double fallback = 0.0) {
   return std::isnan(n) ? fallback : n;
 }
 
+// JS 的 `x === void 0 || x === null`（`??` 的左半边）。
+bool missing(const Value& v) {
+  return std::holds_alternative<std::monostate>(v) || std::holds_alternative<NullTag>(v);
+}
+
 // JS 的 `a || b`：`a` 是假值（缺字段 / `null` / `0` / `NaN`）时落回 `b`。
 double falsy_or(const Value& v, double fallback) {
   const double n = num_at(v, 0.0);
@@ -67,6 +73,74 @@ const std::u16string* as_str(const Value& v) { return std::get_if<std::u16string
 std::string str_or(const Value& v, const std::string& fallback) {
   const std::u16string* const s = as_str(v);
   return s != nullptr ? to_utf8(*s) : fallback;
+}
+
+// ---- 欧拉角 / 四元数（three.js `Euler('XYZ')` ⇄ `Quaternion` 的同口径实现）----
+// TS 的 `model_node.rotation` 是"base 模型旋转 × 帧旋转"的四元数乘积再拆回 XYZ 欧拉角；
+// 端口的宿主只吃欧拉角（Godot 的默认次序是 YXZ，和 three.js 不同），所以这里自己算一遍。
+struct Quat {
+  double x = 0, y = 0, z = 0, w = 1;
+};
+
+Quat quat_from_euler_xyz(double x, double y, double z) {
+  const double c1 = std::cos(x / 2.0), c2 = std::cos(y / 2.0), c3 = std::cos(z / 2.0);
+  const double s1 = std::sin(x / 2.0), s2 = std::sin(y / 2.0), s3 = std::sin(z / 2.0);
+  Quat q;
+  q.x = s1 * c2 * c3 + c1 * s2 * s3;
+  q.y = c1 * s2 * c3 - s1 * c2 * s3;
+  q.z = c1 * c2 * s3 + s1 * s2 * c3;
+  q.w = c1 * c2 * c3 - s1 * s2 * s3;
+  return q;
+}
+
+Quat quat_mul(const Quat& a, const Quat& b) {
+  Quat r;
+  r.x = a.x * b.w + a.w * b.x + a.y * b.z - a.z * b.y;
+  r.y = a.y * b.w + a.w * b.y + a.z * b.x - a.x * b.z;
+  r.z = a.z * b.w + a.w * b.z + a.x * b.y - a.y * b.x;
+  r.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
+  return r;
+}
+
+// three.js `Euler.setFromQuaternion(q, 'XYZ')`。
+void euler_xyz_from_quat(const Quat& q, double& ox, double& oy, double& oz) {
+  const double x2 = q.x * 2.0, y2 = q.y * 2.0, z2 = q.z * 2.0;
+  const double xx = q.x * x2, xy = q.x * y2, xz = q.x * z2;
+  const double yy = q.y * y2, yz = q.y * z2, zz = q.z * z2;
+  const double wx = q.w * x2, wy = q.w * y2, wz = q.w * z2;
+  const double m11 = 1.0 - (yy + zz);
+  const double m12 = xy - wz;
+  const double m13 = xz + wy;
+  const double m22 = 1.0 - (xx + zz);
+  const double m23 = yz + wx;
+  const double m32 = yz - wx;
+  const double m33 = 1.0 - (xx + yy);
+  const double clamped = m13 > 1.0 ? 1.0 : (m13 < -1.0 ? -1.0 : m13);
+  oy = std::asin(clamped);
+  if (std::fabs(m13) < 0.9999999) {
+    ox = std::atan2(-m23, m33);
+    oz = std::atan2(-m12, m11);
+  } else {
+    ox = std::atan2(m32, m22);
+    oz = 0.0;
+  }
+}
+
+// 一组 `{x,y,z}`（数据里是 object，缺省各轴 0）。
+void euler_or(const Value& holder, const char16_t* key, double& x, double& y, double& z) {
+  const Value v = lfw::field_or(holder, key);
+  if (missing(v)) return;
+  x = num_or(v, u"x");
+  y = num_or(v, u"y");
+  z = num_or(v, u"z");
+}
+
+// `holder[key][sub]`（缺省 `fallback`）。
+double num_sub(const Value& holder, const char16_t* key, const char16_t* sub,
+               double fallback = 0.0) {
+  const Value v = lfw::field_or(holder, key);
+  if (missing(v)) return fallback;
+  return num_or(v, sub, fallback);
 }
 
 int hex_digit(char c) {
@@ -439,6 +513,33 @@ void GodotWorldRenderer::emit_sprite(GodotFrame& frame, const Entity& e, const V
   it.sh = ph;
   it.flip_x = e.facing < 0;
   if (it.path.empty()) ++frame.unnamed_textures;
+  // 逐图旋转（TS `EntityMainRender.update_mesh_position`）：`rad` 为假值时不动（TS 的 `!rad`）。
+  // TS 的 mesh 位置算在 **y 向上**的局部系里（`px = cx + ox` / `py = cy - oy`，pivot 从矩形
+  // 左上角按 `ox` 向右、`oy` 向下量），端口的绘制项是 y 向下的屏幕系（差一个镜像）⇒ 角度取
+  // `-rad`；再把**矩形中心**按同一条公式绕 pivot 转一次，剩下的「绕矩形中心转」由宿主做
+  //（绕中心转 + 中心绕 pivot 转 = 绕 pivot 转，两次叠加逐位等价）。
+  const Value rad_v = lfw::field_or(pic, u"rad");
+  if (std::holds_alternative<double>(rad_v) && std::get<double>(rad_v) != 0.0) {
+    const double rad = std::get<double>(rad_v);
+    const Value ox_v = lfw::field_or(pic, u"ox");
+    const Value oy_v = lfw::field_or(pic, u"oy");
+    const double ox = missing(ox_v) ? pw / 2.0 : num_at(ox_v);
+    const double oy = missing(oy_v) ? ph / 2.0 : num_at(oy_v);
+    // TS：`rotation.z = flipped ? -rad : rad`，绕 pivot 的那次旋转也用同一个符号（`_sin` 乘
+    // `flipped ? -1 : 1`）⇒ 屏幕系（差一个镜像）里就是它的相反数。
+    const double theta = e.facing < 0 ? rad : -rad;
+    const double pivot_x = it.x + ox * frame.scale_x;
+    const double pivot_y = it.y + oy * frame.scale_y;
+    const double dx = it.x + it.w / 2.0 - pivot_x;
+    const double dy = it.y + it.h / 2.0 - pivot_y;
+    const double cs = std::cos(theta);
+    const double sn = std::sin(theta);
+    it.x = pivot_x + dx * cs - dy * sn - it.w / 2.0;
+    it.y = pivot_y + dx * sn + dy * cs - it.h / 2.0;
+    it.rot = theta;
+    if (frame.rotated_items == 0) frame.rotated_probe = theta;
+    ++frame.rotated_items;
+  }
   // 换色（`mix_color` + `mix_strength`）：宿主用第二遍 `modulate` 叠出来（见 `_draw`）。
   const double mix = e.mix_strength();
   if (mix > 0.0) {
@@ -509,6 +610,85 @@ void GodotWorldRenderer::emit_entity_shadow(const World& world, GodotFrame& fram
   it.sh = res.img_h;
   it.a = clamp01(o);
   if (it.path.empty()) ++frame.unnamed_textures;
+  frame.items.push_back(std::move(it));
+}
+
+// ---------------------------------------------------------------- 3D 模型那一遍（`frame.model`）
+
+// TS `EntityMainRender.render` 的模型分支 + `update_model_visual` 的参数部分：
+//   `model_node.position.set(shaking_x + ox, oy, oz)`、`scale.set(facing * sx, sy, sz)`、
+//   `rotation.set(ex, facing < 0 ? -ey : ey, facing < 0 ? -ez : ez)`，
+//   其中 (ex,ey,ez) 是「base 模型旋转 × 帧旋转」的四元数拆回 XYZ 欧拉角，
+//   帧旋转缺省时 `z` 回退到 `model.rad`。
+// 位置/缩放/旋转都是**局部**量（相对实体节点），真正的像素由宿主在离屏 3D 画布里出。
+void GodotWorldRenderer::emit_model(GodotFrame& frame, const Entity& e, const Value& model,
+                                    double world_x, double world_y, double shaking_x) {
+  const std::string id = str_or(lfw::field_or(model, u"id"), "");
+  if (id.empty()) return;
+  const Value models = lfw::field_or(e.data_base(), u"models");
+  const Value id_v = lfw::field_or(model, u"id");
+  const std::u16string* const id_p = as_str(id_v);
+  if (id_p == nullptr) return;
+  const Value info = lfw::field_or(models, id_p->c_str());
+  if (missing(info)) return;  // TS：`未在 base.models 中声明` ⇒ 只警告、不显示
+  GodotModelSpec spec;
+  std::string path = str_or(lfw::field_or(info, u"path"), "");
+  if (path.empty()) return;
+  // TS `resolve_model_path`：`!` 精确 / `?` 模糊（数据里目前没有这两个前缀，照抄语义）。
+  if (path.front() == '!') {
+    path = path.substr(1);
+  } else if (path.front() == '?') {
+    path = path.substr(1);
+    spec.exact = false;
+  }
+  spec.path = path;
+
+  double bx = 0, by = 0, bz = 0;
+  euler_or(info, u"rotation", bx, by, bz);
+  double fx = 0, fy = 0, fz = 0;
+  euler_or(model, u"rotation", fx, fy, fz);
+  if (missing(lfw::field_or(model, u"rotation"))) fz = num_or(model, u"rad");
+  const Quat qa = quat_mul(quat_from_euler_xyz(bx, by, bz), quat_from_euler_xyz(fx, fy, fz));
+  euler_xyz_from_quat(qa, spec.rx, spec.ry, spec.rz);
+  if (e.facing < 0) {
+    spec.ry = -spec.ry;
+    spec.rz = -spec.rz;
+  }
+
+  const double b_sx = num_sub(info, u"scale", u"x", 1.0);
+  const double b_sy = num_sub(info, u"scale", u"y", 1.0);
+  const double b_sz = num_sub(info, u"scale", u"z", 1.0);
+  const double f_sx = num_sub(model, u"scale", u"x", 1.0);
+  const double f_sy = num_sub(model, u"scale", u"y", 1.0);
+  const double f_sz = num_sub(model, u"scale", u"z", 1.0);
+  spec.sx = e.facing * b_sx * f_sx;
+  spec.sy = b_sy * f_sy;
+  spec.sz = b_sz * f_sz;
+
+  spec.px = shaking_x + num_sub(info, u"offset", u"x") + num_sub(model, u"offset", u"x");
+  spec.py = num_sub(info, u"offset", u"y") + num_sub(model, u"offset", u"y");
+  spec.pz = num_sub(info, u"offset", u"z") + num_sub(model, u"offset", u"z");
+
+  spec.anim = str_or(lfw::field_or(model, u"anim"), "");
+  spec.loop = lfw::truthy(lfw::field_or(model, u"loop"));
+  spec.reverse = lfw::truthy(lfw::field_or(model, u"reverse"));
+  spec.hold_last = lfw::truthy(lfw::field_or(model, u"hold_last"));
+
+  GodotDrawItem it;
+  it.kind = "model";
+  it.tag = to_utf8(e.id);
+  it.has_model = true;
+  it.model = std::move(spec);
+  it.depth = e.position.z;
+  // 模型局部原点（世界单位 = 逻辑像素）落在实体**画到**的那个点上 ⇒ 离屏画布以它为中心。
+  const double cx = frame.tx + frame.scale_x * (world_x - frame.cam_x);
+  const double cy = frame.screen_h - frame.ty - frame.scale_y * (world_y - frame.cam_y);
+  it.w = kModelViewport * frame.scale_x;
+  it.h = kModelViewport * frame.scale_y;
+  it.x = cx - it.w / 2.0;
+  it.y = cy - it.h / 2.0;
+  ++frame.model_items;
+  if (frame.model_probe.empty()) frame.model_probe = it.model.path + "|" + it.model.anim;
   frame.items.push_back(std::move(it));
 }
 
@@ -764,8 +944,16 @@ void GodotWorldRenderer::render(double dt) {
       ++frame.drawn_entities;
     } else if (had_tex) {
       ++frame.no_file_entities;  // 有素材键但没解出文件（素材表里没这个键 / 包里没这张图）
+    } else if (!missing(lfw::field_or(top, u"model"))) {
+      // 只有 3D 模型帧（书类武器就是这样）：不算"没有 2D 精灵"，模型项在下面单独出。
+      ++frame.drawn_entities;
     } else {
       ++frame.no_pic_entities;  // 这一帧根本没有 2D 精灵（例如纯 3D 模型帧）
+    }
+    // `frame.model`：与 2D 精灵**共存**（TS 的 `frame` 可以同时有 `pic` 和 `model`）。
+    const Value model_v = lfw::field_or(top, u"model");
+    if (!missing(model_v)) {
+      emit_model(frame, e, model_v, live->rx, live->ry, shaking_x);
     }
   }
 
