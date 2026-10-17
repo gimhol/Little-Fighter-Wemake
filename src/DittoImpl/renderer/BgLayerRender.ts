@@ -8,6 +8,15 @@ import { MaterialKind as Kind, MaterialFactory } from "./factory";
 
 const pos_mod = (v: number, period: number): number => ((v % period) + period) % period;
 
+/**
+ * 背景层负 z 的间距放大倍数。
+ * 正交相机的 near/far 跨度极大（far = 1e6），16 位深度缓冲下 1 单位的
+ * 图层间距不足一个深度级，相邻图层会 z-fighting（表现为边缘黑线）。
+ * 只放大负 z（背景层），前景层（z > 0）保持原值以免被近裁剪面裁掉。
+ */
+const BG_Z_SCALE = 1000;
+const scale_bg_z = (z: number): number => z < 0 ? z * BG_Z_SCALE : z;
+
 
 export class BgLayerRender {
   readonly mesh: T.Mesh;
@@ -69,8 +78,6 @@ export class BgLayerRender {
     if (!this.src_texture && color !== void 0) m.color.set(color)
     m.transparent = true;
     m.opacity = 1;
-    m.depthTest = false;
-    m.depthWrite = false;
     this.shared_material = m;
 
     const geo = get_static_plane_geometry(dst_w, dst_h, dst_w / 2, -dst_h / 2);
@@ -78,12 +85,13 @@ export class BgLayerRender {
       const mesh = new T.InstancedMesh(geo, m, this.layers.length);
       const mat4 = new T.Matrix4();
       const anchors: T.Object3D[] = [];
+      const depth_z = scale_bg_z(z);
       for (let i = 0; i < this.layers.length; i++) {
         const x = this.layers[i].info.x;
-        mat4.makeTranslation(x, y, z);
+        mat4.makeTranslation(x, y, depth_z);
         mesh.setMatrixAt(i, mat4);
         const anchor = new T.Object3D();
-        anchor.position.set(x, y, z);
+        anchor.position.set(x, y, depth_z);
         mesh.add(anchor);
         anchors.push(anchor);
       }
@@ -92,7 +100,7 @@ export class BgLayerRender {
       this.anchors = anchors;
     } else {
       const mesh = new T.Mesh(geo, m);
-      mesh.position.set(info.x, y, z);
+      mesh.position.set(info.x, y, scale_bg_z(z));
       this.instanced_mesh = null;
       this.mesh = mesh;
       this.anchors = [mesh];
@@ -132,6 +140,8 @@ export class BgLayerRender {
   copy_position(i: number, out: T.Vector3): T.Vector3 {
     out.copy(this.anchors[i].position);
     if (this.instanced_mesh) out.x += this.mesh.position.x;
+    // 渲染用的负 z 被放大过，这里还原成数据里的原始 z（供指示器显示）
+    out.z = this.layer.info.z;
     return out;
   }
 
@@ -182,8 +192,6 @@ export class BgLayerRender {
     const material = new MeshBasicMaterial({
       transparent: true,
       opacity,
-      depthTest: false,
-      depthWrite: false,
     });
     if (with_uv && src) {
       const texture = src.clone();
