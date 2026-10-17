@@ -267,6 +267,11 @@ function cmdConfigure() {
     "-G",
     "Ninja",
     "-DCMAKE_BUILD_TYPE=Release",
+    // 显式钉住 MSVC：`vsTools()` 为了找 ninja 会把 msys64\mingw64\bin 塞到 PATH 最前，
+    // 于是 CMake 的自动探测会挑上 `c++.exe`（g++），静默换掉整条工具链
+    // （`.obj` 还是 g++ 编的、`/showIncludes` 依赖全丢）。目录名 `msvc-x64` 就该是 MSVC。
+    "-DCMAKE_CXX_COMPILER=cl",
+    "-DCMAKE_C_COMPILER=cl",
     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
   ]);
   if (code !== 0) return code;
@@ -274,8 +279,34 @@ function cmdConfigure() {
   return 0;
 }
 
+// 中文 VS 的 `cl.exe` 把 `/showIncludes` 的前置打成「注意: 包含文件:」，CMake 探到的
+// `msvc_deps_prefix` 写进 `rules.ninja` 后与 ninja 拿到的字节对不上 ⇒ **头文件依赖一条都
+// 记不下来**（`ninja -t deps` 是空的）：只改 `.h` 时 ninja 认为无事可做，编出来的还是旧目标。
+// 这个坑很贵 —— 曾经把「已经修好」误判成「没修好」（`bot_env.h` 的 `id` 白加一轮）。
+// 所以：头文件比对象新就把 `lfw|host|tests` 的对象目录整个删掉重编（`ninja` 自己的依赖
+// 表不可信，只能按「头文件 mtime 比任何 .obj 新」这个粗粒度守卫兜底）。
+function guardStaleObjectsAt(buildDir) {
+  if (!existsSync(buildDir)) return false;
+  const objMs = Math.max(newestMtime(join(buildDir, "lfw"), (f) => f.endsWith(".obj")),
+                         newestMtime(join(buildDir, "host"), (f) => f.endsWith(".obj")),
+                         newestMtime(join(buildDir, "tests"), (f) => f.endsWith(".obj")));
+  if (objMs === 0) return false;
+  const headerMs = Math.max(newestMtime(join(NATIVE, "lfw"), isHeader),
+                            newestMtime(join(NATIVE, "host"), isHeader),
+                            newestMtime(join(NATIVE, "tests"), isHeader));
+  if (headerMs <= objMs) return false;
+  console.log(C.dim("  头文件比 .obj 新（MSVC 的 /showIncludes 在中文 VS 下记不进依赖）⇒ 全量重编"));
+  for (const sub of ["lfw", "host", "tests"]) {
+    rmSync(join(buildDir, sub, "CMakeFiles"), { recursive: true, force: true });
+  }
+  return true;
+}
+
+const guardStaleObjects = () => guardStaleObjectsAt(BUILD_DIR);
+
 function cmdBuild() {
   const subject = process.argv[3];
+  guardStaleObjects();
   const args = ["--build", BUILD_DIR];
   if (subject) args.push("--target", `lfw_trace_${subject}`);
   const code = runCmake(args);
@@ -325,26 +356,13 @@ function newestMtime(dir, pred) {
 
 const isHeader = (f) => f.endsWith(".h") || f.endsWith(".hpp") || f.endsWith(".inc");
 
-function guardGodotStaleObjects() {
-  const objDir = join(NATIVE, "build", "godot", "host", "godot", "CMakeFiles", "lfw_godot.dir");
-  if (!existsSync(objDir)) return false;
-  const objMs = newestMtime(objDir, (f) => f.endsWith(".obj"));
-  if (objMs === 0) return false;
-  const headerMs = Math.max(newestMtime(join(NATIVE, "host"), isHeader),
-                            newestMtime(join(NATIVE, "lfw"), isHeader));
-  if (headerMs <= objMs) return false;
-  console.log(C.dim("  host/lfw 下有比 .obj 更新的头文件 ⇒ 删掉 lfw_godot 的对象目录，全量重编"));
-  rmSync(objDir, { recursive: true, force: true });
-  return true;
-}
-
 function cmdGodot() {
   const cppDir = process.env.GODOT_CPP_DIR;
   if (!cppDir) {
     console.error(C.red("GODOT_CPP_DIR is not set (path to a godot-cpp checkout, outside this repo)"));
     return 2;
   }
-  guardGodotStaleObjects();
+  guardStaleObjectsAt(GODOT_BUILD_DIR);
   const apiFile = join(NATIVE, "build", "godot-api", "extension_api.json");
   if (!existsSync(apiFile)) {
     console.error(C.red(`missing ${apiFile}`));
@@ -362,6 +380,9 @@ function cmdGodot() {
     "-DCMAKE_BUILD_TYPE=Release",
     // IntelliSense 那一半靠它（见 CC_MERGED_DB 的注释）：显式传，别指望环境变量里碰巧有
     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+    // 同 `cmdConfigure`：不钉住的话 PATH 里的 msys64 `c++.exe` 会被自动探测挑走
+    "-DCMAKE_CXX_COMPILER=cl",
+    "-DCMAKE_C_COMPILER=cl",
     "-DLFW_GODOT_HOST=ON",
     `-DLFW_GODOT_CPP_DIR=${cppDir}`,
     `-DGODOTCPP_CUSTOM_API_FILE=${apiFile}`,

@@ -11504,3 +11504,71 @@ const o_speedz = speedz_field ?? (弹道状态 ? Defines.DEFAULT_OPOINT_SPEED_Z 
 * `z_disabled`（`Normal`/`Burning` 的生成物 Z 恒 0）保持原样，两者共用 `spawn_state`。
 * 钉子：`cases/entity/spawn.txt` 尾段（`ud=0 → 0` / `D → +3.5` / `U → -3.5` /
   `speedz: 0 → 0` / `state: 0 → 0`）。
+
+## 160. bot 的 `self_ref` 必须带 `id`（2026-10-18）
+
+`bot/*` 里的 `const self = this.entity` 在端口被投影成 `bot::self_ref_of_env(CtrlEnv&)`
+（`bot_env.h`）：TS 那边 `is_ray_hit(me, en, r)` / `same_entity(a,b)` / `closest(self, …)`
+拿的是**活实体**，端口这边只有 `CtrlEnv` 的字段与「实体引用」`Value`。
+
+这份投影原来只有 `{ position }`（因为第一批消费者 `closest` / `manhattan_xz` 只读位置）。
+问题是 `CtrlEnv::resolve`（`entity.cpp`，实体引用 → 真实体）靠 `ref.id` 查
+`World::entity_map`：
+
+```cpp
+env.resolve = [this](const Value& ref) -> Entity* {
+  const Value id_v = field_or(ref, u"id");
+  const std::u16string* const id_p = std::get_if<std::u16string>(&id_v);
+  return id_p != nullptr ? world().find_entity(*id_p) : nullptr;
+};
+```
+
+`self_ref_of_env` 不给 `id` ⇒ `resolve(self_ref())` **恒 nullptr**。后果集中在
+`BotController::handle_action` 的 `e_ray` 分支（`is_ray_hit(me, en, r)` 的 `me` 解不出来 ⇒
+`return false`）：`bot.actions` 里所有带 `e_ray` 的招式恒被拒 —— `d>a`（发波）、`d^a`、`dvj`
+这些全在里面，表现就是"机器人只会走位，很少发波"。
+
+### 160.1. 证据（主页自动对局 `--ui-page main_page`，2400 帧）
+
+| 探针 | 修前 | 修后 |
+| ---- | ---- | ---- |
+| `resolve` 里「引用没有字符串 `id`」 | 2327 / 4654 | 0 / 31226 |
+| `handle_action` 的 `e_ray` 拒绝：`self` 解不出 | 223 | 0 |
+| `e_ray` 拒绝：真的没打中（`ray_miss`） | 0 | 0 |
+| `d>a` 全闸门通过次数 | **0** | **7** |
+
+修前 `e_ray` 的拒绝**全部**落在「`me` 解不出来」这一条上，`ray_miss` 是 0 ——
+所以射线几何本身没问题，坏的是「谁在打」。
+
+### 160.2. 为什么台面没抓到
+
+`cases/bot/actions.txt` 早就有 `act "ray"`，但两侧都返回 `false`：端口这边的 `g_env.resolve`
+是空的（台面没有真实体/世界），TS 那边的 `me` 是假对象、`is_ray_hit` 也打不中。
+**射线分支的正路一条都没被钉住** ⇒ 这个 bug 藏了很久。
+
+新增的钉子钉的是**投影的形状**而不是射线结果：`bot` 台面新 op `selfref`
+（`subjects/bot.{ts,cpp}`，用例 `cases/bot/actions.txt` 的 `make` 之后）：
+
+```
+TS  : [ctrl.entity.id, {x,y,z}]
+端口: [self_ref_of_env(g_env).id, self_ref_of_env(g_env).position]
+```
+
+去掉 `id` 立刻 `v=[u,…]` vs `v=[s"b1",…]`（已验）。要钉射线正路得让台面有真实体
+（`Entity` + `World`），那是另一刀。
+
+### 160.3. 顺带的构建坑（`native/tools/native.mjs`）
+
+1. **中文 VS 的 `/showIncludes` 前置对不上**：`cl.exe` 打「注意: 包含文件:」，CMake 探到后写进
+   `build.ninja` 的 `msvc_deps_prefix` 是乱码（UTF-8 里套着 GBK 的 mojibake），ninja 拿它跟
+   编译器的原始字节比 ⇒ 永远不匹配 ⇒ **头文件依赖一条都记不下来**（`ninja -t deps` 空）。
+   改 `.h` 时 ninja 认为无事可做，编出来的还是旧对象。这一轮因此把「修好了」误判成「没修好」
+   （`bot_env.h` 的 `id` 加了一轮，编的却是旧对象）。
+   `VSLANG=1033` 无效（实测 `cl` 仍按安装语言输出），所以照 `guardGodotStaleObjects` 的老办法：
+   `guardStaleObjectsAt(buildDir)` —— 头文件比对象新就删掉 `lfw|host|tests` 的对象目录全量重编，
+   `build` 与 `godot` 两个构建目录都挂上。
+2. **工具链会被 PATH 换掉**：`vsTools()` 找不到 ninja 时会把 `msys64\mingw64\bin` 插到 PATH 最前，
+   于是新建构建目录时 CMake 的自动探测挑上 `c++.exe`（g++），整条工具链静默变成 MinGW
+   （`.obj` 后缀不变，肉眼看不出来）。实测 g++ 编出的 `lfw_trace_bot` 在 `bot/targets` 上
+   **栈溢出**（`0xC00000FD`），而同一份源码用 MSVC 编就正常。`configure` 现在显式
+   `-DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl`。

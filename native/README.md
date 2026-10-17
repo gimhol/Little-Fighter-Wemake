@@ -2298,3 +2298,38 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   `ud=0 → v.z=0`、`D → +3.5`、`U → -3.5`；显式 `speedz: 0` 与 `state: 0` 的仍是 0。
   两条变异锚点（`entity.mjs`）跟着改到新表达式上。
 * 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
+
+### 2026-10-18（十七）：bot 的 `self_ref` 少了 `id` ⇒ 带 `e_ray` 的招式（`d>a` 发波）恒被拒
+
+* 用户报「机器人还是很少 D>A 发波，你的 Bot Action 射线检测真没问题？」。射线本身是对的
+  （`is_ray_hit` 与 TS 逐行一致，台面 `act "ray"` 也钉着），问题在**射线之前**：
+  `BotController::handle_action` 的 `e_ray` 分支要先把手里的引用解回实体
+  （`env()->resolve(self_ref())`），而 `bot::self_ref_of_env` 只投影了 `position`、**没有 `id`**
+  ⇒ `CtrlEnv::resolve` 恒 `nullptr` ⇒ 直接 `return false`。
+* 探针（主页 `LittleFunnyAutoGame` 自动对局，2400 帧，`--ui-page main_page`）：
+
+  ```
+  修前：[probe act] desire=3414 status=66 ray_null=223 ray_miss=0 expr=60 ok=5
+        [probe act d>a] desire=871 status=27 ray=90 expr=2 ok=0
+  修后：[probe res] calls=31226 nullid=0 miss=5
+        [probe act d>a] desire=195 status=12 ray=1 expr=1 ok=7
+  ```
+
+  即：修前 `e_ray` 的拒绝理由**全是**「`me` 解不出来」（`ray_miss` 一次都没有），`d>a` 通过 0 次；
+  修后 `resolve` 不再拿不到 `id`，`d>a` 通过 7 次。
+* 修：`bot_env.h` 的 `self_ref_of_env` 补上 `id`（TS 那边 `me` 是活实体，本来就不存在这一步）。
+* 钉子：`bot` 台面新 op `selfref`（`cases/bot/actions.txt` 的 `make` 之后一行）——
+  TS 给 `[ctrl.entity.id, {x,y,z}]`，端口给 `self_ref_of_env(g_env)` 的同名投影。
+  故意去掉 `id` 时这条会 `v=[u,…]` vs `v=[s"b1",…]` 直接挂（验过）。
+* **为什么之前一直没发现**：`cases/bot/actions.txt` 的 `act "ray"` 两侧都返回 `false`
+  （台面没给 `env.resolve`，端口这边必然拒绝、TS 那边的假实体也打不中），
+  射线分支的**正路**从没被钉住。这条只在真实体（`LittleFunnyAutoGame`）里跑得出来。
+* 顺带两个构建坑（也都修了，`native/tools/native.mjs`）：
+  * **中文 VS 的 `/showIncludes` 前置对不上**：`cl.exe` 打「注意: 包含文件:」，CMake 写进
+    `rules.ninja` 的 `msvc_deps_prefix` 是乱码 ⇒ ninja 一条头文件依赖都记不下 ⇒ 只改 `.h`
+    时根本不重编。这一轮就被它骗过一次（`id` 加上了，编的却还是旧对象，看着像"没修好"）。
+  * `vsTools()` 为了找 ninja 会把 `msys64\mingw64\bin` 塞到 PATH 最前 ⇒ 新建构建目录时
+    CMake 自动探测会挑 `c++.exe`（g++）而不是 `cl.exe`，整条工具链静默换掉
+    （实测 g++ 编出来的台面在 `bot/targets` 上直接爆栈）。`configure` 现在显式
+    `-DCMAKE_CXX_COMPILER=cl`；`build` / `godot` 前后都有「头文件比 .obj 新就全量重编」的守卫。
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。

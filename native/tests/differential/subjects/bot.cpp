@@ -600,6 +600,17 @@ int main(int argc, char** argv) {
                     : op == "enter_avoid" ? g_ctrl->is_enter_avoid_zone(target)
                                           : g_ctrl->is_leave_avoid_zone(target);
       emit(line + " || " + join_log() + " | v=" + render(Value(v)));
+    } else if (op == "selfref") {
+      // `self_ref_of_env` 的**形状**钉子：TS 的 `me` 是活实体（`ctrl.entity`），端口的替身
+      // 只有 `{ id, position }` —— 少了 `id`，`CtrlEnv::resolve`（`is_ray_hit(me, …)` 的
+      // 那一半）就解不回实体，带 `e_ray` 的 bot 招式恒被拒（见 `bot_env.h`）。
+      sync_env();
+      const Value ref = lfw::bot::self_ref_of_env(g_env);
+      std::vector<Value> v;
+      v.push_back(lfw::field_or(ref, u"id"));
+      v.push_back(lfw::field_or(ref, u"position"));
+      emit(line + " || " + join_log() + " | v=" +
+           render(Value(std::make_shared<lfw::Array>(std::move(v)))));
     } else if (op == "act") {
       const std::u16string where = trace::parse_js_string_literal(t[i++]);
       const Value action = parse_value(t, i);

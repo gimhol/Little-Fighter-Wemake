@@ -69,14 +69,17 @@ inline bool same_entity(const Value& a, const Value& b) {
   return same_ref(a, b);
 }
 
-// `const self = this.entity` 在端口里的替身：只带 `position` 的位置快照
-// （`closest` / `manhattan_xz` 只读它）。
+// `const self = this.entity` 在端口里的替身：`{ id, position }`（`ref_of` 的最小投影）。
+// `id` 不能省 —— `CtrlEnv::resolve`（实体引用 → 真实体，见 `entity.cpp`）靠它把 `me` 解回
+// 实体；少了它 `is_ray_hit(me, en, r)` 的 `me` 恒为空 ⇒ **带 `e_ray` 的 bot 招式恒被拒**
+// （实测：`d>a` 这类发波招式在演示局里命中 0 次，机器人只会走位不会发波）。
 inline Value self_ref_of_env(const controller::CtrlEnv& e) {
   Object pos;
   pos.set(u"x", Value(e.px));
   pos.set(u"y", Value(e.py));
   pos.set(u"z", Value(e.pz));
   Object o;
+  o.set(u"id", Value(e.id));
   o.set(u"position", Value(std::make_shared<Object>(pos)));
   return Value(std::make_shared<Object>(o));
 }
