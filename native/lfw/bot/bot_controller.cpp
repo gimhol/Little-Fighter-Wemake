@@ -199,6 +199,23 @@ Value BotController::self_ref() const {
   return e != nullptr ? self_ref_of_env(*e) : Value();
 }
 
+void BotController::look_target(NearestTargets& nt, const Value& other_ref,
+                                const Value& defendable) {
+  if (const Entity* const self = self_entity()) {
+    nt.look(*self, other_ref, defendable);
+    return;
+  }
+  nt.look(self_ref(), other_ref, defendable);
+}
+
+void BotController::sort_targets(NearestTargets& nt) {
+  if (const Entity* const self = self_entity()) {
+    nt.sort(*self);
+    return;
+  }
+  nt.sort(self_ref());
+}
+
 double BotController::difficulty() const {
   const controller::CtrlEnv* e = env();
   return e != nullptr && e->bot_difficulty ? e->bot_difficulty() : 0.0;
@@ -731,7 +748,7 @@ int BotController::should_defend(const Value& e_ref) {
     return Value(std::make_shared<Object>(o));
   }();
   Entity* const target = env() != nullptr && env()->resolve ? env()->resolve(e_ref) : nullptr;
-  Entity* const self = env() != nullptr && env()->resolve ? env()->resolve(self_ref()) : nullptr;
+  Entity* const self = self_entity();
   if (target == nullptr || self == nullptr) return 0;
   const Value hit = is_ray_hit(*target, *self, ray);
   if (!truthy(hit)) return 0;
@@ -776,40 +793,40 @@ void BotController::lookup(const Value& other_ref) {
   if (entity::is_fighter(other_ref)) {
     if (equals(Value(e->team), field_or(other_ref, u"team"))) return;
     if (should_avoid(other_ref)) {
-      avoidings.look(self_ref(), other_ref);
+      look_target(avoidings, other_ref);
       return;
     }
     const int dd = should_defend(other_ref);
     if (dd != 0) {
-      defends.look(self_ref(), other_ref, Value(static_cast<double>(dd)));
+      look_target(defends, other_ref, Value(static_cast<double>(dd)));
       return;
     }
     if (should_chase(other_ref)) {
-      chasings.look(self_ref(), other_ref);
+      look_target(chasings, other_ref);
       return;
     }
   } else if (entity::is_weapon(other_ref)) {
     if (should_chase(other_ref)) {
-      chasings.look(self_ref(), other_ref);
+      look_target(chasings, other_ref);
       return;
     }
     if (equals(Value(e->team), field_or(other_ref, u"team"))) return;
     const int dd = should_defend(other_ref);
     if (dd != 0) {
-      defends.look(self_ref(), other_ref, Value(static_cast<double>(dd)));
+      look_target(defends, other_ref, Value(static_cast<double>(dd)));
       return;
     }
   } else if (entity::is_ball(other_ref)) {
     if (equals(Value(e->team), field_or(other_ref, u"team"))) return;
     const int dd = should_defend(other_ref);
     if (dd != 0) {
-      defends.look(self_ref(), other_ref, Value(static_cast<double>(dd)));
+      look_target(defends, other_ref, Value(static_cast<double>(dd)));
       return;
     }
   } else if (strict_equals(field_or(field_or(other_ref, u"data"), u"id"),
                            Value(std::u16string(oid::kCriminal))) &&
              !equals(Value(e->team), stage_value(u"team")) && !has_players_alive()) {
-    chasings.look(self_ref(), other_ref);
+    look_target(chasings, other_ref);
   } else {
     avoidings.del([&](const BotTarget& t) { return same_entity(t.entity, other_ref); });
     chasings.del([&](const BotTarget& t) { return same_entity(t.entity, other_ref); });
@@ -949,7 +966,7 @@ Value BotController::handle_action(const std::u16string& where, const Value& act
   if (truthy(e_ray)) {
     const Value en_ref = en();
     if (!truthy(en_ref) || !entity::is_fighter(en_ref)) return Value(false);
-    Entity* const self_e = env() != nullptr && env()->resolve ? env()->resolve(self_ref()) : nullptr;
+    Entity* const self_e = self_entity();
     Entity* const en_e = env() != nullptr && env()->resolve ? env()->resolve(en_ref) : nullptr;
     if (self_e == nullptr || en_e == nullptr) return Value(false);
     bool ray_hit = false;
@@ -1068,11 +1085,11 @@ const controller::ControllerResult& BotController::update() {
       const double fol_hp = to_number(field_or(following, u"hp"));
       if (!fol_mounted || fol_hp <= 0) following = Value(NullTag{});
       chasings.del([this](const BotTarget& t) { return !should_chase(t.entity); });
-      chasings.sort(self_ref());
+      sort_targets(chasings);
       avoidings.del([this](const BotTarget& t) { return !should_avoid(t.entity); });
-      avoidings.sort(self_ref());
+      sort_targets(avoidings);
       defends.del([this](const BotTarget& t) { return 1 != should_defend(t.entity); });
-      defends.sort(self_ref());
+      sort_targets(defends);
     } else {
       following = Value(NullTag{});
       chasings.clear();

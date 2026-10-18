@@ -11572,3 +11572,76 @@ TS  : [ctrl.entity.id, {x,y,z}]
    （`.obj` 后缀不变，肉眼看不出来）。实测 g++ 编出的 `lfw_trace_bot` 在 `bot/targets` 上
    **栈溢出**（`0xC00000FD`），而同一份源码用 MSVC 编就正常。`configure` 现在显式
    `-DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl`。
+
+## 161. bot 的「自己」：`CtrlEnv.self`（2026-10-18）
+
+`bot/*` 里 `this.entity` 是**活实体**。端口的结构性限制是 `Entity` ⇄ `controller` 的包含环：
+`bot/*.h` 只能前置声明 `Entity`，运行期只拿得到 `CtrlEnv` 与「实体引用」`Value`。
+于是最早的做法是 `self_ref_of_env(CtrlEnv&)` 把自身投影成 `{ id, position }` 的引用，
+需要真实体时再靠 `CtrlEnv::resolve` 解回来（`is_ray_hit` 那一族）。
+
+这条往返有两个代价：
+
+1. **正确性**：投影少了 `id` 就解不回来（README（十七）那次的 `d>a` 恒被拒）；
+2. **开销**：`look` / `sort` / `closest` / `is_*_range` 每次调用都重建两个 `Object`。
+
+### 161.1. 形状
+
+```cpp
+struct CtrlEnv {
+  std::function<Entity*(const Value&)> resolve;  // 引用 → 实体（只给 other 用）
+  Entity* self = nullptr;                        // Entity::refresh_ctrl_env: env.self = this
+};
+
+// 三条新重载：自身是实体，位置活读
+double helper::manhattan_xz(const Entity& a, const Value& b);
+Value  bot::closest(const Entity& me, const std::vector<Value>& list);
+void   NearestTargets::look(const Entity& self, const Value& other, const Value& defendable = Value());
+void   NearestTargets::sort(const Entity& self);
+```
+
+`BotController` 侧三个口子把「有没有实体」这件事收在一处：
+
+```cpp
+Entity* self_entity() const;                                   // env()->self
+void look_target(NearestTargets& nt, const Value& other_ref, const Value& defendable = Value());
+void sort_targets(NearestTargets& nt);
+```
+
+真实运行时 `env.self` 恒非空 ⇒ 走实体版；差分台面（`subjects/bot.cpp` 只有 `Value` 假实体）
+`env.self == nullptr` ⇒ 退回 `self_ref()` 的引用版，8 个 bot 用例原样跑。
+`handle_action` 的 `is_ray_hit(me, en, r)` 与 `should_defend` 里的 `resolve(self_ref())`
+一并换成 `self_entity()`。
+
+### 161.2. 为什么 `other` 不一起改
+
+`other` 要**跨帧存**（目标的引用存在 `targets_` 里，`sort()` 下一帧还要用它算距离），
+而它的来源是世界侧的 `BaseController::update_lookup(const std::vector<Value>&)`
+（`is_ball_ctrl || is_bot_ctrl` 共用，球控制器也是这套）。把它换成 `Entity*` 要同时动
+世界缝 + 球控制器 + 台面（`subjects/bot.{ts,cpp}` 的假实体层，8 个用例约 1500 行）。
+所以这一刀只动 `self`，`NearestTargets::reidentify`（把目标引用换成当帧的新快照）保留。
+
+### 161.3. 验证
+
+* 差分 265/265；
+* 主页自动对局 2400 帧摘要与改前**逐位一致**：`digest=2ea7026a9cd193b6`
+  （`renderer(+-)=182/166`）—— 说明「`CtrlEnv.px/pz` 快照」与「`Entity::position` 活读」
+  在 `refresh_ctrl_env → ctrl.update()` 这条时序里取值相同，纯搬家。
+
+### 161.4. 结构体一改就必须全量重编
+
+`CtrlEnv` 加成员的那次，`native.mjs` 的构建守卫没兜住：它按
+`lfw|host|tests/CMakeFiles` 猜目录，而实际层级是 `tests/differential/CMakeFiles`；
+判定又是「头文件比**最新** `.obj` 新」，部分重建之后必然失效。
+漏网的 `subjects/bot.cpp.obj` 用旧布局读 `CtrlEnv` ⇒ 台面 `make` 直接 `0xC0000005`。
+现在的守卫：`<buildDir>/.lfw-header-stamp` 记录上次构建时的最新头文件 mtime，
+一旦变小/变大不符就**递归删掉全部 `*.obj`**（跳过 CMake 自己的 `CompilerId`/`ShowIncludes` 产物）。
+
+### 161.5. 变异锚点
+
+几何从两处「各写一份」收成了两个函数：`helper::manhattan_xz_of(ax, az, b)`（`manhattan_xz.cpp`）
+与 `bot::distance_xz(mx, mz, it)`（`closest.cpp`）—— 引用版与实体版只差「谁给出自身坐标」。
+好处是同一个几何只剩一份，变异锚点也因此各自唯一（`bot_helpers.mjs` 里 15 条重写；
+`node native/tools/mutate.mjs temp 子集` 实测 **15 killed / 0 survived / 0 compile-error**）。
+`NearestTargets.look` 的两条委派行（引用版/实体版）文本相同，相关锚点用「多行 + 函数签名」
+定位，别只写 `insert_at(...)` 那一行。

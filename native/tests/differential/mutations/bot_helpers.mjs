@@ -28,32 +28,32 @@ export default {
     {
       note: "manhattan_xz 的 dx 读成 z",
       file: "native/lfw/helper/manhattan_xz.cpp",
-      from: `  const double dx = to_number(field_or(pa, u"x")) - to_number(field_or(pb, u"x"));`,
-      to: `  const double dx = to_number(field_or(pa, u"z")) - to_number(field_or(pb, u"z"));`,
+      from: `  const double dx = ax - to_number(field_or(pb, u"x"));`,
+      to: `  const double dx = az - to_number(field_or(pb, u"z"));`,
     },
     {
       note: "manhattan_xz 的 dx 变成加法",
       file: "native/lfw/helper/manhattan_xz.cpp",
-      from: `  const double dx = to_number(field_or(pa, u"x")) - to_number(field_or(pb, u"x"));`,
-      to: `  const double dx = to_number(field_or(pa, u"x")) + to_number(field_or(pb, u"x"));`,
+      from: `  const double dx = ax - to_number(field_or(pb, u"x"));`,
+      to: `  const double dx = ax + to_number(field_or(pb, u"x"));`,
     },
     {
       note: "manhattan_xz 的 dx 两边都读 a",
       file: "native/lfw/helper/manhattan_xz.cpp",
-      from: `  const double dx = to_number(field_or(pa, u"x")) - to_number(field_or(pb, u"x"));`,
-      to: `  const double dx = to_number(field_or(pa, u"x")) - to_number(field_or(pa, u"x"));`,
+      from: `  const double dx = ax - to_number(field_or(pb, u"x"));`,
+      to: `  const double dx = ax - ax;`,
     },
     {
-      note: "manhattan_xz 读的是 a 的 position 两次",
+      note: "manhattan_xz 的引用版把 a 的 x 读成 z",
       file: "native/lfw/helper/manhattan_xz.cpp",
-      from: `  const Value pb = field_or(b, u"position");`,
-      to: `  const Value pb = field_or(a, u"position");`,
+      from: `  return manhattan_xz_of(to_number(field_or(pa, u"x")), to_number(field_or(pa, u"z")), b);`,
+      to: `  return manhattan_xz_of(to_number(field_or(pa, u"z")), to_number(field_or(pa, u"z")), b);`,
     },
     {
       note: "closest 完全不做四舍五入",
       file: "native/lfw/bot/closest.cpp",
-      from: `    const double d = round(abs(dx) + abs(dz));`,
-      to: `    const double d = abs(dx) + abs(dz);`,
+      from: `  return round(abs(dx) + abs(dz));`,
+      to: `  return abs(dx) + abs(dz);`,
     },
     {
       note: "closest 的最小值判定用 <=",
@@ -76,27 +76,27 @@ export default {
     {
       note: "closest 的 dx 丢了 abs",
       file: "native/lfw/bot/closest.cpp",
-      from: `    const double d = round(abs(dx) + abs(dz));`,
-      to: `    const double d = round(dx + abs(dz));`,
+      from: `  return round(abs(dx) + abs(dz));`,
+      to: `  return round(dx + abs(dz));`,
     },
     {
       note: "closest 的距离变成相减",
       file: "native/lfw/bot/closest.cpp",
-      from: `    const double d = round(abs(dx) + abs(dz));`,
-      to: `    const double d = round(abs(dx) - abs(dz));`,
+      from: `  return round(abs(dx) + abs(dz));`,
+      to: `  return round(abs(dx) - abs(dz));`,
     },
     {
       note: "closest 的 dx 读成 z",
       file: "native/lfw/bot/closest.cpp",
-      from: `    const double dx = to_number(field_or(pm, u"x")) - to_number(field_or(pi, u"x"));`,
-      to: `    const double dx = to_number(field_or(pm, u"z")) - to_number(field_or(pi, u"z"));`,
+      from: `  const double dx = mx - to_number(field_or(pi, u"x"));`,
+      to: `  const double dx = mz - to_number(field_or(pi, u"z"));`,
     },
     {
       note: "closest 记错获胜者",
       file: "native/lfw/bot/closest.cpp",
       from: `      ret = it;
       distance = d;`,
-      to: `      ret = me;
+      to: `      ret = Value();
       distance = d;`,
     },
     {
@@ -108,10 +108,10 @@ export default {
       distance = 0;`,
     },
     {
-      note: "closest 拿 it 的 position 当 me",
+      note: "closest 的 dx 两边都用 me",
       file: "native/lfw/bot/closest.cpp",
-      from: `    const Value pi = field_or(it, u"position");`,
-      to: `    const Value pi = field_or(me, u"position");`,
+      from: `  const double dx = mx - to_number(field_or(pi, u"x"));`,
+      to: `  const double dx = mx - mx;`,
     },
     {
       note: "is_ray_hit 的 x 读成 z",
@@ -452,20 +452,25 @@ export default {
     {
       note: "NearestTargets.look 漏掉 self 假值检查",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  if (!truthy(self) || has_entity(other)) return;`,
-      to: `  if (has_entity(other)) return;`,
+      from: `  if (!truthy(self)) return;
+  insert_at(other, helper::manhattan_xz(self, other), defendable);`,
+      to: `  insert_at(other, helper::manhattan_xz(self, other), defendable);`,
     },
     {
-      note: "NearestTargets.look 检查的是 self 是否已收录",
+      note: "NearestTargets.look 收录的是 self 而不是 other",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  if (!truthy(self) || has_entity(other)) return;`,
-      to: `  if (!truthy(self) || has_entity(self)) return;`,
+      from: `void NearestTargets::look(const Value& self, const Value& other, const Value& defendable) {
+  if (!truthy(self)) return;
+  insert_at(other, helper::manhattan_xz(self, other), defendable);`,
+      to: `void NearestTargets::look(const Value& self, const Value& other, const Value& defendable) {
+  if (!truthy(self)) return;
+  insert_at(self, helper::manhattan_xz(self, other), defendable);`,
     },
     {
       note: "NearestTargets.look 的假值判定查了 other",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  if (!truthy(self) || has_entity(other)) return;`,
-      to: `  if (!truthy(other) || has_entity(other)) return;`,
+      from: `  if (!truthy(self)) return;`,
+      to: `  if (!truthy(other)) return;`,
     },
     {
       note: "NearestTargets.look 的容量判定用 <=",
@@ -589,14 +594,23 @@ export default {
     {
       note: "NearestTargets.sort 不重算距离",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  for (BotTarget& t : targets_) t.distance = helper::manhattan_xz(self, t.entity);`,
-      to: `  (void)self;`,
+      from: `void NearestTargets::sort(const Value& self) {
+  sort_by([&self](const Value& e) { return helper::manhattan_xz(self, e); });
+}`,
+      to: `void NearestTargets::sort(const Value& self) {
+  (void)self;
+  std::stable_sort(targets_.begin(), targets_.end(), target_less);
+}`,
     },
     {
       note: "NearestTargets.sort 用 self 与自己算距离",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  for (BotTarget& t : targets_) t.distance = helper::manhattan_xz(self, t.entity);`,
-      to: `  for (BotTarget& t : targets_) t.distance = helper::manhattan_xz(self, self);`,
+      from: `void NearestTargets::sort(const Value& self) {
+  sort_by([&self](const Value& e) { return helper::manhattan_xz(self, e); });
+}`,
+      to: `void NearestTargets::sort(const Value& self) {
+  sort_by([&self](const Value& e) { (void)e; return helper::manhattan_xz(self, self); });
+}`,
     },
     {
       note: "NearestTargets.sort 的距离比较反了",

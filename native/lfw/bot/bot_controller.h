@@ -133,6 +133,16 @@ class BotController : public controller::BaseController {
   bool is_enter_avoid_zone(const Value& target_ref) const;
   // `this.entity` 的位置快照引用（`is_*_range` / `closest` / `is_ray_hit` 的 `self`）。
   Value self_ref() const;
+  // 「自己」的真实体：真实运行时由 `Entity::refresh_ctrl_env` 给（`env.self`），
+  // 差分台面里是 `nullptr` ⇒ 调用点退回 `self_ref()` 的引用版重载。
+  Entity* self_entity() const {
+    const controller::CtrlEnv* const e = env();
+    return e != nullptr ? e->self : nullptr;
+  }
+  // `chasings/avoidings/defends` 的 `look` / `sort`：有真实体就走实体版（位置活读），
+  // 否则走 `self_ref()` 的引用版（台面）。
+  void look_target(NearestTargets& nt, const Value& other_ref, const Value& defendable = Value());
+  void sort_targets(NearestTargets& nt);
 
   // `dummy` 的 getter / setter（setter 会松掉全部按键）。
   const Value& dummy_value() const { return dummy; }

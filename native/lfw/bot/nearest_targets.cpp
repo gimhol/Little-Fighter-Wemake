@@ -10,6 +10,7 @@
 
 #include "lfw/core/same_ref.h"
 #include "lfw/core/value.h"
+#include "lfw/entity/entity.h"
 #include "lfw/helper/manhattan_xz.h"
 #include "lfw/utils/container_help/field_or.h"
 
@@ -63,9 +64,17 @@ void NearestTargets::del_entity(const Value& v) {
 }
 
 void NearestTargets::look(const Value& self, const Value& other, const Value& defendable) {
-  if (!truthy(self) || has_entity(other)) return;
+  if (!truthy(self)) return;
+  insert_at(other, helper::manhattan_xz(self, other), defendable);
+}
 
-  const double distance = helper::manhattan_xz(self, other);
+void NearestTargets::look(const Entity& self, const Value& other, const Value& defendable) {
+  insert_at(other, helper::manhattan_xz(self, other), defendable);
+}
+
+void NearestTargets::insert_at(const Value& other, double distance, const Value& defendable) {
+  if (has_entity(other)) return;
+
   const std::size_t len = targets_.size();
   if (static_cast<double>(len) < max_) {
     targets_.push_back(BotTarget(other, distance, defendable_of(defendable)));
@@ -95,7 +104,15 @@ void NearestTargets::del(const std::function<bool(const BotTarget&)>& condition)
 }
 
 void NearestTargets::sort(const Value& self) {
-  for (BotTarget& t : targets_) t.distance = helper::manhattan_xz(self, t.entity);
+  sort_by([&self](const Value& e) { return helper::manhattan_xz(self, e); });
+}
+
+void NearestTargets::sort(const Entity& self) {
+  sort_by([&self](const Value& e) { return helper::manhattan_xz(self, e); });
+}
+
+void NearestTargets::sort_by(const std::function<double(const Value&)>& distance_of) {
+  for (BotTarget& t : targets_) t.distance = distance_of(t.entity);
   std::stable_sort(targets_.begin(), targets_.end(), target_less);
 }
 

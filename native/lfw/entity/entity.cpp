@@ -3252,6 +3252,7 @@ void Entity::refresh_ctrl_env() {
   if (ctrl_ != nullptr) {
     // ---- `bot/*`（`BotController` / `BotState_*`）读 `this.entity` 的额外自身字段 ----
     env.id = id;
+    env.self = this;
     env.hp_max = hp_max();
     env.mounted = truthy(Value(mounted()));
     env.invisible = truthy(Value(invisible()));

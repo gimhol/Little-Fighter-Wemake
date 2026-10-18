@@ -2333,3 +2333,31 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
     （实测 g++ 编出来的台面在 `bot/targets` 上直接爆栈）。`configure` 现在显式
     `-DCMAKE_CXX_COMPILER=cl`；`build` / `godot` 前后都有「头文件比 .obj 新就全量重编」的守卫。
 * 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad，三条摘要不变。
+
+### 2026-10-18（十八）：bot 的「自己」改用真实体（`CtrlEnv.self`）
+
+* TS 的 `bot/*` 读 `this.entity` 就是活实体（`this.entity.position`）；端口一直靠
+  `self_ref_of_env` 的 `Value` 投影（每次调用重建两个 `Object`），再靠 `CtrlEnv::resolve`
+  解回去。这条投影-解回的往返既是上次 `id` 缺失的来源，也白花每帧的分配。
+* 改法（只动 `self`，代价 ≈ 60 行）：
+  * `controller::CtrlEnv` 加 `Entity* self`，`Entity::refresh_ctrl_env` 里 `env.self = this`；
+  * `helper::manhattan_xz` / `bot::closest` / `NearestTargets::look|sort` 各加一条
+    `const Entity&` 重载（`other` 仍是引用 —— 它要跨帧存，且世界侧的
+    `BaseController::update_lookup` 给的就是引用，球控制器共用那条缝）；
+  * `BotController::self_entity()` / `look_target()` / `sort_targets()` 三个口子：真实运行时
+    走实体版，差分台面（没有 `Entity`）自动退回 `self_ref()` 的引用版；
+  * `handle_action` 的 `is_ray_hit(me, …)` 与 `should_defend` 里的
+    `resolve(self_ref())` 直接换成 `self_entity()` —— 连查表都省了。
+* 证据：主页自动对局 2400 帧 `--ui-page main_page` 的摘要与改前**逐位一致**
+  （`digest=2ea7026a9cd193b6`），差分 265/265 —— 纯搬家，行为不变。
+* `reidentify` 仍然保留：它刷新的是**目标**引用（`other`）的位置快照，这一刀没动 `other`。
+* 变异锚点跟着几何搬家：`bot_helpers.mjs` 里 `manhattan_xz` / `closest` /
+  `NearestTargets.look|sort` 的 15 条重写（几何收进了 `manhattan_xz_of` / `distance_xz`
+  两个函数，锚点因此各自唯一），`node native/tools/mutate.mjs` 跑这 15 条**全部 killed**。
+* 顺带把上一节的构建守卫改对了两处（否则这一刀会被骗）：
+  * 判定从「头文件比最新 `.obj` 新」换成「头文件 mtime 与上次构建记录的 stamp 比」——
+    部分重建之后总有 `.obj` 比头文件新，原来的比较会把剩下的旧对象漏掉；
+  * 清理从「按 `lfw|host|tests/CMakeFiles` 猜目录」换成**递归删 `*.obj`**：
+    实际层级是 `tests/differential/CMakeFiles/...`、`host/godot/CMakeFiles/...`。
+    漏掉的那个 `subjects/bot.cpp.obj` 拿的是旧 `CtrlEnv` 布局 ⇒ 台面 `make` 直接
+    `0xC0000005`。结构体成员一改就必须全量重编。

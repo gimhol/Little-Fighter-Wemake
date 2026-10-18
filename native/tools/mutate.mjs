@@ -46,12 +46,14 @@ const specCases = Array.isArray(spec.cases) ? spec.cases : spec.cases ? [spec.ca
 // 见下面 `touchSubjectSource()` 的注释。
 const subjectSource = resolve(root, "native", "tests", "differential", "subjects", `${subject}.cpp`);
 
-// ⚠️ 本机 `build.ninja` 里没有头文件依赖（没有 depfile，见 DESIGN §138）⇒ 改头文件
-// 不会让任何 `.obj` 过期。而台面源文件里往往**内联/实例化**了被改的类（MSVC 会把
-// vtable 与内联体以 COMDAT 放在台面的 .obj 里，链接时又排在库的前面赢得挑选），
-// 于是「头文件变异」会**假存活**。运行器本来就会在每条变异后把 spec 提到的文件
-// 写回一遍（顺带把它们的 mtime 顶新 ⇒ 下一条变异时自然会重编），台面源文件不在
-// 这个集合里，得单独顶一下。
+// ⚠️ 本机 `build.ninja` 里**记不下**头文件依赖（中文 VS 的 `/showIncludes` 前置与
+// `msvc_deps_prefix` 对不上，见 README（十七）/ DESIGN §161.4）⇒ 改头文件不会让任何
+// `.obj` 过期。`native.mjs build` 现在靠「头文件 stamp 变了就全量重编」兜底；但变异运行器
+// 里是它自己改文件、自己 build，所以这里仍旧把台面源文件顶一下，别指望别人替它擦。
+// 台面源文件里往往**内联/实例化**了被改的类（MSVC 会把 vtable 与内联体以 COMDAT 放在台面的
+// .obj 里，链接时又排在库的前面赢得挑选），于是「头文件变异」会**假存活**。运行器本来就会在
+// 每条变异后把 spec 提到的文件写回一遍（顺带把它们的 mtime 顶新 ⇒ 下一条变异时自然会重编），
+// 台面源文件不在这个集合里，得单独顶一下。
 function touchSubjectSource() {
   if (!existsSync(subjectSource)) return;
   const now = new Date();

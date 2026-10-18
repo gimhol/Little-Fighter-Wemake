@@ -287,19 +287,37 @@ function cmdConfigure() {
 // 表不可信，只能按「头文件 mtime 比任何 .obj 新」这个粗粒度守卫兜底）。
 function guardStaleObjectsAt(buildDir) {
   if (!existsSync(buildDir)) return false;
-  const objMs = Math.max(newestMtime(join(buildDir, "lfw"), (f) => f.endsWith(".obj")),
-                         newestMtime(join(buildDir, "host"), (f) => f.endsWith(".obj")),
-                         newestMtime(join(buildDir, "tests"), (f) => f.endsWith(".obj")));
-  if (objMs === 0) return false;
   const headerMs = Math.max(newestMtime(join(NATIVE, "lfw"), isHeader),
                             newestMtime(join(NATIVE, "host"), isHeader),
                             newestMtime(join(NATIVE, "tests"), isHeader));
-  if (headerMs <= objMs) return false;
-  console.log(C.dim("  头文件比 .obj 新（MSVC 的 /showIncludes 在中文 VS 下记不进依赖）⇒ 全量重编"));
-  for (const sub of ["lfw", "host", "tests"]) {
-    rmSync(join(buildDir, sub, "CMakeFiles"), { recursive: true, force: true });
+  if (headerMs === 0) return false;
+  // 记「上一次构建时的最新头文件 mtime」。不能拿它跟 `.obj` 比 —— 部分重建之后总会有
+  // 些 .obj 比头文件新、另一些更旧，比较会漏掉后者（实测漏掉 `subjects/bot.cpp.obj`，
+  // `CtrlEnv` 换了布局 ⇒ 台面 `make` 直接访问越界）。
+  const stampFile = join(buildDir, ".lfw-header-stamp");
+  const prev = existsSync(stampFile) ? Number(readFileSync(stampFile, "utf8")) || 0 : 0;
+  if (headerMs <= prev) return false;
+  console.log(C.dim("  头文件有更新（MSVC 的 /showIncludes 在中文 VS 下记不进依赖）⇒ 全量重编"));
+  // 只删 `*.obj`：各子工程的 `CMakeFiles` 目录层级不一样（`tests/differential/CMakeFiles`、
+  // `host/godot/CMakeFiles`），按目录猜会漏。
+  for (const f of walkFiles(buildDir, (p) => p.endsWith(".obj"))) {
+    // CMake 自己的编译器探测产物（`CompilerIdCXX` / `ShowIncludes`）不是我们的目标文件
+    if (f.includes("CompilerId") || f.includes("ShowIncludes")) continue;
+    rmSync(f, { force: true });
   }
+  writeFileSync(stampFile, String(headerMs));
   return true;
+}
+
+function walkFiles(dir, pred) {
+  const out = [];
+  if (!existsSync(dir)) return out;
+  for (const ent of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, ent.name);
+    if (ent.isDirectory()) out.push(...walkFiles(full, pred));
+    else if (pred(full)) out.push(full);
+  }
+  return out;
 }
 
 const guardStaleObjects = () => guardStaleObjectsAt(BUILD_DIR);

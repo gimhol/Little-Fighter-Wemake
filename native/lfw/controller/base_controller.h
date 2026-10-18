@@ -56,6 +56,10 @@ struct CtrlEnv {
   // `Entity&`，靠这条缝把引用解回实体（`Entity` 在控制器侧只出现指针/引用 ⇒ 前置声明就够，
   // 不破 `Entity` ⇄ `controller` 的包含环）。
   std::function<Entity*(const Value&)> resolve;
+  // 「自己」的真实体（`Entity::refresh_ctrl_env` 里直接给 `this`）。TS 那边 `bot/*` 读的就是
+  // 活实体（`this.entity.position`），有了这条就不用每帧重建 `Value` 投影再去解回来；
+  // 差分台面（没有 `Entity`）里它是 `nullptr`，那些地方走 `self_ref()` 的引用版重载。
+  Entity* self = nullptr;
   std::function<void(double, double, double, const std::u16string&)> world_etc;
   std::function<void(const std::u16string&, double, double, double)> team_come;
   std::function<void(const std::u16string&)> team_stay;
