@@ -3266,8 +3266,8 @@ void Entity::refresh_ctrl_env() {
     env.vz = velocity.z;
     env.name = name();
     env.data = _data;
-    env.holding = holding != nullptr ? ref_of(*holding) : Value(NullTag{});
-    env.catching = catching != nullptr ? ref_of(*catching) : Value(NullTag{});
+    env.holding = holding != nullptr ? TargetHandle::of(*holding) : TargetHandle();
+    env.catching = catching != nullptr ? TargetHandle::of(*catching) : TargetHandle();
     env.blockers_count = static_cast<double>(blockers.size());
     env.mt = &(*world().lfw().mt());
     // `BotController.difficulty` 是 getter：这里做成闭包，读的时刻才求值（同 TS）。

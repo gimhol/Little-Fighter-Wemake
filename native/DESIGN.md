@@ -11758,3 +11758,62 @@ void update_lookup(int me, const std::vector<TargetHandle>& entities);  // 公�
 
 顺带给两个「候选循环」加了「两侧都没推进就 break」的守卫：句柄化之后 `same()` 有可能两边都不认
 （TS 里 `e` 一定来自名单，不会出现），没有守卫会死循环（实测台面挂住过一次）。
+
+## 164. `CtrlEnv.holding` / `CtrlEnv.catching` 也用句柄（2026-10-18）
+
+`CtrlEnv` 上原来还剩两个「关系槽」是引用快照：
+
+```cpp
+env.holding  = holding  != nullptr ? ref_of(*holding)  : Value(NullTag{});
+env.catching = catching != nullptr ? ref_of(*catching) : Value(NullTag{});
+```
+
+TS 那边 `me.holding` / `me.catching` 是 `Entity | null`（`me.holding?.base_type`、
+`me.catching.hp`、`e == me.catching` …），所以这两条也换成 `TargetHandle`：
+
+```cpp
+env.holding  = holding  != nullptr ? TargetHandle::of(*holding)  : TargetHandle();
+env.catching = catching != nullptr ? TargetHandle::of(*catching) : TargetHandle();
+```
+
+### 164.1. 读点
+
+| 位置 | 改前 | 改后 |
+| --- | --- | --- |
+| `bot/bot_env.h:holding_base_type_of_env` | `!truthy(e.holding)` / `base_type_of_ref(e.holding)` | `e.holding.nullish()` / `base_type_of_ref(e.holding.ref())` |
+| `BotController::w_atk_m_x` / `w_atk_r_x` | `field_or(field_or(field_or(e->holding, …)))` | 同上但起点是 `e->holding.ref()` |
+| `BotController::should_chase` | `same_entity(e->catching, x)` | `e->catching.same(TargetHandle::of(x))` |
+| `bot/state/bot_state_chasing.cpp` | `if (truthy(e->catching))` | `if (!e->catching.nullish())` |
+
+`nullish()` 与 `truthy(Value)` 的差别只在「实体被回收复用」这一路：句柄会拿 `id` 复核，
+判成死目标（下游本来也会拒）；其余读法与旧实现同值，所以摘要逐位不变。
+
+### 164.2. 台面
+
+`subjects/bot.cpp` 的 `g_env` 是脚本化出来的，没有 `Entity`：
+
+```cpp
+g_env.holding  = lfw::TargetHandle::of(lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"),  Value(NullTag{})));
+g_env.catching = lfw::TargetHandle::of(lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{})));
+```
+
+句柄在 `_entity == nullptr` 时退回引用快照，所以 8 份 `bot` 用例的输出不受影响。
+
+### 164.3. 补的两组用例
+
+`cases/bot/targets.txt` 补了：
+
+1. `meref catching "e2"` + `should_chase "e1"` / `"e4"` —— 让「`catching` 非空 ⇒ 只比身份」
+   这一支真正被走到（以前只有 `catching === 被问目标` 一种情形，恒真/恒假两个变异都杀不掉）；
+2. `fx put "h1" … "base" o 3 "type" n 2 "w_atk_m_x" n 7 "w_atk_r_x" n 9` +
+   `meref holding "h1"` + `get w_atk_m_x` / `get w_atk_r_x` —— 钉住持握物两字段不串。
+
+`bot_controller` spec 因此重写 3 条锚点：`mutate.mjs` 26 killed / 0 survived / 0 compile-error。
+
+### 164.4. 一段沿袭下来的死代码
+
+`should_chase` 里 `if (e == me.holding) return false;` / `if (e == me.catching) return true;` /
+`if (me.catching && me.catching.hp > 0) return false;` 三行在 `catching` 非空时**不可达** ——
+函数开头 `if (this.entity.catching) return this.entity.catching == e;` 已经返回。
+TS 原样如此（`src/LFW/bot/BotController.ts:397-399`），端口照抄；别为它们写锚点（杀不掉，
+不是因为台面弱，而是分支不存在）。

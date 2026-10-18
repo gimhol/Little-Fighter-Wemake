@@ -2406,3 +2406,30 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   300 帧 `b936d83b3706ebfe` → `b18b9d0d7892aef5`。原因是端口从「引用快照（每趟 lookup 刷新一次）」
   变成「活实体」：距离每帧重算、死目标当帧就掉出目标表 —— 这是**向 TS 靠**的改动，
   差分 265/265 仍是硬门槛（`bot/*` 8 个用例 + `entity/ball_ctrl` 全绿）。
+
+### 2026-10-18（二十一）：`CtrlEnv.holding` / `CtrlEnv.catching` 实体化
+
+* `CtrlEnv` 上最后两个「关系槽投影」也换成 `TargetHandle`：`refresh_ctrl_env` 里
+  `env.holding = holding != nullptr ? TargetHandle::of(*holding) : TargetHandle();`
+  （`catching` 同）。以前是 `ref_of(*holding)` —— 一份完整快照（`data`/`frame`/四个关系槽），
+  而且要等下一次刷新才更新，TS 读的是 `this.entity.holding` 这个活实体。
+* 读点跟着改：
+  * `bot/bot_env.h` 的 `holding_base_type_of_env` 读 `e.holding.ref()`，
+    空判从 `!truthy(...)` 换成 `!nullish()`（句柄才会复核实体存活）；
+  * `BotController::w_atk_m_x` / `w_atk_r_x` 读 `e->holding.ref()`；
+  * `should_chase` 里三处 `same_entity(e->catching, x)` 换成 `e->catching.same(TargetHandle::of(x))`
+    （`===` 按实体身份比，不再比两份引用的字段）；
+  * `bot/state/bot_state_chasing.cpp` 的 `if (truthy(e->catching))` → `if (!e->catching.nullish())`。
+* 台面：`subjects/bot.cpp` 的 `g_env.holding` / `g_env.catching` 由 `Value` 改
+  `TargetHandle::of(or_nullish(...))` —— 台面里没有实体，句柄退回引用快照，语义与改前一致。
+* 补了两组用例（`cases/bot/targets.txt`）：`catching` 指向**别的**目标时 `should_chase` 走
+  「catching 直通」那一支（原来只测过 `catching === 被问目标`），以及持握物
+  `data.base.w_atk_m_x` / `w_atk_r_x` 必须各读各的。`bot_controller` spec 重写 3 条锚点，
+  `mutate.mjs` 跑出 **26 killed / 0 survived / 0 compile-error**。
+* 顺带记一笔：`should_chase` 里 `e == me.holding` / `e == me.catching` / `me.catching.hp > 0`
+  三行在 `catching` 非空时**不可达**（函数开头 `if (this.entity.catching) return … == e;` 已经返回）。
+  TS 原样如此（`src/LFW/bot/BotController.ts:397`），端口照抄，不为它们写锚点。
+* 验证：差分 265/265、lint 864 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad；
+  摘要与中批**逐位一致**（这刀只换投影来源，不改任何判定）：
+  `--ui-page main_page` 2400 帧 `56bd53ab3ae75154`、`--stage 1` 900 帧 `4c5ef7aa63c97056`、
+  300 帧 `b18b9d0d7892aef5`。

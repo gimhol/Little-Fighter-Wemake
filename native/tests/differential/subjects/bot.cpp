@@ -238,8 +238,10 @@ void sync_env() {
   g_env.is_on_ground = lfw::truthy(lfw::field_or(g_me, u"is_on_ground"));
   g_env.name = lfw::field_or(g_me, u"name");
   g_env.data = lfw::field_or(g_me, u"data");
-  g_env.holding = lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"), Value(NullTag{}));
-  g_env.catching = lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{}));
+  g_env.holding = lfw::TargetHandle::of(
+      lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"), Value(NullTag{})));
+  g_env.catching = lfw::TargetHandle::of(
+      lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{})));
   const Value blockers = lfw::field_or(g_me, u"blockers");
   const lfw::Array* const bl = lfw::as_array(blockers);
   g_env.blockers_count = bl != nullptr ? static_cast<double>(bl->size()) : 0;

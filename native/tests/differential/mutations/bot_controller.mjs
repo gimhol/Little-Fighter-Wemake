@@ -42,8 +42,20 @@ export default {
     {
       note: "should_chase 的 catching 直通变成恒 false",
       file: "native/lfw/bot/bot_controller.cpp",
-      from: `  if (truthy(e->catching)) return same_entity(e->catching, e_ref);`,
-      to: `  if (truthy(e->catching)) return false;`,
+      from: `  if (!e->catching.nullish()) return e->catching.same(TargetHandle::of(e_ref));`,
+      to: `  if (!e->catching.nullish()) return false;`,
+    },
+    {
+      note: "w_atk_m_x 误读 w_atk_r_x（持握物数据字段串了）",
+      file: "native/lfw/bot/bot_controller.cpp",
+      from: `    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_m_x");`,
+      to: `    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_r_x");`,
+    },
+    {
+      note: "should_chase 的 catching 直通变成恒 true",
+      file: "native/lfw/bot/bot_controller.cpp",
+      from: `  if (!e->catching.nullish()) return e->catching.same(TargetHandle::of(e_ref));`,
+      to: `  if (!e->catching.nullish()) return true;`,
     },
     {
       note: "handle_action 的 desire 比较方向反了",

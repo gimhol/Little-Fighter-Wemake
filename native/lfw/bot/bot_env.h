@@ -55,8 +55,8 @@ inline Value bot_ignore_of_ref(const Value& ref) {
 
 // `me.holding?.base_type`（没有持握物时给 `undefined`，不是 0）。
 inline Value holding_base_type_of_env(const controller::CtrlEnv& e) {
-  if (!truthy(e.holding)) return Value();
-  return base_type_of_ref(e.holding);
+  if (e.holding.nullish()) return Value();
+  return base_type_of_ref(e.holding.ref());
 }
 
 // `a == b` / `a === b`（实体身份）：TS 比的是对象同一性；端口的两份引用是各自建出来的

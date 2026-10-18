@@ -377,8 +377,8 @@ double BotController::j_atk_x() const {
 double BotController::w_atk_m_x() const {
   const controller::CtrlEnv* e = env();
   Value v;
-  if (e != nullptr && truthy(e->holding)) {
-    v = field_or(field_or(field_or(e->holding, u"data"), u"base"), u"w_atk_m_x");
+  if (e != nullptr && !e->holding.nullish()) {
+    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_m_x");
   }
   return to_number(or_nullish(v, Value(dataset.num(u"w_atk_m_x"))));
 }
@@ -386,8 +386,8 @@ double BotController::w_atk_m_x() const {
 double BotController::w_atk_r_x() const {
   const controller::CtrlEnv* e = env();
   Value v;
-  if (e != nullptr && truthy(e->holding)) {
-    v = field_or(field_or(field_or(e->holding, u"data"), u"base"), u"w_atk_r_x");
+  if (e != nullptr && !e->holding.nullish()) {
+    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_r_x");
   }
   return to_number(or_nullish(v, Value(dataset.num(u"w_atk_r_x"))));
 }
@@ -583,7 +583,7 @@ bool BotController::is_leave_chase_range(const Value& target_ref) const {
 bool BotController::should_chase(const Value& e_ref) {
   const controller::CtrlEnv* e = env();
   if (e == nullptr) return false;
-  if (truthy(e->catching)) return same_entity(e->catching, e_ref);
+  if (!e->catching.nullish()) return e->catching.same(TargetHandle::of(e_ref));
 
   // 正在注视的对象已失效（死亡/消失/回到可追击范围）时置空
   if (watching.same(TargetHandle::of(e_ref)) && truthy(e_ref)) {
@@ -598,9 +598,9 @@ bool BotController::should_chase(const Value& e_ref) {
   if (e->hp <= 0) return false;
   if (ref_hp(e_ref) <= 0) return false;
   if (equals(bot_ignore_of_ref(e_ref), Value(1.0))) return false;
-  if (truthy(e->holding) && same_entity(e_ref, e->holding)) return false;
-  if (truthy(e->catching) && same_entity(e_ref, e->catching)) return true;
-  if (truthy(e->catching) && ref_hp(e->catching) > 0) return false;
+  if (!e->holding.nullish() && e->holding.same(TargetHandle::of(e_ref))) return false;
+  if (!e->catching.nullish() && e->catching.same(TargetHandle::of(e_ref))) return true;
+  if (!e->catching.nullish() && ref_hp(e->catching.ref()) > 0) return false;
 
   const double en_x = ref_x(e_ref);
   const double player_l = stage_player_l();
@@ -629,7 +629,7 @@ bool BotController::should_chase(const Value& e_ref) {
         strict_equals(base_type_of_ref(e_ref), Value(static_cast<double>(WeaponEnum::Drink)))) {
       return false;
     }
-    if (truthy(e->holding)) return false;
+    if (!e->holding.nullish()) return false;
     if (is_leave_goto_range(e_ref)) return false;
     do {
       // 队友Bot尽量不喝
@@ -676,8 +676,8 @@ bool BotController::should_avoid(const Value& av_ref) {
   if (!truthy(field_or(av_ref, u"mounted"))) return false;
   if (e->hp <= 0) return false;
   if (ref_hp(av_ref) <= 0) return false;
-  if (truthy(e->holding) && same_entity(e->holding, av_ref)) return false;
-  if (truthy(e->catching) && same_entity(e->catching, av_ref)) return false;
+  if (!e->holding.nullish() && e->holding.same(TargetHandle::of(av_ref))) return false;
+  if (!e->catching.nullish() && e->catching.same(TargetHandle::of(av_ref))) return false;
   const bool avoiding = strict_equals(bot_state(), Value(std::u16string(bse::kAvoiding)));
   const bool ret = avoiding ? !is_leave_avoid_zone(av_ref) : is_enter_avoid_zone(av_ref);
 

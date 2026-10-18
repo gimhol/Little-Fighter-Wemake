@@ -106,7 +106,7 @@ std::optional<Value> BotState_Chasing::update(double dt) {
   }
   if (strict_equals(state, Value(static_cast<double>(StateEnum::Catching)))) {
     // louisEx 空中推人的帧状态也是 Catching
-    if (truthy(e->catching)) c.click({u"a"});
+    if (!e->catching.nullish()) c.click({u"a"});
   } else if (strict_equals(state, Value(static_cast<double>(StateEnum::Standing))) ||
              strict_equals(state, Value(static_cast<double>(StateEnum::Walking)))) {
     if (!c.en_out_of_range) {

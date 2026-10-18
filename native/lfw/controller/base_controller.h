@@ -82,10 +82,10 @@ struct CtrlEnv {
   double vz = 0;
   Value name;
   Value data;
-  // 关系槽用**浅引用**（`ref_of` 不带关系那一层）：TS 读的是活实体
-  // （`me.holding?.base_type` / `me.catching.hp`），端口读刷新那一刻的投影。
-  Value holding;
-  Value catching;
+  // `me.holding` / `me.catching`：TS 读的是活实体（`me.holding?.base_type` / `me.catching.hp`），
+  // 端口用 `TargetHandle`（真实体活读；差分台面里退回引用快照）。
+  TargetHandle holding;
+  TargetHandle catching;
   double blockers_count = 0;
   // `lfw.mt`（`desire` 的 `mark`/`range`、`handle_bot_actions` 的 `pick`/`case`）。
   MersenneTwister* mt = nullptr;
