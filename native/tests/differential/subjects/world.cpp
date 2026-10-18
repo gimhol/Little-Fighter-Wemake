@@ -24,6 +24,7 @@
 #include "lfw/defines/i_terrain_info.h"
 #include "lfw/defines/frame_id.h"
 #include "lfw/defines/gone_frame_info.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/entity/entity.h"
 #include "lfw/entity/entity_ref.h"
 #include "lfw/player_info.h"
@@ -523,7 +524,10 @@ class FakeLfw : public lfw::LFW {
   }
   bool dev() const override { return dev_flag; }
   void debug(const std::u16string& msg) override { push("h:debug=" + to_ascii(msg)); }
-  bool survival_rank_mode() const override { return rank_mode; }
+  std::optional<std::u16string> game_mode() const override {
+    return rank_mode ? std::optional<std::u16string>(lfw::game_mode::kSurvivalRank1P)
+                     : std::nullopt;
+  }
   bool survival_rank_available() const override { return rank_avail; }
   void handle_cmds(World& world) override {
     (void)world;

@@ -12016,11 +12016,13 @@ float center = texture2D(tex, uv).a;
 
 两点口径容易搞错：
 
-1. `outlineWidth` 是**画布像素**。`TextMesh` 的画布按 `style.scale`（`_normalize_style` 缺省 2）
-   放大，画完再缩回节点尺寸 ⇒ 逻辑像素 = `outlineWidth / style.scale`。
-2. 着色器只按 `outlineWidth` 个 texel 采**一圈**（不是填充整段），所以视觉上是一条细环。
+1. `outlineWidth` 是**逻辑像素**（4 ⇒ 描边 4px 宽）。`TextMesh` 的画布按 `style.scale`
+   （`_normalize_style` 缺省 2）放大、着色器按 `outlineWidth` 个 texel 取一圈，
+   两者相消后屏幕上就是 `outlineWidth` 个逻辑像素 —— 端口因此**不除** `style.scale`
+   （早先按 `outlineWidth / style.scale` 实现过一版，描边细了一半，是错的）。
+2. 着色器只采**一圈**（四邻域），不是填充整段，所以视觉上是贴着字形的一条环。
 
-端口：`parse_text` 读三个字段，把宽度折算成「向外扩多少逻辑像素」存进 `_stroke_w`，
+端口：`parse_text` 读三个字段，宽度原样存进 `_stroke_w`，
 `emit_node` 再乘这一层的缩放（`_gsy`）写进 `GodotDrawItem.stroke_*`。
 顺带留两条回退（数据里没有，但代码里存在过）：
 `style.stroke_style` + `style.line_width`（canvas `strokeText`，线宽是以字形边线为中心的，
@@ -12029,17 +12031,26 @@ float center = texture2D(tex, uv).a;
 
 ### 167.2. 宿主怎么画
 
+Godot 自带的 `draw_string_outline(font, pos, line, LEFT, -1, size, size_px, color)` **不随
+`size_px` 线性变粗**：实测 `size_px` = 4 / 8 / 16 在 24px 字形上只出约 1 / 2 / 2 px 的带
+（内部大概是按固定比例的轮廓偏移），撑不出 `outlineWidth: 4` 想要的 4px。所以描边自己铺：
+
 ```cpp
 void LfwGodot::draw_text_run(font, pos /*基线左端*/, line, font_size, color,
-                             has_stroke, stroke_size, stroke_color) {
-  if (has_stroke) draw_string_outline(font, pos, line, LEFT, -1, font_size, stroke_size,
-                                      stroke_color);   // 先铺轮廓（向外扩）
-  draw_string(font, pos, line, LEFT, -1, font_size, color);  // 再压填充
+                             has_stroke, stroke_w, stroke_color) {
+  if (has_stroke) {
+    // 半径 1..n，每个半径上八个方向各画一遍描边色 ⇒ 字形向外长厚 n px
+    for (int r = 1; r <= stroke_w; ++r)
+      for (const auto& d : kDirs8)
+        draw_string(font, pos + d * r, line, LEFT, -1, font_size, stroke_color);
+  }
+  draw_string(font, pos, line, LEFT, -1, font_size, color);   // 最后压填充
 }
 ```
 
-canvas 那边是 `fillText` 之后 `strokeText`（描边半宽压在字形内侧），Godot 的
-`draw_string_outline` 是「向外膨胀 size 像素」⇒ 反过来先轮廓后填充，得到同样的观感。
+边缘的 alpha 跟着字形自己走（`draw_string` 的抗锯齿保留），观感与 canvas 那边
+`fillText` + `strokeText` 一致；代价是每行最多 `8 * stroke_w + 1` 次 `draw_string`
+—— 实测页面（DEMO 4px、`Go!` 5px、血条名字 1px）在 600 帧里没影响 60 ups。
 
 ### 167.3. 世界空间的两条文字
 
@@ -12080,3 +12091,75 @@ TS 里名字/数量是挂 `EntityRenderer.body` 的独立 mesh，只看 `invisib
 `EntityStatRender` 的六条小血条（`Bar`：hp / hp_r / mp / fall / defend / toughness）、
 UI 文字的下划线（`underline_color` / `underline_width`）与阴影、`CursorRender` 的指针名字。
 这些都不在这次报的问题里，单列。
+
+
+## 168. 对局模式：`GameMode` 字符串枚举（2026-10-19）
+
+上游 `be59a6aff` 把 `lfw.survival_rank_mode`（bool）与 `lfw.survival_rank_2p`（bool）
+换成一个可空的字符串枚举 `GameMode`：
+
+| 值 | 含义 |
+| --- | --- |
+| `vs` | 对战 |
+| `stage` | 闯关 |
+| `survival_rank_1p` | 单人榜生存 |
+| `survival_rank_2p` | 双人榜生存 |
+
+### 168.1. 端口形状
+
+TS 里 `game_mode` 是**公开字段**，且只在准备页写入；端口要让它可被差分台面伪造，所以
+照「字段与缝撞名就分开」的老规矩（`srank_mode` / `srank_available` 那一套）拆成：
+
+```cpp
+std::optional<std::u16string> game_mode_value;                     // 字段（TS `game_mode?`）
+virtual std::optional<std::u16string> game_mode() const;           // 缝（读）
+```
+
+`is_survival_rank_mode(mode)` 是自由函数（`defines/game_mode.h`）：`1p` / `2p` 两个值之一。
+`survival_rank_mode()` 那条老缝**删掉了** —— TS 里已经没有这个名字，留着只会让两个口径漂移。
+
+### 168.2. 谁写、谁读
+
+| 位置 | 动作 |
+| --- | --- |
+| `GamePrepareLogic::on_resume` | `lfw().game_mode_value = game_mode()`（准备页一进来就定档） |
+| `GamePrepareLogic::start_game` | 再写一次（TS 同款），并把 `srank_mode = false/true` 两处删掉 |
+| `StageModeLogic::on_stop` | `reset()`（原来是 `srank_mode = false`） |
+| `Entity::update_catching` | `!is_survival_rank_mode(lfw().game_mode())` |
+| `E_Val.IsSurvialRankMode` | `flag_of(is_survival_rank_mode(e.lfw().game_mode()))` |
+| `StageModeLogic` 三处、`GamePrepareLogic` 各处 | `is_survival_rank_mode(...)` / `== kStage` |
+
+`GamePrepareLogic` 自己有两个 `game_mode`：`props_game_mode()` 是 TS 的
+`this.props.game_mode`（`vs_mode` / `stage_mode` / `survival` 三个**旧串**），
+`game_mode()` 是 TS 的 `get game_mode()`（映射成 `GameMode`，生存按 `player_count()` 分 1P/2P）。
+
+## 169. 喝饮料：瓶子为什么落地不碎（2026-10-19）
+
+TS `CharacterState_Drink.update` 收尾：
+
+```ts
+e.drop_holding();                      // 只清 this.holding
+e.enter_frame(NEXT_FRAME_AUTO);
+holding.hp = holding.hp_r = 1;         // ← 局部引用，drop 之后仍然有效
+holding.lfw.mt.mark = 'drink_drop';
+const vx = holding.lfw.mt.range(-6, 6) / 2;
+holding.set_velocity(vx, 6, 0);
+```
+
+端口早期把这几句逐字翻成了 `e.holding_set_hp(...)` / `e.holding_mt_range(...)` —— 可
+`drop_holding()` 刚把 `this->holding` 清成 `nullptr`，**五句全是空操作**；而
+`holding_mt_range` 当时还是返回空 `Value` 的空壳 ⇒ `vx = NaN`。瓶子于是既没有被压成
+`hp = 1`（落地时 `drop_hurt: 35` 打不掉它）、也没有抛出速度，永远不碎。
+
+现在：
+
+* `Entity::holding_mt_mark/mt_range` 落到真 `MersenneTwister`（`lfw.mt` 是**每 LFW 一个**
+  实例，所以在喝的人身上调与在瓶子身上调是同一条流）。
+* 状态层先抓 `Entity* const held = e.holding;` 再写 `held->set_hp_r(1) / set_hp(1) /
+  set_velocity(vx, 6, 0)`。
+* 差分台面 `burning_drink` 的被持有物换成独立的 `FakeHeld`：TS 那边它本来就是独立对象，
+  台面靠它把「写给了谁」也观察出来（之前只观察「写了什么」，所以这条一直没被抓住）。
+
+碎裂本身不需要额外代码：`Entity::set_hp` 在 `o > 0 && v <= 0` 时已经会
+`apply_opoints(base.brokens)` + 播 `dead_sounds` + 进 `frame.on_dead ?? data.on_dead`
+（武器表里 `on_dead = NEXT_FRAME_GONE`）。

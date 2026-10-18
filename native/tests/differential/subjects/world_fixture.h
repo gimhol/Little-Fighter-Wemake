@@ -382,7 +382,7 @@ class FakeLfw : public lfw::LFW {
 
   void debug(const std::u16string& msg) override { push("h:debug=" + to_ascii(msg)); }
 
-  bool survival_rank_mode() const override { return false; }
+  std::optional<std::u16string> game_mode() const override { return std::nullopt; }
   bool survival_rank_available() const override { return false; }
 
   // TS 的 `World.handle_cmds` 直接 `CMDS.handle`；端口的这面是 `IWorldLfw::handle_cmds` 缝

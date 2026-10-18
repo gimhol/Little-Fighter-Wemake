@@ -5992,10 +5992,8 @@ export default {
     {
       note: "update_catching：survival_rank_mode 判定取反",
       file: "native/lfw/entity/entity.cpp",
-      from: `  if (cp_throwinjury == -1 &&
-      (!world().lfw().survival_rank_mode() || !entity::is_boss(caught->entity_view()))) {`,
-      to: `  if (cp_throwinjury == -1 &&
-      (world().lfw().survival_rank_mode() || !entity::is_boss(caught->entity_view()))) {`,
+      from: `  if (cp_throwinjury == -1 && (!is_survival_rank_mode(world().lfw().game_mode()) ||`,
+      to: `  if (cp_throwinjury == -1 && (is_survival_rank_mode(world().lfw().game_mode()) ||`,
     },
     {
       note: "update_catching：decrease 不乘 atom_time",

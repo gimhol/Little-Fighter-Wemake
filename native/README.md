@@ -2502,9 +2502,9 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   `UITextRenderer.update()` 把它们塞进文字材质，着色器按 `outlineWidth` 个**纹理像素**采样四邻域
   往外扩一圈。端口原来只读 `fill_style`，于是所有描边都丢了。
   现在 `parse_text` 读三个 outline 字段（另留 `style.stroke_style` / `line_width` 与旧数据的
-  `style.back_style.stroke_style` 两条回退），宽度统一折算成「向外扩多少逻辑像素」
-  （材质口径 `outlineWidth / style.scale`，canvas `strokeText` 口径 `line_width / 2`），
-  宿主用 `draw_string_outline` 先铺轮廓、再压填充。
+  `style.back_style.stroke_style` 两条回退），宽度原样当**逻辑像素**
+  （`outlineWidth: 4` ⇒ 4px；canvas `strokeText` 口径 `line_width / 2`），
+  宿主按八个方向逐半径偏移复制铺描边、最后压填充（见下面「描边基准改正」）。
 * **角色脚下的名字**（TS `EntityNameRender`）。端口从没画过：`TextMesh` 的 plain 模式在 TS 里是
   白字 + 材质 `mixColor`（`get_team_text_color`）+ 1 世界单位描边（`get_team_outline_color`），
   位置 `y = ground_y - z/2 - 块高`（在脚下）、`x` 按块宽夹在视口里。
@@ -2518,12 +2518,66 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
 `has_clamp_x` / `clamp_x0` / `clamp_x1` / `clamp_pad`；`_draw()` 里文字项走
 `draw_text_item` → `draw_text_run`（描边 + 填充）/ `draw_world_text_item`（世界锚点）。
 
+**描边基准改正**（用户："你的描边大小基准大小不对"）。两处：
+
+* 宽度口径：`outlineWidth` 是**逻辑像素**，不再除 `style.scale`
+  （缺省 2 ⇒ 早先的描边只有一半粗；DEMO 的 `outlineWidth: 4` 现在就是 4px）。
+* 画法：Godot 的 `draw_string_outline(size)` **不随 size 线性变粗** —— 实测 24px 字形上
+  size 4 / 8 / 16 只出约 1 / 2 / 2px 的带，撑不出 4px。改成自己做偏移复制：
+  半径 1..n，每个半径八个方向各画一遍描边色，再压填充；边缘 alpha 跟字形走。
+  每行最多 `8n + 1` 次 `draw_string`，`demo_mode_page` 600 帧仍是 60 ups。
+
 验证（截图 + 摘要，都是渲染侧，**世界摘要逐位不变**）：
-`--ui-page demo_mode_page` 的 "DEMO" 现在有 `#005A8E` 描边、八个角色脚下都有队伍色的名字；
-`--ui-page stage_mode_page --stage 21` 的 STAGE 3-2 标题与角色名同样带描边。
+`--ui-page demo_mode_page` 的 "DEMO" 现在有 `#005A8E` 描边（扫描线量得 4px）、八个角色脚下
+都有队伍色的名字；`--ui-page stage_mode_page --stage 21` 的 STAGE 3-2 标题与角色名同样带描边。
 摘要：`--ui-page main_page` 2400 帧 `b3f9a34a67597b08`、`--stage 1` 900 帧 `4c5ef7aa63c97056`、
 300 帧 `b18b9d0d7892aef5`（与上一刀一致）；差分 265/265、lint 866 clean / 0 failed / 14 warnings、
 anchors 9773 ok / 0 bad。
 
 仍缺（TS 有、端口没画，另行处理）：`EntityStatRender` 的六条小血条（`Bar`）、UI 文字的
 下划线（`underline_color` / `underline_width`，`demo_play_link` 用到）、文字阴影。
+
+### 2026-10-19（二十五）：跟上游 `LFW 改用 GameMode 枚举`
+
+上游 `be59a6aff` 把 `lfw.survival_rank_mode` / `lfw.survival_rank_2p` 两个布尔换成一个
+`GameMode` 字符串枚举（`vs` / `stage` / `survival_rank_1p` / `survival_rank_2p`），
+"是不是生存排行"改由 `is_survival_rank_mode(mode)` 判。
+
+* 新头 `native/lfw/defines/game_mode.h`：`game_mode::kVs|kStage|kSurvivalRank1P|kSurvivalRank2P`
+  + `game_mode_entries()` + `is_survival_rank_mode(const std::optional<std::u16string>&)`。
+* `LFW`：字段 `srank_mode` / `survival_rank_2p` 删掉，换成
+  `std::optional<std::u16string> game_mode_value`（TS 的 `game_mode?`）与缝
+  `virtual std::optional<std::u16string> game_mode() const`。
+  `virtual bool survival_rank_mode() const` 一并删掉（TS 没有这条了），
+  `Entity::update_catching` 与 `E_Val.IsSurvialRankMode` 改读
+  `is_survival_rank_mode(lfw().game_mode())`。
+* `GamePrepareLogic`：原来的 `game_mode()`（读 `props.game_mode` 串）改名 `props_game_mode()`，
+  新增 `std::u16string game_mode()` = TS 的 `get game_mode()`（props 模式 → GameMode；
+  生存按玩家数分 1P/2P）。`on_resume()` 开头 `lfw().game_mode_value = game_mode()`、
+  `start_game()` 里 `lfw().game_mode_value = mode`（替代 `srank_mode=false/true` 两次写），
+  `refresh_survival_rank()` 删掉 `survival_rank_2p` 那句。
+* `StageModeLogic`：三处 `lfw().srank_mode` 改 `is_survival_rank_mode(lfw().game_mode())`；
+  `on_stop()` 改 `lfw().game_mode_value.reset()`。
+* 台面 `subjects/{lfw,world,entity,world_fixture}` 与 `mutations/{lfw_char_menu,entity,get_val}`
+  跟着改（`sprobe`/`srank` 的口径同 TS：`is_survival_rank_mode(game_mode())` 与
+  `game_mode() == kSurvivalRank2P`）。
+
+### 2026-10-19（二十六）：两个跟着查出来的功能缺陷
+
+用户报的 4 条里，这两条的根因都在"端口留了空壳"：
+
+* **Louis 不能 D>J→LouisEX**（有动作但不变身）。`datas/make_weapon_data` 之外，变身走的是
+  `CharacterState_TransformToLouisEX::enter` → `e.lfw.datas.find_fighter("50")`；
+  端口 `Entity::datas_find_fighter` 一直是**返回空值**的占位（注释写着"留给后续刀"）⇒
+  帧 319 的 `state: 9995` 进去以后什么也没发生。现在接到
+  `LFW::datas_fighters_find`（`datas_->find_fighter(oid)`）。
+* **牛奶/啤酒喝完脱落、落地不碎**。`CharacterState_Drink` 收尾那五句 TS 写的是
+  **drop 之前捕获的局部 `holding`** 引用；端口照抄成了 `e.holding_set_*` / `e.holding_mt_*`，
+  而 `drop_holding()` 刚把 `this->holding` 清成 `nullptr` ⇒ 五句全是空操作
+  （瓶子既没被压成 `hp=1`，也没拿到抛出速度）。更糟的是 `holding_mt_range` 当时是
+  返回空 `Value` 的空壳 ⇒ `vx = to_number(undefined)/2 = NaN`，瓶子位置直接变成 NaN。
+  现在：`Entity::holding_mt_mark/range` 落到真 `MersenneTwister`；状态层先抓
+  `Entity* const held = e.holding;` 再做 `held->set_hp_r/set_hp/set_velocity`。
+  瓶子于是 `hp=1`、按 `(vx, 6, 0)` 抛出，落地时 `weapon_drop_hurt: 35` 把它打到 0
+  ⇒ `set_hp` 的 `brokens` / `on_dead` 那一段触发，碎掉。
+  差分台面 `burning_drink` 的被持有物改成独立的 `FakeHeld`（TS 那边它本来就是个独立对象）。

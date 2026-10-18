@@ -14,6 +14,7 @@
 #include "lfw/defines/cheat_type.h"
 #include "lfw/defines/entity_enum.h"
 #include "lfw/defines/entity_val.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/defines/itr_kind.h"
 #include "lfw/defines/weapon_type.h"
 #include "lfw/entity/entity_type_check.h"
@@ -254,7 +255,7 @@ Value transform_index(const Entity& e, const std::u16string&, BinOp) {
 }
 
 Value is_survial_rank_mode(const Entity& e, const std::u16string&, BinOp) {
-  return flag_of(e.lfw().survival_rank_mode());
+  return flag_of(is_survival_rank_mode(e.lfw().game_mode()));
 }
 
 }

@@ -14,6 +14,7 @@
 #include "lfw/core/js_num.h"
 #include "lfw/core/value.h"
 #include "lfw/defines/frame_id.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/entity/entity.h"
 #include "lfw/controller/ball_controller.h"
 #include "lfw/helper/closer_one.h"
@@ -666,7 +667,10 @@ struct EntityLfw : fx::FakeLfw {
     return field_of(g_datas, lfw::to_string(oid));
   }
 
-  bool survival_rank_mode() const override { return g_rank_mode; }
+  std::optional<std::u16string> game_mode() const override {
+    return g_rank_mode ? std::optional<std::u16string>(lfw::game_mode::kSurvivalRank1P)
+                       : std::nullopt;
+  }
   bool survival_rank_available() const override { return g_rank_avail; }
 
   // `lfw.is_cheat(name)`：TS 是 `is_cheat_type(name) && !!world.dataset[name]`，
