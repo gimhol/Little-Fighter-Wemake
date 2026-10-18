@@ -1,8 +1,10 @@
 import type { IEntityData, IFrameInfo, IFramePic, IPictureInfo, TFace } from "@/LFW";
-import { Buff_Electroshock, clamp, cos, Entity, floor, LFW, max, abs, sin, World } from "@/LFW";
+import { abs, Buff_Electroshock, clamp, cos, Entity, floor, LFW, max, sin, World } from "@/LFW";
 import type { IFrameModel, IFrameModelPose } from "@/LFW/defines/IFrameModel";
 import type { IModelInfo } from "@/LFW/defines/IModelInfo";
 import { Ditto } from "@/LFW/ditto";
+import { SkinnedMesh } from "three";
+import { clone as clone_skeleton } from "three/addons/utils/SkeletonUtils.js";
 import type { AnimationAction, AnimationClip, Bone } from "../_t";
 import { AnimationMixer, BackSide, BufferGeometry, Color, Euler, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Quaternion, ShaderMaterial, Vector3 } from "../_t";
 import type { ImageMgr } from "../ImageMgr/ImageMgr";
@@ -11,10 +13,8 @@ import type { EntityRenderer } from "./EntityRenderer";
 import { MeshFactory, MeshKind } from "./factory";
 import { OutlineMaterial } from "./materials/OutlineMaterial";
 import { OutlineMesh } from "./meshs/OutlineMesh";
-import { Shaders } from "./shader";
-import { clone as clone_skeleton } from "three/addons/utils/SkeletonUtils.js";
-import { SkinnedMesh } from "three";
 import { ModelCache, type IModelCacheEntry } from "./ModelCache";
+import { Shaders } from "./shader";
 import type { WorldRenderer } from "./WorldRenderer";
 
 const ATOM_PER_SECOND = 60;
@@ -25,7 +25,7 @@ const get_img_map = (lfw: LFW, data: IEntityData, out: Map<string, RImageInfo>):
   const images = lfw.images as ImageMgr;
   for (const key in files) {
     const img = images.find_by_pic_info(files[key]);
-    img && out.set(key, img);
+    if (img) out.set(key, img);
   }
 };
 
@@ -168,20 +168,23 @@ export class EntityMainRender {
     const files = this.files = data.base.files ?? {};
     for (const k in files) {
       const file = files[k];
-      file.variants?.length && this.file_variants.set(k, [k, ...file.variants]);
+      if (file.variants?.length)
+        this.file_variants.set(k, [k, ...file.variants]);
     }
 
     const model_list: IModelInfo[] = [];
     const models = this.models = data.base.models ?? {};
     for (const k in models) {
       const model = models[k];
-      model.variants?.length && this.model_variants.set(k, [k, ...model.variants]);
+      if (model.variants?.length)
+        this.model_variants.set(k, [k, ...model.variants]);
       model_list.push(model);
     }
 
     this.data = data;
     get_img_map(this.lfw, data, this.images);
     this.pin_files();
+    this.preload_images();
     // 贴图与全局 ImageMgr 共享（clip 走 uniforms，无需隔离 texture）。
     // 不要在这里设 needsUpdate：它会 bump 共享 source.version，
     // 导致所有引用同一贴图的实体都在下一帧重新上传 GPU。
@@ -245,6 +248,21 @@ export class EntityMainRender {
     }
   }
 
+  private preload_images(): void {
+    const data = this.data;
+    const images = this.lfw.images;
+    const jobs = Object.entries(this.files).map(([key, info]) =>
+      images.load_by_pic_info(info).then((image) => {
+        if (this.data === data) this.images.set(key, image);
+      })
+    );
+    void Promise.all(jobs).then(() => {
+      if (this.data === data) this.update_texture();
+    }).catch((e) => {
+      Ditto.warn('[EntityMainRender::preload_fighter_images]', e);
+    });
+  }
+
   private request_img(tex: string, info: IPictureInfo): void {
     if (this.img_pending.has(tex)) return;
     this.img_pending.add(tex);
@@ -260,7 +278,8 @@ export class EntityMainRender {
   }
 
   update_shaking(): void {
-    let { shaking, facing, buffs } = this.entity;
+    let { shaking } = this.entity;
+    const { facing, buffs } = this.entity;
 
     if (!shaking && buffs.size) {
       for (const [, b] of buffs) {
@@ -482,11 +501,24 @@ export class EntityMainRender {
     return 1
   }
 
+  /** FIXME: 大哥，味道不对啊 -Gim */
   private get_next_frame(): IFrameInfo | undefined {
-    const next = this.frame.next
+
+    let { next } = this.frame;
     if (!next) return void 0
-    const id = typeof next === 'string' ? next : Array.isArray(next) ? (next[0] as any)?.id : (next as any)?.id
-    if (!id) return void 0
+    const { frames } = this.data;
+    if (!frames) return void 0
+
+    if (typeof next === 'string') return frames[next]
+
+    if (Array.isArray(next)) next = next[0]
+
+    if (!next) return void 0;
+
+    let { id } = next;
+    if (Array.isArray(id)) id = id[0]
+
+    if (!id) return void 0;
     return this.data.frames?.[id]
   }
 
@@ -608,7 +640,7 @@ export class EntityMainRender {
     const seek = Math.max(model.seek ?? 0, 0)
     const next = this.get_next_frame()?.model
     const same_clip = !!next && next.anim === model.anim && next.id === model.id
-    let end = model.seek_end ?? (same_clip && next!.seek !== void 0 ? Math.max(next!.seek ?? 0, 0) : duration)
+    const end = model.seek_end ?? (same_clip && next!.seek !== void 0 ? Math.max(next!.seek ?? 0, 0) : duration)
     let seg_len = end - seek
     if (!(seg_len > 0)) seg_len = duration - seek
     if (!(seg_len > 0)) seg_len = 0
@@ -809,10 +841,10 @@ export class EntityMainRender {
 
     if (!visible) return;
 
-    let { x: bx, y: by, z: bz = 0.1, r = 0 } = bpoint;
+    let { x: bx } = bpoint;
+    const { y: by, z: bz = 0.1 } = bpoint;
     bx = entity.facing === 1 ? bx : mesh0.scale.x - bx;
     this.blood_mesh.position.set(this.centerx + bx, this.centery - by, bz);
   }
 }
-
 
