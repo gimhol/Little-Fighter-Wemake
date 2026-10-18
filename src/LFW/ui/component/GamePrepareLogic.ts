@@ -1,4 +1,4 @@
-import { Defines, Difficulty, FacingFlag, SurvivalRankOids, TeamEnum } from "../../defines";
+import { Defines, Difficulty, FacingFlag, GameMode, is_survival_rank_mode, SurvivalRankOids, TeamEnum } from "../../defines";
 import type { IPropsMeta } from "../../defines/ISchema";
 import { Ditto } from "../../ditto";
 import type { ILFWCallback } from "../../ILFWCallback";
@@ -63,15 +63,30 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
   /** 本准备页的玩家数（生存排行双人页为 2，缺省 1） */
   get player_count(): number { return this.props.players ?? 1 }
 
+  /** 本准备页对应的对局模式（生存排行按玩家数分单人/双人） */
+  get game_mode(): GameMode {
+    switch (this.props.game_mode) {
+      case GAME_MODE_SURVIVAL:
+        return this.player_count >= 2 ? GameMode.SurvivalRank2P : GameMode.SurvivalRank1P
+      case GAME_MODE_STAGE:
+        return GameMode.Stage
+      case GAME_MODE_VS:
+        return GameMode.Vs
+      default:
+        return GameMode.Vs
+    }
+  }
+
   override on_start(): void {
     super.on_start?.();
     this.lfw.callbacks.add(this._lf2_callbacks)
   }
   override on_resume(): void {
+    this.lfw.game_mode = this.game_mode
     const background_row = this.node.search_node("background_row");
     const stage_row = this.node.search_node("stage_row");
     const char_menu_logic = this.node.search_component(CharMenuLogic)
-    if (this.props.game_mode === GAME_MODE_SURVIVAL) {
+    if (is_survival_rank_mode(this.game_mode)) {
       background_row?.set_visible(false).set_disabled(true);
       stage_row?.set_visible(false).set_disabled(true);
       if (char_menu_logic) {
@@ -80,7 +95,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
         char_menu_logic.max_player = this.player_count;
         char_menu_logic.oids = [...SurvivalRankOids];
       }
-    } else if (this.props.game_mode === GAME_MODE_STAGE) {
+    } else if (this.game_mode === GameMode.Stage) {
       stage_row?.set_visible(true).set_disabled(false);
       background_row?.set_visible(false).set_disabled(true);
       if (char_menu_logic) char_menu_logic.teams = [TeamEnum.Team_1]
@@ -99,7 +114,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
   /** 每帧跟随选角刷新背景大头像/随机问号（无变化时零开销） */
   override update(dt: number): void {
     super.update?.(dt)
-    if (this.props.game_mode === GAME_MODE_SURVIVAL)
+    if (is_survival_rank_mode(this.game_mode))
       this.refresh_selection_face()
   }
 
@@ -162,7 +177,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
   /** 生存排行准备页：左侧选角、右侧展示排行榜（外部未注入数据能力时隐藏） */
   protected refresh_survival_rank(): void {
-    if (this.props.game_mode !== GAME_MODE_SURVIVAL) return
+    if (!is_survival_rank_mode(this.game_mode)) return
     this.layout_rank_rows()
     const title = this.node.search_node("survival_rank_title")
     const tabs = this.node.search_node("rank_period_tabs")
@@ -189,7 +204,6 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
     else this.clear_rank_rows()
     // 请求外部(宿主 App)按当前周期拉取最新数据；数据到达后经 on_survival_rank_changed 更新本页
     this.lfw.survival_rank_period = this.rank_period
-    this.lfw.survival_rank_2p = this.player_count >= 2
     this.lfw.broadcast(BROADCAST_RANK_REQUEST)
   }
 
@@ -295,7 +309,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
   /** 单人固定设置模式（生存排行）：角色就绪倒计时结束后直接开始，不弹设置菜单 */
   get auto_start_when_ready(): boolean {
-    return this.props.game_mode === GAME_MODE_SURVIVAL
+    return is_survival_rank_mode(this.game_mode)
   }
 
   protected _lf2_callbacks: ILFWCallback = {
@@ -311,7 +325,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       }
     },
     on_survival_rank_changed: (data) => {
-      if (this.props.game_mode !== GAME_MODE_SURVIVAL) return
+      if (!is_survival_rank_mode(this.game_mode)) return
       if (!data) {
         this._rank_entries = []
         this._rank_mine = null
@@ -342,7 +356,8 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
     }
 
     const { bg_switcher, stage_switcher } = this.props
-    const is_survival_rank = this.props.game_mode === GAME_MODE_SURVIVAL
+    const game_mode = this.game_mode
+    const is_survival_rank = is_survival_rank_mode(game_mode)
     if (is_survival_rank) this.reset_world_dataset()
     const survival_stage = is_survival_rank
       ? (this.lfw.datas.stages.find(v => v.chapter === 'survival' && v.is_starting)
@@ -357,10 +372,10 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       this.lfw.change_bg(bg_switcher.background.id);
 
     const { far, near, left, right } = this.lfw.world.bg;
-    const is_stage_mode = this.props.game_mode === GAME_MODE_STAGE || is_survival_rank
-    const is_vs_mode = this.props.game_mode === GAME_MODE_VS
+    const is_stage_mode = game_mode === GameMode.Stage || is_survival_rank
+    const is_vs_mode = game_mode === GameMode.Vs
 
-    this.lfw.survival_rank_mode = false
+    this.lfw.game_mode = game_mode
     this.lfw.mt.mark = 'gpl_start_game_cam_x';
     let cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - Defines.MODERN_SCREEN_WIDTH)
 
@@ -412,7 +427,6 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
     if (is_survival_rank) {
       this.lfw.change_stage(survival_stage?.id ?? '50');
-      this.lfw.survival_rank_mode = true;
       this.node.layer?.push({ id: "stage_mode_page" });
     } else if (is_stage_mode) {
       if (stage_switcher)

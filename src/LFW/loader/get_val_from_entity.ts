@@ -1,4 +1,4 @@
-import { CheatEnum, ItrKind, WeaponEnum } from "../defines";
+import { CheatEnum, is_survival_rank_mode, ItrKind, WeaponEnum } from "../defines";
 import { E_Val } from "../defines/EntityVal";
 import type { IValGetter, IValGetterGetter } from "../defines/IExpression";
 import { Entity } from "../entity/Entity";
@@ -71,7 +71,7 @@ export const entity_val_getters: Record<E_Val, (e: Entity) => any> = {
   [E_Val.TransformListSize]: e => e.transforms?.length || 0,
   [E_Val.IsOnGround]: e => e.is_on_ground ? 1 : 0,
   [E_Val.TransformIndex]: e => e.transform_index,
-  [E_Val.IsSurvialRankMode]: e => e.world.lfw.survival_rank_mode ? 1 : 0
+  [E_Val.IsSurvialRankMode]: e => is_survival_rank_mode(e.world.lfw.game_mode) ? 1 : 0
 }
 export const entity_world_val_getters = new Map<string, undefined | IValGetter<Entity>>();
 

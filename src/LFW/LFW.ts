@@ -6,7 +6,7 @@ import { BotController } from './bot/BotController';
 import { regist_buffs } from './buff/_';
 import type { Collision } from './collision/Collision';
 import { LocalController } from './controller/LocalController';
-import type { IDataInfo } from './defines';
+import type { GameMode, IDataInfo } from './defines';
 import * as D from "./defines";
 import { CMD, CMD_NAMES } from "./defines/CMD";
 import { AGK } from './defines/GameKey';
@@ -232,18 +232,16 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   first_page: string = 'init';
   /** 所有已挂载（`Keys.mount()`）的按键状态；未挂载的实例留在 `_keys_graves` 回收池里 */
   readonly mounted_keys: Keys[] = [];
-
+  /** TODO: 这堆东西有点离谱 -Gim */
   /** 是否运行在 B站 Toy 容器环境（由外部 App 注入；主菜单“生存排行”入口仅在此环境显示） */
   toy_env: boolean = false;
   danmu_available: boolean = false;
-  /** B站生存排行模式：开启时每进入一个新的 Survival 阶段触发 on_survival_rank_phase */
-  survival_rank_mode: boolean = false;
+  /** 当前对局模式（准备页选定、对局中生效；未指定时为 undefined） */
+  game_mode?: GameMode;
   /** 每进入一个 Survival 阶段时回调（phase_reached = 当前阶段编号，从 0 起） */
   on_survival_rank_phase?: (phase_reached: number) => void;
   /** 外部(宿主 App)是否注入了生存排行数据能力（未注入表示不可用/不显示） */
   survival_rank_available: boolean = false;
-  /** 当前准备页是否为双人生存排行（榜单/榜位与单人分开） */
-  survival_rank_2p: boolean = false;
   /** 当前展示的排行周期（准备页切标签时更新；外部按此周期拉取） */
   survival_rank_period: SurvivalRankPeriod = 'all';
   /** 外部最近一次下发的生存排行数据（未下发为 undefined） */

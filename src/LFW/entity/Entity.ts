@@ -19,7 +19,7 @@ import {
   type IArmorInfo,
   type IBdyInfo, type IBounding, type ICpoint, type IDeadJoin, type IEntityData,
   type IFrameInfo, type IItrInfo, type INextFrame, type INextFrameResult, type IOpointInfo,
-  is_independent, ItrKind, type IVector3,
+  is_independent, is_survival_rank_mode, ItrKind, type IVector3,
   type IVector3Like,
   type IVelocityInfo, type IWpointInfo,
   OpointKind, OpointMultiEnum, OpointSpreading,
@@ -1844,7 +1844,7 @@ export class Entity {
       this.enter_frame(Defines.NEXT_FRAME_GONE);
       return true;
     }
-    if (throwinjury === -1 && (!this.lfw.survival_rank_mode || !is_boss(this.catching))) {
+    if (throwinjury === -1 && (!is_survival_rank_mode(this.lfw.game_mode) || !is_boss(this.catching))) {
       this.transfrom_to_another(catching._data);
       this.drop_catching()
       catching.catcher = null;

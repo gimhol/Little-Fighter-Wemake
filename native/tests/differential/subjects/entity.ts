@@ -7,6 +7,7 @@ import { summary_mgr } from "../../../../src/LFW/entity/SummaryMgr";
 import { State_Base } from "../../../../src/LFW/state/State_Base";
 import { States } from "../../../../src/LFW/state/States";
 import { WorldDataset } from "../../../../src/LFW/WorldDataset";
+import { GameMode } from "../../../../src/LFW/defines";
 import { MersenneTwister } from "../../../../src/LFW/utils/math/MersenneTwister";
 import { Ground } from "../../../../src/LFW/Ground";
 import { mt_cases } from "../../../../src/LFW/cases_instances";
@@ -145,7 +146,7 @@ const worldStub = {
     return out;
   },
   // `update()` 的四个宿主输入：puppets 名单、舞台边界、`ground.step`、
-  // `lfw.survival_rank_mode`（后者挂在 `lfwStub` 上）。
+  // `lfw.game_mode`（后者挂在 `lfwStub` 上）。
   puppets: new Map<string, Entity>(),
   stage: {} as Record<string, unknown>,
   ground: { step: 10 },
@@ -315,11 +316,11 @@ const relProbe = (): string =>
 const lfwStub = {
   players: new Map<string, Any>(),
   mt: new MersenneTwister(0),
-  // `lfw.survival_rank_mode`（`env rankmode b 1`；`update_catching` 的 -1 投掷分支）。
-  get survival_rank_mode(): boolean {
-    return rankMode;
+  // `lfw.game_mode`（`env rankmode b 1`；`update_catching` 的 -1 投掷分支）。
+  get game_mode(): GameMode | undefined {
+    return rankMode ? GameMode.SurvivalRank1P : undefined;
   },
-  // `world.lfw.survival_rank_available`（`survial_rank_mode` getter 用）。
+  // `world.lfw.survival_rank_available`（`env rankavail b 1`）。
   get survival_rank_available(): boolean {
     return rankAvail;
   },

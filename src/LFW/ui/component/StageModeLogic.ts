@@ -1,5 +1,5 @@
 import { FSM } from "../../base/FSM";
-import { GameKey, StageActions, type IStagePhaseInfo } from "../../defines";
+import { GameKey, is_survival_rank_mode, StageActions, type IStagePhaseInfo } from "../../defines";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import type { Stage } from "../../stage";
 import type { IStageCallbacks } from "../../stage/IStageCallbacks";
@@ -46,7 +46,7 @@ export class StageModeLogic extends UIComponent {
     ) => {
       this.debug('on_phase_changed', stage, curr, prev)
       if (
-        this.lfw.survival_rank_mode &&
+        is_survival_rank_mode(this.lfw.game_mode) &&
         !this.lfw.survival_rank_invalid &&
         stage.data.chapter === 'survival' &&
         this.lfw.on_survival_rank_phase
@@ -132,7 +132,7 @@ export class StageModeLogic extends UIComponent {
     this.lfw.world.callbacks.add(this.world_callbacks);
 
     if (
-      this.lfw.survival_rank_mode &&
+      is_survival_rank_mode(this.lfw.game_mode) &&
       !this.lfw.survival_rank_invalid &&
       this.world.stage.data.chapter === 'survival' &&
       this.lfw.on_survival_rank_phase
@@ -141,14 +141,14 @@ export class StageModeLogic extends UIComponent {
     }
   }
   override on_stop(): void {
-    this.lfw.survival_rank_mode = false
+    this.lfw.game_mode = undefined
     this.world.clear()
     this.lfw.world.stage.callbacks.del(this.stage_callbacks)
     this.lfw.world.callbacks.del(this.world_callbacks);
   }
 
   override update(dt: number): void {
-    if (this.lfw.survival_rank_mode) {
+    if (is_survival_rank_mode(this.lfw.game_mode)) {
       this.rank_hint_cheat?.set_visible(this.lfw.survival_rank_cheated)
       this.rank_hint_mods?.set_visible(this.lfw.survival_rank_modded)
     }
