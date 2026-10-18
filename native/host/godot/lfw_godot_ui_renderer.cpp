@@ -77,6 +77,14 @@ double pos_mod(double a, double b) {
   return r < 0.0 ? r + b : r;
 }
 
+// `Style.scale`：`UITextRenderer._normalize_style` 的缺省是 2（HiDPI 画布倍数），
+// 数据里显式覆盖时按数据的。
+double style_scale(const Value& style) {
+  const Value v = lfw::field_or(style, u"scale");
+  const double s = std::holds_alternative<double>(v) ? std::get<double>(v) : 0.0;
+  return s > 0.0 ? s : 2.0;
+}
+
 // `Style.font` / `TextMesh` 的 `DEFAULT_FONT_SIZE`：抓第一个 `NNpx`。
 double parse_font_size(const std::u16string& font) {
   const std::string s = to_utf8(font);
@@ -393,6 +401,7 @@ void GodotUINodeRenderer::sync_model() {
   _font_css.clear();
   _text_align = 0;
   _tr = _tg = _tb = _ta = 1.0;
+  _sr = _sg = _sb = _sa = _stroke_w = 0.0;
   const Value& tv = n.text();
   if (!nullish(tv)) {
     const Value text_v = lfw::field_or(tv, u"text");
@@ -415,6 +424,72 @@ void GodotUINodeRenderer::sync_model() {
         _tb = fill.b;
         _ta = fill.a;
       }
+      // 描边。数据里实际用的是**节点级** `outlineColor` / `outlineWidth` / `outlineAlpha`
+      //（cooked 的 `prel/ui/*.json5`：25 处 `outlineWidth: 1`，另有 2/4/5 若干），
+      // TS `UITextRenderer.update()` 把它们塞进文字材质的 `outlineColor/Width/Alpha`
+      //（着色器按 `outlineWidth` 个**纹理像素**采样四邻域，向外扩一圈）。
+      // `style.stroke_style` / `line_width`（canvas `strokeText`）与旧数据里的
+      // `style.back_style.stroke_style` 是另外两条路，优先级从高到低：
+      // 节点 outline ⇒ 顶层 stroke_style ⇒ back_style.stroke_style。
+      //
+      // 宽度口径：材质里的 `outlineWidth` 是**画布像素**（`TextMesh` 的画布按 `style.scale`
+      // ——默认 2—— 放大），`ctx.lineWidth` 则是逻辑像素 ⇒ 分别折算成逻辑像素存起来，
+      // `emit_node` 里再乘这一层的缩放。
+      double stroke_w = 0.0;
+      const Value node_outline_color = n.outlineColor();
+      const Value node_outline_width = n.outlineWidth();
+      if (!nullish(node_outline_color) && !nullish(node_outline_width)) {
+        const double px_width =
+            std::holds_alternative<double>(node_outline_width) ? std::get<double>(node_outline_width)
+                                                               : 0.0;
+        const double canvas_scale = style_scale(style);
+        if (px_width > 0.0) {
+          const Rgb01 stroke = parse_color(str16_or(node_outline_color));
+          if (stroke.found) {
+            double alpha = stroke.a;
+            const Value node_outline_alpha = n.outlineAlpha();
+            if (!nullish(node_outline_alpha)) {
+              alpha = std::holds_alternative<double>(node_outline_alpha)
+                          ? std::get<double>(node_outline_alpha)
+                          : alpha;
+            }
+            if (alpha > 0.0) {
+              _sr = stroke.r;
+              _sg = stroke.g;
+              _sb = stroke.b;
+              _sa = alpha;
+              stroke_w = px_width / (canvas_scale > 0.0 ? canvas_scale : 1.0);
+            }
+          }
+        }
+      }
+      if (stroke_w <= 0.0) {
+        Value stroke_style_v = lfw::field_or(style, u"stroke_style");
+        Value line_width_v = lfw::field_or(style, u"line_width");
+        const Value back = lfw::field_or(style, u"back_style");
+        if (!nullish(back)) {
+          const Value back_stroke = lfw::field_or(back, u"stroke_style");
+          const Value back_width = lfw::field_or(back, u"line_width");
+          if (nullish(stroke_style_v)) stroke_style_v = back_stroke;
+          if (!std::holds_alternative<double>(line_width_v)) line_width_v = back_width;
+        }
+        const std::u16string stroke_css = str16_or(stroke_style_v);
+        const double line_width =
+            std::holds_alternative<double>(line_width_v) ? std::get<double>(line_width_v) : 0.0;
+        if (!stroke_css.empty() && line_width > 0.0) {
+          const Rgb01 stroke = parse_color(stroke_css);
+          if (stroke.found && stroke.a > 0.0) {
+            _sr = stroke.r;
+            _sg = stroke.g;
+            _sb = stroke.b;
+            _sa = stroke.a;
+            // canvas 的 `strokeText` 线宽以字形边线为中心（内半 + 外半），而填充压在它上面
+            // ⇒ 看得见的只有外侧那一半。这里统一存「向外扩多少」。
+            stroke_w = line_width * 0.5;
+          }
+        }
+      }
+      _stroke_w = stroke_w;
     }
   }
 }
@@ -544,7 +619,10 @@ bool GodotUINodeRenderer::emit_node() {
     }
   }
   // 3) 文字
-  if (!_text.empty() && _ta > 0.0) {
+  // TS `need_fill` / `need_stroke` 是两个独立开关：填充色透明（或没写）时仍可能只画描边
+  // ⇒ 这里不能再只按 `_ta > 0` 取舍。
+  const bool has_stroke = _stroke_w > 0.0 && _sa > 0.0;
+  if (!_text.empty() && (_ta > 0.0 || has_stroke)) {
     GodotDrawItem it = base_item();
     it.x = x;
     it.y = y;
@@ -558,6 +636,13 @@ bool GodotUINodeRenderer::emit_node() {
     it.g = _tg;
     it.b = _tb;
     it.a = _alpha * _ta;
+    if (has_stroke) {
+      it.stroke_r = _sr;
+      it.stroke_g = _sg;
+      it.stroke_b = _sb;
+      it.stroke_a = _alpha * _sa;
+      it.stroke_w = _stroke_w * std::fabs(_gsy);
+    }
     push(std::move(it));
     ++_world->ui_stats().texts;
     drew = true;

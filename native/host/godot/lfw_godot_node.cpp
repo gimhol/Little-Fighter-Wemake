@@ -2266,14 +2266,79 @@ void LfwGodot::_draw() {
 // 2026-10-16 用户报的"Launch 页文字歪了"就是它）。而 `width = item.w`（原本的做法）会让 Godot
 // **自己折行**，与 TS 的 `split_text_to_lines`（只按 `\n` 切、不折行）口径不同。
 // ⇒ 两头都不能用：**自己量行宽、自己摆 x**，`alignment` 固定 LEFT、`width` 固定 -1。
+// 一行文字的描边 + 填充。`pos` 是**基线左端**（`draw_string` 的口径）。
+// 先画描边再画填充：canvas 那边是 `fillText` 之后 `strokeText`（描边在字形边线上、内侧压住填充边缘），
+// Godot 的 `draw_string_outline` 是**向外**膨胀 `size` 像素的实心轮廓 ⇒ 反过来先铺轮廓、再压上填充，
+// 得到"轮廓露在外侧"的同样观感（半宽取 `line_width/2`：canvas 的 lineWidth 也是半宽在内半宽在外）。
+void LfwGodot::draw_text_run(const godot::Ref<godot::Font>& font, const godot::Vector2& pos,
+                             const std::string& line, int font_size, const godot::Color& color,
+                             bool has_stroke, int stroke_size, const godot::Color& stroke_color) {
+  const godot::String text = godot::String::utf8(line.c_str());
+  if (has_stroke && stroke_size > 0) {
+    draw_string_outline(font, pos, text, godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size,
+                        stroke_size, stroke_color);
+  }
+  draw_string(font, pos, text, godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size, color);
+}
+
+// 世界空间的一行文字（实体名 / `xN` 剩余数量，TS `TextMesh` 的 plain 模式）：
+// `item.x/item.y` 是**屏幕锚点**，块尺寸要按字体度量现算（TS 那边是 canvas 量的 `mesh.scale`）。
+//   `text_below` ⇒ 块中心挂在锚点**下方一个块高**（`EntityNameRender`：`y = ground_y - z/2 - 块高`）；
+//   否则块中心挂在锚点**上方半个块高**（`EntityStatRender`：`y = 精灵顶 + 块高/2`）。
+void LfwGodot::draw_world_text_item(const GodotDrawItem& item, const godot::Ref<godot::Font>& font,
+                                    int font_size) {
+  const godot::Color color(static_cast<float>(item.r), static_cast<float>(item.g),
+                           static_cast<float>(item.b), static_cast<float>(item.a));
+  const bool has_stroke = item.stroke_w > 0.0 && item.stroke_a > 0.0;
+  const int stroke_size =
+      has_stroke ? std::max(1, static_cast<int>(std::lround(item.stroke_w))) : 0;
+  const godot::Color stroke_color(static_cast<float>(item.stroke_r),
+                                  static_cast<float>(item.stroke_g),
+                                  static_cast<float>(item.stroke_b),
+                                  static_cast<float>(item.stroke_a));
+  // 单行（名字与 `xN` 都不会换行），量一次宽高就够。
+  const double text_w = static_cast<double>(
+      font->get_string_size(godot::String::utf8(item.text.c_str()),
+                            godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size)
+          .x);
+  const double ascent = static_cast<double>(font->get_ascent(font_size));
+  const double descent = static_cast<double>(font->get_descent(font_size));
+  const double block_h = ascent + descent;
+  double cx = item.x;
+  if (item.has_clamp_x) {
+    // TS `clamp(position.x, cam_x + hw, …)` 的屏幕版：`hw = 块宽/2 + clamp_pad`。
+    const double hw = text_w * 0.5 + item.clamp_pad;
+    const double lo = item.clamp_x0 + hw;
+    const double hi = item.clamp_x1 - hw;
+    cx = hi >= lo ? std::min(std::max(cx, lo), hi) : (lo + hi) * 0.5;
+  }
+  const double center_y = item.text_below ? item.y + block_h : item.y - block_h * 0.5;
+  const double left = cx - text_w * 0.5;
+  // 基线 = 块顶 + ascent（`TextMesh` 用 `textBaseline = "top"` 的等价口径）。
+  const double baseline = center_y - block_h * 0.5 + ascent;
+  draw_text_run(font, godot::Vector2(static_cast<float>(left), static_cast<float>(baseline)),
+                item.text, font_size, color, has_stroke, stroke_size, stroke_color);
+}
+
 void LfwGodot::draw_text_item(const GodotDrawItem& item) {
   if (item.text.empty()) return;
   godot::Ref<godot::Font> font = font_for_css(item.font_css);
   if (font.is_null()) return;
   const int size = static_cast<int>(std::lround(item.font_size > 0.0 ? item.font_size : 9.0));
   const int font_size = size > 0 ? size : 1;
+  if (item.world_text) {
+    draw_world_text_item(item, font, font_size);
+    return;
+  }
   const Color color(static_cast<float>(item.r), static_cast<float>(item.g),
                     static_cast<float>(item.b), static_cast<float>(item.a));
+  const bool has_stroke = item.stroke_w > 0.0 && item.stroke_a > 0.0;
+  const int stroke_size =
+      has_stroke ? std::max(1, static_cast<int>(std::lround(item.stroke_w))) : 0;
+  const Color stroke_color(static_cast<float>(item.stroke_r),
+                           static_cast<float>(item.stroke_g),
+                           static_cast<float>(item.stroke_b),
+                           static_cast<float>(item.stroke_a));
   const double pad = 2.0;  // `UITextRenderer._normalize_style` 的四边缺省值
   // 先量一遍（块宽 = 最宽一行 + 左右 padding），再定块的左边界：块的**中心** = 节点矩形中心。
   std::vector<std::pair<std::string, double>> lines;
@@ -2315,9 +2380,8 @@ void LfwGodot::draw_text_item(const GodotDrawItem& item) {
       } else if (item.text_align == 2) {
         ax = content_x + std::round(line_max) - line.second;
       }
-      draw_string(font, Vector2(static_cast<float>(ax), static_cast<float>(y)),
-                  String::utf8(line.first.c_str()), godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f,
-                  font_size, color);
+      draw_text_run(font, Vector2(static_cast<float>(ax), static_cast<float>(y)), line.first,
+                    font_size, color, has_stroke, stroke_size, stroke_color);
     }
     y += static_cast<double>(line_h);
   }

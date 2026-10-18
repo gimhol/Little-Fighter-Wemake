@@ -2492,3 +2492,38 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
 （`reset_world_dataset` 跳过 `difficulty`）。两条新锚点都 killed。
 
 * 验证：差分 265/265、lint 866 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad。
+
+### 2026-10-19（二十四）：UI 文字描边、实体名、剩余数量
+
+用户报的三条渲染缺口，都在 Godot 宿主这一侧（世界/UI 的**绘制**，不碰核心）：
+
+* **UI 文字描边**。数据里用的是**节点级** `outlineColor` / `outlineWidth` / `outlineAlpha`
+  （cooked `prel/ui/*.json5`：25 处 `outlineWidth: 1`，另有 2/4/5 若干），TS 的
+  `UITextRenderer.update()` 把它们塞进文字材质，着色器按 `outlineWidth` 个**纹理像素**采样四邻域
+  往外扩一圈。端口原来只读 `fill_style`，于是所有描边都丢了。
+  现在 `parse_text` 读三个 outline 字段（另留 `style.stroke_style` / `line_width` 与旧数据的
+  `style.back_style.stroke_style` 两条回退），宽度统一折算成「向外扩多少逻辑像素」
+  （材质口径 `outlineWidth / style.scale`，canvas `strokeText` 口径 `line_width / 2`），
+  宿主用 `draw_string_outline` 先铺轮廓、再压填充。
+* **角色脚下的名字**（TS `EntityNameRender`）。端口从没画过：`TextMesh` 的 plain 模式在 TS 里是
+  白字 + 材质 `mixColor`（`get_team_text_color`）+ 1 世界单位描边（`get_team_outline_color`），
+  位置 `y = ground_y - z/2 - 块高`（在脚下）、`x` 按块宽夹在视口里。
+  现在 `GodotWorldRenderer` 每条实体多发一条 `world_text` 绘制项：锚点交给屏幕系，
+  块宽/高与夹取由宿主按字体度量算（渲染器不碰引擎类型）。
+* **头顶的剩余数量**（TS `EntityStatRender` 的 `x${reserve}`）。同一条 `world_text`，
+  `text_below = false` ⇒ 块中心压在精灵顶边上方半个块高。`reserve` 只由关卡道具给
+  （`StageItemInfo.reserve`，数据里 `stage.stage.json5` 有 3/5/8 若干），所以平时看不到。
+
+补的观测面：`GodotDrawItem` 新增 `stroke_*`（世界/UI 共用）与 `world_text` / `text_below` /
+`has_clamp_x` / `clamp_x0` / `clamp_x1` / `clamp_pad`；`_draw()` 里文字项走
+`draw_text_item` → `draw_text_run`（描边 + 填充）/ `draw_world_text_item`（世界锚点）。
+
+验证（截图 + 摘要，都是渲染侧，**世界摘要逐位不变**）：
+`--ui-page demo_mode_page` 的 "DEMO" 现在有 `#005A8E` 描边、八个角色脚下都有队伍色的名字；
+`--ui-page stage_mode_page --stage 21` 的 STAGE 3-2 标题与角色名同样带描边。
+摘要：`--ui-page main_page` 2400 帧 `b3f9a34a67597b08`、`--stage 1` 900 帧 `4c5ef7aa63c97056`、
+300 帧 `b18b9d0d7892aef5`（与上一刀一致）；差分 265/265、lint 866 clean / 0 failed / 14 warnings、
+anchors 9773 ok / 0 bad。
+
+仍缺（TS 有、端口没画，另行处理）：`EntityStatRender` 的六条小血条（`Bar`）、UI 文字的
+下划线（`underline_color` / `underline_width`，`demo_play_link` 用到）、文字阴影。

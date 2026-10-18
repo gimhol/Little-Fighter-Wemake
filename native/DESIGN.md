@@ -11981,3 +11981,102 @@ TS 的默认 `3` 对不上。
   **存活**的（`bot` 的 8 份用例从来没读这个 getter），补完三档立刻 killed。
 * `lfw_char_menu.mjs`：加「重置 dataset 时保留旧难度」（让 dump 循环跳过 `difficulty`）——
   这条钉住的就是 §166.1 的行为。
+## 167. Godot 宿主的三处文字：UI 描边、实体名、剩余数量（2026-10-19）
+
+`WorldRenderer` 侧的文字有三份，端口原先一份都没画（UI 文字画了但没描边）：
+
+| TS | 位置 | 端口现状 |
+| --- | --- | --- |
+| `UITextRenderer` + `TextMesh._draw_styled` | UI 文字 | 画了，**描边丢了** |
+| `EntityNameRender` | 角色脚下 | 完全没画 |
+| `EntityStatRender.update_reverse_text` | 角色头顶 `x${reserve}` | 完全没画 |
+
+### 167.1. UI 文字的描边走的是**节点属性**，不是 style
+
+数据（cooked）里是这样写的：
+
+```json5
+{
+  i18n: "DEMO",
+  outlineColor: "#005A8E",
+  outlineWidth: 4,
+  outlineAlpha: 1,
+  style: { fill_style: "white", font: '24px "Arial Black", Arial' },
+}
+```
+
+`UITextRenderer.update()` 在 `mesh.set_style(...)` **之后**把 `ui.outlineColor/Width/Alpha`
+塞进文字材质（`TextMaterial` 的 `outlineColor/outlineWidth/outlineAlpha`），着色器：
+
+```glsl
+vec2 texel = vec2(outlineWidth) / vec2(textureSize(tex, 0));
+float center = texture2D(tex, uv).a;
+// 四邻域采样，中心透明、邻居不透明 ⇒ 描边色
+```
+
+两点口径容易搞错：
+
+1. `outlineWidth` 是**画布像素**。`TextMesh` 的画布按 `style.scale`（`_normalize_style` 缺省 2）
+   放大，画完再缩回节点尺寸 ⇒ 逻辑像素 = `outlineWidth / style.scale`。
+2. 着色器只按 `outlineWidth` 个 texel 采**一圈**（不是填充整段），所以视觉上是一条细环。
+
+端口：`parse_text` 读三个字段，把宽度折算成「向外扩多少逻辑像素」存进 `_stroke_w`，
+`emit_node` 再乘这一层的缩放（`_gsy`）写进 `GodotDrawItem.stroke_*`。
+顺带留两条回退（数据里没有，但代码里存在过）：
+`style.stroke_style` + `style.line_width`（canvas `strokeText`，线宽是以字形边线为中心的，
+露在外面的只有一半 ⇒ 存 `line_width / 2`）、旧数据的 `style.back_style.stroke_style`
+（`ImageMgr` 在 `2d5b626ba` 删掉之前就是读它；仓库里 11 处旧数据还在）。
+
+### 167.2. 宿主怎么画
+
+```cpp
+void LfwGodot::draw_text_run(font, pos /*基线左端*/, line, font_size, color,
+                             has_stroke, stroke_size, stroke_color) {
+  if (has_stroke) draw_string_outline(font, pos, line, LEFT, -1, font_size, stroke_size,
+                                      stroke_color);   // 先铺轮廓（向外扩）
+  draw_string(font, pos, line, LEFT, -1, font_size, color);  // 再压填充
+}
+```
+
+canvas 那边是 `fillText` 之后 `strokeText`（描边半宽压在字形内侧），Godot 的
+`draw_string_outline` 是「向外膨胀 size 像素」⇒ 反过来先轮廓后填充，得到同样的观感。
+
+### 167.3. 世界空间的两条文字
+
+`EntityNameRender`（脚下）：
+
+```
+hw = (块宽 + 10) / 2
+x  = clamp(px, cam_x + hw, cam_x + screen_w/scale_x - hw)
+y  = clamp(ground_y - z/2 - 块高, cam_y + 10, cam_y + world_h - 10)   // 块**中心**
+```
+
+`EntityStatRender`（头顶，`x${reserve}`）：
+
+```
+mesh.position = (px, round(py + centery + 块高/2), pz)                // 块**中心**
+```
+
+两者都是 `TextMesh` 的 plain 模式：白字 + 材质 `mixColor` = `get_team_text_color(team)`、
+描边 = `get_team_outline_color(team)`、1 世界单位宽（`outlineWidth = TEXT_SUPERSAMPLE`
+个超采样 texel 折回 1）。
+
+端口把这两条做成同一族绘制项（`GodotDrawItem.world_text`）：
+
+* `x/y` 是**屏幕锚点**：名字 = 地面（`ground_y - z/2`），剩余数量 = 精灵顶边（`ry + centery`）；
+* `text_below` 决定块中心挂在锚点下方一个块高（名字）还是上方半个块高（数量）；
+* 横向夹取只给区间和那 5 个单位（`clamp_pad = 5 * scale_x`），**块宽由宿主量**
+  —— `lfw_godot_renderer.cpp` 不碰引擎类型（§G5 的边界规矩），字体度量只有宿主有。
+
+### 167.4. 可见性口径
+
+TS 里名字/数量是挂 `EntityRenderer.body` 的独立 mesh，只看 `invisible`（不看 `blinking`）⇒
+端口把它们放在「实体可见性判断」**之外**、只按 `e.invisible() > 0` 取舍，否则受击闪烁时名字会跟着闪。
+名字还要求 `name` 非空且 `name_visible` 为真；数量要求 `reserve != 0`
+（`reserve` 只由关卡道具给：`StageItemInfo.reserve`）。
+
+### 167.5. 还没有的
+
+`EntityStatRender` 的六条小血条（`Bar`：hp / hp_r / mp / fall / defend / toughness）、
+UI 文字的下划线（`underline_color` / `underline_width`）与阴影、`CursorRender` 的指针名字。
+这些都不在这次报的问题里，单列。

@@ -252,6 +252,13 @@ class LfwGodot : public Node2D {
   void draw_item(const GodotDrawItem& item);
   godot::Transform2D _item_xform;  // 当前这一批绘制项用的矩阵（`_draw()` 设、`draw_item` 镜像后还回去）
   void draw_text_item(const GodotDrawItem& item);
+  // 一行文字（先描边、后填充）。`pos` 是基线左端，`stroke_size` 是**半宽**（0 = 不描边）。
+  void draw_text_run(const godot::Ref<godot::Font>& font, const godot::Vector2& pos,
+                     const std::string& line, int font_size, const godot::Color& color,
+                     bool has_stroke, int stroke_size, const godot::Color& stroke_color);
+  // 世界空间的一行文字（实体名 / `xN` 剩余数量）：`item.x/item.y` 是屏幕锚点，块尺寸现量。
+  void draw_world_text_item(const GodotDrawItem& item, const godot::Ref<godot::Font>& font,
+                            int font_size);
   // `--clip-probe` 那一圈（逻辑屏幕边界内外各 8 像素；见 `Args::clip_probe`）。
   void draw_clip_probe(const godot::Transform2D& contain);
   // ---- 窗口 / 自绘标题栏（`--titlebar` / `--window-scale`）----

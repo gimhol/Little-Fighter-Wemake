@@ -131,6 +131,9 @@ class GodotUINodeRenderer : public ui::IUINodeRenderer {
   std::string _font_css;  // `style.font` 原文（CSS 简写）—— 交给宿主按字族挑字体
   int _text_align = 0;  // 0 左 / 1 中 / 2 右
   double _tr = 1, _tg = 1, _tb = 1, _ta = 1;
+  // 描边（TS `TextMesh` 的 `stroke_style` + `line_width`：画布上 `strokeText`）。
+  // `_stroke_w <= 0` 或 `_sa <= 0` ⇒ 没有描边（`need_stroke` 的两个条件）。
+  double _sr = 0, _sg = 0, _sb = 0, _sa = 0, _stroke_w = 0;
 };
 
 }  // namespace lfw::host

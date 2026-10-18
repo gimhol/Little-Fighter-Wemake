@@ -114,6 +114,23 @@ struct GodotDrawItem {
   std::string text;
   double font_size = 0;
   int text_align = 0;
+  // 文字描边（TS `TextMesh` 的 `stroke_style` + `line_width`）：
+  //   * UI 文字：`style.stroke_style` / `style.line_width`（画布上 `strokeText`）；
+  //   * 世界文字（实体名 / 剩余数量）：`get_team_outline_color(team)`，宽度 1 世界单位
+  //     （TS 是材质的 `outlineWidth = TEXT_SUPERSAMPLE` 个超采样 texel ⇒ 折回 1 逻辑像素）。
+  // 宿主用 `draw_string_outline` 画在填充之前（canvas 里也是先 `fillText` 再 `strokeText`，
+  // 但描边半宽压在字形外侧、填充后画会把外侧盖掉一半 ⇒ 反过来画才是 canvas 的样子）。
+  double stroke_r = 0, stroke_g = 0, stroke_b = 0, stroke_a = 0, stroke_w = 0;
+  // 世界文字（实体名下 / 剩余数量上，TS `EntityNameRender` / `EntityStatRender`）：
+  // 这一项的 `x/y` 是**屏幕锚点**，块尺寸由宿主按字体度量算（TS 那边是 canvas 量出来的
+  // `mesh.scale`）；`text_below` ⇒ 文字块的**中心**挂在锚点下方一个文字高度（名字：锚点 = 地面），
+  // 否则挂在锚点上方半个文字高度（剩余数量：锚点 = 精灵顶边）。
+  bool world_text = false;
+  bool text_below = false;
+  // 世界文字的横向夹取（TS `clamp(position.x, cam_x + hw, …)`，`hw = (块宽 + 10)/2` 折算到屏幕）：
+  // 宿主用 `[clamp_x0 + hw, clamp_x1 - hw]` 夹锚点，`hw = 块宽/2 + clamp_pad`。
+  bool has_clamp_x = false;
+  double clamp_x0 = 0, clamp_x1 = 0, clamp_pad = 0;
   // `style.font` 的原文（CSS 简写，如 `"bold 18px Arial"`）。字号已经单独抽出来了，
   // 这里留着是为了让 `_draw()` 能按**字族**挑字体 —— 浏览器就是按它渲染的
   //（`TextMesh.ts:66` 直接把整串塞给 `ctx.font`）。
@@ -256,6 +273,10 @@ class GodotWorldRenderer : public IWorldRenderer {
   // `frame.model` 的一条绘制项（TS `EntityMainRender` 的 `model_node` 摆位 + 动画参数）。
   void emit_model(GodotFrame& frame, const Entity& e, const Value& model, double world_x,
                   double world_y, double shaking_x);
+  // 世界空间的一行文字（TS `TextMesh` 的 plain 模式：实体名下 / `xN` 剩余数量上）。
+  // `anchor_world_y` 是锚点（名字 = 地面、剩余数量 = 精灵顶边）；`below` 见 `GodotDrawItem`。
+  void emit_world_text(GodotFrame& frame, const Entity& e, double world_x, double anchor_world_y,
+                       bool below, const std::string& text, bool clamp_x);
 
   LFW* _lfw = nullptr;
   HeadlessHost* _host = nullptr;
