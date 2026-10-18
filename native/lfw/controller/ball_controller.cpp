@@ -14,6 +14,7 @@
 #include "lfw/defines/frame_behavior.h"
 #include "lfw/defines/frame_id.h"
 #include "lfw/defines/game_key.h"
+#include "lfw/entity/entity.h"
 #include "lfw/entity/entity_flag.h"
 #include "lfw/helper/closer_one.h"
 #include "lfw/helper/manhattan_xz.h"
@@ -142,7 +143,12 @@ void BallController::update_lookup(int me, const std::vector<Value>& entities) {
   if (stratedy == static_cast<double>(ChaseStrategy::StopOnLost) && gave_up) return;
 
   const int count = static_cast<int>(entities.size());
-  const Value self = self_ref(*e);
+  // TS 的 `const self = this.entity`：真实运行时 `CtrlEnv::self` 就是它（位置活读）；
+  // 差分台面没有 `Entity`，退回只带 `position` 的投影（距离的输入仍与 TS 一致）。
+  // **不能**拿 `entities[me]` 顶替：`me` 是「自己在名单里的下标」，只有调用方保证它
+  // 指向自己时两者才等价。
+  const Entity* const self_e = e->self;
+  const Value self = self_e != nullptr ? Value() : self_ref(*e);
 
   const Value current = reidentify(chasing, entities);
   chasing = current;
@@ -161,7 +167,7 @@ void BallController::update_lookup(int me, const std::vector<Value>& entities) {
   }
   if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = Value();
 
-  const double x0 = ref_x(self);
+  const double x0 = self_e != nullptr ? self_e->position.x : ref_x(self);
   int i1 = me - 1;
   int i2 = me + 1;
   Value found;
@@ -175,10 +181,11 @@ void BallController::update_lookup(int me, const std::vector<Value>& entities) {
       if (truthy(l) && x0 - ref_x(l) >= found_d) l = Value();
       if (truthy(r) && ref_x(r) - x0 >= found_d) r = Value();
     }
-    e2 = helper::closer_one(self, l, r);
+    e2 = self_e != nullptr ? helper::closer_one(*self_e, l, r) : helper::closer_one(self, l, r);
     if (!truthy(e2)) break;
     if (!truthy(field_or(e2, u"ghosted")) && should_chase(e2)) {
-      const double d = helper::manhattan_xz(self, e2);
+      const double d =
+          self_e != nullptr ? helper::manhattan_xz(*self_e, e2) : helper::manhattan_xz(self, e2);
       if (d < found_d) {
         found = e2;
         found_d = d;

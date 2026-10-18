@@ -610,7 +610,7 @@ void LFW::goto_next_stage() {
   }
   if (next_stage != nullptr && truthy(field_or(*next_stage, u"is_starting"))) {
     for (Entity* const e : world_->entities) {
-      if (entity::is_fighter(ref_of(*e)) && e->ctrl() != nullptr &&
+      if (entity::is_fighter(*e) && e->ctrl() != nullptr &&
           players_has(Value(e->ctrl()->player_id))) {
         continue;
       }

@@ -198,7 +198,7 @@ export default {
     {
       note: "World: add_entities 的战士分支不再认战士",
       file: "native/lfw/world.cpp",
-      from: `  if (entity::is_fighter(ref_of(e))) {
+      from: `  if (entity::is_fighter(e)) {
     callbacks.call(u"on_fighter_add",`,
       to: `  if (false) {
     callbacks.call(u"on_fighter_add",`,
@@ -780,14 +780,14 @@ export default {
       restrict_result_.z = z;
       return restrict_result_;
     }
-  } else if (entity::is_ball(ref_of(e))) {`,
+  } else if (entity::is_ball(e)) {`,
       to: `      e.terrain = ground.base();
       restrict_result_.x = x;
       restrict_result_.y = y;
       restrict_result_.z = z;
       return restrict_result_;
     }
-  } else if (entity::is_ball(ref_of(e))) {`,
+  } else if (entity::is_ball(e)) {`,
     },
     {
       note: "World: restrict 的落点不取地形高度",

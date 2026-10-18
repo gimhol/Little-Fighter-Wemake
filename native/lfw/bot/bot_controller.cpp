@@ -1165,7 +1165,8 @@ void BotController::update_lookup(int me, const std::vector<Value>& entities) {
   avoidings.reidentify(entities);
   defends.reidentify(entities);
 
-  const Value self = self_ref();
+  const Entity* const self_e = self_entity();
+  const Value self = self_e != nullptr ? Value() : self_ref();
   while (i1 >= 0 || i2 < len) {
     Value l = (i1 >= 0 && i1 < len) ? entities[static_cast<size_t>(i1)] : Value();
     Value r = (i2 >= 0 && i2 < len) ? entities[static_cast<size_t>(i2)] : Value();
@@ -1173,7 +1174,8 @@ void BotController::update_lookup(int me, const std::vector<Value>& entities) {
       if (truthy(l) && x0 - ref_x(l) > bound) l = Value();
       if (truthy(r) && ref_x(r) - x0 > bound) r = Value();
     }
-    const Value picked = helper::closer_one(self, l, r);
+    const Value picked = self_e != nullptr ? helper::closer_one(*self_e, l, r)
+                                           : helper::closer_one(self, l, r);
     if (!truthy(picked)) break;
     if (!truthy(field_or(picked, u"ghosted"))) lookup(picked);
     if (same_ref(l, picked)) --i1;

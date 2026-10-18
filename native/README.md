@@ -2361,3 +2361,22 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
     实际层级是 `tests/differential/CMakeFiles/...`、`host/godot/CMakeFiles/...`。
     漏掉的那个 `subjects/bot.cpp.obj` 拿的是旧 `CtrlEnv` 布局 ⇒ 台面 `make` 直接
     `0xC0000005`。结构体成员一改就必须全量重编。
+
+### 2026-10-18（十九）：便宜批 —— ball 的 `self` + `is_*` / `closer_one` 的实体重载
+
+承接（十八）的清点，这一刀只做**不动台面、不动世界缝**的那一档：
+
+* `BallController::update_lookup` 的 `self` 改走 `CtrlEnv::self`（真实运行时恒非空，位置活读），
+  台面（没有 `Entity`）才退回原来的 `self_ref(CtrlEnv&)` 投影。`x0` / `closer_one` / `manhattan_xz`
+  三处都按这条分叉。
+* `entity::is_fighter` / `is_weapon` / `is_ball` 加 `const Entity&` 重载（TS 的 `is_fighter(v)`
+  读的就是 `v.data.type`），把 36 处 `is_xxx(ref_of(*e))` 全部改直读实体：
+  `stage` 14 / `world` 9 / `ui` 7 / `cmds` 4 / `entity` 1 / `lfw` 1 —— 这些地方原来**为了判一个
+  类型**就白造一份完整引用（`data` + `frame` + 四个关系槽）。
+* `helper::closer_one` 加 `const Entity&` 重载，几何收成一份 `closer_of`；
+  `BotController::update_lookup` 与 `BallController::update_lookup` 都改成实体版优先。
+* 变异锚点：8 个 spec 里 21 条（含 `closer_one` 2 条）跟着新文本重写，
+  `mutate.mjs` 逐 spec 跑这 23 条：**全部 killed**，0 survived / 0 compile-error。
+* 验证：差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad；
+  摘要与改前逐位一致 —— `--ui-page main_page` 2400 帧 `digest=2ea7026a9cd193b6`、
+  `--stage 1` 900 帧 `digest=f150041396ce61b7`。

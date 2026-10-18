@@ -380,7 +380,7 @@ bool World::vec_has(const std::vector<std::u16string>& v, const std::u16string& 
 void World::add_entities(Entity& e) {
   if (map_get(entity_map, e.id) != nullptr) return;
 
-  if (entity::is_fighter(ref_of(e))) {
+  if (entity::is_fighter(e)) {
     callbacks.call(u"on_fighter_add",
                    {WorldCallbackArgs{this, &e, nullptr, nullptr, Value(), Value(),
                                       std::u16string(), 0.0, 0.0, 0.0, false}});
@@ -737,7 +737,7 @@ std::vector<double> World::get_bound(Entity& e) {
   const Stage& s = *stage_;
   double l = -9007199254740991.0;  // `Number.MIN_SAFE_INTEGER`
   double r = 9007199254740991.0;   // `Number.MAX_SAFE_INTEGER`
-  if (entity::is_fighter(ref_of(e))) {
+  if (entity::is_fighter(e)) {
     if (e.team() == to_string(s.team())) {
       l = s.enemy_l;
       r = s.enemy_r;
@@ -745,7 +745,7 @@ std::vector<double> World::get_bound(Entity& e) {
       l = s.player_l;
       r = s.player_r;
     }
-  } else if (entity::is_weapon(ref_of(e)) && e.base_type() == static_cast<double>(WeaponEnum::Drink)) {
+  } else if (entity::is_weapon(e) && e.base_type() == static_cast<double>(WeaponEnum::Drink)) {
     l = s.drink_l;
     r = s.drink_r;
   }
@@ -774,7 +774,7 @@ const Vector3& World::restrict(Entity& e) {
   const double far_v = b[3];
   x = clamp(x, left, right);
   z = clamp(z, far_v, near_v);
-  if (entity::is_weapon(ref_of(e))) {
+  if (entity::is_weapon(e)) {
     if (e.is_on_ground && x < left - e.l_len || x > right + e.r_len) {
       e.enter_frame(defines_value(u"Defines.NEXT_FRAME_GONE"));
       e.terrain = ground.base();
@@ -783,7 +783,7 @@ const Vector3& World::restrict(Entity& e) {
       restrict_result_.z = z;
       return restrict_result_;
     }
-  } else if (entity::is_ball(ref_of(e))) {
+  } else if (entity::is_ball(e)) {
     if (x < left - 800 - e.l_len || x > right + 800 + e.r_len) {
       e.enter_frame(defines_value(u"Defines.NEXT_FRAME_GONE"));
       e.terrain = ground.base();
@@ -906,7 +906,7 @@ void World::step() {
     }
     a->update();
 
-    if (entity::is_fighter(ref_of(*a))) {
+    if (entity::is_fighter(*a)) {
       if (a->hp() > 0) {
         double count = 0;
         for (const std::pair<std::u16string, double>& kv : team_alive_counts_) {
@@ -980,7 +980,7 @@ void World::step() {
   for (size_t i = 0; i < len; ++i) {
     Entity* const a = entities[i];
     if (frame_is_gone(*a)) continue;
-    if (entity::is_weapon(ref_of(*a)) && a->is_on_ground) {
+    if (entity::is_weapon(*a) && a->is_on_ground) {
       const double section = round(a->position.x / kWeaponXSection);
       double count = 0;
       for (const std::pair<double, double>& kv : ground_weapon_counts) {
@@ -1065,7 +1065,7 @@ void World::step() {
       }
     }
     mark_players_alive(*entity, false);
-    if (entity::is_fighter(ref_of(*entity))) {
+    if (entity::is_fighter(*entity)) {
       callbacks.call(u"on_fighter_del",
                      {WorldCallbackArgs{this, entity, nullptr, nullptr, Value(), Value(),
                                         std::u16string(), 0.0, 0.0, 0.0, false}});
@@ -1326,7 +1326,7 @@ void World::calc_alives() {
   puppet_teams.clear();
   team_alive_counts_.clear();
   for (Entity* const e : entities) {
-    if (!entity::is_fighter(ref_of(*e))) continue;
+    if (!entity::is_fighter(*e)) continue;
     if (e->hp() <= 0) continue;
     const std::u16string team = e->team();
     double count = 0;

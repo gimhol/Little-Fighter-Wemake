@@ -11645,3 +11645,55 @@ void sort_targets(NearestTargets& nt);
 `node native/tools/mutate.mjs temp 子集` 实测 **15 killed / 0 survived / 0 compile-error**）。
 `NearestTargets.look` 的两条委派行（引用版/实体版）文本相同，相关锚点用「多行 + 函数签名」
 定位，别只写 `insert_at(...)` 那一行。
+
+## 162. 便宜批：球控的 `self` 与类型判定的实体重载（2026-10-18）
+
+承 §161（bot 的 `self` 实体化）把剩下的「不动台面、不动世界缝」的部分做掉。
+
+### 162.1. `BallController` 的 `self`
+
+`update_lookup` 原来跟 bot 一样，用本地 `self_ref(CtrlEnv&)` 造一份 `{ position }` 投影
+（`x0` / `closer_one` / `manhattan_xz` 三处用）。`CtrlEnv::self` 对所有有控制器的实体都成立
+（`Entity::refresh_ctrl_env` 里 `env.self = this`），所以：
+
+```cpp
+const Entity* const self_e = e->self;
+const Value self = self_e != nullptr ? Value() : self_ref(*e);   // 台面才走投影
+const double x0 = self_e != nullptr ? self_e->position.x : ref_x(self);
+e2 = self_e != nullptr ? helper::closer_one(*self_e, l, r) : helper::closer_one(self, l, r);
+```
+
+`chasing` 仍是引用 + `reidentify`（那是「目标」那一层，见 §161.2 的同一理由）。
+
+### 162.2. `is_fighter` / `is_weapon` / `is_ball` 的实体重载
+
+TS：`is_fighter = (v: any) => is_fighter_data(v?.data)`。端口调用点普遍写成
+`is_fighter(ref_of(*e))` —— **为判一个类型**就造一份含 `data`/`frame`/四个关系槽的完整引用。
+加三条 `const Entity&` 重载（`is_xxx_data(e.data())`），把 36 处改直读：
+
+| 目录 | 处数 |
+| --- | --- |
+| `stage` | 14 |
+| `world` | 9 |
+| `ui` | 7 |
+| `cmds` | 4 |
+| `entity` | 1 |
+| `lfw` | 1 |
+
+`helper::closer_one` 同理加了 `const Entity&` 重载（几何收成 `closer_of` 一份），
+bot / ball 的 `update_lookup` 都改成实体版优先、台面退回引用版。
+
+### 162.3. 仍然留在引用上的（有意为之）
+
+* `chasing` / `following` / `aim_at` / `should_chase`（`BallController`）—— 是「目标」那一层，
+  要动 `LFW::ctrl_update_lookup` 与两个台面 subject（`bot.cpp:662`、`entity.cpp:1485`）；
+* `CtrlEnv.holding` / `catching`（浅引用）—— 实体侧早已直读 `Entity*`，只有 `bot/*` 走引用；
+* `collision::CollisionActor` —— 整套碰撞是扁平投影（设计如此：台面要独立建场）。
+
+### 162.4. 验证
+
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad；
+* 摘要逐位不变：`--ui-page main_page` 2400 帧 `2ea7026a9cd193b6`、`--stage 1` 900 帧
+  `f150041396ce61b7`（说明「`CtrlEnv.px` 快照」与「`Entity::position` 活读」在这条时序里同值）；
+* 变异锚点 21 条跟着改（8 个 spec），逐 spec 跑 `mutate.mjs`：23 条**全部 killed**，
+  0 survived / 0 compile-error。

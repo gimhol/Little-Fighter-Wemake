@@ -1109,7 +1109,7 @@ void Entity::holding_set_team(const Value& v) {
 }
 
 bool Entity::holding_is_weapon() const {
-  return holding != nullptr && entity::is_weapon(ref_of(*holding));
+  return holding != nullptr && entity::is_weapon(*holding);
 }
 
 void Entity::catcher_drop_catching() {

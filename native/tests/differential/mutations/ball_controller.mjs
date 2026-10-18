@@ -272,14 +272,14 @@ export default {
     {
       note: "closer_one 的远近比较写反",
       file: "native/lfw/helper/closer_one.cpp",
-      from: `    return manhattan_xz(s, t1) > manhattan_xz(s, t2) ? t2 : t1;`,
-      to: `    return manhattan_xz(s, t1) < manhattan_xz(s, t2) ? t2 : t1;`,
+      from: `  if (truthy(t1) && truthy(t2)) return distance_of(t1) > distance_of(t2) ? t2 : t1;`,
+      to: `  if (truthy(t1) && truthy(t2)) return distance_of(t1) < distance_of(t2) ? t2 : t1;`,
     },
     {
       note: "closer_one 的两者都缺判成或",
       file: "native/lfw/helper/closer_one.cpp",
-      from: `  if (truthy(t1) && truthy(t2)) {`,
-      to: `  if (truthy(t1) || truthy(t2)) {`,
+      from: `  if (truthy(t1) && truthy(t2)) return distance_of(t1) > distance_of(t2) ? t2 : t1;`,
+      to: `  if (truthy(t1) || truthy(t2)) return distance_of(t1) > distance_of(t2) ? t2 : t1;`,
     },
     {
       note: "closer_one 忽略 s 的缺失",

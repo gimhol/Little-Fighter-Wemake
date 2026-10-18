@@ -271,7 +271,7 @@ void SummaryLogic::on_fighter_del(Entity& e) {
 
 void SummaryLogic::on_start() {
   for (Entity* const e : world().entities) {
-    if (entity::is_fighter(ref_of(*e))) on_fighter_add(*e);
+    if (entity::is_fighter(*e)) on_fighter_add(*e);
   }
   world().callbacks.add(&_world_cb);
 }
@@ -303,7 +303,7 @@ void SummaryLogic::update(double dt) {
       teams[i].second.hp = 0;
     }
     for (Entity* const e : world().entities) {
-      if (!entity::is_fighter(ref_of(*e))) continue;
+      if (!entity::is_fighter(*e)) continue;
       TeamSumInfo& t = team_sum(e->team());
       t.hp += e->hp();
       t.reserve += e->reserve();
