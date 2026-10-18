@@ -77,14 +77,6 @@ double pos_mod(double a, double b) {
   return r < 0.0 ? r + b : r;
 }
 
-// `Style.scale`：`UITextRenderer._normalize_style` 的缺省是 2（HiDPI 画布倍数），
-// 数据里显式覆盖时按数据的。
-double style_scale(const Value& style) {
-  const Value v = lfw::field_or(style, u"scale");
-  const double s = std::holds_alternative<double>(v) ? std::get<double>(v) : 0.0;
-  return s > 0.0 ? s : 2.0;
-}
-
 // `Style.font` / `TextMesh` 的 `DEFAULT_FONT_SIZE`：抓第一个 `NNpx`。
 double parse_font_size(const std::u16string& font) {
   const std::string s = to_utf8(font);
@@ -426,15 +418,14 @@ void GodotUINodeRenderer::sync_model() {
       }
       // 描边。数据里实际用的是**节点级** `outlineColor` / `outlineWidth` / `outlineAlpha`
       //（cooked 的 `prel/ui/*.json5`：25 处 `outlineWidth: 1`，另有 2/4/5 若干），
-      // TS `UITextRenderer.update()` 把它们塞进文字材质的 `outlineColor/Width/Alpha`
-      //（着色器按 `outlineWidth` 个**纹理像素**采样四邻域，向外扩一圈）。
+      // TS `UITextRenderer.update()` 把它们塞进文字材质的 `outlineColor/Width/Alpha`。
       // `style.stroke_style` / `line_width`（canvas `strokeText`）与旧数据里的
       // `style.back_style.stroke_style` 是另外两条路，优先级从高到低：
       // 节点 outline ⇒ 顶层 stroke_style ⇒ back_style.stroke_style。
       //
-      // 宽度口径：材质里的 `outlineWidth` 是**画布像素**（`TextMesh` 的画布按 `style.scale`
-      // ——默认 2—— 放大），`ctx.lineWidth` 则是逻辑像素 ⇒ 分别折算成逻辑像素存起来，
-      // `emit_node` 里再乘这一层的缩放。
+      // 宽度口径：`outlineWidth` 直接按**逻辑像素**（作者口径：1 ⇒ 1px、4 ⇒ 4px，
+      // 不再除 `style.scale`）；canvas 的 `ctx.lineWidth` 也是逻辑像素，但它是**居中**的
+      //（填充盖掉内侧一半）⇒ 存一半。存下来的值在 `emit_node` 里再乘这一层的缩放（`_gsy`）。
       double stroke_w = 0.0;
       const Value node_outline_color = n.outlineColor();
       const Value node_outline_width = n.outlineWidth();
@@ -442,7 +433,6 @@ void GodotUINodeRenderer::sync_model() {
         const double px_width =
             std::holds_alternative<double>(node_outline_width) ? std::get<double>(node_outline_width)
                                                                : 0.0;
-        const double canvas_scale = style_scale(style);
         if (px_width > 0.0) {
           const Rgb01 stroke = parse_color(str16_or(node_outline_color));
           if (stroke.found) {
@@ -458,7 +448,8 @@ void GodotUINodeRenderer::sync_model() {
               _sg = stroke.g;
               _sb = stroke.b;
               _sa = alpha;
-              stroke_w = px_width / (canvas_scale > 0.0 ? canvas_scale : 1.0);
+              // `outlineWidth` 按**逻辑像素**算（作者口径：1 ⇒ 1px、4 ⇒ 4px，不除 `style.scale`）。
+              stroke_w = px_width;
             }
           }
         }
@@ -484,7 +475,7 @@ void GodotUINodeRenderer::sync_model() {
             _sb = stroke.b;
             _sa = stroke.a;
             // canvas 的 `strokeText` 线宽以字形边线为中心（内半 + 外半），而填充压在它上面
-            // ⇒ 看得见的只有外侧那一半。这里统一存「向外扩多少」。
+            // ⇒ 看得见的只有外侧那一半。这一支是**带**（不是环），单独标出来。
             stroke_w = line_width * 0.5;
           }
         }

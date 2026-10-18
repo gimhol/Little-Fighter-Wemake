@@ -2267,16 +2267,29 @@ void LfwGodot::_draw() {
 // **自己折行**，与 TS 的 `split_text_to_lines`（只按 `\n` 切、不折行）口径不同。
 // ⇒ 两头都不能用：**自己量行宽、自己摆 x**，`alignment` 固定 LEFT、`width` 固定 -1。
 // 一行文字的描边 + 填充。`pos` 是**基线左端**（`draw_string` 的口径）。
-// 先画描边再画填充：canvas 那边是 `fillText` 之后 `strokeText`（描边在字形边线上、内侧压住填充边缘），
-// Godot 的 `draw_string_outline` 是**向外**膨胀 `size` 像素的实心轮廓 ⇒ 反过来先铺轮廓、再压上填充，
-// 得到"轮廓露在外侧"的同样观感（半宽取 `line_width/2`：canvas 的 lineWidth 也是半宽在内半宽在外）。
+//
+// 描边用**自己铺的偏移复制**（`stroke_w` 像素的带状）：半径 1..n 的八个方向各画一遍描边色，
+// 最后压上填充。为什么不用 `draw_string_outline`：实测它**不随 `p_size` 线性变粗**
+//（`size` 8 与 16 画出来都是约 2px，见 DESIGN §167.6），而 TS 侧
+//  `outlineWidth` 要到 4~5（DEMO / "Go!"），必须拿到精确的像素厚度。
+// 偏移复制与 TS 着色器的口径也对得上：着色器判据是「中心透明、`outlineWidth` 外有字」⇒
+// 轮廓就是字形按该距离外扩的一圈，边缘 alpha 跟着字形走（这里同样是画字形本身）。
 void LfwGodot::draw_text_run(const godot::Ref<godot::Font>& font, const godot::Vector2& pos,
                              const std::string& line, int font_size, const godot::Color& color,
-                             bool has_stroke, int stroke_size, const godot::Color& stroke_color) {
+                             bool has_stroke, double stroke_w,
+                             const godot::Color& stroke_color) {
   const godot::String text = godot::String::utf8(line.c_str());
-  if (has_stroke && stroke_size > 0) {
-    draw_string_outline(font, pos, text, godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size,
-                        stroke_size, stroke_color);
+  if (has_stroke && stroke_w > 0.0) {
+    static const float kDirs[8][2] = {{-1.0f, 0.0f}, {1.0f, 0.0f},  {0.0f, -1.0f}, {0.0f, 1.0f},
+                                      {-1.0f, -1.0f}, {1.0f, -1.0f}, {-1.0f, 1.0f}, {1.0f, 1.0f}};
+    const int n = std::max(1, static_cast<int>(std::lround(stroke_w)));
+    for (int r = 1; r <= n; ++r) {
+      for (int k = 0; k < 8; ++k) {
+        const float d = static_cast<float>(r);
+        draw_string(font, pos + godot::Vector2(kDirs[k][0] * d, kDirs[k][1] * d), text,
+                    godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size, stroke_color);
+      }
+    }
   }
   draw_string(font, pos, text, godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size, color);
 }
@@ -2290,8 +2303,6 @@ void LfwGodot::draw_world_text_item(const GodotDrawItem& item, const godot::Ref<
   const godot::Color color(static_cast<float>(item.r), static_cast<float>(item.g),
                            static_cast<float>(item.b), static_cast<float>(item.a));
   const bool has_stroke = item.stroke_w > 0.0 && item.stroke_a > 0.0;
-  const int stroke_size =
-      has_stroke ? std::max(1, static_cast<int>(std::lround(item.stroke_w))) : 0;
   const godot::Color stroke_color(static_cast<float>(item.stroke_r),
                                   static_cast<float>(item.stroke_g),
                                   static_cast<float>(item.stroke_b),
@@ -2317,7 +2328,8 @@ void LfwGodot::draw_world_text_item(const GodotDrawItem& item, const godot::Ref<
   // 基线 = 块顶 + ascent（`TextMesh` 用 `textBaseline = "top"` 的等价口径）。
   const double baseline = center_y - block_h * 0.5 + ascent;
   draw_text_run(font, godot::Vector2(static_cast<float>(left), static_cast<float>(baseline)),
-                item.text, font_size, color, has_stroke, stroke_size, stroke_color);
+                item.text, font_size, color, has_stroke, item.stroke_w,
+                stroke_color);
 }
 
 void LfwGodot::draw_text_item(const GodotDrawItem& item) {
@@ -2333,8 +2345,6 @@ void LfwGodot::draw_text_item(const GodotDrawItem& item) {
   const Color color(static_cast<float>(item.r), static_cast<float>(item.g),
                     static_cast<float>(item.b), static_cast<float>(item.a));
   const bool has_stroke = item.stroke_w > 0.0 && item.stroke_a > 0.0;
-  const int stroke_size =
-      has_stroke ? std::max(1, static_cast<int>(std::lround(item.stroke_w))) : 0;
   const Color stroke_color(static_cast<float>(item.stroke_r),
                            static_cast<float>(item.stroke_g),
                            static_cast<float>(item.stroke_b),
@@ -2381,7 +2391,7 @@ void LfwGodot::draw_text_item(const GodotDrawItem& item) {
         ax = content_x + std::round(line_max) - line.second;
       }
       draw_text_run(font, Vector2(static_cast<float>(ax), static_cast<float>(y)), line.first,
-                    font_size, color, has_stroke, stroke_size, stroke_color);
+                    font_size, color, has_stroke, item.stroke_w, stroke_color);
     }
     y += static_cast<double>(line_h);
   }

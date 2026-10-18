@@ -114,12 +114,10 @@ struct GodotDrawItem {
   std::string text;
   double font_size = 0;
   int text_align = 0;
-  // 文字描边（TS `TextMesh` 的 `stroke_style` + `line_width`）：
-  //   * UI 文字：`style.stroke_style` / `style.line_width`（画布上 `strokeText`）；
-  //   * 世界文字（实体名 / 剩余数量）：`get_team_outline_color(team)`，宽度 1 世界单位
-  //     （TS 是材质的 `outlineWidth = TEXT_SUPERSAMPLE` 个超采样 texel ⇒ 折回 1 逻辑像素）。
-  // 宿主用 `draw_string_outline` 画在填充之前（canvas 里也是先 `fillText` 再 `strokeText`，
-  // 但描边半宽压在字形外侧、填充后画会把外侧盖掉一半 ⇒ 反过来画才是 canvas 的样子）。
+  // 文字描边：`stroke_w` 是描边的**像素厚度**（向外扩多少），宿主按它铺偏移复制。
+  //   * UI 文字：节点级 `outlineWidth`（**逻辑像素**，1 ⇒ 1px、4 ⇒ 4px）；
+  //   * 世界文字：1 个世界单位（TS plain 模式的 `outlineWidth = TEXT_SUPERSAMPLE` 个 4 倍
+  //     texel ⇒ 折回 1 单位）。
   double stroke_r = 0, stroke_g = 0, stroke_b = 0, stroke_a = 0, stroke_w = 0;
   // 世界文字（实体名下 / 剩余数量上，TS `EntityNameRender` / `EntityStatRender`）：
   // 这一项的 `x/y` 是**屏幕锚点**，块尺寸由宿主按字体度量算（TS 那边是 canvas 量出来的

@@ -648,7 +648,9 @@ void GodotWorldRenderer::emit_world_text(GodotFrame& frame, const Entity& e, dou
     it.stroke_g = cg;
     it.stroke_b = cb;
     it.stroke_a = ca;
-    it.stroke_w = std::max(1.0, std::fabs(frame.scale_y));
+    // plain 模式的材质描边：`strokeStyle` 把 `outlineWidth` 设成 `TEXT_SUPERSAMPLE`（4）个
+    // 超采样 texel，画布是 4 倍 ⇒ 环的距离正好 1 个世界单位（屏幕 `scale_y` 像素）。
+    it.stroke_w = std::fabs(frame.scale_y);
   }
   if (clamp_x) {
     // TS：`hw = (mesh.scale.x + 10) / 2`，`x = clamp(px, cam_x + hw, cam_x + screen_w/scale_x - hw)`。
