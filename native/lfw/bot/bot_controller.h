@@ -46,7 +46,11 @@ class BotController : public controller::BaseController {
   void reset() override;
   const controller::ControllerResult& update() override;
   // `update_lookup(me, entities)`（`World.step` 每两帧一次；实体表是引用表）。
+  // 真实运行时世界侧直接给实体（`LFW::ctrl_update_lookup`）；台面给引用快照 —— 两条入口
+  // 都折成 `TargetHandle` 再走同一份实现。
+  void update_lookup(int me, const std::vector<Entity*>& entities);
   void update_lookup(int me, const std::vector<Value>& entities);
+  void update_lookup(int me, const std::vector<TargetHandle>& entities);
 
   // ---- TS 的公开字段（`readonly` 的照抄）----
   FSM fsm;
@@ -56,8 +60,8 @@ class BotController : public controller::BaseController {
   Value dummy{dummy_default()};
   BotBehavior behavior = BotBehavior::Move;
   Value goingto;    // `IVector3 | null`
-  Value following;  // 实体引用 | null
-  Value watching;   // 实体引用 | null
+  TargetHandle following;  // 实体句柄 | null
+  TargetHandle watching;   // 实体句柄 | null
   bool en_out_of_range = false;
   double idle_min_x = -9007199254740991.0;
   double idle_max_x = 9007199254740991.0;
@@ -113,7 +117,8 @@ class BotController : public controller::BaseController {
   bool should_avoid(const Value& av_ref);
   // 返回 `0 | 1 | 2`。
   int should_defend(const Value& e_ref);
-  void lookup(const Value& other_ref);
+  void lookup(const TargetHandle& other);
+  void lookup(const Value& other_ref) { lookup(TargetHandle::of(other_ref)); }
   // `guess_entity_pos` 的返回：`{x, z, next_x, next_z, next_y}`。
   Value guess_entity_pos(const Value& entity_ref) const;
   double desire(const std::u16string& mark) const;
@@ -122,7 +127,9 @@ class BotController : public controller::BaseController {
   bool lock_when_stand_and_rest();
   // `LGK[] | false | string`。
   Value handle_action(const std::u16string& where, const Value& action);
-  void follow(const Value& e_ref);
+  void follow(const TargetHandle& e_ref);
+  void follow(const Entity& e_ref);
+  void follow(const Value& e_ref) { follow(TargetHandle::of(e_ref)); }
   void move();
   void stay();
   void come(double x, double y, double z);

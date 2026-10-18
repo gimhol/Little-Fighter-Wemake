@@ -43,7 +43,11 @@ class BallController : public BaseController {
   void set_chase_point(double x, double y, double z);
   void aim_at(const Value& e, double oy = 0);
 
+  // 世界侧给实体（`LFW::ctrl_update_lookup`），台面给引用快照 —— 两条入口都折成
+  // `TargetHandle` 再走同一份实现。
+  void update_lookup(int me, const std::vector<Entity*>& entities);
   void update_lookup(int me, const std::vector<Value>& entities);
+  void update_lookup(int me, const std::vector<TargetHandle>& entities);
   bool should_chase(const Value& other) const;
 
   const ControllerResult& update() override;

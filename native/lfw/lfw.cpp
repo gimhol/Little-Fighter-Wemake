@@ -1058,16 +1058,12 @@ controller::BaseController* LFW::create_ctrl(const std::u16string& data_id,
 
 void LFW::ctrl_update_lookup(controller::BaseController& ctrl, double index,
                              std::vector<Entity*>& entities) {
-  // ⚠ 这里要的是「控制器看的实体视图」= `ref_of()`（含 `data`/`position`/`team`…），**不是**
-  // `Entity::ref()` 那个薄引用（TS 的 `ref` 只有 `{id}`）。喂薄引用会让 `BotController::lookup`
-  // 的 `is_fighter/is_weapon/is_ball(other)` 全恒假 ⇒ chasings/avoidings/defends 永远空
-  // ⇒ bot 有目标也不追不打（DESIGN §145）。
-  std::vector<Value> vals;
-  for (Entity* const e : entities) vals.push_back(ref_of(*e));
+  // 直接把实体表给控制器（目标表 / `chasing` 用 `TargetHandle` 存，身份靠 `id` 复核 ——
+  // 实体是池化复用的，裸指针不能单独当身份）。以前这里每个控制器都 `ref_of` 一遍整张表。
   if (ctrl.creator() == controller::bot_controller_creator()) {
-    static_cast<bot::BotController*>(&ctrl)->update_lookup(static_cast<int>(index), vals);
+    static_cast<bot::BotController*>(&ctrl)->update_lookup(static_cast<int>(index), entities);
   } else if (ctrl.creator() == controller::ball_controller_creator()) {
-    static_cast<controller::BallController*>(&ctrl)->update_lookup(static_cast<int>(index), vals);
+    static_cast<controller::BallController*>(&ctrl)->update_lookup(static_cast<int>(index), entities);
   }
 }
 

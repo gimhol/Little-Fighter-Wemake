@@ -613,11 +613,11 @@ int main(int argc, char** argv) {
                     lfw::truthy(bc->bot) ? 1 : 0, bc->chasings.targets().size(),
                     bc->avoidings.targets().size(), bc->defends.targets().size());
         if (ch != nullptr) {
-          std::printf(" chase=%s@%.1f", to_utf8(lfw::to_string(field_or(ch->entity, u"id"))).c_str(),
+          std::printf(" chase=%s@%.1f", to_utf8(lfw::to_string(lfw::Value(ch->entity.id()))).c_str(),
                       ch->distance);
         }
         if (av != nullptr) {
-          std::printf(" avoid=%s@%.1f", to_utf8(lfw::to_string(field_or(av->entity, u"id"))).c_str(),
+          std::printf(" avoid=%s@%.1f", to_utf8(lfw::to_string(lfw::Value(av->entity.id()))).c_str(),
                       av->distance);
         }
         for (Entity* const o : world.entities) {

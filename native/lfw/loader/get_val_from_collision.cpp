@@ -246,14 +246,14 @@ Value victim_threw(const Ctx& c, const std::u16string&, BinOp) {
   return with_victim(c, [](const Entity& e) { return num_of(truthy(Value(e.throwinjury))); });
 }
 
-// `is_ball_ctrl(c.attacker.ctrl) && c.victim === c.attacker.ctrl.chasing`：端口的目标是
-// **引用**、`victim` 是快照 ⇒ 用 `id` 比（实体的 id 唯一）。
+// `is_ball_ctrl(c.attacker.ctrl) && c.victim === c.attacker.ctrl.chasing`：`chasing` 是
+// `TargetHandle`、`victim` 是碰撞快照 ⇒ 按 `id` 比（实体 id 唯一）。
 Value victim_is_chasing(const Ctx& c, const std::u16string&, BinOp) {
   const Entity* a = attacker_of(c);
   if (a == nullptr) return Value(0.0);
   const controller::BaseController* ctrl = a->ctrl();
   if (ctrl == nullptr || !ctrl->is_ball_ctrl()) return Value(0.0);
-  return num_of(strict_equals(Value(c.victim.id), field_of(ctrl->chasing, u"id")));
+  return num_of(c.victim.id == ctrl->chasing.id());
 }
 
 // --- 属性 ---------------------------------------------------------------------

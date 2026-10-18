@@ -43,7 +43,7 @@ std::optional<Value> BotState_Chasing::update(double dt) {
   if (c.stage_is_chapter_finish()) return next_state(bse::kIdle);
   if (c.stage_is_stage_finish()) return next_state(bse::kStageEnd);
 
-  const Value en = c.chasings.get() != nullptr ? c.chasings.get()->entity : Value();
+  const Value en = c.chasings.get() != nullptr ? c.chasings.get()->entity.ref() : Value();
   if (truthy(en) && c.is_leave_chase_range(en)) return next_state(bse::kFollowing);
   if (c.is_leave_goto_range(c.self_ref())) return next_state(bse::kFollowing);
 

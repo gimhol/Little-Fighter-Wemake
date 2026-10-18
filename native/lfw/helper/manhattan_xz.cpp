@@ -32,5 +32,9 @@ double manhattan_xz(const Entity& a, const Value& b) {
   return manhattan_xz_of(a.position.x, a.position.z, b);
 }
 
+double manhattan_xz(const Entity& a, const Entity& b) {
+  return round_float(abs(a.position.x - b.position.x) + abs(a.position.z - b.position.z));
+}
+
 }
 }

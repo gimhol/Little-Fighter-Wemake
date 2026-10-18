@@ -2676,19 +2676,19 @@ void Entity::apply_opoints(const Value& opoints_value) {
         if (strict_equals(multi_type,
                           Value(static_cast<double>(OpointMultiEnum::AccordingEnemies)))) {
           ctrl->chasing = enemies.empty()
-                              ? Value()
-                              : ref_of(*enemies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*enemies[static_cast<std::size_t>(
                                     std::fmod(i, enemies.size()))]);
         } else if (strict_equals(
                        multi_type,
                        Value(static_cast<double>(OpointMultiEnum::AccordingAllies)))) {
           ctrl->chasing = allies.empty()
-                              ? Value()
-                              : ref_of(*allies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*allies[static_cast<std::size_t>(
                                     std::fmod(i, allies.size()))]);
         } else if (strict_equals(multi_type,
                                  Value(static_cast<double>(OpointMultiEnum::Emitter)))) {
-          ctrl->chasing = allies.empty() ? Value() : ref_of(*allies[0]);
+          ctrl->chasing = allies.empty() ? TargetHandle() : TargetHandle::of(*allies[0]);
         }
       }
 

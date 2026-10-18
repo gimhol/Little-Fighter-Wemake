@@ -131,19 +131,19 @@ std::string snap_nt(const std::u16string& name, const lfw::bot::NearestTargets& 
   if (first == nullptr) {
     s += " get=- facing=- x=-";
   } else {
-    s += " get=" + name_of(first->entity) + " facing=" + render(first->facing()) +
+    s += " get=" + name_of(first->entity.ref()) + " facing=" + render(first->facing()) +
          " x=" + render(first->x());
   }
   s += " targets=[";
   for (std::size_t i = 0; i < nt.targets().size(); ++i) {
     if (i != 0) s += ',';
     const lfw::bot::BotTarget& t = nt.targets()[i];
-    s += name_of(t.entity) + ":" + render_num(t.distance) + ":" + render(t.defendable);
+    s += name_of(t.entity.ref()) + ":" + render_num(t.distance) + ":" + render(t.defendable);
   }
   s += "] ents=[";
   for (std::size_t i = 0; i < nt.entities().size(); ++i) {
     if (i != 0) s += ',';
-    s += name_of(nt.entities()[i]);
+    s += name_of(nt.entities()[i].ref());
   }
   s += "]";
   return s;
@@ -284,7 +284,7 @@ int main(int argc, char** argv) {
           const bool found = victim != nullptr;
           const lfw::Value held = found ? *victim : lfw::Value();
           inst->del([&held, found](const lfw::bot::BotTarget& tgt) {
-            return found && lfw::strict_equals(tgt.entity, held);
+            return found && tgt.entity.same(lfw::TargetHandle::of(held));
           });
         } else if (sub == "sort") {
           inst->sort(ent_arg(trace::parse_js_string_literal(t[i++]), lineno));

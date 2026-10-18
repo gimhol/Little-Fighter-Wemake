@@ -11697,3 +11697,64 @@ bot / ball 的 `update_lookup` 都改成实体版优先、台面退回引用版�
   `f150041396ce61b7`（说明「`CtrlEnv.px` 快照」与「`Entity::position` 活读」在这条时序里同值）；
 * 变异锚点 21 条跟着改（8 个 spec），逐 spec 跑 `mutate.mjs`：23 条**全部 killed**，
   0 survived / 0 compile-error。
+
+## 163. 目标句柄 `TargetHandle`（2026-10-18）
+
+`BallController.chasing` / `BotController.following|watching` / `NearestTargets` 的目标，TS 里都是
+**活实体**（`Entity | null`）。端口原来一律用 `entity/entity_ref.h` 的引用快照，并靠
+`reidentify`（每趟 `update_lookup` 拿名单里的新引用去换旧快照）保持「字段基本新鲜」。
+
+中批把它们换成 `entity/target_handle.h` 的 `TargetHandle`：
+
+```cpp
+class TargetHandle {
+  const Entity* _entity = nullptr;  // 真实运行时有值；台面里为空
+  std::u16string _id;               // 身份（实体池会复用指针 ⇒ 单靠指针不算身份）
+  mutable Value _ref;               // 给仍只认 Value 的读法用的投影（真实体按需生成 + 缓存）
+  mutable bool _ref_built = true;
+};
+```
+
+### 163.1. 三条硬约束
+
+1. **池化复用**：`common_creator` 从 `Factory.acquire_entity` 拿旧实体 `reset` 后再用 ⇒ 裸指针
+   过一会儿可能指向别人。`entity()` 因此先复核 `id`；`refresh()`（每趟 `update_lookup`）发现
+   `id` 变了就把缓存置成 `null`（等价「目标已经死了」，下游 `should_chase` 之类本来也会拒）。
+2. **台面没有 `Entity`**：`subjects/bot.cpp` 的 `me` / `fx` 是脚本化 `Value`。句柄在
+   `_entity == nullptr` 时退回引用快照，`entities()` / `ref()` 都照旧，8 个 bot 用例与
+   `entity/ball_ctrl` 原样跑（只把三个 subject 的打印改成 `entity.ref()`）。
+3. **`===` 的语义**：两个都是实体比指针、两个都是引用比 `same_ref`、一实体一引用才按 `id`
+   桥接。台面用例里 `s1`/`s2` 故意共用 `id: "z"` 来钉「TS 的 `Set<Entity>` 比的是对象」，
+   纯 `id` 比较会把它们并成一个（第一版就踩了）。
+
+### 163.2. 世界缝
+
+`LFW::ctrl_update_lookup` 以前把整张 `std::vector<Entity*>` 逐项 `ref_of` 成引用再喂控制器
+（每个控制器 × 每个实体一份完整快照，含 `data`/`frame`/四个关系槽）。现在直接把实体表传下去，
+两个控制器各有三条入口，内部折成 `std::vector<TargetHandle>` 走同一份实现：
+
+```cpp
+void update_lookup(int me, const std::vector<Entity*>& entities);   // 真实运行时
+void update_lookup(int me, const std::vector<Value>& entities);     // 差分台面
+void update_lookup(int me, const std::vector<TargetHandle>& entities);  // 公共实现
+```
+
+`reidentify`（`NearestTargets` 与 `BallController` 各一份）随之删除：目标自己带着实体，
+不需要每趟从名单里认领。
+
+### 163.3. 摘要为什么变了
+
+`--ui-page main_page` 2400 帧 `2ea7026a9cd193b6` → `56bd53ab3ae75154`；`--stage 1` 900 帧
+`f150041396ce61b7` → `4c5ef7aa63c97056`；300 帧 `b936d83b3706ebfe` → `b18b9d0d7892aef5`。
+以前距离/存活判定读的是「上一趟 lookup 刷新出来的快照」，现在读活实体：距离每帧重算、
+死目标当帧掉出目标表。这是**向 TS 靠**，不是回归；差分 265/265（含 `bot/*` 8 份与
+`entity/ball_ctrl`）仍是硬门槛。
+
+### 163.4. 台面改了两处
+
+* `subjects/entity.cpp` 的 `run ball lookup` 改成喂 `std::vector<Entity*>`（这些实体在 `entity`
+  subject 里是**真的**）—— 喂引用会让 `chasing` 停在冻结字段上，与 TS 读活实体不等价；
+* `subjects/bot.cpp` / `bot_helpers.cpp` 的 `name_of(...)` 参数改成 `…entity.ref()`。
+
+顺带给两个「候选循环」加了「两侧都没推进就 break」的守卫：句柄化之后 `same()` 有可能两边都不认
+（TS 里 `e` 一定来自名单，不会出现），没有守卫会死循环（实测台面挂住过一次）。

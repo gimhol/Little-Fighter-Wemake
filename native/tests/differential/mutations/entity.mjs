@@ -5219,25 +5219,25 @@ export default {
       note: "apply_opoints：敌人的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
       from: `          ctrl->chasing = enemies.empty()
-                              ? Value()
-                              : ref_of(*enemies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*enemies[static_cast<std::size_t>(
                                     std::fmod(i, enemies.size()))]);`,
-      to: `          ctrl->chasing = Value();`,
+      to: `          ctrl->chasing = TargetHandle();`,
     },
     {
       note: "apply_opoints：友军的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
       from: `          ctrl->chasing = allies.empty()
-                              ? Value()
-                              : ref_of(*allies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*allies[static_cast<std::size_t>(
                                     std::fmod(i, allies.size()))]);`,
-      to: `          ctrl->chasing = Value();`,
+      to: `          ctrl->chasing = TargetHandle();`,
     },
     {
       note: "apply_opoints：Emitter 的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
-      from: `          ctrl->chasing = allies.empty() ? Value() : ref_of(*allies[0]);`,
-      to: `          ctrl->chasing = Value();`,
+      from: `          ctrl->chasing = allies.empty() ? TargetHandle() : TargetHandle::of(*allies[0]);`,
+      to: `          ctrl->chasing = TargetHandle();`,
     },
     {
       note: "apply_opoints：inherit_speed 丢了生成后的速度项",

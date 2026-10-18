@@ -2380,3 +2380,29 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
 * 验证：差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad；
   摘要与改前逐位一致 —— `--ui-page main_page` 2400 帧 `digest=2ea7026a9cd193b6`、
   `--stage 1` 900 帧 `digest=f150041396ce61b7`。
+
+### 2026-10-18（二十）：中批 —— `chasing` / `following` / `watching` / `update_lookup` 实体化
+
+* 新增 `entity/target_handle.h`（`TargetHandle`）：TS 的 `Entity | null` 在端口的统一替身。
+  * 真实运行时是**活实体**（位置/血/队伍活读），台面里退回引用快照；
+  * `id` 两条路都带着 —— 实体是**池化复用**的（`Factory::recycle_entity` 之后 `reset` 给下一个
+    实体），裸指针过一会儿可能指向别人 ⇒ `entity()` 先复核 `id`，`refresh()` 发现 `id` 变了就
+    把缓存置空（等价 TS 里"这个目标已经死了"，下游 `should_chase` 本来也会拒）；
+  * `same()` 的语义对齐 TS 的 `===`：两个都是实体比指针、两个都是引用比 `same_ref`、
+    一实体一引用才用 `id` 桥接（台面用例里 `s1`/`s2` 故意共用 `id`，按 `id` 比会并成一个）。
+* `LFW::ctrl_update_lookup` 不再把整张实体表 `ref_of` 成引用喂控制器，直接给
+  `std::vector<Entity*>`（以前是「每个控制器 × 每个实体」一份完整快照）。
+* `BotController`：`following` / `watching` 换成句柄；`update_lookup(entities|refs|handles)`
+  三条入口折成同一份实现；`NearestTargets` 的目标表改成句柄（`reidentify` 删除 ——
+  目标自带实体，不用每趟从名单里认领）；`sort()` 用活位置算距离。
+* `BallController`：`chasing`（在 `BaseController` 上）换成句柄，`reidentify` 删除，
+  `update_lookup` 同样三条入口；`should_chase` / `aim_at` 读句柄的引用投影（缓存每趟刷一次）。
+* 台面：`bot` / `bot_helpers` / `entity` 三个 subject 的输出改用 `entity.ref()`；
+  `entity` 的 `run ball lookup` 改成直接喂实体（TS 读的是活实体，喂引用会让 `chasing` 读到冻结字段）。
+* 变异锚点：5 个 spec 里 25 条重写；逐 spec 跑 `mutate.mjs`：**21 killed / 0 survived /
+  0 compile-error**（另 4 条是删除 `reidentify` 后失去意义的，改到新代码上）。
+* **摘要变了**（不再逐位一致）：`--ui-page main_page` 2400 帧 `2ea7026a9cd193b6` →
+  `56bd53ab3ae75154`，`--stage 1` 900 帧 `f150041396ce61b7` → `4c5ef7aa63c97056`，
+  300 帧 `b936d83b3706ebfe` → `b18b9d0d7892aef5`。原因是端口从「引用快照（每趟 lookup 刷新一次）」
+  变成「活实体」：距离每帧重算、死目标当帧就掉出目标表 —— 这是**向 TS 靠**的改动，
+  差分 265/265 仍是硬门槛（`bot/*` 8 个用例 + `entity/ball_ctrl` 全绿）。

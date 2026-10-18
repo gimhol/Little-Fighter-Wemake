@@ -78,8 +78,8 @@ export default {
     {
       note: "update 里 chasings.del 的条件丢掉了取反",
       file: "native/lfw/bot/bot_controller.cpp",
-      from: `      chasings.del([this](const BotTarget& t) { return !should_chase(t.entity); });`,
-      to: `      chasings.del([this](const BotTarget& t) { return should_chase(t.entity); });`,
+      from: `      chasings.del([this](const BotTarget& t) { return !should_chase(t.entity.ref()); });`,
+      to: `      chasings.del([this](const BotTarget& t) { return should_chase(t.entity.ref()); });`,
     },
     {
       note: "update 的 bot_keys 队列判定反了",

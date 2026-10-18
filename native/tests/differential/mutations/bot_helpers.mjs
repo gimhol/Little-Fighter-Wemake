@@ -438,13 +438,13 @@ export default {
     {
       note: "NearestTargets.has_entity 恒为假",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `bool NearestTargets::has_entity(const Value& v) const {
-  for (const Value& e : entities_) {
-    if (strict_equals(e, v)) return true;
+      from: `bool NearestTargets::has_entity(const TargetHandle& v) const {
+  for (const TargetHandle& e : entities_) {
+    if (e.same(v)) return true;
   }
   return false;
 }`,
-      to: `bool NearestTargets::has_entity(const Value& v) const {
+      to: `bool NearestTargets::has_entity(const TargetHandle& v) const {
   (void)v;
   return false;
 }`,
@@ -453,18 +453,18 @@ export default {
       note: "NearestTargets.look 漏掉 self 假值检查",
       file: "native/lfw/bot/nearest_targets.cpp",
       from: `  if (!truthy(self)) return;
-  insert_at(other, helper::manhattan_xz(self, other), defendable);`,
-      to: `  insert_at(other, helper::manhattan_xz(self, other), defendable);`,
+  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);`,
+      to: `  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);`,
     },
     {
       note: "NearestTargets.look 收录的是 self 而不是 other",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `void NearestTargets::look(const Value& self, const Value& other, const Value& defendable) {
+      from: `void NearestTargets::look(const Value& self, const TargetHandle& other, const Value& defendable) {
   if (!truthy(self)) return;
-  insert_at(other, helper::manhattan_xz(self, other), defendable);`,
-      to: `void NearestTargets::look(const Value& self, const Value& other, const Value& defendable) {
+  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);`,
+      to: `void NearestTargets::look(const Value& self, const TargetHandle& other, const Value& defendable) {
   if (!truthy(self)) return;
-  insert_at(self, helper::manhattan_xz(self, other), defendable);`,
+  insert_at(TargetHandle::of(self), helper::manhattan_xz(self, other.ref()), defendable);`,
     },
     {
       note: "NearestTargets.look 的假值判定查了 other",
@@ -520,14 +520,14 @@ export default {
       note: "NearestTargets.look 满员插入分支不加实体",
       file: "native/lfw/bot/nearest_targets.cpp",
       from: `    add_entity(other);
-    const Value entity = targets_[static_cast<std::size_t>(max_)].entity;`,
-      to: `    const Value entity = targets_[static_cast<std::size_t>(max_)].entity;`,
+    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;`,
+      to: `    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;`,
     },
     {
       note: "NearestTargets.look 删错被挤出的实体",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    const Value entity = targets_[static_cast<std::size_t>(max_)].entity;`,
-      to: `    const Value entity = targets_[0].entity;`,
+      from: `    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;`,
+      to: `    const TargetHandle entity = targets_[0].entity;`,
     },
     {
       note: "NearestTargets.look 不把挤出的实体移出集合",
@@ -595,7 +595,7 @@ export default {
       note: "NearestTargets.sort 不重算距离",
       file: "native/lfw/bot/nearest_targets.cpp",
       from: `void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const Value& e) { return helper::manhattan_xz(self, e); });
+  sort_by([&self](const BotTarget& t) { return helper::manhattan_xz(self, t.entity.ref()); });
 }`,
       to: `void NearestTargets::sort(const Value& self) {
   (void)self;
@@ -606,10 +606,10 @@ export default {
       note: "NearestTargets.sort 用 self 与自己算距离",
       file: "native/lfw/bot/nearest_targets.cpp",
       from: `void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const Value& e) { return helper::manhattan_xz(self, e); });
+  sort_by([&self](const BotTarget& t) { return helper::manhattan_xz(self, t.entity.ref()); });
 }`,
       to: `void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const Value& e) { (void)e; return helper::manhattan_xz(self, self); });
+  sort_by([&self](const BotTarget& t) { (void)t; return helper::manhattan_xz(self, self); });
 }`,
     },
     {
@@ -635,8 +635,8 @@ export default {
     {
       note: "NearestTargets.sort 的 id 取了 a 的两次",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  const Value ib = field_or(b.entity, u"id");`,
-      to: `  const Value ib = field_or(a.entity, u"id");`,
+      from: `  const Value ib = Value(b.entity.id());`,
+      to: `  const Value ib = Value(a.entity.id());`,
     },
     {
       note: "NearestTargets.clear 不清实体集合",

@@ -96,7 +96,7 @@ std::optional<Value> BotState_Idle::update(double dt) {
     c.key_up({u"U", u"D"});
   }
 
-  const Value watching = c.watching;
+  const Value watching = c.watching.ref();
   if (truthy(watching) && truthy(field_or(watching, u"mounted")) &&
       frame_state_is(*e, StateEnum::Standing) && my_x >= c.idle_min_x &&
       my_x <= c.idle_max_x && my_z >= c.idle_min_z && my_z <= c.idle_max_z) {

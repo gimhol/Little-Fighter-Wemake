@@ -12,6 +12,7 @@
 #include "lfw/controller/seq_keys.h"
 #include "lfw/core/value.h"
 #include "lfw/defines/bin_op.h"
+#include "lfw/entity/target_handle.h"
 #include "lfw/utils/times.h"
 
 namespace lfw {
@@ -140,9 +141,9 @@ class BaseController {
   // 收在 `Factory` 那一层；`entity == nullptr` 的 `InvalidController` 不绑，同 TS）。
   // `BallController.chasing`：TS 里这个字段在子类上，端口放在基类（`spawn` 的
   // `OpointMultiEnum` 分支要在 `is_ball_ctrl` 门后写它，而端口那边只有 `BaseController*`）。
-  // 值是一个**实体引用**（`entity/entity_ref.h` 的 `ref_of`），不是 `Entity*` ——
-  // 控制器这一侧看不见 `Entity`（同 `CtrlEnv`）。
-  Value chasing;
+  // 用 `entity/target_handle.h` 的句柄：真实运行时是活实体（位置/血活读、身份靠 `id` 复核，
+  // 实体池会复用指针），差分台面里退回引用快照。
+  TargetHandle chasing;
 
   double time() const { return _time.value(); }
 

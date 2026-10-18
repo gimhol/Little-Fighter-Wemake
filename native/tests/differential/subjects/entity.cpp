@@ -183,7 +183,7 @@ Value id_probe(const Value& ref) {
 }
 
 Value chasing_probe(const lfw::controller::BaseController* c) {
-  return c == nullptr ? Value(lfw::NullTag{}) : id_probe(c->chasing);
+  return c == nullptr ? Value(lfw::NullTag{}) : id_probe(c->chasing.ref());
 }
 
 // --- `loader/get_val_from_collision` 的驱动器 -----------------------------------
@@ -1477,12 +1477,15 @@ int main(int argc, char** argv) {
         } else if (sub == "lookup") {
           const std::string& me_tok = t[i++];
           head += " " + me_tok;
-          const std::vector<Value> refs = ball_refs();
+          // 世界侧真实运行时给的是实体（`LFW::ctrl_update_lookup`），台面这里也照给 ——
+          // 引用快照会让 `chasing` 读到冻结的旧字段（TS 读的是活实体）。
+          std::vector<Entity*> ents;
+          for (const std::string& tok : g_candidate_tokens) ents.push_back(candidate_of(tok));
           int me = -1;
           for (int k = 0; k < static_cast<int>(g_candidate_tokens.size()); ++k) {
             if (g_candidate_tokens[static_cast<std::size_t>(k)] == me_tok) me = k;
           }
-          g_ball->update_lookup(me, refs);
+          g_ball->update_lookup(me, ents);
         } else if (sub == "should") {
           const std::string& tok = t[i++];
           head += " " + tok;
