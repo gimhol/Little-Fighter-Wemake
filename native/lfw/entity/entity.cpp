@@ -1573,11 +1573,11 @@ void Entity::update_position() {
   const double atom_time = _atom_time;
   for (const auto& kv : blockers) {
     const collision::Collision& v = kv.second;
-    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px > position.x)) {
+    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() > position.x)) {
       vx = 0;
       prev_velocity.x = 0;
     }
-    if ((vz < 0 && v.attacker.pz < position.z) || (vz > 0 && v.attacker.pz > position.z)) {
+    if ((vz < 0 && v.attacker.pz() < position.z) || (vz > 0 && v.attacker.pz() > position.z)) {
       vz = 0;
       prev_velocity.z = 0;
     }
@@ -2380,8 +2380,8 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
     std::u16string attacker_id = emitter.id;
     Value attacker_team = Value(emitter.team());
     if (emitter.lastest_collided.has_value()) {
-      attacker_id = emitter.lastest_collided->attacker.id;
-      attacker_team = emitter.lastest_collided->attacker.team;
+      attacker_id = emitter.lastest_collided->attacker.id();
+      attacker_team = emitter.lastest_collided->attacker.team();
     }
     emitters.clear();
     emitters.push_back(attacker_id);

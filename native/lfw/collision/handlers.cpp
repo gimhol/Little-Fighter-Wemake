@@ -18,11 +18,11 @@ bool missing(const Value& v) {
 
 void handle_stiffness(Collision& c) {
   const Value m = field_or(c.itr, u"motionless");
-  const Value motionless = missing(m) ? c.env->attacker_itr_motionless() : m;
-  c.env->attacker_set_motionless(motionless);
+  const Value motionless = missing(m) ? c.env->attacker_itr_motionless(c) : m;
+  c.env->attacker_set_motionless(c, motionless);
   const Value s = field_or(c.itr, u"shaking");
   const Value shaking = missing(s) ? field_or(c.dataset, u"itr_shaking") : s;
-  c.env->victim_set_shaking(shaking);
+  c.env->victim_set_shaking(c, shaking);
 }
 
 void handle_body_goto(Collision& c) { handle_stiffness(c); }
@@ -40,7 +40,7 @@ void handle_rest(Collision& c) {
   const double arest = truthy(arest_v) ? to_number(arest_v) : to_number(field_or(c.dataset, u"itr_arest"));
   const double base = max(to_number(field_or(c.dataset, u"min_arest")),
                           arest + to_number(field_or(c.dataset, u"arest_offset")));
-  c.env->attacker_set_arest(base);
+  c.env->attacker_set_arest(c, base);
 }
 
 void handle_itr_kind_magic_flute(Collision& c) {

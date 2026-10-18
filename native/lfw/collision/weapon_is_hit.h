@@ -21,7 +21,8 @@ struct SparkPoint {
 
 struct WeaponIsHitEnv {
   std::function<Entity*(const std::u16string& id)> find_entity;
-  std::function<SparkPoint(const Cube& a, const Cube& b)> spark_point;
+  // `victim.spark_point(a_cube, b_cube)`：读活实体。
+  std::function<SparkPoint(const Collision& c, const Cube& a, const Cube& b)> spark_point;
   std::function<void(const Value& x, const Value& y, const Value& z,
                      const std::u16string& kind)>
       spark;

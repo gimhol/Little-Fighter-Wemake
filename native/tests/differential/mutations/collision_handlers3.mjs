@@ -251,14 +251,14 @@ export default {
     {
       note: "ball_is_hit_a spark ignores critical flag",
       file: "native/lfw/collision/handlers3.cpp",
-      from: "  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
-      to: "  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), true));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
+      from: "  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
+      to: "  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), true));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
     },
     {
       note: "ball_is_hit_a spark point cubes swapped",
       file: "native/lfw/collision/handlers3.cpp",
-      from: "  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
-      to: "  g_env.spark_point(c.b_cube, c.a_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
+      from: "  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
+      to: "  g_env.spark_point(c, c.b_cube, c.a_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nvoid handle_ball_is_hit_b(Collision& c) {",
     },
     {
       note: "ball_is_hit_a plays undefined sound",
@@ -287,8 +287,8 @@ export default {
     {
       note: "ball_is_hit_b spark ignores critical flag",
       file: "native/lfw/collision/handlers3.cpp",
-      from: "  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nbool handle_armor(Collision& c) {",
-      to: "  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), true));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nbool handle_armor(Collision& c) {",
+      from: "  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), false));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nbool handle_armor(Collision& c) {",
+      to: "  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);\n  g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u\"fall\"), true));\n  v->play_sound(v->data_base_hit_sounds());\n}\n\nbool handle_armor(Collision& c) {",
     },
     {
       note: "ball_is_hit_b plays undefined sound",

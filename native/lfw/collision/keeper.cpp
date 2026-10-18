@@ -370,12 +370,12 @@ bool CollisionKeeper::load_handlers(Collision& collision) const {
     collision.handlers = std::make_shared<std::vector<std::u16string>>();
   }
 
-  const double a_type = collision.attacker.data_type;
+  const double a_type = collision.attacker.data_type();
   const Value itr_kind = field_or(collision.itr, u"kind");
-  const double v_type = collision.victim.data_type;
+  const double v_type = collision.victim.data_type();
   const Value bdy_kind = field_or(collision.bdy, u"kind");
-  const double a_state = g_env.attacker_state();
-  const double b_state = g_env.victim_state();
+  const double a_state = g_env.attacker_state(collision);
+  const double b_state = g_env.victim_state(collision);
 
   if (!is_integer_in_range(a_type, 256.0)) return false;
   if (!is_integer_in_range(itr_kind, 4096.0)) return false;
@@ -409,9 +409,9 @@ void CollisionKeeper::handle(Collision& collision) const {
         enum_name(itr_kind_entries(), to_number(field_or(collision.itr, u"kind")));
     const std::u16string bdy_name =
         enum_name(bdy_kind_entries(), to_number(field_or(collision.bdy, u"kind")));
-    const std::u16string desc = u"[" + number_to_string(collision.attacker.data_type) + u"]#" +
+    const std::u16string desc = u"[" + number_to_string(collision.attacker.data_type()) + u"]#" +
                                 itr_name + u" => [" +
-                                number_to_string(collision.victim.data_type) + u"]#" + bdy_name;
+                                number_to_string(collision.victim.data_type()) + u"]#" + bdy_name;
     collision.core->log(u" collision: " + desc + u" \nhandlers: " + names);
   }
 
@@ -452,8 +452,8 @@ void CollisionKeeper::handle(Collision& collision) const {
     // TS: `const sounds = victim.data.base.hit_sounds; victim.play_sound(sounds)` —— 直接读
     // 受击方的数据（**不是** `lfw.datas.find_object(vdata_id)`：那是 4E 那一刀在没有宿主时
     // 的替代写法，本刀接上宿主后改回直读，见 DESIGN §78.6）。
-    const Value data = g_env.victim_data();
-    g_env.victim_play_sound(field_or(field_or(data, u"base"), u"hit_sounds"));
+    const Value data = g_env.victim_data(collision);
+    g_env.victim_play_sound(collision, field_or(field_or(data, u"base"), u"hit_sounds"));
   }
 }
 

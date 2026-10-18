@@ -291,16 +291,16 @@ ItrVelocity seam_velocity(Collision&) {
 }
 
 void bind() {
-  g_henv.attacker_itr_motionless = []() { return g_itr_motionless; };
-  g_henv.attacker_set_motionless = [](const Value& v) {
+  g_henv.attacker_itr_motionless = [](const Collision&) { return g_itr_motionless; };
+  g_henv.attacker_set_motionless = [](const Collision&, const Value& v) {
     g_att._motionless = v;
     g_log.push_back("A:set_motionless:" + render(v));
   };
-  g_henv.victim_set_shaking = [](const Value& v) {
+  g_henv.victim_set_shaking = [](const Collision&, const Value& v) {
     g_vic._shaking = v;
     g_log.push_back("V:set_shaking:" + render(v));
   };
-  g_henv.attacker_set_arest = [](double v) { g_log.push_back("A:set_arest:" + num(v)); };
+  g_henv.attacker_set_arest = [](const Collision&, double v) { g_log.push_back("A:set_arest:" + num(v)); };
   g_henv.victim_add_v_rest = [](Collision& c) {
     g_log.push_back("add_v_rest:" + s_of(c.vid) + ":" + num(c.rest));
   };
@@ -339,7 +339,7 @@ void bind() {
   };
   g_h3.is_ball = [](const lfw::Entity& e) { return lfw::entity::is_ball_data(e.data()); };
   g_h3.is_weapon = [](const lfw::Entity& e) { return lfw::entity::is_weapon_data(e.data()); };
-  g_h3.spark_point = [](const Cube& a, const Cube& b, double& x, double& y, double& z) {
+  g_h3.spark_point = [](const Collision&, const Cube& a, const Cube& b, double& x, double& y, double& z) {
     x = a.left;
     y = b.top;
     z = a.near;

@@ -44,19 +44,19 @@ void bind() {
   g_env.attacker_pick_victim = [](lfw::collision::Collision& c) {
     g_log.push_back("pick:" + to_ascii(c.aid) + ":" + to_ascii(c.vid));
   };
-  g_env.attacker_itr_motionless = []() {
+  g_env.attacker_itr_motionless = [](const lfw::collision::Collision&) {
     g_log.push_back("get_itr_motionless");
     return g_itr_motionless;
   };
-  g_env.attacker_set_motionless = [](const lfw::Value& v) {
+  g_env.attacker_set_motionless = [](const lfw::collision::Collision&, const lfw::Value& v) {
     g_motionless = v;
     g_log.push_back("set_motionless:" + render(v));
   };
-  g_env.victim_set_shaking = [](const lfw::Value& v) {
+  g_env.victim_set_shaking = [](const lfw::collision::Collision&, const lfw::Value& v) {
     g_shaking = v;
     g_log.push_back("set_shaking:" + render(v));
   };
-  g_env.attacker_set_arest = [](double v) {
+  g_env.attacker_set_arest = [](const lfw::collision::Collision&, double v) {
     g_arest = lfw::Value(v);
     g_log.push_back("set_arest:" + num(v));
   };

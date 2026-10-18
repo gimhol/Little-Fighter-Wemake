@@ -171,5 +171,11 @@ export default {
       from: `  o.set(u"r_x_min", Value(100.0));`,
       to: `  o.set(u"r_x_min", Value(101.0));`,
     },
+    {
+      note: "数据集默认 defend_desire_step 1800 改回 2500（TS 4d209569b 降过一次）",
+      file: "native/lfw/bot/bot_dataset.cpp",
+      from: `  o.set(u"defend_desire_step", Value(1800.0));`,
+      to: `  o.set(u"defend_desire_step", Value(2500.0));`,
+    },
   ],
 };

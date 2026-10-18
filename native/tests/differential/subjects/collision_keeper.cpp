@@ -41,8 +41,8 @@ std::string handlers_text() {
 
 void bind() {
   lfw::collision::KeeperEnv env;
-  env.attacker_state = []() { return g_a_state; };
-  env.victim_state = []() { return g_v_state; };
+  env.attacker_state = [](const Collision&) { return g_a_state; };
+  env.victim_state = [](const Collision&) { return g_v_state; };
   lfw::collision::set_keeper_env(env);
 }
 
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
         const std::string& field = t[i++];
         const double n = trace::to_double(t[i++]);
         if (field == "type") {
-          (sub == "a" ? g_c.attacker.data_type : g_c.victim.data_type) = n;
+          (sub == "a" ? g_c.attacker.snap_mut().data_type : g_c.victim.snap_mut().data_type) = n;
         } else if (field == "state") {
           (sub == "a" ? g_a_state : g_v_state) = n;
         } else {

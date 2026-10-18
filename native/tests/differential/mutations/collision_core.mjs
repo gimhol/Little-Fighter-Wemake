@@ -33,7 +33,7 @@ export default {
     {
       note: "new 不再查 itr_prefabs",
       file: "native/lfw/collision/collision.cpp",
-      from: "    else if (!index_by(a.itr_prefabs, to_string(prefab_id), prefab))",
+      from: "    else if (!index_by(a.itr_prefabs(), to_string(prefab_id), prefab))",
       to: "    else if (false)",
     },
     {
@@ -58,7 +58,7 @@ export default {
     {
       note: "new rest 第二分支丢掉 marks",
       file: "native/lfw/collision/collision.cpp",
-      from: "  } else if (itr_kind_is(itr, ItrKind::Normal) && a.marks_group_attack) {",
+      from: "  } else if (itr_kind_is(itr, ItrKind::Normal) && a.marks_group_attack()) {",
       to: "  } else if (itr_kind_is(itr, ItrKind::Normal)) {",
     },
     {
@@ -77,14 +77,14 @@ export default {
     {
       note: "new id 未按 rest 取新 id",
       file: "native/lfw/collision/collision.cpp",
-      from: "  c.id = rest ? core.new_id() : a.id;",
-      to: "  c.id = a.id;",
+      from: "  c.id = rest ? core.new_id() : a.id();",
+      to: "  c.id = a.id();",
     },
     {
       note: "new id 判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  c.id = rest ? core.new_id() : a.id;",
-      to: "  c.id = rest ? a.id : core.new_id();",
+      from: "  c.id = rest ? core.new_id() : a.id();",
+      to: "  c.id = rest ? a.id() : core.new_id();",
     },
     {
       note: "new 攻击方当受击方",
@@ -149,8 +149,8 @@ export default {
     {
       note: "new priority 取受击方类型",
       file: "native/lfw/collision/collision.cpp",
-      from: "  c.priority = core.priority_of(a.data_type);",
-      to: "  c.priority = core.priority_of(v.data_type);",
+      from: "  c.priority = core.priority_of(a.data_type());",
+      to: "  c.priority = core.priority_of(v.data_type());",
     },
     {
       note: "new injury 初值不为 null",
@@ -167,8 +167,8 @@ export default {
     {
       note: "new aid/vid 互换",
       file: "native/lfw/collision/collision.cpp",
-      from: "  c.aid = a.id;\n  c.vid = v.id;",
-      to: "  c.aid = v.id;\n  c.vid = a.id;",
+      from: "  c.aid = a.id();\n  c.vid = v.id();",
+      to: "  c.aid = v.id();\n  c.vid = a.id();",
     },
     // ---- collision_test ----
     {
@@ -186,20 +186,20 @@ export default {
     {
       note: "test dropping 判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (a.dropping) return false;",
-      to: "  if (!a.dropping) return false;",
+      from: "  if (a.dropping()) return false;",
+      to: "  if (!a.dropping()) return false;",
     },
     {
       note: "test arest 与 rest 关系取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (!c.rest && truthy(a.arest)) return false;",
-      to: "  if (c.rest && truthy(a.arest)) return false;",
+      from: "  if (!c.rest && truthy(a.arest())) return false;",
+      to: "  if (c.rest && truthy(a.arest())) return false;",
     },
     {
       note: "test v_rest 判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (c.rest && c.core->victim_get_v_rest(c.aid)) return false;",
-      to: "  if (c.rest && !c.core->victim_get_v_rest(c.aid)) return false;",
+      from: "  if (c.rest && c.core->victim_get_v_rest(c)) return false;",
+      to: "  if (c.rest && !c.core->victim_get_v_rest(c)) return false;",
     },
     {
       note: "test Heal 跳过判定取反",
@@ -210,20 +210,20 @@ export default {
     {
       note: "test 无敌判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "    if (truthy(v.invulnerable)) return false;",
-      to: "    if (!truthy(v.invulnerable)) return false;",
+      from: "    if (truthy(v.invulnerable())) return false;",
+      to: "    if (!truthy(v.invulnerable())) return false;",
     },
     {
       note: "test 被抓者 hurtable 比较值错",
       file: "native/lfw/collision/collision.cpp",
-      from: "    if (v.has_catcher && !strict_equals(v.catcher_hurtable, Value(1.0))) return false;",
-      to: "    if (v.has_catcher && !strict_equals(v.catcher_hurtable, Value(0.0))) return false;",
+      from: "    if (v.has_catcher() && !strict_equals(v.catcher_hurtable(), Value(1.0))) return false;",
+      to: "    if (v.has_catcher() && !strict_equals(v.catcher_hurtable(), Value(0.0))) return false;",
     },
     {
       note: "test 被抓者前置条件取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "    if (v.has_catcher && !strict_equals(v.catcher_hurtable, Value(1.0))) return false;",
-      to: "    if (!v.has_catcher && !strict_equals(v.catcher_hurtable, Value(1.0))) return false;",
+      from: "    if (v.has_catcher() && !strict_equals(v.catcher_hurtable(), Value(1.0))) return false;",
+      to: "    if (!v.has_catcher() && !strict_equals(v.catcher_hurtable(), Value(1.0))) return false;",
     },
     {
       note: "test 丢掉 PickSecretly",
@@ -234,14 +234,14 @@ export default {
     {
       note: "test bot_ignore 比较值错",
       file: "native/lfw/collision/collision.cpp",
-      from: "      strict_equals(v.bot_ignore, Value(1.0)) && a.is_bot_ctrl)",
-      to: "      strict_equals(v.bot_ignore, Value(2.0)) && a.is_bot_ctrl)",
+      from: "      strict_equals(v.bot_ignore(), Value(1.0)) && a.is_bot_ctrl())",
+      to: "      strict_equals(v.bot_ignore(), Value(2.0)) && a.is_bot_ctrl())",
     },
     {
       note: "test 机器人判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "      strict_equals(v.bot_ignore, Value(1.0)) && a.is_bot_ctrl)",
-      to: "      strict_equals(v.bot_ignore, Value(1.0)) && !a.is_bot_ctrl)",
+      from: "      strict_equals(v.bot_ignore(), Value(1.0)) && a.is_bot_ctrl())",
+      to: "      strict_equals(v.bot_ignore(), Value(1.0)) && !a.is_bot_ctrl())",
     },
     {
       note: "test 左边界比较反向",
@@ -282,8 +282,8 @@ export default {
     {
       note: "test 队伍标志取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  const double ally_flag = c.core->attacker_is_ally() ? static_cast<double>(HitFlag::Ally)\n                                                      : static_cast<double>(HitFlag::Enemy);",
-      to: "  const double ally_flag = c.core->attacker_is_ally() ? static_cast<double>(HitFlag::Enemy)\n                                                      : static_cast<double>(HitFlag::Ally);",
+      from: "  const double ally_flag = c.core->attacker_is_ally(c) ? static_cast<double>(HitFlag::Ally)\n                                                      : static_cast<double>(HitFlag::Enemy);",
+      to: "  const double ally_flag = c.core->attacker_is_ally(c) ? static_cast<double>(HitFlag::Enemy)\n                                                      : static_cast<double>(HitFlag::Ally);",
     },
     {
       note: "test bdy hit_flag 缺省判定取反",
@@ -300,14 +300,14 @@ export default {
     {
       note: "test itr 类型位判定换了操作数",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (!bit_and(itr_flag, v.data_type) || !bit_and(bdy_flag, a.data_type) ||",
-      to: "  if (!bit_and(bdy_flag, v.data_type) || !bit_and(bdy_flag, a.data_type) ||",
+      from: "  if (!bit_and(itr_flag, v.data_type()) || !bit_and(bdy_flag, a.data_type()) ||",
+      to: "  if (!bit_and(bdy_flag, v.data_type()) || !bit_and(bdy_flag, a.data_type()) ||",
     },
     {
       note: "test bdy 类型位判定换了操作数",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (!bit_and(itr_flag, v.data_type) || !bit_and(bdy_flag, a.data_type) ||",
-      to: "  if (!bit_and(itr_flag, v.data_type) || !bit_and(itr_flag, a.data_type) ||",
+      from: "  if (!bit_and(itr_flag, v.data_type()) || !bit_and(bdy_flag, a.data_type()) ||",
+      to: "  if (!bit_and(itr_flag, v.data_type()) || !bit_and(itr_flag, a.data_type()) ||",
     },
     {
       note: "test 队伍位双条件用或",
@@ -318,20 +318,20 @@ export default {
     {
       note: "test 同队判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (strict_equals(v.team, a.team) && truthy(v.emitter) && strict_equals(v.emitter, a.emitter) &&",
-      to: "  if (!strict_equals(v.team, a.team) && truthy(v.emitter) && strict_equals(v.emitter, a.emitter) &&",
+      from: "  if (strict_equals(v.team(), a.team()) && truthy(v.emitter()) &&\n      strict_equals(v.emitter(), a.emitter()) &&",
+      to: "  if (!strict_equals(v.team(), a.team()) && truthy(v.emitter()) && strict_equals(v.emitter(), a.emitter()) &&",
     },
     {
       note: "test 同发射者判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "  if (strict_equals(v.team, a.team) && truthy(v.emitter) && strict_equals(v.emitter, a.emitter) &&",
-      to: "  if (strict_equals(v.team, a.team) && truthy(v.emitter) && !strict_equals(v.emitter, a.emitter) &&",
+      from: "  if (strict_equals(v.team(), a.team()) && truthy(v.emitter()) &&\n      strict_equals(v.emitter(), a.emitter()) &&",
+      to: "  if (strict_equals(v.team(), a.team()) && truthy(v.emitter()) && !strict_equals(v.emitter(), a.emitter()) &&",
     },
     {
       note: "test 同生成时刻判定取反",
       file: "native/lfw/collision/collision.cpp",
-      from: "      strict_equals(v.spawn_time, a.spawn_time))",
-      to: "      !strict_equals(v.spawn_time, a.spawn_time))",
+      from: "      strict_equals(v.emitter(), a.emitter()) && strict_equals(v.spawn_time(), a.spawn_time()))",
+      to: "      strict_equals(v.emitter(), a.emitter()) && !strict_equals(v.spawn_time(), a.spawn_time()))",
     },
     {
       note: "test bdy 块改读 itr 测试器",
@@ -367,8 +367,8 @@ export default {
     {
       note: "get aframe 误当 bframe",
       file: "native/lfw/collision/collision.cpp",
-      from: "      inits.aframe = attacker.frame;\n      inits.bframe = victim.frame;",
-      to: "      inits.aframe = victim.frame;\n      inits.bframe = attacker.frame;",
+      from: "      inits.aframe = attacker.frame();\n      inits.bframe = victim.frame();",
+      to: "      inits.aframe = victim.frame();\n      inits.bframe = attacker.frame();",
     },
     {
       note: "get itr_index 用了 j",

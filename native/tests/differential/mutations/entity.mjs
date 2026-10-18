@@ -3573,20 +3573,20 @@ export default {
         {
       "note": "update_position stops vx for a blocker behind the entity",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px > position.x)) {",
-      "to": "    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px < position.x)) {"
+      "from": "    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() > position.x)) {",
+      "to": "    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() < position.x)) {"
     },
         {
       "note": "update_position stops vx for a receding blocker",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px > position.x)) {",
-      "to": "    if ((vx < 0 && v.attacker.px > position.x) || (vx > 0 && v.attacker.px > position.x)) {"
+      "from": "    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() > position.x)) {",
+      "to": "    if ((vx < 0 && v.attacker.px() > position.x) || (vx > 0 && v.attacker.px() > position.x)) {"
     },
         {
       "note": "update_position stops vz for a blocker behind the entity",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    if ((vz < 0 && v.attacker.pz < position.z) || (vz > 0 && v.attacker.pz > position.z)) {",
-      "to": "    if ((vz < 0 && v.attacker.pz < position.z) || (vz > 0 && v.attacker.pz < position.z)) {"
+      "from": "    if ((vz < 0 && v.attacker.pz() < position.z) || (vz > 0 && v.attacker.pz() > position.z)) {",
+      "to": "    if ((vz < 0 && v.attacker.pz() < position.z) || (vz > 0 && v.attacker.pz() < position.z)) {"
     },
         {
       "note": "update_position zeroes the blocker velocity without arming prev_velocity.x",
@@ -4678,13 +4678,13 @@ export default {
     {
       note: "on_spawn：Ball_Rebounding 分支用发射者而不是 attacker",
       file: "native/lfw/entity/entity.cpp",
-      from: `      attacker_id = emitter.lastest_collided->attacker.id;`,
+      from: `      attacker_id = emitter.lastest_collided->attacker.id();`,
       to: `      attacker_id = emitter.id;`,
     },
     {
       note: "on_spawn：Ball_Rebounding 分支的 team 用发射者",
       file: "native/lfw/entity/entity.cpp",
-      from: `      attacker_team = emitter.lastest_collided->attacker.team;`,
+      from: `      attacker_team = emitter.lastest_collided->attacker.team();`,
       to: `      attacker_team = Value(emitter.team());`,
     },
     {

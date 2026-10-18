@@ -16,16 +16,8 @@ namespace loader {
 // `src/LFW/loader/get_val_from_collision.ts` 里的 `map` 表（86 个词），声明顺序照抄
 // `defines/CollisionVal.ts`。键是 `defines/collision_val.h` 的 `collision_val::k*`。
 //
-// TS 的 `Collision.attacker` / `.victim` **就是**那两个活实体（读的时候才取字段），
-// 而端口的 `Collision` 只有 `CollisionActor` 快照（`collision/` 层看不见 `Entity`）⇒
-// 表里凡是读实体的项都要宿主按 `id` 给出活实体，缝见 `CollisionValEnv`。
-struct CollisionValEnv {
-  std::function<const Entity*(const std::u16string& id)> find_entity;
-};
-
-const CollisionValEnv& collision_val_env();
-void set_collision_val_env(const CollisionValEnv& env);
-
+// TS 的 `Collision.attacker` / `.victim` **就是**那两个活实体（读的时候才取字段）——
+// 端口的 `Collision` 现在也一样（`collision::ActorHandle`），所以这张表**不再需要**宿主缝。
 const std::vector<std::pair<std::u16string, ValGetter<collision::Collision>>>&
 collision_val_getters();
 

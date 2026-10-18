@@ -11817,3 +11817,167 @@ g_env.catching = lfw::TargetHandle::of(lfw::bot::or_nullish(lfw::field_or(g_me, 
 函数开头 `if (this.entity.catching) return this.entity.catching == e;` 已经返回。
 TS 原样如此（`src/LFW/bot/BotController.ts:397-399`），端口照抄；别为它们写锚点（杀不掉，
 不是因为台面弱，而是分支不存在）。
+
+## 165. 碰撞层的 `ActorHandle`（2026-10-18）
+
+`Collision.attacker` / `.victim` 在 TS 里就是那两个活实体（`collision/*` 读的是
+`c.attacker.position.x`、`c.victim.hp`、`c.victim.data.base.hit_sounds` …）。端口原先是这样接的：
+
+```cpp
+// world_collision.cpp（旧）
+collision::CollisionActor WorldCollisionHost::actor_of(Entity& e) const {
+  collision::CollisionActor a;
+  a.id = e.id; a.px = e.position.x; a.py = e.position.y; a.pz = e.position.z;
+  a.data_id = ...; a.data_type = ...; a.frame = e.frame; /* 还有 13 个字段 */
+  return a;
+}
+```
+
+一份 20 字段的**快照**，在 `collision_get` 那一刻拍下，之后整个判定 + 分发都用它。
+它有两个真实代价：
+
+1. 宿主还得记住「当前判定的是哪一对」（`_cur_a` / `_cur_v`），因为缝签名里没有对方实体；
+2. `loader/get_val_from_collision` 的 86 个词要从快照回到活实体 —— 于是又有 `CollisionValEnv`
+   一条缝，按 `id` 去 `world.find_entity` 找。
+
+这一刀把这两个代价一起消掉。
+
+### 165.1. `ActorHandle`
+
+```cpp
+class ActorHandle {
+  const Entity* _entity = nullptr;   // 真实运行时
+  std::u16string _id;                // 身份（池化复用，单靠指针不算身份）
+  mutable CollisionActor _snap;      // 台面：脚本化的假实体
+  mutable bool _snap_built = false;
+ public:
+  double px() const;                 // 真实体活读，台面读 _snap
+  double data_type() const;
+  Value frame() const;
+  /* …共 19 个取值器 */
+};
+```
+
+与 `TargetHandle`（§163）同一套形状、同一个理由（池化复用 ⇒ 读之前用 `id` 复核），
+但多一条**写**的出口：`snap_mut()`。碰撞判定里有几个字段是**写**进去的（台面的 `run aid` /
+`attacker.data_type`），而真实运行时的写入都走 `HandlersEnv` 的缝，所以 `snap_mut()`
+只对台面有意义（写进去之后句柄降级成快照）。
+
+### 165.2. 缝签名统一收 `Collision`
+
+`Collision` 自己带着那两个句柄 ⇒ 宿主不需要 `_cur_a` / `_cur_v` 这对「当前判定的是谁」的
+隐式状态（它原来只靠 `collision_get` / `collision_test` / `handle` 三个入口轮换赋值，
+谁少赋值一次就静默读错实体）。改后：
+
+| Env | 旧签名 | 新签名 |
+| --- | --- | --- |
+| `HandlersEnv.attacker_itr_motionless` | `() -> Value` | `(const Collision&) -> Value` |
+| `HandlersEnv.attacker_set_motionless` | `(const Value&)` | `(const Collision&, const Value&)` |
+| `HandlersEnv.victim_set_shaking` | `(const Value&)` | `(const Collision&, const Value&)` |
+| `HandlersEnv.attacker_set_arest` | `(double)` | `(const Collision&, double)` |
+| `KeeperEnv.attacker_state` / `victim_state` | `() -> double` | `(const Collision&) -> double` |
+| `KeeperEnv.victim_data` | `() -> Value` | `(const Collision&) -> Value` |
+| `KeeperEnv.victim_play_sound` | `(const Value&)` | `(const Collision&, const Value&)` |
+| `KeeperEnv.ball_frozen` | `(CollisionActor&, CollisionActor&, const Value&)` | `(const ActorHandle&, const ActorHandle&, const Value&)` |
+| `CollisionCoreEnv.get_bounding` | `(const CollisionActor&, …)` | `(const ActorHandle&, …)` |
+| `CollisionCoreEnv.victim_get_v_rest` | `(const std::u16string& aid)` | `(const Collision&)` |
+| `CollisionCoreEnv.attacker_is_ally` | `() -> bool` | `(const Collision&) -> bool` |
+| `CollisionCoreEnv.find_entity` | `(id, CollisionActor& out)` | `(id, ActorHandle& out)` |
+| `Handlers3Env.spark_point` / `WeaponIsHitEnv.spark_point` | `(const Cube&, const Cube&, …)` | `(const Collision&, const Cube&, const Cube&, …)` |
+| `Handlers4Env.find_align_frame` | `(frame_id, throwings, sky)` | `(const Collision&, frame_id, throwings, sky)` |
+| `NbdDefendEnv.dispatch` | `(handler_type, action)` | `(const Collision&, handler_type, action)` |
+
+### 165.3. `CollisionValEnv` 删除
+
+`get_val_from_collision` 的 86 个词以前要 `g_env.find_entity(c.attacker.id)` 才能拿到活实体；
+现在：
+
+```cpp
+const Entity* attacker_of(const Ctx& c) { return c.attacker.entity(); }
+const Entity* victim_of(const Ctx& c) { return c.victim.entity(); }
+```
+
+`find_entity` 一删，整个 `CollisionValEnv` 就没有成员了 ⇒ 结构体、`set_collision_val_env`、
+`WorldCollisionHost::bind_val_env` 全部删除。
+
+### 165.4. 台面
+
+* `subjects/entity.cpp` 的 `run cv …`（`get_val_from_collision` 那一套）以前只能塞 `id`、
+  再靠 `CollisionValEnv` 找回实体；现在 `cv_bind` 直接给**真**实体，
+  「世界外」用 `cv_handle_of(nullptr)`（只有 `id` 的假句柄，`entity()` 给 `nullptr`）。
+* `collision_core` / `collision_keeper` / `collision_keeper_handle` / `collision_handlers*` /
+  `collision_n_bdy_defend` / `collision_weapon_is_hit` 六个 subject 里，Env lambda 都补上
+  `const Collision&` 参数；写入类（`run aid` / `attacker.data_type`）改用 `snap_mut()`。
+
+### 165.5. 三条工具链修复（这一刀踩出来的）
+
+1. **`mutate.mjs` 的 `execFileSync` 补 `maxBuffer`**：MSVC 的 `/showIncludes` 打印在 stdout，
+   而中文 VS 的前缀与 `rules.ninja` 里的 `msvc_deps_prefix` 对不上（§161.4）⇒ ninja 不吞它，
+   一个中等 TU 就能刷出近 1 MB。`execFileSync` 的默认 `maxBuffer` 正好也是 1 MB ⇒ 撑爆后
+   **整份 spec 被记成 compile-error**（实测 `entity.mjs` 的 936 条里 935 条全红，而且报错文本
+   全是「包括文件:」噪声，极难看出原因）。
+2. **基线先 `build` 再 `test`**：`native.mjs test` 不构建（README 有记）。变异运行器原来直接拿
+   「上一次的二进制」当基线 ⇒ 上一次若是被中断的变异构建，基线就是变异体（实测
+   `entity/main` 的 `resting_max` 报 40 vs 30 —— 那正是 `_resting_max = std::nullopt`
+   这条变异体的行为）。
+3. **从备份恢复源码后删掉对应 `*.obj`**：被打断的那一趟会停在「源码=变异体、obj=变异体」的
+   状态；恢复源码时写入的 mtime 可能**早于**那个 obj（恢复与最后一次编译前后脚），ninja 于是
+   认为它是最新的 ⇒ 下一趟整趟在测变异体。删 obj 逼它重编。
+
+### 165.6. 两条不可观察的锚点
+
+`CollisionCoreEnv.find_entity` / `find_object_data` 现在唯一的消费者是
+`collision_from_snapshot`（`collision/` 层的水合入口）。`World::step` 从不水合快照 ——
+`Entity::vrests` / `colliders` 存的是**整份** `Collision`，不是快照 —— 所以
+`world/collision.txt` 那条路径够不着它们；`collision_core` subject 里已用 `snap` / `fromsnap`
+锁住。两条锚点从 `world_collision.mjs` 删除，理由记进该 spec 的「有意不覆盖」段。
+## 166. 跟两条 TS 提交（2026-10-18）
+
+开工期间上游落了两个只改 TS 的提交，端口的差分立刻红了一条 —— 这正是「TS 是唯一真值、
+差分是硬门槛」的价值所在：
+
+```
+x lfw/char_menu <- drift
+  first divergence at line 2736
+  2736  C++: dsrd|difficulty|n2:4000000000000000
+  2736  TS : dsrd|difficulty|n3:4008000000000000
+```
+
+`dsrd` 打印的是 `world.dataset[key]`，所以方向很明确：**世界数据集的 difficulty 不一样**。
+
+### 166.1. `b25e6ff9c`：生存排行恒为苦难
+
+`GamePrepareLogic.reset_world_dataset` 原来先把 `difficulty` 存起来、重置完再写回去
+（「保留难度选择」）；TS 改成**不保留**（B 站生存排行恒为苦难）：
+
+```cpp
+// 旧
+const Value difficulty = ds.get(u"difficulty");
+/* …dump_dataset 覆盖… */
+ds.set(u"difficulty", difficulty);
+// 新（= TS）
+/* …dump_dataset 覆盖… */
+```
+
+char_menu 用例走的正是「切到生存排行 → 重置 dataset」那条路，所以 C++ 保留的 `2` 与
+TS 的默认 `3` 对不上。
+
+### 166.2. `4d209569b`：`defend_desire_step` 2500 → 1800
+
+`bot_dataset.cpp` 的默认表跟着改。这条**会动摘要**（bot 的防御欲望是每帧都在用的量）：
+
+| 摘要 | 改前 | 改后 |
+| --- | --- | --- |
+| `--ui-page main_page` 2400 帧 | `56bd53ab3ae75154` | `b3f9a34a67597b08` |
+| `--stage 1` 900 帧 | `4c5ef7aa63c97056` | 不变 |
+| 默认 300 帧 | `b18b9d0d7892aef5` | 不变 |
+
+后两条不变是因为那条路里没有 bot（`stage 1` 的对手是脚本化的假实体）。
+
+### 166.3. 补的观测面
+
+* `cases/bot/state_keys.txt`：在 `make` 之后按 `diff n 1` / `2` / `3` 各读一次
+  `get defend_desire`。新锚点「数据集默认 defend_desire_step 1800 改回 2500」加上之前是
+  **存活**的（`bot` 的 8 份用例从来没读这个 getter），补完三档立刻 killed。
+* `lfw_char_menu.mjs`：加「重置 dataset 时保留旧难度」（让 dump 循环跳过 `difficulty`）——
+  这条钉住的就是 §166.1 的行为。

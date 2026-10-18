@@ -16,6 +16,7 @@ namespace {
 
 using lfw::Value;
 using lfw::collision::Collision;
+using lfw::collision::ActorHandle;
 using lfw::collision::CollisionActor;
 using lfw::collision::CollisionCoreEnv;
 using trace::parse_value;
@@ -58,30 +59,30 @@ std::string flatten(const std::u16string& s) {
 
 void bind() {
   lfw::collision::KeeperEnv env;
-  env.attacker_state = []() { return g_a_state; };
-  env.victim_state = []() { return g_v_state; };
+  env.attacker_state = [](const Collision&) { return g_a_state; };
+  env.victim_state = [](const Collision&) { return g_v_state; };
   env.call_handler = [](const std::u16string& fn, Collision&) {
     g_log.push_back("handler:" + s_of(fn));
   };
-  env.ball_frozen = [](CollisionActor& first, CollisionActor& second, const Value&) {
+  env.ball_frozen = [](const ActorHandle& first, const ActorHandle& second, const Value&) {
     (void)second;
-    return first.id != u"V";
+    return first.id() != u"V";
   };
   env.run_action = [](const std::u16string& type, const Value& action, Collision&) {
     g_log.push_back("action:" + s_of(type) + ":" + render(action));
   };
   env.victim_push_collided = [](Collision& c) {
-    g_log.push_back("v_collided:" + s_of(c.victim.id));
+    g_log.push_back("v_collided:" + s_of(c.victim.id()));
   };
   env.attacker_push_collision = [](Collision& c) {
-    g_log.push_back("a_collision:" + s_of(c.attacker.id));
+    g_log.push_back("a_collision:" + s_of(c.attacker.id()));
   };
-  env.victim_play_sound = [](const Value& sounds) {
+  env.victim_play_sound = [](const Collision&, const Value& sounds) {
     g_log.push_back("sound:" + render(sounds));
   };
   // `handle` 末尾读 `victim.data.base.hit_sounds`（TS 直读实体数据）⇒ 与本 harness 的
   // `find_object_data` 给同一份 `g_vdata`，观测量不变。
-  env.victim_data = []() { return g_vdata; };
+  env.victim_data = [](const Collision&) { return g_vdata; };
   lfw::collision::set_keeper_env(env);
 
   g_core.dev = []() { return g_dev; };
@@ -96,8 +97,10 @@ void bind() {
     return true;
   };
   g_c.core = &g_core;
-  g_c.attacker.id = u"A";
-  g_c.victim.id = u"V";
+  g_c.attacker = ActorHandle::of(CollisionActor{});
+  g_c.victim = ActorHandle::of(CollisionActor{});
+  g_c.attacker.snap_mut().id = u"A";
+  g_c.victim.snap_mut().id = u"V";
 }
 
 void seed_handlers(const Value& v) {
@@ -157,10 +160,11 @@ int main(int argc, char** argv) {
         if (field == "id") {
           const Value v = parse_value(t, i);
           const std::u16string* s = std::get_if<std::u16string>(&v);
-          (sub == "a" ? g_c.attacker.id : g_c.victim.id) = s != nullptr ? *s : std::u16string();
+          (sub == "a" ? g_c.attacker.snap_mut().id : g_c.victim.snap_mut().id) =
+          s != nullptr ? *s : std::u16string();
         } else if (field == "type") {
           const double n = trace::to_double(t[i++]);
-          (sub == "a" ? g_c.attacker.data_type : g_c.victim.data_type) = n;
+          (sub == "a" ? g_c.attacker.snap_mut().data_type : g_c.victim.snap_mut().data_type) = n;
         } else if (field == "state") {
           const double n = trace::to_double(t[i++]);
           (sub == "a" ? g_a_state : g_v_state) = n;

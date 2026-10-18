@@ -17,7 +17,7 @@ void set_defaults(Object& o) {
   const double max_desire = defines::num(u"Defines.MAX_AI_DESIRE");
   o.set(u"r_stop_desire", Value(10.0));
   o.set(u"defend_desire_base", Value(0.0));
-  o.set(u"defend_desire_step", Value(2500.0));
+  o.set(u"defend_desire_step", Value(1800.0));
   o.set(u"w_atk_x", Value(50.0));
   o.set(u"w_atk_m_x", Value(-1.0));
   o.set(u"w_atk_r_x", Value(-1.0));

@@ -58,14 +58,14 @@ bool index_by(const Value& holder, const std::u16string& k, Value& out) {
 }
 
 Collision& collision_new(const CollisionCoreEnv& core, const CollisionInits& o) {
-  const CollisionActor& a = o.attacker;
-  const CollisionActor& v = o.victim;
-  const double ax = a.px;
-  const double ay = a.py;
-  const double az = a.pz;
-  const double vx = v.px;
-  const double vy = v.py;
-  const double vz = v.pz;
+  const ActorHandle& a = o.attacker;
+  const ActorHandle& v = o.victim;
+  const double ax = a.px();
+  const double ay = a.py();
+  const double az = a.pz();
+  const double vx = v.px();
+  const double vy = v.py();
+  const double vz = v.pz();
   const double dx = vx - ax;
   const double dy = vy - ay;
   const double dz = vz - az;
@@ -75,11 +75,11 @@ Collision& collision_new(const CollisionCoreEnv& core, const CollisionInits& o) 
   Value itr = o.itr;
   double itr_index = o.itr_index;
   if (itr_kind_is(o.itr, ItrKind::WeaponSwing)) {
-    const Value prefab_id = a.bear_wpoint_attacking;
+    const Value prefab_id = a.bear_wpoint_attacking();
     Value prefab;
     if (!truthy(prefab_id))
       itr_index = -1;
-    else if (!index_by(a.itr_prefabs, to_string(prefab_id), prefab))
+    else if (!index_by(a.itr_prefabs(), to_string(prefab_id), prefab))
       itr_index = -1;
     else
       itr = spread_assign(o.itr, prefab);
@@ -91,14 +91,14 @@ Collision& collision_new(const CollisionCoreEnv& core, const CollisionInits& o) 
   double rest = 0;
   if (!truthy(field_or(itr, u"arest")) && truthy(field_or(itr, u"vrest"))) {
     rest = max(min_vrest, to_number(field_or(itr, u"vrest")) + vrest_offset);
-  } else if (itr_kind_is(itr, ItrKind::Normal) && a.marks_group_attack) {
+  } else if (itr_kind_is(itr, ItrKind::Normal) && a.marks_group_attack()) {
     const Value ar = field_or(itr, u"arest");
     const double base = truthy(ar) ? to_number(ar) : to_number(field_or(dataset, u"itr_arest"));
     rest = max(min_vrest, base + vrest_offset);
   }
 
   Collision& c = core.acquire_collision();
-  c.id = rest ? core.new_id() : a.id;
+  c.id = rest ? core.new_id() : a.id();
   c.core = &core;
   c.attacker = a;
   c.victim = v;
@@ -115,8 +115,8 @@ Collision& collision_new(const CollisionCoreEnv& core, const CollisionInits& o) 
   c.dx = dx;
   c.dy = dy;
   c.dz = dz;
-  c.adata_id = a.data_id;
-  c.vdata_id = v.data_id;
+  c.adata_id = a.data_id();
+  c.vdata_id = v.data_id();
   c.aframe_id = to_string(field_or(o.aframe, u"id"));
   c.bframe_id = to_string(field_or(o.bframe, u"id"));
   c.itr_index = itr_index;
@@ -129,32 +129,32 @@ Collision& collision_new(const CollisionCoreEnv& core, const CollisionInits& o) 
     c.handlers->clear();
   else
     c.handlers = std::make_shared<std::vector<std::u16string>>();
-  c.priority = core.priority_of(a.data_type);
+  c.priority = core.priority_of(a.data_type());
   c.injury = Value(NullTag{});
   c.injury_r = Value(NullTag{});
   c.real_injury = Value(NullTag{});
   c.real_injury_r = Value(NullTag{});
-  c.aid = a.id;
-  c.vid = v.id;
+  c.aid = a.id();
+  c.vid = v.id();
   return c;
 }
 
 bool collision_test(Collision& c) {
   if (c.bdy_index < 0) return false;
   if (c.itr_index < 0) return false;
-  const CollisionActor& a = c.attacker;
-  const CollisionActor& v = c.victim;
-  if (a.dropping) return false;
-  if (!c.rest && truthy(a.arest)) return false;
-  if (c.rest && c.core->victim_get_v_rest(c.aid)) return false;
+  const ActorHandle& a = c.attacker;
+  const ActorHandle& v = c.victim;
+  if (a.dropping()) return false;
+  if (!c.rest && truthy(a.arest())) return false;
+  if (c.rest && c.core->victim_get_v_rest(c)) return false;
 
   if (!itr_kind_is(c.itr, ItrKind::Heal)) {
-    if (truthy(v.invulnerable)) return false;
-    if (v.has_catcher && !strict_equals(v.catcher_hurtable, Value(1.0))) return false;
+    if (truthy(v.invulnerable())) return false;
+    if (v.has_catcher() && !strict_equals(v.catcher_hurtable(), Value(1.0))) return false;
   }
 
   if ((itr_kind_is(c.itr, ItrKind::Pick) || itr_kind_is(c.itr, ItrKind::PickSecretly)) &&
-      strict_equals(v.bot_ignore, Value(1.0)) && a.is_bot_ctrl)
+      strict_equals(v.bot_ignore(), Value(1.0)) && a.is_bot_ctrl())
     return false;
 
   const Cube& ac = c.a_cube;
@@ -163,7 +163,7 @@ bool collision_test(Collision& c) {
       ac.far > bc.near || ac.near < bc.far)
     return false;
 
-  const double ally_flag = c.core->attacker_is_ally() ? static_cast<double>(HitFlag::Ally)
+  const double ally_flag = c.core->attacker_is_ally(c) ? static_cast<double>(HitFlag::Ally)
                                                       : static_cast<double>(HitFlag::Enemy);
   const Value bdy_flag_v = field_or(c.bdy, u"hit_flag");
   const Value itr_flag_v = field_or(c.itr, u"hit_flag");
@@ -171,12 +171,12 @@ bool collision_test(Collision& c) {
       missing(bdy_flag_v) ? static_cast<double>(HitFlag::AllEnemy) : to_number(bdy_flag_v);
   const double itr_flag =
       missing(itr_flag_v) ? static_cast<double>(HitFlag::AllEnemy) : to_number(itr_flag_v);
-  if (!bit_and(itr_flag, v.data_type) || !bit_and(bdy_flag, a.data_type) ||
+  if (!bit_and(itr_flag, v.data_type()) || !bit_and(bdy_flag, a.data_type()) ||
       (!bit_and(itr_flag, ally_flag) && !bit_and(bdy_flag, ally_flag)))
     return false;
 
-  if (strict_equals(v.team, a.team) && truthy(v.emitter) && strict_equals(v.emitter, a.emitter) &&
-      strict_equals(v.spawn_time, a.spawn_time))
+  if (strict_equals(v.team(), a.team()) && truthy(v.emitter()) &&
+      strict_equals(v.emitter(), a.emitter()) && strict_equals(v.spawn_time(), a.spawn_time()))
     return false;
 
   const Value bdy_tester = field_or(c.bdy, u"__tester");
@@ -194,10 +194,10 @@ bool collision_test(Collision& c) {
   return c.core->load_handlers(c);
 }
 
-Collision* collision_get(const CollisionCoreEnv& core, const CollisionActor& attacker,
-                         const CollisionActor& victim) {
-  const Value itr_arr = field_or(attacker.frame, u"itr");
-  const Value bdy_arr = field_or(victim.frame, u"bdy");
+Collision* collision_get(const CollisionCoreEnv& core, const ActorHandle& attacker,
+                         const ActorHandle& victim) {
+  const Value itr_arr = field_or(attacker.frame(), u"itr");
+  const Value bdy_arr = field_or(victim.frame(), u"bdy");
   const size_t ni = array_len(itr_arr);
   const size_t nj = array_len(bdy_arr);
   if (!ni || !nj) return nullptr;
@@ -208,8 +208,8 @@ Collision* collision_get(const CollisionCoreEnv& core, const CollisionActor& att
       inits.victim = victim;
       if (!array_at(itr_arr, i, inits.itr)) continue;
       if (!array_at(bdy_arr, j, inits.bdy)) continue;
-      inits.aframe = attacker.frame;
-      inits.bframe = victim.frame;
+      inits.aframe = attacker.frame();
+      inits.bframe = victim.frame();
       inits.itr_index = static_cast<double>(i);
       inits.bdy_index = static_cast<double>(j);
       Collision& c = collision_new(core, inits);

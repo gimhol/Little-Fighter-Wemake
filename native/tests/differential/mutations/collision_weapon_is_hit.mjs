@@ -245,8 +245,8 @@ export default {
     {
       note: "spark point uses the b cube as source",
       file: "native/lfw/collision/weapon_is_hit.cpp",
-      from: "  const SparkPoint sp = g_env.spark_point(c.a_cube, c.b_cube);",
-      to: "  const SparkPoint sp = g_env.spark_point(c.b_cube, c.a_cube);",
+      from: "  const SparkPoint sp = g_env.spark_point(c, c.a_cube, c.b_cube);",
+      to: "  const SparkPoint sp = g_env.spark_point(c, c.b_cube, c.a_cube);",
     },
     {
       note: "spark kind ignores the fly test",

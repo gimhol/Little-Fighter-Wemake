@@ -121,7 +121,8 @@ std::vector<std::u16string> g_cheats;
 std::vector<std::unique_ptr<lfw::buff::Buff>> g_buffs;
 // `run cv …` 手里的那个碰撞（`loader/get_val_from_collision`）。TS 的 `Collision` 没有
 // 快照版本，`attacker` / `victim` 就是那两个**活**实体、`aframe` / `bframe` 就是它们的
-// `frame`；端口这边只有 `CollisionActor` 快照，所以按 `id` 交给 `CollisionValEnv` 找回来。
+// `frame`；端口这边 `ActorHandle` 直接拿实体（台面里给的是**真**实体），"世界外"就塞一个
+// 只有 `id` 的假句柄（读实体的项于是给 `undefined`）。
 lfw::collision::Collision g_cv;
 // 世界外的 id：`world.entity_map.get(id) ?? null` 找不到它，读实体的项于是给 `undefined`
 // （TS 那边会是 `TypeError`，见 `DESIGN.md`）。
@@ -205,21 +206,29 @@ Value cv_frame_of(const Entity* e) {
   return e->frame;
 }
 
+// 世界外的 id ⇒ 只有 `id`、没有实体的句柄（`entity()` 给 `nullptr`）。
+lfw::collision::ActorHandle cv_handle_of(Entity* e) {
+  if (e != nullptr) return lfw::collision::ActorHandle::of(*e);
+  lfw::collision::CollisionActor fake;
+  fake.id = std::u16string(kCvOutside);
+  return lfw::collision::ActorHandle::of(fake);
+}
+
 void cv_reset() {
   g_cv = lfw::collision::Collision{};
   g_cv.itr = cv_empty();
   g_cv.bdy = cv_empty();
   g_cv.aframe = cv_empty();
   g_cv.bframe = cv_empty();
-  g_cv.attacker.id = std::u16string(kCvOutside);
-  g_cv.victim.id = std::u16string(kCvOutside);
+  g_cv.attacker = cv_handle_of(nullptr);
+  g_cv.victim = cv_handle_of(nullptr);
 }
 
 void cv_bind(const std::string& a_tok, const std::string& v_tok) {
   Entity* a = cv_entity_of(a_tok);
   Entity* v = cv_entity_of(v_tok);
-  g_cv.attacker.id = a != nullptr ? a->id : std::u16string(kCvOutside);
-  g_cv.victim.id = v != nullptr ? v->id : std::u16string(kCvOutside);
+  g_cv.attacker = cv_handle_of(a);
+  g_cv.victim = cv_handle_of(v);
   g_cv.aframe = cv_frame_of(a);
   g_cv.bframe = cv_frame_of(v);
 }
@@ -1230,14 +1239,6 @@ int main(int argc, char** argv) {
   bind_entity_factory();
   cv_reset();
   {
-    // `loader/get_val_from_collision` 的活实体缝：TS 的 `Collision.attacker` / `.victim`
-    // 是那两个实体本身，端口只有快照 ⇒ 按 `id` 现查（就是世界那个
-    // `world.entity_map.get(id) ?? null`）。
-    lfw::loader::CollisionValEnv env;
-    env.find_entity = [](const std::u16string& id) { return fixture_find_entity(id); };
-    lfw::loader::set_collision_val_env(env);
-  }
-  {
     lfw::Object o;
     g_bg_dataset = Value(std::make_shared<lfw::Object>(o));
   }
@@ -1609,8 +1610,8 @@ int main(int argc, char** argv) {
         const std::string& v_tok = t[i++];
         cv_bind(a_tok, v_tok);
         std::printf("run cvwho %s %s || %s | a=%s v=%s af=%s bf=%s\n", a_tok.c_str(),
-                    v_tok.c_str(), join(g_log).c_str(), s_of(g_cv.attacker.id).c_str(),
-                    s_of(g_cv.victim.id).c_str(), fid(g_cv.aframe).c_str(),
+                    v_tok.c_str(), join(g_log).c_str(), s_of(g_cv.attacker.id()).c_str(),
+                    s_of(g_cv.victim.id()).c_str(), fid(g_cv.aframe).c_str(),
                     fid(g_cv.bframe).c_str());
       } else if (what == "cvclear") {
         cv_reset();
@@ -1622,8 +1623,13 @@ int main(int argc, char** argv) {
         else if (field == "bdy") g_cv.bdy = v;
         else if (field == "aframe") g_cv.aframe = v;
         else if (field == "bframe") g_cv.bframe = v;
-        else if (field == "aid") g_cv.attacker.id = text_of(v);
-        else if (field == "vid") g_cv.victim.id = text_of(v);
+        else if (field == "aid") {
+          g_cv.attacker = cv_handle_of(nullptr);
+          g_cv.attacker.snap_mut().id = text_of(v);
+        } else if (field == "vid") {
+          g_cv.victim = cv_handle_of(nullptr);
+          g_cv.victim.snap_mut().id = text_of(v);
+        }
         else {
           std::fprintf(stderr, "unknown cvset '%s' at line %d\n", field.c_str(), lineno);
           return 2;
@@ -1712,8 +1718,8 @@ int main(int argc, char** argv) {
         // `CollisionActor` 是快照，只保留了这个字段。
         const std::string& which = t[i++];
         lfw::collision::Collision c;
-        c.attacker.data_type = lfw::to_number(parse_value(t, i));
-        c.victim.data_type = lfw::to_number(parse_value(t, i));
+        c.attacker.snap_mut().data_type = lfw::to_number(parse_value(t, i));
+        c.victim.snap_mut().data_type = lfw::to_number(parse_value(t, i));
         c.aframe = parse_value(t, i);
         c.itr = parse_value(t, i);
         c.bframe = parse_value(t, i);
@@ -2131,12 +2137,12 @@ int main(int argc, char** argv) {
         const std::u16string aid = text_of(parse_value(t, i));
         const Value team = parse_value(t, i);
         g_entity->lastest_collided = lfw::collision::Collision{};
-        g_entity->lastest_collided->attacker.id = aid;
-        g_entity->lastest_collided->attacker.team = team;
+        g_entity->lastest_collided->attacker.snap_mut().id = aid;
+        g_entity->lastest_collided->attacker.snap_mut().team = team;
         std::printf("run lastcollided %s %s || %s | a=%s t=%s\n", render(Value(aid)).c_str(),
                     render(team).c_str(), join(g_log).c_str(),
-                    render(Value(g_entity->lastest_collided->attacker.id)).c_str(),
-                    render(g_entity->lastest_collided->attacker.team).c_str());
+                    render(Value(g_entity->lastest_collided->attacker.id())).c_str(),
+                    render(g_entity->lastest_collided->attacker.team()).c_str());
       } else if (what == "setstate" || what == "setstateb") {
         const double code = trace::to_double(t[i++]);
         Entity* target = what == "setstateb" ? g_buddy.get() : g_entity.get();
@@ -2173,13 +2179,13 @@ int main(int argc, char** argv) {
         const double ax = lfw::to_number(parse_value(t, i));
         const double az = lfw::to_number(parse_value(t, i));
         const auto it = g_entity->vrests.find(aid);
-        if (it != g_entity->vrests.end()) it->second.attacker.px = ax;
+        if (it != g_entity->vrests.end()) it->second.attacker.snap_mut().px = ax;
         const auto ib = g_entity->blockers.find(aid);
-        if (ib != g_entity->blockers.end()) ib->second.attacker.px = ax;
+        if (ib != g_entity->blockers.end()) ib->second.attacker.snap_mut().px = ax;
         const auto ibz = g_entity->blockers.find(aid);
-        if (ibz != g_entity->blockers.end()) ibz->second.attacker.pz = az;
+        if (ibz != g_entity->blockers.end()) ibz->second.attacker.snap_mut().pz = az;
         const auto iz = g_entity->vrests.find(aid);
-        if (iz != g_entity->vrests.end()) iz->second.attacker.pz = az;
+        if (iz != g_entity->vrests.end()) iz->second.attacker.snap_mut().pz = az;
         std::printf("run vratt %s %s %s || %s | ax=%s az=%s\n", render(Value(aid)).c_str(),
                     render(Value(ax)).c_str(), render(Value(az)).c_str(), join(g_log).c_str(),
                     render(Value(ax)).c_str(), render(Value(az)).c_str());

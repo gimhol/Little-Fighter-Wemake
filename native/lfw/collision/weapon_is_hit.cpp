@@ -56,7 +56,7 @@ void handle_weapon_is_hit(Collision& c) {
   const Value fall = field_or(c.itr, u"fall");
   const bool is_fly = truthy(fall) && ge(fall, Value(kDefaultFallValueCritical));
 
-  const SparkPoint sp = g_env.spark_point(c.a_cube, c.b_cube);
+  const SparkPoint sp = g_env.spark_point(c, c.a_cube, c.b_cube);
   g_env.spark(sp.x, sp.y, sp.z,
               is_fly ? spark_enum::kSilentCriticalHit : spark_enum::kSilentHit);
 

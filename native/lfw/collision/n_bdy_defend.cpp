@@ -23,18 +23,18 @@ bool is_effect(const Value& effect, ItrEffect want) {
   return strict_equals(effect, Value(static_cast<double>(want)));
 }
 
-void run_actions(const Value& actions, const char16_t* a_type, const char16_t* v_type,
-                 const char16_t* a_dispatch, const char16_t* v_dispatch) {
+void run_actions(const Collision& c, const Value& actions, const char16_t* a_type,
+                 const char16_t* v_type, const char16_t* a_dispatch, const char16_t* v_dispatch) {
   const Array* arr = as_array(actions);
   if (arr == nullptr) return;
   for (size_t i = 0; i < arr->size(); ++i) {
     const Value& action = arr->at(i);
     const Value type = field_or(action, u"type");
     if (strict_equals(type, Value(std::u16string(a_type)))) {
-      g_env.dispatch(a_dispatch, action);
+      g_env.dispatch(c, a_dispatch, action);
     }
     if (strict_equals(type, Value(std::u16string(v_type)))) {
-      g_env.dispatch(v_dispatch, action);
+      g_env.dispatch(c, v_dispatch, action);
     }
   }
 }
@@ -79,15 +79,15 @@ void handle_itr_normal_bdy_defend(Collision& c) {
   if (v->defend_value() <= 0) {
     v->set_defend_value(0.0);
     g_env.spark(Value(x), Value(y), Value(z), Value(std::u16string(spark_enum::kBrokenDefend)));
-    run_actions(itr_actions, action_type::kA_DEFEND, action_type::kV_DEFEND,
+    run_actions(c, itr_actions, action_type::kA_DEFEND, action_type::kV_DEFEND,
                 action_type::kA_NEXT_FRAME, action_type::kV_NEXT_FRAME);
-    run_actions(bdy_actions, action_type::kA_BROKEN_DEFEND, action_type::kV_BROKEN_DEFEND,
+    run_actions(c, bdy_actions, action_type::kA_BROKEN_DEFEND, action_type::kV_BROKEN_DEFEND,
                 action_type::kA_NEXT_FRAME, action_type::kV_NEXT_FRAME);
   } else {
     g_env.spark(Value(x), Value(y), Value(z), Value(std::u16string(spark_enum::kDefendHit)));
-    run_actions(itr_actions, action_type::kA_DEFEND, action_type::kV_DEFEND,
+    run_actions(c, itr_actions, action_type::kA_DEFEND, action_type::kV_DEFEND,
                 action_type::kA_NEXT_FRAME, action_type::kV_NEXT_FRAME);
-    run_actions(bdy_actions, action_type::kA_DEFEND, action_type::kV_DEFEND,
+    run_actions(c, bdy_actions, action_type::kA_DEFEND, action_type::kV_DEFEND,
                 action_type::kA_NEXT_FRAME, action_type::kV_NEXT_FRAME);
   }
 }

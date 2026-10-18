@@ -24,20 +24,20 @@ export default {
     {
       note: "is_fighter_actor 拿 Weapon 判（hit_by_character）",
       file: "native/lfw/loader/get_val_from_entity.cpp",
-      from: `  return a.data_type == static_cast<double>(EntityEnum::Fighter);`,
-      to: `  return a.data_type == static_cast<double>(EntityEnum::Weapon);`,
+      from: `  return a.data_type() == static_cast<double>(EntityEnum::Fighter);`,
+      to: `  return a.data_type() == static_cast<double>(EntityEnum::Weapon);`,
     },
     {
       note: "is_weapon_actor 拿 Fighter 判（hit_by_weapon）",
       file: "native/lfw/loader/get_val_from_entity.cpp",
-      from: `  return a.data_type == static_cast<double>(EntityEnum::Weapon);`,
-      to: `  return a.data_type == static_cast<double>(EntityEnum::Fighter);`,
+      from: `  return a.data_type() == static_cast<double>(EntityEnum::Weapon);`,
+      to: `  return a.data_type() == static_cast<double>(EntityEnum::Fighter);`,
     },
     {
       note: "is_ball_actor 拿 Entity 判（hit_by_ball）",
       file: "native/lfw/loader/get_val_from_entity.cpp",
-      from: `  return a.data_type == static_cast<double>(EntityEnum::Ball);`,
-      to: `  return a.data_type == static_cast<double>(EntityEnum::Entity);`,
+      from: `  return a.data_type() == static_cast<double>(EntityEnum::Ball);`,
+      to: `  return a.data_type() == static_cast<double>(EntityEnum::Entity);`,
     },
     {
       note: "find_flag 命中后给 0",

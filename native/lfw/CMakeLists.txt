@@ -109,7 +109,8 @@ add_library(lfw_core STATIC
   collision/is_armor_work.cpp
   collision/calc_itr_velocity.cpp
   collision/handlers.cpp
-  collision/collision.cpp
+  collision/actor_handle.cpp
+collision/collision.cpp
   collision/action_handlers.cpp
   collision/handlers2.cpp
   collision/handlers3.cpp

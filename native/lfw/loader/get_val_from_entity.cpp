@@ -34,14 +34,14 @@ using G = ValGetter<Entity>;
 // `is_fighter(v)` / `is_weapon(v)` / `is_ball(v)` 读的是 `v.data.type`（`type_check.ts`），
 // 而 `collision_list` / `collided_list` 里的 `CollisionActor` 是快照，只留下了
 // `data.type`（`data_type`），所以这里按 `data_type` 判定。
-bool is_fighter_actor(const collision::CollisionActor& a) {
-  return a.data_type == static_cast<double>(EntityEnum::Fighter);
+bool is_fighter_actor(const collision::ActorHandle& a) {
+  return a.data_type() == static_cast<double>(EntityEnum::Fighter);
 }
-bool is_weapon_actor(const collision::CollisionActor& a) {
-  return a.data_type == static_cast<double>(EntityEnum::Weapon);
+bool is_weapon_actor(const collision::ActorHandle& a) {
+  return a.data_type() == static_cast<double>(EntityEnum::Weapon);
 }
-bool is_ball_actor(const collision::CollisionActor& a) {
-  return a.data_type == static_cast<double>(EntityEnum::Ball);
+bool is_ball_actor(const collision::ActorHandle& a) {
+  return a.data_type() == static_cast<double>(EntityEnum::Ball);
 }
 
 // `find(list, c => pred(c.attacker))` / `find(list, c => pred(c.victim))`：

@@ -2433,3 +2433,62 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
   摘要与中批**逐位一致**（这刀只换投影来源，不改任何判定）：
   `--ui-page main_page` 2400 帧 `56bd53ab3ae75154`、`--stage 1` 900 帧 `4c5ef7aa63c97056`、
   300 帧 `b18b9d0d7892aef5`。
+
+### 2026-10-18（二十二）：碰撞层的 `attacker` / `victim` 实体化（`collision::ActorHandle`）
+
+* 新增 `collision/actor_handle.h` / `actor_handle.cpp`：`ActorHandle` = `const Entity*` + `id` +
+  `CollisionActor` 快照兜底，外加 19 个取值器（`px/py/pz`、`data_id/data_type`、`frame`、
+  `itr_prefabs`、`bear_wpoint_attacking`、`marks_group_attack`、`dropping`、`arest`、
+  `has_catcher`、`catcher_hurtable`、`invulnerable`、`bot_ignore`、`team`、`emitter`、
+  `spawn_time`、`is_bot_ctrl`）。TS 的 `c.attacker.xxx` 是**活实体**，端口现在也一样；
+  台面（脚本化假实体）走 `ActorHandle::of(CollisionActor)`，语义与旧实现一致。
+* `Collision.attacker` / `.victim` / `CollisionInits.attacker` / `.victim` 由 `CollisionActor`
+  换成 `ActorHandle`；`CollisionActor` 只留下「台面假实体 + 快照载体」这一个身份。
+  `WorldCollisionHost::actor_of` 从 20 行的逐字段投影缩成一行 `ActorHandle::of(e)`。
+* **`_cur_a` / `_cur_v` 整对删除**：`collision/` 的 Env 缝原来靠宿主记「当前判定的是哪一对」，
+  现在 `Collision` 自己带着那两个句柄 ⇒ 缝签名统一收 `const Collision&`：
+  `victim_get_v_rest` / `attacker_is_ally` / `attacker_itr_motionless` / `attacker_set_motionless` /
+  `victim_set_shaking` / `attacker_set_arest`（`HandlersEnv`）、`attacker_state` / `victim_state` /
+  `victim_data` / `victim_play_sound` / `ball_frozen`（`KeeperEnv`）、`spark_point`（`Handlers3Env`
+  / `WeaponIsHitEnv`）、`find_align_frame`（`Handlers4Env`）、`dispatch`（`NbdDefendEnv`）。
+* **`CollisionValEnv` 整个删除**：`loader/get_val_from_collision` 的 86 个词以前要宿主按 `id`
+  把活实体找回来（`g_env.find_entity`），现在 `c.attacker.entity()` 直接给。
+* 台面：`subjects/entity.cpp` 的 `run cv …`（`cv_bind` / `cvset aid|vid`）直接塞真实体或
+  「只有 id 的假句柄」；`collision_*` 六个 subject 的 Env lambda 加上 `const Collision&` 参数，
+  写入类的用 `snap_mut()`（`handle` 里的假实体没有真身）。
+* 变异锚点：12 份 spec 重写（多数是机械改动：`a.field` → `a.field()`、缝多一个 `c` 参数）。
+  删 2 条**不可观察**的（`core: find_entity 恒失败` / `find_object_data 恒失败`）：
+  这两条缝现在只有 `collision_from_snapshot` 用，而 `World::step` 从不水合快照
+  （`entity` 的 `vrests` / `colliders` 存的是整份 `Collision`），台面够不着 —— 已记进
+  `world_collision.mjs` 的「有意不覆盖」段。
+  逐 spec 跑 `mutate.mjs`：`collision_core` 72、`collision_handlers` 30、`collision_handlers2` 49、
+  `collision_handlers3` 78、`collision_handlers4` 80、`collision_keeper` 45、
+  `collision_keeper_handle` 48、`collision_n_bdy_defend` 65、`collision_n_bdy_normal` 100、
+  `collision_val` 122、`collision_weapon_is_hit` 85、`world_collision` 33 —— **全部 killed /
+  0 survived / 0 compile-error**；`entity` 里被这刀改动的 5 条同样 killed。
+* 工具链两处修复（都是这刀踩出来的，见 DESIGN §165.5）：`mutate.mjs` 的
+  `execFileSync` 补 `maxBuffer`（MSVC 的 `/showIncludes` 噪声能刷掉近 1 MB，撑爆默认值后
+  **整份 spec 被误记成 compile-error**），基线在 `test` 之前先 `build`（`test` 不构建，
+  拿上一次的二进制当基线会得到假 drift），从备份恢复源码后顺手删掉对应的 `*.obj`。
+* 验证：差分 265/265、lint 866 clean / 0 failed / 14 warnings、anchors 9771 ok / 0 bad；
+  三条摘要与上一刀**逐位一致**（活读与旧投影读的是同一个实体、同一时刻）：
+  `56bd53ab3ae75154` / `4c5ef7aa63c97056` / `b18b9d0d7892aef5`。
+
+### 2026-10-18（二十三）：跟两条 TS 提交（生存排行难度 / 防御欲望）
+
+这刀开工时上游又落了两个**只改 TS** 的提交，端口的差分因此红了一条
+（`lfw/char_menu`：`dsrd|difficulty` 报 `2` vs `3`）。两处都照抄过来：
+
+* `b25e6ff9c`（`GamePrepareLogic.reset_world_dataset`）：生存排行重置 world dataset 时
+  **不再保留**旧难度（排行恒为苦难）⇒ 删掉 `difficulty` 的存取那一对；
+* `4d209569b`（`IBotDataSet.defend_desire_step`）：`2500` → `1800`
+  （`bot_dataset.cpp` 的默认表）。这一条**会动摘要**：`--ui-page main_page` 2400 帧
+  `56bd53ab3ae75154` → `b3f9a34a67597b08`（bot 的防御欲望变了）；
+  `--stage 1` 900 帧 `4c5ef7aa63c97056`、300 帧 `b18b9d0d7892aef5` 不变（那条路没有 bot）。
+
+补观测面：`cases/bot/state_keys.txt` 在 `make` 之后按 `diff n 1/2/3` 读三档
+`get defend_desire`（新增锚点「数据集默认 defend_desire_step 1800 改回 2500」原来**存活**，
+补完三档后 killed）；`lfw_char_menu.mjs` 新增「重置时保留旧难度」一条
+（`reset_world_dataset` 跳过 `difficulty`）。两条新锚点都 killed。
+
+* 验证：差分 265/265、lint 866 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad。
