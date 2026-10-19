@@ -12,6 +12,8 @@
 
 **原作者Marti Wong现已推出《[Little Fighter 2 Remastered](https://lf2.net/)》，请在[Steam](https://store.steampowered.com/app/3249650)购买，以支持原作者。**
 
+**由于 [LF2R](https://store.steampowered.com/app/3249650) 即将上线 LF2 2.0 的素材，届时本项目将不再 Release 涉及 LF2 素材的版本，已发布的涉及 LF2 素材的版本也将一并移除。**
+
 ## 快捷链接
 
 - [CHANGELOG](./CHANGELOG.MD)
@@ -39,6 +41,7 @@
 - 更丰富的关卡功能支持？
 - 继续实现LF2的其他游戏模式？
 - 录像与回放？
+- 移除取自 LF2 的素材？
 
 ## GitHub Actions 自动部署
 

@@ -14,6 +14,8 @@ Think this project is pretty good? Consider starring it!
 
 **The original author, Marti Wong, has now launched "[Little Fighter 2 Remastered](https://lf2.net/)". Please purchase it on [Steam](https://store.steampowered.com/app/3249650) to support the original author.**
 
+**As [LF2R](https://store.steampowered.com/app/3249650) is about to release LF2 2.0 assets, this project will no longer publish releases involving LF2 assets from that point on, and already published versions containing LF2 assets will be removed as well.**
+
 ## Links
 
 - [CHANGELOG](./CHANGELOG.EN.MD)
@@ -41,6 +43,7 @@ Think this project is pretty good? Consider starring it!
 - Support for more diverse level functions?
 - Continuing to implement other game modes of LF2?
 - Video recording and playback?
+- Removing the assets taken from LF2?
 
 ## GitHub Actions Auto Deployment
 
