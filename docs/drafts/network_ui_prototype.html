@@ -1,0 +1,1287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>联机页内置 UI 原型</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #05070f; overflow: hidden; }
+  body {
+    font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column;
+  }
+  button { font-family: inherit; }
+  input { font-family: inherit; }
+
+  #proto-bar {
+    position: relative; z-index: 100; flex: none; min-height: 44px;
+    display: flex; flex-wrap: wrap; align-items: center; align-content: center;
+    gap: 4px 6px; padding: 4px 10px;
+    background: #0b0f22; border-bottom: 1px solid #25306b; font-size: 12px;
+    white-space: nowrap; overflow: visible;
+  }
+  #proto-bar .bar-fixed { flex: none; display: flex; align-items: center; gap: 6px; }
+  #proto-bar .brand { color: #fff; font-weight: bold; font-size: 13px; margin-right: 6px; }
+  #proto-bar .label { color: #7e88b8; margin-left: 4px; }
+  #proto-bar .sep { width: 1px; height: 20px; background: #2a356e; margin: 0 4px; }
+  #proto-bar button {
+    flex: none; background: #151b3a; color: #aab4e8; border: 1px solid #2a356e; border-radius: 3px;
+    padding: 4px 9px; font-size: 12px; cursor: pointer; line-height: 16px; white-space: nowrap;
+  }
+  #proto-bar button:hover { border-color: #5A73D6; color: #fff; }
+  #proto-bar button.on { background: #2F48A0; border-color: #5A73D6; color: #fff; }
+  #proto-bar select {
+    flex: none; height: 26px; padding: 2px 6px; font-size: 12px; font-family: inherit;
+    background: #151b3a; color: #aab4e8; border: 1px solid #2a356e; border-radius: 3px;
+  }
+  #viewport {
+    position: relative; flex: 1; min-height: 0;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #stage {
+    position: relative; width: 794px; height: 450px; flex: none;
+    transform-origin: center center; overflow: hidden;
+    background: #1b2264 url("../../public/builtin_data/launch/bg.png") repeat;
+    box-shadow: 0 0 0 1px #2a356e, 0 0 40px #000;
+  }
+
+  .screen { position: absolute; inset: 0; display: none; }
+  .screen.active { display: block; }
+
+  .topbar {
+    position: absolute; left: 12px; right: 12px; top: 8px; height: 28px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar .title { flex: none; font-weight: bold; font-size: 20px; letter-spacing: 1px; }
+  .topbar .sub {
+    min-width: 0; max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+    font-size: 12px; color: #9b9bff; opacity: .85; white-space: nowrap;
+  }
+  #rooms-topbar .btn, #room-topbar .btn { font-size: 13.5px; }
+  .topbar .grow { flex: 1; }
+
+  .panel {
+    position: absolute; display: flex; flex-direction: column; overflow: hidden;
+    border: 7px solid transparent;
+    border-image: url("../../lf2s/origin/prel_data/sprite/frame@4x.png") 28 fill stretch;
+  }
+  .panel-head {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    height: 32px; padding: 0 6px 0 10px;
+  }
+  .panel-title { font-weight: bold; font-size: 17px; white-space: nowrap; }
+  .panel-sub { font-size: 12px; opacity: .55; white-space: nowrap; }
+  .hairline { flex: none; height: 1px; margin: 0 6px; background: rgba(255,255,255,.16); }
+
+  .btn {
+    background: none; border: 0; padding: 0 2px; cursor: pointer;
+    color: #a8b9ff; font-size: 15px; line-height: 20px; white-space: nowrap;
+  }
+  .btn:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+  .btn.active { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+  .btn[disabled] { color: #6b7280; text-decoration: none; cursor: default; }
+  .btn.small { font-size: 12px; line-height: 16px; }
+  .btn.danger { color: #ff9b9b; }
+
+  input.ti {
+    min-width: 0; height: 24px; padding: 2px 7px; border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.48); color: #fff; font-size: 14px; outline: none;
+  }
+  input.ti:focus { border-bottom-color: #5A73D6; background: rgba(0,0,0,.62); }
+  input.ti::placeholder { color: rgba(255,255,255,.35); }
+
+  .badge {
+    flex: none; height: 16px; line-height: 16px; padding: 0 5px; font-size: 11px;
+    color: rgba(255,255,255,.78); background: rgba(255,255,255,.12); white-space: nowrap;
+  }
+  .badge.live { color: #86efac; background: rgba(74,222,128,.2); }
+  .badge.lock { color: #ffd08a; background: rgba(255,208,138,.15); }
+
+  #rooms-panel { left: 10px; top: 42px; width: 482px; height: 398px; }
+  #room-list { flex: 1; min-height: 0; overflow: hidden; padding: 2px 6px; }
+  .room-row {
+    height: 56px; padding: 4px 8px;
+    display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  }
+  .room-row:hover { background: rgba(0,0,0,.2); }
+  .room-row .line1 { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .room-row .line1 .grow { flex: 1; min-width: 0; }
+  .room-name {
+    font-weight: bold; font-size: 15px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .room-code { flex: none; font: 12px Consolas, monospace; color: #9b9bff; }
+  .room-meta {
+    display: flex; align-items: center; min-width: 0;
+    font-size: 11.5px; opacity: .62; white-space: nowrap; overflow: hidden;
+  }
+  .room-owner { flex: 1 1 auto; min-width: 96px; overflow: hidden; text-overflow: ellipsis; }
+  .room-meta-rest { flex: 0 1 auto; min-width: 0; padding-left: 2px; overflow: hidden; text-overflow: ellipsis; }
+  .room-pwd { width: 96px; height: 20px; font-size: 12px; }
+
+  .pager {
+    flex: none; height: 34px; display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 0 12px;
+  }
+  .pager .total { font-size: 11.5px; opacity: .5; white-space: nowrap; }
+  .pager .grow { flex: 1; }
+  .pager .pages { min-width: 52px; text-align: center; font-size: 12px; }
+
+  #chat-panel { left: 500px; top: 42px; width: 284px; height: 398px; }
+  .chat-head { flex: none; height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 10px; }
+  .chat-head .grow { flex: 1; }
+  #chat-list {
+    flex: 1; min-height: 0; overflow: hidden; padding: 3px 8px;
+    font-size: 12.5px; line-height: 19px;
+  }
+  .msg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-sys { color: #9b9bff; }
+  .m-global { color: #fff; }
+  .m-room { color: #ff7b00; }
+  .chat-input-row {
+    flex: none; display: flex; align-items: center; gap: 5px;
+    padding: 5px 6px; border-top: 1px solid rgba(255,255,255,.14);
+  }
+  .chat-input-row input { flex: 1; height: 22px; font-size: 13px; }
+  .chat-target { font-size: 12px; flex: none; }
+
+  #screen-connect { background: rgba(0,0,0,.25); }
+  .connect-panel { left: 197px; top: 100px; width: 400px; height: 250px; }
+  .connect-body { flex: 1; display: flex; flex-direction: column; padding: 2px 14px 10px; }
+  .field { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+  .field label { width: 44px; flex: none; font-size: 13px; color: #9b9bff; }
+  .field input { flex: 1; }
+  .connect-actions { display: flex; align-items: center; justify-content: center; gap: 40px; padding: 12px 0 6px; }
+  .tip { margin-top: auto; text-align: center; font-size: 11px; line-height: 16px; opacity: .5; }
+  .mode-tabs { flex: none; display: flex; align-items: center; gap: 18px; padding: 2px 0 6px; }
+  .mode-body { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .account-box { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .account-tip { font-size: 11.5px; line-height: 17px; opacity: .6; }
+  .account-card { display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: rgba(0,0,0,.22); }
+  .account-avatar {
+    flex: none; width: 40px; height: 40px; background: #1F2F6F;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: bold;
+  }
+  .account-name { font-size: 15px; font-weight: bold; }
+  .account-id { font-size: 11px; opacity: .55; }
+  .account-card .grow { flex: 1; }
+  .account-actions { display: flex; align-items: center; justify-content: center; gap: 30px; padding-top: 4px; }
+  .account-chip {
+    flex: none; padding: 2px 7px; font-size: 11.5px; white-space: nowrap;
+    color: #fff; background: rgba(0,0,0,.25);
+  }
+  .hidden { display: none !important; }
+
+  #room-panel { left: 10px; top: 42px; width: 482px; height: 398px; }
+  .room-head-title { max-width: 250px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .sync-row {
+    flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+    white-space: nowrap;
+  }
+  .sync-row .label { font-size: 13px; color: #9b9bff; }
+  .sync-row .recommend { min-width: 0; margin-left: auto; overflow: hidden; text-overflow: ellipsis; font-size: 11px; opacity: .58; }
+  .version-block { flex: none; padding: 4px 10px 6px; font-size: 11.5px; line-height: 17px; opacity: .75; }
+  .version-block div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pwd-row { flex: none; display: flex; align-items: center; gap: 8px; padding: 2px 10px 5px; }
+  .pwd-row label { width: 40px; flex: none; font-size: 12px; color: #9b9bff; }
+  .pwd-row input { flex: none; width: 236px; height: 22px; font-size: 12.5px; }
+  .pwd-hint { font-size: 11px; opacity: .5; white-space: nowrap; }
+
+  #player-list { flex: 1; min-height: 0; overflow: hidden; padding: 1px 6px; }
+  .player-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) 92px 52px 70px 62px;
+    align-items: center; column-gap: 8px; height: 32px; padding: 0 6px;
+  }
+  .player-name { min-width: 0; font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-tags { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+  .player-tag { flex: none; font-size: 11px; color: #9b9bff; }
+  .player-rtt { text-align: center; font-size: 11.5px; opacity: .6; }
+  .player-state { text-align: center; font-size: 12px; color: #9b9bff; }
+  .player-action { display: flex; justify-content: center; }
+  .player-state.no { color: rgba(255,255,255,.45); }
+  .empty-slot { height: 32px; line-height: 32px; text-align: center; font-size: 12px; opacity: .32; }
+
+  #countdown-line {
+    display: none; flex: none; height: 24px; line-height: 24px;
+    text-align: center; font-size: 13px; color: #fff;
+  }
+  .room-actions {
+    flex: none; display: flex; align-items: center; justify-content: center;
+    gap: 44px; padding: 4px 0 10px;
+  }
+
+  #overlay {
+    position: absolute; inset: 0; z-index: 30; display: none;
+    align-items: center; justify-content: center; background: rgba(0,0,0,.55);
+  }
+  #overlay.show { display: flex; }
+  #overlay-panel { position: relative; width: 344px; }
+  .overlay-body { padding: 8px 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .overlay-title { font-size: 18px; font-weight: bold; text-align: center; }
+  .overlay-lines { font-size: 13px; line-height: 19px; text-align: center; opacity: .85; white-space: pre-line; }
+  .overlay-actions { display: flex; align-items: center; justify-content: center; gap: 28px; padding-top: 2px; }
+
+  body.annotate #stage { overflow: visible; }
+  body.annotate .panel { overflow: visible; }
+  body.annotate .annot { outline: 1px dashed rgba(255,214,102,.85); outline-offset: 0; }
+  body.annotate .annot::after {
+    content: attr(data-annot); position: absolute; left: -1px; top: -14px; z-index: 40;
+    padding: 0 4px; font-size: 10px; line-height: 14px; white-space: nowrap;
+    color: #201800; background: #ffd666; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="proto-bar">
+  <div class="bar-fixed">
+    <span class="brand" data-i18n="proto_title">联机页原型</span>
+    <span class="sep"></span>
+    <span class="label" data-i18n="language">语言</span>
+    <select id="lang-select">
+      <option value="zh-Hans">简体中文</option>
+      <option value="zh-Hant">繁體中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="fr">Français</option>
+      <option value="ru">Русский</option>
+      <option value="es">Español</option>
+      <option value="pt">Português</option>
+    </select>
+  </div>
+  <span class="sep"></span>
+  <span class="label" data-i18n="screen">画面</span>
+  <button data-connect-mode="guest" data-i18n="tab_guest">游客连接</button>
+  <button data-connect-mode="account" data-i18n="tab_account">账号登录</button>
+  <button data-screen-btn="rooms" data-i18n="room_list">房间列表</button>
+  <button data-screen-btn="room" data-i18n="room">房间</button>
+  <span class="sep"></span>
+  <span class="label" data-i18n="overlay">浮层</span>
+  <button data-overlay-btn="reconnecting" data-i18n="reconnecting">重连中</button>
+  <button data-overlay-btn="paused" data-i18n="paused">掉线暂停</button>
+  <button data-overlay-btn="failed" data-i18n="failed">重连失败</button>
+  <button id="btn-close-overlay" data-i18n="close_overlay">关闭浮层</button>
+  <span class="sep"></span>
+  <button id="btn-annotate" data-i18n="annotate">标注</button>
+  <button id="btn-reset" data-i18n="reset">重置</button>
+</div>
+
+<div id="viewport">
+  <div id="stage">
+
+    <section class="screen" id="screen-connect">
+      <div class="panel connect-panel annot" data-annot="Frame + TextInput + 文本按钮">
+        <div class="panel-head">
+          <span class="panel-title" data-i18n="conn_title">联网游戏</span>
+          <span class="grow" style="flex:1"></span>
+          <button class="btn small" data-goto="close-connect" data-i18n="close">关闭</button>
+        </div>
+        <div class="hairline"></div>
+        <div class="connect-body">
+          <div class="mode-tabs">
+            <button class="btn active" id="tab-guest" data-i18n="tab_guest">游客联机</button>
+            <button class="btn" id="tab-account" data-i18n="tab_account">账号联机</button>
+          </div>
+
+          <div class="mode-body" id="mode-guest">
+            <div class="field">
+              <label data-i18n="address">地址</label>
+              <input class="ti" id="conn-address" value="lfj.gim.ink" spellcheck="false">
+            </div>
+            <div class="field">
+              <label data-i18n="nickname">昵称</label>
+              <input class="ti" id="conn-nickname" value="Gim" maxlength="16" spellcheck="false">
+            </div>
+            <div class="connect-actions">
+              <button class="btn" id="btn-connect" data-i18n="connect">连接</button>
+              <button class="btn" data-goto="close-connect" data-i18n="cancel">取消</button>
+            </div>
+            <div class="tip"><span data-i18n="guest_note1">游客联机不需要账号</span><br><span data-i18n="guest_note2">支持公网与局域网服务器</span></div>
+          </div>
+
+          <div class="mode-body hidden annot" id="mode-account" data-annot="登录态：Text + 色块 + 按钮">
+            <div class="field">
+              <label data-i18n="address">地址</label>
+              <input class="ti" id="conn-account-address" value="lfj.gim.ink" spellcheck="false">
+            </div>
+
+            <div class="account-box" id="account-out">
+              <div class="account-tip"><span data-i18n="account_note1">账号联机需要先登录 gim.ink。</span><br><span data-i18n="account_note2">登录后可跨设备保留昵称、角色与战绩。</span></div>
+              <div class="account-actions">
+                <button class="btn" id="btn-account-login" data-i18n="login_gim">使用 gim.ink 登录</button>
+                <button class="btn" data-goto="close-connect" data-i18n="cancel">取消</button>
+              </div>
+            </div>
+
+            <div class="account-box hidden" id="account-pending">
+              <div class="account-tip"><span data-i18n="auth_pending1">已在浏览器打开登录页。</span><br><span data-i18n="auth_pending2">请在网页中完成授权，这里会自动继续。</span></div>
+              <div class="account-actions">
+                <button class="btn" id="btn-account-success" data-i18n="mock_auth">模拟授权成功</button>
+                <button class="btn" id="btn-account-cancel" data-i18n="cancel">取消</button>
+              </div>
+            </div>
+
+            <div class="account-box hidden" id="account-in">
+              <div class="account-card">
+                <div class="account-avatar">G</div>
+                <div>
+                  <div class="account-name">Gim</div>
+                  <div class="account-id">gim_1024 · <span data-i18n="logged_in">已登录</span></div>
+                </div>
+                <span class="grow"></span>
+                <span class="panel-sub">gim.ink</span>
+              </div>
+              <div class="account-tip" data-i18n="auth_scope">授权范围：昵称、头像、公开 ID</div>
+              <div class="account-actions">
+                <button class="btn" id="btn-account-enter" data-i18n="enter_lobby">进入大厅</button>
+                <button class="btn" id="btn-account-logout" data-i18n="logout">退出登录</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen active" id="screen-rooms">
+      <div class="topbar annot" id="rooms-topbar" data-annot="Text + main_text_button">
+        <span class="title" data-i18n="online">联机</span>
+        <span class="sub" id="rooms-topbar-sub">游客联机　·　lfj.gim.ink　·　32ms</span>
+        <span class="account-chip hidden" data-account-chip>账号 Gim</span>
+        <button class="btn small hidden" id="btn-logout" data-account-logout data-i18n="logout">退出登录</button>
+        <span class="grow"></span>
+        <button class="btn" id="btn-create" data-i18n="create_room">创建房间</button>
+        <button class="btn" id="btn-refresh" data-i18n="refresh">刷新</button>
+        <button class="btn active" id="btn-auto-refresh" data-i18n="auto_refresh">自动刷新</button>
+        <button class="btn" data-goto="disconnect" data-i18n="disconnect">断开</button>
+      </div>
+
+      <div class="panel annot" id="rooms-panel" data-annot="Frame(nine-patch) + Flex + ScrollView">
+        <div class="panel-head">
+          <span class="panel-title" data-i18n="room_list">房间列表</span>
+          <span class="panel-sub" id="rooms-total">共 7 个房间</span>
+        </div>
+        <div class="hairline"></div>
+        <div id="room-list"></div>
+        <div class="hairline"></div>
+        <div class="pager">
+          <button class="btn small" id="btn-prev" data-i18n="prev_page">上一页</button>
+          <span class="pages" id="page-label">1 / 2</span>
+          <button class="btn small" id="btn-next" data-i18n="next_page">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-room">
+      <div class="topbar annot" id="room-topbar" data-annot="Text + main_text_button">
+        <span class="title" data-i18n="room">房间</span>
+        <span class="sub" id="room-topbar-sub">老手速通　·　#7C10　·　lfj.gim.ink　·　48ms</span>
+        <span class="account-chip hidden" data-account-chip>账号 Gim</span>
+        <span class="grow"></span>
+        <button class="btn" id="btn-room-refresh" data-i18n="refresh">刷新</button>
+        <button class="btn" data-goto="leave-room" data-i18n="leave_room">退出房间</button>
+      </div>
+
+      <div class="panel annot" id="room-panel" data-annot="Frame + Flex + LabelButton + Text">
+        <div class="panel-head">
+          <span class="panel-title room-head-title" id="room-title">老手速通</span>
+          <span class="room-code" id="room-code">#7C10</span>
+          <span class="badge" id="room-badge">等待中</span>
+          <span class="grow" style="flex:1"></span>
+          <span class="panel-sub" id="room-count">人数 3/4</span>
+        </div>
+        <div class="hairline"></div>
+
+        <div class="sync-row">
+          <span class="label" data-i18n="sync_mode">同步模式</span>
+          <button class="btn small sync-mode" data-sync="auto" data-i18n="sync_auto">自动</button>
+          <button class="btn small sync-mode active" data-sync="lockstep" data-i18n="sync_lockstep">锁帧</button>
+          <button class="btn small sync-mode" data-sync="delay" data-i18n="sync_delay">延迟</button>
+          <span class="recommend" id="sync-recommend">推荐: 锁帧 (120ms)</span>
+        </div>
+        <div class="hairline"></div>
+
+        <div class="version-block">
+          <div><span data-i18n="lfw_version">LFW 版本</span>: 0.1.61</div>
+          <div><span data-i18n="data_package">数据包</span>[1] [origin] LF2 原版 v2.0 · ab12cd34</div>
+          <div><span data-i18n="data_package">数据包</span>[2] [mod] 平衡补丁 v1 · 98fe76aa</div>
+        </div>
+        <div class="hairline"></div>
+
+        <div class="pwd-row">
+          <label data-i18n="password">密码</label>
+          <input class="ti" id="room-pwd" placeholder="留空则任何人可加入" data-i18n-ph="pwd_placeholder" spellcheck="false">
+          <span class="pwd-hint" data-i18n="owner_only">仅房主可设置</span>
+        </div>
+        <div class="hairline"></div>
+
+        <div id="player-list">
+          <div class="player-row">
+            <span class="player-name">小明</span>
+            <span class="player-tags"><span class="player-tag">(<span data-i18n="yourself">你</span>)</span><span class="player-tag">(<span data-i18n="room_owner">房主</span>)</span></span>
+            <span class="player-rtt">32ms</span>
+            <span class="player-state" id="state-self">未准备</span>
+            <span class="player-action"></span>
+          </div>
+          <div class="player-row">
+            <span class="player-name">阿强</span>
+            <span class="player-tags"></span>
+            <span class="player-rtt">48ms</span>
+            <span class="player-state" data-i18n="ready_done">已准备</span>
+            <span class="player-action"></span>
+          </div>
+          <div class="player-row">
+            <span class="player-name">Gim</span>
+            <span class="player-tags"></span>
+            <span class="player-rtt">120ms</span>
+            <span class="player-state no" id="state-gim">未准备</span>
+            <span class="player-action"><button class="btn small" id="btn-kick" data-i18n="kick">请出房间</button></span>
+          </div>
+          <div class="empty-slot">—　<span data-i18n="waiting_player">等待玩家加入</span>　—</div>
+        </div>
+
+        <div id="countdown-line">即将开始，倒计时: 5秒</div>
+
+        <div class="room-actions">
+          <button class="btn" data-goto="leave-room" data-i18n="leave_room">退出房间</button>
+          <button class="btn" id="btn-ready">准备！</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="panel annot" id="chat-panel" data-annot="Frame + ScrollView + TextInput">
+      <div class="chat-head">
+        <span class="panel-title" data-i18n="chat">聊天</span>
+        <span class="grow"></span>
+        <span class="panel-sub" id="chat-target-label">[全局]</span>
+      </div>
+      <div class="hairline"></div>
+      <div id="chat-list"></div>
+      <div class="chat-input-row">
+        <button class="btn chat-target m-global" id="btn-chat-target">[全局]</button>
+        <input class="ti" id="chat-input" maxlength="100" placeholder="输入消息" data-i18n-ph="chat_placeholder" spellcheck="false">
+        <button class="btn small" id="btn-send" data-i18n="send">发送</button>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div class="panel annot" id="overlay-panel" data-annot="Frame 弹窗">
+        <div class="overlay-body">
+          <div class="overlay-title" id="overlay-title">正在重连…</div>
+          <div class="overlay-lines" id="overlay-lines">第 2 次尝试</div>
+          <div class="overlay-actions" id="overlay-actions">
+            <button class="btn" data-overlay-close="1">继续单机游戏</button>
+            <button class="btn" data-overlay-close="1" data-go-rooms="1">返回大厅</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const I18N = {
+  en: {
+    proto_title: "Network UI Prototype", screen: "Screen", overlay: "Overlay", paused: "Disconnect Pause", failed: "Reconnect Failed", close_overlay: "Close Overlay", annotate: "Annotate", reset: "Reset", language: "Language",
+    conn_title: "Network Game", tab_guest: "Guest", tab_account: "Account", close: "Close", address: "Address", nickname: "Nickname", connect: "Connect", connecting: "Connecting...", cancel: "Cancel",
+    guest_note1: "Guest mode does not require an account.", guest_note2: "Supports public and LAN servers.",
+    account_note1: "Account mode requires a gim.ink login.", account_note2: "Your nickname, characters and records are kept across devices.",
+    login_gim: "Sign in with gim.ink", auth_pending1: "The login page has been opened in your browser.", auth_pending2: "Complete authorization there; this page will continue automatically.",
+    mock_auth: "Simulate Success", logged_in: "Signed in", auth_scope: "Scope: nickname, avatar, public ID", enter_lobby: "Enter Lobby", logout: "Sign Out", account_chip: "Account {name}",
+    online: "Online", room_list: "Room List", create_room: "Create Room", refresh: "Refresh", auto_refresh: "Auto Refresh", disconnect: "Disconnect",
+    rooms_total: "{n} room(s)", page_index: "Page {n}", prev_page: "Previous", next_page: "Next",
+    room_owner: "Owner", player_count: "Players", waiting: "Waiting", game_running: "Started", password: "Password", pls_enter_pwd: "Enter password", join: "Join", data_package: "Data Pkg", lfw_version: "LFW Version",
+    sync_mode: "Sync Mode", sync_auto: "Auto", sync_lockstep: "Lockstep", sync_delay: "Delay", sync_recommend: "Recommend",
+    room: "Room", leave_room: "Leave Room", player_count_value: "Players {count}/{max}", pwd_placeholder: "Leave blank to allow anyone", owner_only: "Host only",
+    yourself: "You", not_ready: "Not ready", ready_done: "Ready", kick: "Kick", waiting_player: "Waiting for players",
+    counting_down: "Starting soon, countdown: {n}s", entering_game: "Entering game...", get_ready: "Ready!", cancal_ready: "Cancel Ready",
+    chat: "Chat", chat_global: "Global", chat_room: "Room", chat_placeholder: "Type a message", send: "Send",
+    reconnecting: "Reconnecting...", reconnect_attempt: "Attempt {n}", continue_solo: "Continue Solo", back_to_lobby: "Back to Lobby", match_paused: "Game Paused",
+    player_disconnected: "Player {name} disconnected, waiting for reconnect...", continue_game: "Continue", reconnect_failed: "Reconnect failed",
+    reconnect_failed_line: "Reconnect timed out; the match cannot be restored.",
+    sys_connected: "Connected to {url}", sys_connected_guest: "Connected as guest to {url}", sys_connected_account: "Signed in with gim.ink: {name}", sys_logout: "Signed out",
+    sys_player_joined: "{name} joined the room", sys_room_created: "Room #{code} created", sys_rooms_refreshed: "Room list refreshed", sys_room_refreshed: "Room status refreshed",
+    sys_sync_changed: "Sync mode set to {mode}", sys_kicked: "{name} was kicked", sys_resumed: "Match resumed", room_title_new: "{name}'s room"
+  },
+  "zh-Hans": {
+    proto_title: "联机页原型", screen: "画面", overlay: "浮层", paused: "掉线暂停", failed: "重连失败", close_overlay: "关闭浮层", annotate: "标注", reset: "重置", language: "语言",
+    conn_title: "联网游戏", tab_guest: "游客联机", tab_account: "账号联机", close: "关闭", address: "地址", nickname: "昵称", connect: "连接", connecting: "连接中...", cancel: "取消",
+    guest_note1: "游客联机不需要账号", guest_note2: "支持公网与局域网服务器",
+    account_note1: "账号联机需要先登录 gim.ink。", account_note2: "登录后可跨设备保留昵称、角色与战绩。",
+    login_gim: "使用 gim.ink 登录", auth_pending1: "已在浏览器打开登录页。", auth_pending2: "请在网页中完成授权，这里会自动继续。",
+    mock_auth: "模拟授权成功", logged_in: "已登录", auth_scope: "授权范围：昵称、头像、公开 ID", enter_lobby: "进入大厅", logout: "退出登录", account_chip: "账号 {name}",
+    online: "联机", room_list: "房间列表", create_room: "创建房间", refresh: "刷新", auto_refresh: "自动刷新", disconnect: "断开",
+    rooms_total: "共 {n} 个房间", page_index: "第 {n} 页", prev_page: "上一页", next_page: "下一页",
+    room_owner: "房主", player_count: "人数", waiting: "等待中", game_running: "已开始", password: "密码", pls_enter_pwd: "输入房间密码", join: "加入", data_package: "数据包", lfw_version: "LFW 版本",
+    sync_mode: "同步模式", sync_auto: "自动", sync_lockstep: "锁帧", sync_delay: "延迟", sync_recommend: "推荐",
+    room: "房间", leave_room: "退出房间", player_count_value: "人数 {count}/{max}", pwd_placeholder: "留空则任何人可加入", owner_only: "仅房主可设置",
+    yourself: "你", not_ready: "未准备", ready_done: "已准备", kick: "请出房间", waiting_player: "等待玩家加入",
+    counting_down: "即将开始，倒计时: {n}秒", entering_game: "正在进入游戏…", get_ready: "准备！", cancal_ready: "取消准备",
+    chat: "聊天", chat_global: "全局", chat_room: "房间", chat_placeholder: "输入消息", send: "发送",
+    reconnecting: "正在重连…", reconnect_attempt: "第 {n} 次尝试", continue_solo: "继续单机游戏", back_to_lobby: "返回大厅", match_paused: "游戏已暂停",
+    player_disconnected: "玩家 {name} 已断开连接，等待重连…", continue_game: "继续游戏", reconnect_failed: "无法重连到对局",
+    reconnect_failed_line: "重连已超时，对局无法恢复",
+    sys_connected: "已连接到 {url}", sys_connected_guest: "已以游客身份连接到 {url}", sys_connected_account: "已使用 gim.ink 账号登录：{name}", sys_logout: "已退出账号登录",
+    sys_player_joined: "玩家 {name} 加入了房间", sys_room_created: "已创建房间 #{code}", sys_rooms_refreshed: "已刷新房间列表", sys_room_refreshed: "已刷新房间状态",
+    sys_sync_changed: "同步模式已切换为 {mode}", sys_kicked: "{name} 已被请出房间", sys_resumed: "对局继续", room_title_new: "{name} 的房间"
+  },
+  "zh-Hant": {
+    proto_title: "聯機頁原型", screen: "畫面", overlay: "浮層", paused: "掉線暫停", failed: "重連失敗", close_overlay: "關閉浮層", annotate: "標註", reset: "重置", language: "語言",
+    conn_title: "連網遊戲", tab_guest: "遊客聯機", tab_account: "帳號聯機", close: "關閉", address: "地址", nickname: "暱稱", connect: "連接", connecting: "連接中...", cancel: "取消",
+    guest_note1: "遊客聯機不需要帳號", guest_note2: "支援公網與區域網路伺服器",
+    account_note1: "帳號聯機需要先登入 gim.ink。", account_note2: "登入後可跨裝置保留暱稱、角色與戰績。",
+    login_gim: "使用 gim.ink 登入", auth_pending1: "已在瀏覽器開啟登入頁。", auth_pending2: "請在網頁中完成授權，這裡會自動繼續。",
+    mock_auth: "模擬授權成功", logged_in: "已登入", auth_scope: "授權範圍：暱稱、頭像、公開 ID", enter_lobby: "進入大廳", logout: "登出", account_chip: "帳號 {name}",
+    online: "聯機", room_list: "房間列表", create_room: "創建房間", refresh: "刷新", auto_refresh: "自動刷新", disconnect: "斷開連接",
+    rooms_total: "共 {n} 個房間", page_index: "第 {n} 頁", prev_page: "上一頁", next_page: "下一頁",
+    room_owner: "房主", player_count: "人數", waiting: "等待中", game_running: "已開始", password: "密碼", pls_enter_pwd: "輸入房間密碼", join: "加入", data_package: "數據包", lfw_version: "LFW 版本",
+    sync_mode: "同步模式", sync_auto: "自動", sync_lockstep: "鎖幀", sync_delay: "延遲", sync_recommend: "推薦",
+    room: "房間", leave_room: "退出房間", player_count_value: "人數 {count}/{max}", pwd_placeholder: "留空則任何人可加入", owner_only: "僅房主可設定",
+    yourself: "你", not_ready: "未準備", ready_done: "已準備", kick: "請出房間", waiting_player: "等待玩家加入",
+    counting_down: "即將開始，倒數計時: {n}秒", entering_game: "正在進入遊戲…", get_ready: "準備！", cancal_ready: "取消準備",
+    chat: "聊天", chat_global: "全域", chat_room: "房間", chat_placeholder: "輸入訊息", send: "發送",
+    reconnecting: "正在重連…", reconnect_attempt: "第 {n} 次嘗試", continue_solo: "繼續單機遊戲", back_to_lobby: "返回大廳", match_paused: "遊戲已暫停",
+    player_disconnected: "玩家 {name} 已斷開連線，等待重連…", continue_game: "繼續遊戲", reconnect_failed: "無法重連到對局",
+    reconnect_failed_line: "重連已逾時，對局無法恢復",
+    sys_connected: "已連線到 {url}", sys_connected_guest: "已以遊客身分連線到 {url}", sys_connected_account: "已使用 gim.ink 帳號登入：{name}", sys_logout: "已登出帳號",
+    sys_player_joined: "玩家 {name} 加入了房間", sys_room_created: "已建立房間 #{code}", sys_rooms_refreshed: "已刷新房間列表", sys_room_refreshed: "已刷新房間狀態",
+    sys_sync_changed: "同步模式已切換為 {mode}", sys_kicked: "{name} 已被請出房間", sys_resumed: "對局繼續", room_title_new: "{name} 的房間"
+  },
+  ja: {
+    proto_title: "オンラインUIプロトタイプ", screen: "画面", overlay: "オーバーレイ", paused: "切断ポーズ", failed: "再接続失敗", close_overlay: "オーバーレイを閉じる", annotate: "注釈", reset: "リセット", language: "言語",
+    conn_title: "ネット対戦", tab_guest: "ゲスト", tab_account: "アカウント", close: "閉じる", address: "アドレス", nickname: "ニックネーム", connect: "接続", connecting: "接続中...", cancel: "キャンセル",
+    guest_note1: "ゲストモードはアカウント不要です。", guest_note2: "公開サーバーとLANサーバーに対応しています。",
+    account_note1: "アカウントモードには gim.ink へのログインが必要です。", account_note2: "ニックネーム、キャラクター、戦績は端末をまたいで保存されます。",
+    login_gim: "gim.ink でログイン", auth_pending1: "ブラウザでログインページを開きました。", auth_pending2: "ページで認証を完了してください。この画面は自動的に続行します。",
+    mock_auth: "認証成功をシミュレート", logged_in: "ログイン済み", auth_scope: "許可範囲：ニックネーム、アバター、公開ID", enter_lobby: "ロビーへ", logout: "ログアウト", account_chip: "アカウント {name}",
+    online: "オンライン", room_list: "部屋リスト", create_room: "部屋を作成", refresh: "更新", auto_refresh: "自動更新", disconnect: "切断",
+    rooms_total: "全 {n} 部屋", page_index: "{n} ページ", prev_page: "前へ", next_page: "次へ",
+    room_owner: "部屋主", player_count: "人数", waiting: "待機中", game_running: "開始済み", password: "パスワード", pls_enter_pwd: "パスワードを入力", join: "参加", data_package: "データパック", lfw_version: "LFW バージョン",
+    sync_mode: "同期方式", sync_auto: "自動", sync_lockstep: "全員同期", sync_delay: "遅延入力", sync_recommend: "推奨",
+    room: "部屋", leave_room: "退出", player_count_value: "人数 {count}/{max}", pwd_placeholder: "空欄なら誰でも参加可", owner_only: "部屋主のみ",
+    yourself: "あなた", not_ready: "未準備", ready_done: "準備完了", kick: "キック", waiting_player: "プレイヤーを待っています",
+    counting_down: "まもなく開始、カウントダウン: {n}秒", entering_game: "ゲームを開始しています…", get_ready: "準備！", cancal_ready: "準備をキャンセル",
+    chat: "チャット", chat_global: "全体", chat_room: "部屋", chat_placeholder: "メッセージを入力", send: "送信",
+    reconnecting: "再接続中…", reconnect_attempt: "{n} 回目の試行", continue_solo: "ひとりで続ける", back_to_lobby: "ロビーに戻る", match_paused: "ゲームは一時停止中",
+    player_disconnected: "プレイヤー {name} が切断されました。再接続を待っています…", continue_game: "続ける", reconnect_failed: "再接続できませんでした",
+    reconnect_failed_line: "再接続がタイムアウトしました。対局は復元できません。",
+    sys_connected: "{url} に接続しました", sys_connected_guest: "ゲストとして {url} に接続しました", sys_connected_account: "gim.ink でログインしました：{name}", sys_logout: "ログアウトしました",
+    sys_player_joined: "{name} が部屋に参加しました", sys_room_created: "部屋 #{code} を作成しました", sys_rooms_refreshed: "部屋リストを更新しました", sys_room_refreshed: "部屋の状態を更新しました",
+    sys_sync_changed: "同期方式を {mode} に変更しました", sys_kicked: "{name} をキックしました", sys_resumed: "対局を再開しました", room_title_new: "{name} の部屋"
+  },
+  ko: {
+    proto_title: "온라인 UI 프로토타입", screen: "화면", overlay: "오버레이", paused: "연결 끊김 일시정지", failed: "재접속 실패", close_overlay: "오버레이 닫기", annotate: "주석", reset: "초기화", language: "언어",
+    conn_title: "네트워크 게임", tab_guest: "게스트", tab_account: "계정", close: "닫기", address: "주소", nickname: "닉네임", connect: "연결", connecting: "연결 중...", cancel: "취소",
+    guest_note1: "게스트 모드는 계정이 필요 없습니다.", guest_note2: "공용 및 LAN 서버를 지원합니다.",
+    account_note1: "계정 모드는 gim.ink 로그인이 필요합니다.", account_note2: "닉네임, 캐릭터, 전적이 기기 간에 유지됩니다.",
+    login_gim: "gim.ink로 로그인", auth_pending1: "브라우저에서 로그인 페이지를 열었습니다.", auth_pending2: "페이지에서 인증을 완료하세요. 이 화면은 자동으로 계속됩니다.",
+    mock_auth: "인증 성공 시뮬레이션", logged_in: "로그인됨", auth_scope: "권한 범위: 닉네임, 아바타, 공개 ID", enter_lobby: "로비 입장", logout: "로그아웃", account_chip: "계정 {name}",
+    online: "온라인", room_list: "방 목록", create_room: "방 만들기", refresh: "새로고침", auto_refresh: "자동 새로고침", disconnect: "연결 끊기",
+    rooms_total: "총 {n}개 방", page_index: "{n} 페이지", prev_page: "이전", next_page: "다음",
+    room_owner: "방장", player_count: "인원", waiting: "대기 중", game_running: "시작됨", password: "비밀번호", pls_enter_pwd: "비밀번호 입력", join: "참가", data_package: "데이터 팩", lfw_version: "LFW 버전",
+    sync_mode: "동기화 모드", sync_auto: "자동", sync_lockstep: "락스텝", sync_delay: "지연 입력", sync_recommend: "추천",
+    room: "방", leave_room: "나가기", player_count_value: "인원 {count}/{max}", pwd_placeholder: "비워 두면 누구나 참가 가능", owner_only: "방장만 설정",
+    yourself: "나", not_ready: "준비 안 됨", ready_done: "준비 완료", kick: "강퇴", waiting_player: "플레이어 대기 중",
+    counting_down: "곧 시작, 카운트다운: {n}초", entering_game: "게임에 입장 중…", get_ready: "준비!", cancal_ready: "준비 취소",
+    chat: "채팅", chat_global: "전체", chat_room: "방", chat_placeholder: "메시지 입력", send: "보내기",
+    reconnecting: "재접속 중…", reconnect_attempt: "{n}번째 시도", continue_solo: "혼자 계속하기", back_to_lobby: "로비로 돌아가기", match_paused: "게임 일시정지",
+    player_disconnected: "플레이어 {name} 님이 접속을 끊었습니다. 재접속 대기 중…", continue_game: "계속", reconnect_failed: "재접속에 실패했습니다",
+    reconnect_failed_line: "재접속 시간이 초과되어 대결을 복구할 수 없습니다.",
+    sys_connected: "{url}에 연결됨", sys_connected_guest: "게스트로 {url}에 연결됨", sys_connected_account: "gim.ink 로그인: {name}", sys_logout: "로그아웃됨",
+    sys_player_joined: "{name} 님이 방에 참가했습니다", sys_room_created: "방 #{code} 생성됨", sys_rooms_refreshed: "방 목록 새로고침됨", sys_room_refreshed: "방 상태 새로고침됨",
+    sys_sync_changed: "동기화 모드가 {mode}(으)로 변경됨", sys_kicked: "{name} 님이 강퇴되었습니다", sys_resumed: "대결 재개됨", room_title_new: "{name}의 방"
+  },
+  fr: {
+    proto_title: "Prototype UI réseau", screen: "Écran", overlay: "Superposition", paused: "Pause", failed: "Échec", close_overlay: "Fermer", annotate: "Annoter", reset: "Réinitialiser", language: "Langue",
+    conn_title: "Jeu en réseau", tab_guest: "Invité", tab_account: "Compte", close: "Fermer", address: "Adresse", nickname: "Pseudo", connect: "Se connecter", connecting: "Connexion...", cancel: "Annuler",
+    guest_note1: "Le mode invité ne nécessite pas de compte.", guest_note2: "Serveurs publics et locaux pris en charge.",
+    account_note1: "Le mode compte nécessite une connexion gim.ink.", account_note2: "Votre pseudo, vos personnages et vos scores sont conservés sur tous vos appareils.",
+    login_gim: "Se connecter avec gim.ink", auth_pending1: "La page de connexion a été ouverte dans votre navigateur.", auth_pending2: "Terminez l’autorisation sur la page ; cette fenêtre continuera automatiquement.",
+    mock_auth: "Simuler le succès", logged_in: "Connecté", auth_scope: "Portée : pseudo, avatar, ID public", enter_lobby: "Entrer dans le salon", logout: "Se déconnecter", account_chip: "Compte {name}",
+    online: "En ligne", room_list: "Liste des salles", create_room: "Créer une salle", refresh: "Actualiser", auto_refresh: "Actualisation auto", disconnect: "Se déconnecter",
+    rooms_total: "{n} salle(s)", page_index: "Page {n}", prev_page: "Précédente", next_page: "Suivante",
+    room_owner: "Hôte", player_count: "Joueurs", waiting: "En attente", game_running: "Démarré", password: "Mot de passe", pls_enter_pwd: "Saisir le mot de passe", join: "Rejoindre", data_package: "Pack de données", lfw_version: "Version LFW",
+    sync_mode: "Mode de synchro", sync_auto: "Auto", sync_lockstep: "Lockstep", sync_delay: "Délai", sync_recommend: "Recommandé",
+    room: "Salle", leave_room: "Quitter", player_count_value: "Joueurs {count}/{max}", pwd_placeholder: "Laisser vide pour autoriser tout le monde", owner_only: "Hôte uniquement",
+    yourself: "Vous", not_ready: "Pas prêt", ready_done: "Prêt", kick: "Expulser", waiting_player: "En attente de joueurs",
+    counting_down: "Début imminent, compte à rebours : {n} s", entering_game: "Entrée dans la partie…", get_ready: "Prêt !", cancal_ready: "Annuler prêt",
+    chat: "Chat", chat_global: "Global", chat_room: "Salle", chat_placeholder: "Saisir un message", send: "Envoyer",
+    reconnecting: "Reconnexion…", reconnect_attempt: "Tentative {n}", continue_solo: "Continuer en solo", back_to_lobby: "Retour au salon", match_paused: "Partie en pause",
+    player_disconnected: "Le joueur {name} s’est déconnecté, en attente de reconnexion…", continue_game: "Continuer", reconnect_failed: "Échec de la reconnexion",
+    reconnect_failed_line: "La reconnexion a expiré, la partie ne peut pas être restaurée.",
+    sys_connected: "Connecté à {url}", sys_connected_guest: "Connecté en invité à {url}", sys_connected_account: "Connecté avec gim.ink : {name}", sys_logout: "Déconnecté",
+    sys_player_joined: "{name} a rejoint la salle", sys_room_created: "Salle #{code} créée", sys_rooms_refreshed: "Liste des salles actualisée", sys_room_refreshed: "État de la salle actualisé",
+    sys_sync_changed: "Mode de synchro réglé sur {mode}", sys_kicked: "{name} a été expulsé", sys_resumed: "Partie reprise", room_title_new: "Salle de {name}"
+  },
+  ru: {
+    proto_title: "Прототип сетевого UI", screen: "Экран", overlay: "Оверлей", paused: "Пауза при отключении", failed: "Ошибка переподключения", close_overlay: "Закрыть оверлей", annotate: "Пометки", reset: "Сброс", language: "Язык",
+    conn_title: "Сетевая игра", tab_guest: "Гость", tab_account: "Аккаунт", close: "Закрыть", address: "Адрес", nickname: "Ник", connect: "Подключиться", connecting: "Подключение...", cancel: "Отмена",
+    guest_note1: "Гостевой режим не требует аккаунта.", guest_note2: "Поддерживаются публичные и локальные серверы.",
+    account_note1: "Для режима аккаунта требуется вход в gim.ink.", account_note2: "Ник, персонажи и результаты сохраняются на всех устройствах.",
+    login_gim: "Войти через gim.ink", auth_pending1: "Страница входа открыта в браузере.", auth_pending2: "Завершите авторизацию на странице; это окно продолжит автоматически.",
+    mock_auth: "Имитировать успех", logged_in: "Вход выполнен", auth_scope: "Доступ: ник, аватар, публичный ID", enter_lobby: "Войти в лобби", logout: "Выйти", account_chip: "Аккаунт {name}",
+    online: "Сеть", room_list: "Список комнат", create_room: "Создать комнату", refresh: "Обновить", auto_refresh: "Автообновление", disconnect: "Отключиться",
+    rooms_total: "Всего комнат: {n}", page_index: "Страница {n}", prev_page: "Предыдущая", next_page: "Следующая",
+    room_owner: "Хозяин", player_count: "Игроки", waiting: "Ожидание", game_running: "Начата", password: "Пароль", pls_enter_pwd: "Введите пароль", join: "Войти", data_package: "Пакет данных", lfw_version: "Версия LFW",
+    sync_mode: "Синхронизация", sync_auto: "Авто", sync_lockstep: "Локстеп", sync_delay: "Задержка", sync_recommend: "Рекомендуется",
+    room: "Комната", leave_room: "Выйти", player_count_value: "Игроки {count}/{max}", pwd_placeholder: "Оставьте пустым для всех", owner_only: "Только хозяин",
+    yourself: "Вы", not_ready: "Не готов", ready_done: "Готов", kick: "Выгнать", waiting_player: "Ожидание игроков",
+    counting_down: "Скоро начало, отсчёт: {n} с", entering_game: "Вход в игру…", get_ready: "Готов!", cancal_ready: "Отменить готовность",
+    chat: "Чат", chat_global: "Общий", chat_room: "Комната", chat_placeholder: "Введите сообщение", send: "Отправить",
+    reconnecting: "Переподключение…", reconnect_attempt: "Попытка {n}", continue_solo: "Продолжить в одиночку", back_to_lobby: "Вернуться в лобби", match_paused: "Игра приостановлена",
+    player_disconnected: "Игрок {name} отключился, ожидание переподключения…", continue_game: "Продолжить", reconnect_failed: "Не удалось переподключиться",
+    reconnect_failed_line: "Время переподключения истекло, матч нельзя восстановить.",
+    sys_connected: "Подключено к {url}", sys_connected_guest: "Подключено как гость к {url}", sys_connected_account: "Вход через gim.ink: {name}", sys_logout: "Выход выполнен",
+    sys_player_joined: "{name} присоединился к комнате", sys_room_created: "Комната #{code} создана", sys_rooms_refreshed: "Список комнат обновлён", sys_room_refreshed: "Состояние комнаты обновлено",
+    sys_sync_changed: "Синхронизация: {mode}", sys_kicked: "{name} исключён", sys_resumed: "Матч продолжен", room_title_new: "Комната {name}"
+  },
+  es: {
+    proto_title: "Prototipo de UI en red", screen: "Pantalla", overlay: "Superposición", paused: "Pausa por desconexión", failed: "Error de reconexión", close_overlay: "Cerrar superposición", annotate: "Anotar", reset: "Restablecer", language: "Idioma",
+    conn_title: "Juego en red", tab_guest: "Invitado", tab_account: "Cuenta", close: "Cerrar", address: "Dirección", nickname: "Apodo", connect: "Conectar", connecting: "Conectando...", cancel: "Cancelar",
+    guest_note1: "El modo invitado no requiere cuenta.", guest_note2: "Compatible con servidores públicos y LAN.",
+    account_note1: "El modo cuenta requiere iniciar sesión en gim.ink.", account_note2: "Tu apodo, personajes y récords se conservan en todos los dispositivos.",
+    login_gim: "Iniciar sesión con gim.ink", auth_pending1: "Se ha abierto la página de inicio de sesión en el navegador.", auth_pending2: "Completa la autorización allí; esta ventana continuará automáticamente.",
+    mock_auth: "Simular éxito", logged_in: "Sesión iniciada", auth_scope: "Alcance: apodo, avatar, ID público", enter_lobby: "Entrar al lobby", logout: "Cerrar sesión", account_chip: "Cuenta {name}",
+    online: "En línea", room_list: "Lista de salas", create_room: "Crear sala", refresh: "Actualizar", auto_refresh: "Actualización automática", disconnect: "Desconectar",
+    rooms_total: "{n} sala(s)", page_index: "Página {n}", prev_page: "Anterior", next_page: "Siguiente",
+    room_owner: "Anfitrión", player_count: "Jugadores", waiting: "En espera", game_running: "Iniciado", password: "Contraseña", pls_enter_pwd: "Introducir contraseña", join: "Unirse", data_package: "Paquete de datos", lfw_version: "Versión LFW",
+    sync_mode: "Sincronización", sync_auto: "Auto", sync_lockstep: "Lockstep", sync_delay: "Retardo", sync_recommend: "Recomendado",
+    room: "Sala", leave_room: "Salir", player_count_value: "Jugadores {count}/{max}", pwd_placeholder: "Vacío para permitir a todos", owner_only: "Solo el anfitrión",
+    yourself: "Tú", not_ready: "No listo", ready_done: "Listo", kick: "Expulsar", waiting_player: "Esperando jugadores",
+    counting_down: "Comienza pronto, cuenta atrás: {n} s", entering_game: "Entrando en la partida…", get_ready: "¡Listo!", cancal_ready: "Cancelar listo",
+    chat: "Chat", chat_global: "Global", chat_room: "Sala", chat_placeholder: "Escribe un mensaje", send: "Enviar",
+    reconnecting: "Reconectando…", reconnect_attempt: "Intento {n}", continue_solo: "Continuar en solitario", back_to_lobby: "Volver al lobby", match_paused: "Juego en pausa",
+    player_disconnected: "El jugador {name} se ha desconectado, esperando reconexión…", continue_game: "Continuar", reconnect_failed: "No se pudo reconectar",
+    reconnect_failed_line: "La reconexión ha caducado; no se puede restaurar la partida.",
+    sys_connected: "Conectado a {url}", sys_connected_guest: "Conectado como invitado a {url}", sys_connected_account: "Sesión iniciada con gim.ink: {name}", sys_logout: "Sesión cerrada",
+    sys_player_joined: "{name} se unió a la sala", sys_room_created: "Sala #{code} creada", sys_rooms_refreshed: "Lista de salas actualizada", sys_room_refreshed: "Estado de la sala actualizado",
+    sys_sync_changed: "Sincronización: {mode}", sys_kicked: "{name} fue expulsado", sys_resumed: "Partida reanudada", room_title_new: "Sala de {name}"
+  },
+  pt: {
+    proto_title: "Protótipo de UI online", screen: "Tela", overlay: "Sobreposição", paused: "Pausa por desconexão", failed: "Falha na reconexão", close_overlay: "Fechar sobreposição", annotate: "Anotar", reset: "Redefinir", language: "Idioma",
+    conn_title: "Jogo em rede", tab_guest: "Convidado", tab_account: "Conta", close: "Fechar", address: "Endereço", nickname: "Apelido", connect: "Conectar", connecting: "Conectando...", cancel: "Cancelar",
+    guest_note1: "O modo convidado não exige conta.", guest_note2: "Compatível com servidores públicos e LAN.",
+    account_note1: "O modo conta exige login no gim.ink.", account_note2: "Seu apelido, personagens e recordes são mantidos em todos os dispositivos.",
+    login_gim: "Entrar com gim.ink", auth_pending1: "A página de login foi aberta no navegador.", auth_pending2: "Conclua a autorização lá; esta janela continuará automaticamente.",
+    mock_auth: "Simular sucesso", logged_in: "Conectado", auth_scope: "Escopo: apelido, avatar, ID público", enter_lobby: "Entrar no lobby", logout: "Sair", account_chip: "Conta {name}",
+    online: "Online", room_list: "Lista de salas", create_room: "Criar sala", refresh: "Atualizar", auto_refresh: "Atualização automática", disconnect: "Desconectar",
+    rooms_total: "{n} sala(s)", page_index: "Página {n}", prev_page: "Anterior", next_page: "Seguinte",
+    room_owner: "Dono", player_count: "Jogadores", waiting: "Aguardando", game_running: "Iniciado", password: "Senha", pls_enter_pwd: "Digitar a senha", join: "Entrar", data_package: "Pacote de dados", lfw_version: "Versão LFW",
+    sync_mode: "Sincronização", sync_auto: "Auto", sync_lockstep: "Lockstep", sync_delay: "Atraso", sync_recommend: "Recomendado",
+    room: "Sala", leave_room: "Sair", player_count_value: "Jogadores {count}/{max}", pwd_placeholder: "Deixe em branco para permitir todos", owner_only: "Somente o dono",
+    yourself: "Você", not_ready: "Não pronto", ready_done: "Pronto", kick: "Expulsar", waiting_player: "Aguardando jogadores",
+    counting_down: "Começa em breve, contagem regressiva: {n} s", entering_game: "Entrando na partida…", get_ready: "Pronto!", cancal_ready: "Cancelar pronto",
+    chat: "Bate-papo", chat_global: "Global", chat_room: "Sala", chat_placeholder: "Digite uma mensagem", send: "Enviar",
+    reconnecting: "Reconectando…", reconnect_attempt: "Tentativa {n}", continue_solo: "Continuar sozinho", back_to_lobby: "Voltar ao lobby", match_paused: "Jogo em pausa",
+    player_disconnected: "O jogador {name} desconectou-se, aguardando reconexão…", continue_game: "Continuar", reconnect_failed: "Falha ao reconectar",
+    reconnect_failed_line: "A reconexão expirou; a partida não pode ser restaurada.",
+    sys_connected: "Conectado a {url}", sys_connected_guest: "Conectado como convidado a {url}", sys_connected_account: "Login com gim.ink: {name}", sys_logout: "Sessão encerrada",
+    sys_player_joined: "{name} entrou na sala", sys_room_created: "Sala #{code} criada", sys_rooms_refreshed: "Lista de salas atualizada", sys_room_refreshed: "Estado da sala atualizado",
+    sys_sync_changed: "Sincronização definida como {mode}", sys_kicked: "{name} foi expulso", sys_resumed: "Partida retomada", room_title_new: "Sala de {name}"
+  }
+};
+
+function detect_lang() {
+  try {
+    const query = new URLSearchParams(location.search).get("lang");
+    if (query && I18N[query]) return query;
+    const saved = localStorage.getItem("lfw_proto_lang");
+    if (saved && I18N[saved]) return saved;
+  } catch (e) {}
+  return "zh-Hans";
+}
+
+function t(key, params) {
+  const lang = I18N[state.lang] ? state.lang : "en";
+  let text = I18N[lang][key];
+  if (text == null) text = I18N.en[key];
+  if (text == null) return key;
+  if (params) {
+    for (const [k, v] of Object.entries(params))
+      text = text.split(`{${k}}`).join(String(v));
+  }
+  return text;
+}
+
+function apply_i18n() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
+    el.setAttribute("placeholder", t(el.dataset.i18nPh));
+  });
+  document.documentElement.lang = state.lang;
+  document.title = t("proto_title");
+}
+
+const ROOMS = [
+  { title: "新手友好局", code: "A3F2", live: false, lock: false, owner: "小明", count: 2, max: 4, sync: "auto", ver: "0.1.61", packs: 2 },
+  { title: "老手速通", code: "7C10", live: false, lock: false, owner: "阿强", count: 3, max: 4, sync: "lockstep", ver: "0.1.61", packs: 2 },
+  { title: "无限连练习", code: "1B9E", live: false, lock: true, owner: "Gim", count: 1, max: 2, sync: "delay", ver: "0.1.61", packs: 1 },
+  { title: "周末友谊赛", code: "55D0", live: false, lock: false, owner: "阿豪", count: 2, max: 4, sync: "auto", ver: "0.1.60", packs: 3 },
+  { title: "已经开打", code: "0F3C", live: true, lock: false, owner: "路人甲", count: 4, max: 4, sync: "lockstep", ver: "0.1.61", packs: 2 },
+  { title: "自定义包测试", code: "9A71", live: false, lock: false, owner: "K", count: 1, max: 4, sync: "auto", ver: "0.1.61", packs: 5 },
+  { title: "深夜局", code: "3C88", live: false, lock: false, owner: "夜猫", count: 2, max: 4, sync: "delay", ver: "0.1.59", packs: 1 }
+];
+
+const state = {
+  screen: "rooms",
+  conn_mode: "guest",
+  account: "out",
+  logged_in: false,
+  session_account: false,
+  connecting: false,
+  lang: "zh-Hans",
+  page: 0,
+  target: "global",
+  ready: false,
+  overlay: "",
+  countdown: 0,
+  room_meta: { title: "老手速通", code: "7C10", live: false, count: 3, max: 4 }
+};
+state.lang = detect_lang();
+
+let auth_timer = 0;
+let chat_cooldown_until = 0;
+
+let messages = [
+  { c: "sys", key: "sys_connected", params: { url: "lfj.gim.ink" } },
+  { c: "global", text: "阿强: 来个 3 局 2 胜？" },
+  { c: "global", text: "小明: 好" },
+  { c: "room", text: "阿强: 准备好了" },
+  { c: "global", text: "路人甲: 有没有人打 VS" },
+  { c: "room", text: "Gim: 等我换下角色" },
+  { c: "sys", key: "sys_player_joined", params: { name: "阿豪" } },
+  { c: "global", text: "夜猫: 晚上再开一局" },
+  { c: "room", text: "小明: 开吧开吧" },
+  { c: "global", text: "K: 新数据包有人测试吗" }
+];
+
+function sync_bar() {
+  document.querySelectorAll("[data-screen-btn]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.screenBtn === state.screen);
+  });
+  document.querySelectorAll("[data-connect-mode]").forEach((b) => {
+    b.classList.toggle("on", state.screen === "connect" && b.dataset.connectMode === state.conn_mode);
+  });
+  document.querySelectorAll("[data-overlay-btn]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.overlayBtn === state.overlay);
+  });
+  $("btn-annotate").classList.toggle("on", document.body.classList.contains("annotate"));
+}
+
+function sync_account_ui() {
+  const on = state.logged_in && state.session_account;
+  document.querySelectorAll("[data-account-chip]").forEach((el) => {
+    el.classList.toggle("hidden", !on);
+    el.textContent = t("account_chip", { name: "Gim" });
+  });
+  document.querySelectorAll("[data-account-logout]").forEach((el) => el.classList.toggle("hidden", !on));
+  $("rooms-topbar-sub").textContent = `${t(on ? "tab_account" : "tab_guest")}　·　lfj.gim.ink　·　32ms`;
+}
+
+function set_account_state(s) {
+  state.account = s;
+  state.logged_in = s === "in";
+  $("account-out").classList.toggle("hidden", s !== "out");
+  $("account-pending").classList.toggle("hidden", s !== "pending");
+  $("account-in").classList.toggle("hidden", s !== "in");
+  if (!state.logged_in) state.session_account = false;
+  sync_account_ui();
+}
+
+function set_mode(mode) {
+  state.conn_mode = mode;
+  $("tab-guest").classList.toggle("active", mode === "guest");
+  $("tab-account").classList.toggle("active", mode === "account");
+  $("mode-guest").classList.toggle("hidden", mode !== "guest");
+  $("mode-account").classList.toggle("hidden", mode !== "account");
+  if (mode !== "account" && state.account === "pending") {
+    clearTimeout(auth_timer);
+    auth_timer = 0;
+    set_account_state("out");
+  }
+  sync_bar();
+}
+
+function show_screen(name) {
+  state.screen = name;
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  const target = $("screen-" + name);
+  if (target) target.classList.add("active");
+  $("chat-panel").style.display = name === "connect" ? "none" : "flex";
+  if (name === "rooms") set_target("global");
+  if (name === "room") set_target("room");
+  if (name !== "room") stop_countdown();
+  render_chat();
+  sync_account_ui();
+  sync_bar();
+}
+
+function render_rooms() {
+  const size = 5;
+  const start = state.page * size;
+  const list = ROOMS.slice(start, start + size);
+  $("room-list").innerHTML = list.map((r, i) => {
+    const idx = start + i;
+    const badge = r.live
+      ? `<span class="badge live">${esc(t("game_running"))}</span>`
+      : `<span class="badge">${esc(t("waiting"))}</span>`;
+    const lock = r.lock ? `<span class="badge lock">${esc(t("password"))}</span>` : "";
+    const pwd = r.lock ? `<input class="ti room-pwd" placeholder="${esc(t("pls_enter_pwd"))}">` : "";
+    const join = r.live ? "" : `<button class="btn small" data-join="${idx}">${esc(t("join"))}</button>`;
+    return `<div class="room-row" data-room="${idx}">
+      <div class="line1">
+        <span class="room-name">${esc(r.title)}</span>
+        <span class="room-code">#${esc(r.code)}</span>
+        ${badge}${lock}
+        <span class="grow"></span>
+        ${pwd}${join}
+      </div>
+      <div class="room-meta">
+        <span class="room-owner">${esc(t("room_owner"))} ${esc(r.owner)}</span>
+        <span class="room-meta-rest">${esc(t("player_count"))} ${r.count}/${r.max}　·　${esc(t("sync_" + r.sync))}　·　${esc(t("lfw_version"))} ${esc(r.ver)}　·　${esc(t("data_package"))}×${r.packs}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  const pages = Math.max(1, Math.ceil(ROOMS.length / size));
+  $("rooms-total").textContent = t("rooms_total", { n: ROOMS.length });
+  $("page-label").textContent = `${state.page + 1} / ${pages}`;
+  $("btn-prev").disabled = state.page <= 0;
+  $("btn-next").disabled = state.page >= pages - 1;
+
+  document.querySelectorAll("[data-join]").forEach((b) => {
+    b.onclick = () => open_room(ROOMS[Number(b.dataset.join)]);
+  });
+}
+
+function render_room_header() {
+  const r = state.room_meta;
+  $("room-title").textContent = r.title;
+  $("room-code").textContent = "#" + r.code;
+  $("room-badge").textContent = t(r.live ? "game_running" : "waiting");
+  $("room-badge").className = "badge" + (r.live ? " live" : "");
+  $("room-count").textContent = t("player_count_value", { count: r.count, max: r.max });
+  $("room-topbar-sub").textContent = `${r.title}　·　#${r.code}　·　lfj.gim.ink　·　48ms`;
+}
+
+function open_room(r) {
+  state.room_meta = r;
+  render_room_header();
+  reset_ready();
+  show_screen("room");
+}
+
+function render_chat() {
+  const box = $("chat-list");
+  const list = state.screen === "room"
+    ? messages.filter(m => m.c !== "global")
+    : messages;
+  box.innerHTML = list.map((m) => {
+    const text = m.key ? t(m.key, m.params) : m.text;
+    return `<div class="msg m-${m.c}">${esc(text)}</div>`;
+  }).join("");
+  box.scrollTop = box.scrollHeight;
+}
+
+function set_target(target) {
+  if (state.screen === "room") target = "room";
+  else if (target === "room") target = "global";
+  state.target = target;
+  const is_room = target === "room";
+  const label = `[${t(is_room ? "chat_room" : "chat_global")}]`;
+  $("chat-target-label").textContent = label;
+  $("chat-target-label").className = "panel-sub " + (is_room ? "m-room" : "m-global");
+  const btn = $("btn-chat-target");
+  btn.textContent = label;
+  btn.className = "btn chat-target " + (is_room ? "m-room" : "m-global");
+}
+
+function send_chat() {
+  const input = $("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const now = Date.now();
+  if (now < chat_cooldown_until) return;
+  chat_cooldown_until = now + 800;
+  messages.push({ c: state.target, text: `${t("yourself")}: ${text}` });
+  input.value = "";
+  render_chat();
+}
+
+function update_ready_ui() {
+  $("btn-ready").textContent = t(state.ready ? "cancal_ready" : "get_ready");
+  const label = state.ready ? t("ready_done") : t("not_ready");
+  $("state-self").textContent = label;
+  $("state-self").className = "player-state" + (state.ready ? "" : " no");
+  $("state-gim").textContent = label;
+  $("state-gim").className = "player-state" + (state.ready ? "" : " no");
+}
+
+function reset_ready() {
+  state.ready = false;
+  update_ready_ui();
+  stop_countdown();
+}
+
+let countdown_timer = 0;
+function update_countdown_text() {
+  const line = $("countdown-line");
+  if (line.style.display !== "block") return;
+  line.textContent = state.countdown > 0
+    ? t("counting_down", { n: state.countdown })
+    : t("entering_game");
+}
+
+function stop_countdown() {
+  if (countdown_timer) clearInterval(countdown_timer);
+  countdown_timer = 0;
+  state.countdown = 0;
+  $("countdown-line").style.display = "none";
+}
+
+function start_countdown() {
+  stop_countdown();
+  state.countdown = 5;
+  $("countdown-line").style.display = "block";
+  update_countdown_text();
+  countdown_timer = setInterval(() => {
+    state.countdown -= 1;
+    if (state.countdown <= 0) {
+      clearInterval(countdown_timer);
+      countdown_timer = 0;
+    }
+    update_countdown_text();
+  }, 1000);
+}
+
+function toggle_ready() {
+  state.ready = !state.ready;
+  update_ready_ui();
+  if (state.ready) start_countdown();
+  else stop_countdown();
+}
+
+const OVERLAYS = {
+  reconnecting: {
+    title: "reconnecting",
+    lines: [{ key: "reconnect_attempt", params: { n: 2 } }],
+    actions: [
+      { key: "continue_solo" },
+      { key: "back_to_lobby", rooms: true }
+    ]
+  },
+  paused: {
+    title: "match_paused",
+    lines: [{ key: "player_disconnected", params: { name: "阿强" } }],
+    actions: [
+      { key: "continue_game", resume: true }
+    ]
+  },
+  failed: {
+    title: "reconnect_failed",
+    lines: [{ key: "reconnect_failed_line" }],
+    actions: [
+      { key: "continue_solo" },
+      { key: "back_to_lobby", rooms: true }
+    ]
+  }
+};
+
+function render_overlay_content() {
+  const data = OVERLAYS[state.overlay];
+  if (!data) return;
+  $("overlay-title").textContent = t(data.title);
+  $("overlay-lines").textContent = data.lines.map((line) => t(line.key, line.params)).join("\n");
+  $("overlay-actions").innerHTML = data.actions.map((a) => {
+    const attrs = [`data-overlay-close="1"`];
+    if (a.rooms) attrs.push(`data-go-rooms="1"`);
+    if (a.resume) attrs.push(`data-resume="1"`);
+    return `<button class="btn" ${attrs.join(" ")}>${esc(t(a.key))}</button>`;
+  }).join("");
+}
+
+function show_overlay(name) {
+  state.overlay = name || "";
+  const overlay = $("overlay");
+  if (!name) {
+    overlay.classList.remove("show");
+    sync_bar();
+    return;
+  }
+  render_overlay_content();
+  overlay.classList.add("show");
+  sync_bar();
+}
+
+$("overlay-actions").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.dataset.resume) {
+    messages.push({ c: "sys", key: "sys_resumed" });
+    render_chat();
+  }
+  if (btn.dataset.goRooms) show_screen("rooms");
+  show_overlay("");
+});
+
+document.querySelectorAll("[data-screen-btn]").forEach((b) => {
+  b.onclick = () => {
+    if (b.dataset.screenBtn === "room") {
+      open_room({ title: "老手速通", code: "7C10", live: false, count: 3, max: 4 });
+    } else {
+      show_screen(b.dataset.screenBtn);
+    }
+  };
+});
+
+document.querySelectorAll("[data-connect-mode]").forEach((b) => {
+  b.onclick = () => {
+    set_mode(b.dataset.connectMode);
+    show_screen("connect");
+  };
+});
+
+document.querySelectorAll("[data-overlay-btn]").forEach((b) => {
+  b.onclick = () => show_overlay(b.dataset.overlayBtn);
+});
+
+$("btn-close-overlay").onclick = () => show_overlay("");
+$("btn-annotate").onclick = () => {
+  document.body.classList.toggle("annotate");
+  sync_bar();
+};
+
+document.querySelectorAll("[data-goto]").forEach((b) => {
+  b.onclick = () => {
+    switch (b.dataset.goto) {
+      case "close-connect":
+        show_screen("rooms");
+        break;
+      case "disconnect":
+        state.session_account = false;
+        sync_account_ui();
+        show_screen("connect");
+        break;
+      case "leave-room":
+        show_screen("rooms");
+        break;
+    }
+  };
+});
+
+function set_lang(code, persist = true) {
+  if (!I18N[code]) code = "en";
+  state.lang = code;
+  if (persist) {
+    try { localStorage.setItem("lfw_proto_lang", code); } catch (e) {}
+  }
+  $("lang-select").value = code;
+  apply_i18n();
+  $("btn-connect").textContent = t(state.connecting ? "connecting" : "connect");
+  render_rooms();
+  render_chat();
+  if (state.overlay) render_overlay_content();
+  sync_account_ui();
+  render_room_header();
+  update_ready_ui();
+  update_countdown_text();
+  update_sync_recommend();
+  set_target(state.target);
+  sync_bar();
+  fit_stage();
+}
+
+function update_sync_recommend() {
+  $("sync-recommend").textContent = `${t("sync_recommend")}: ${t("sync_lockstep")} (120ms)`;
+}
+
+$("btn-connect").onclick = () => {
+  const btn = $("btn-connect");
+  state.connecting = true;
+  btn.textContent = t("connecting");
+  btn.disabled = true;
+  setTimeout(() => {
+    state.connecting = false;
+    btn.textContent = t("connect");
+    btn.disabled = false;
+    state.session_account = false;
+    sync_account_ui();
+    messages.push({ c: "sys", key: "sys_connected_guest", params: { url: $("conn-address").value.trim() || "lfj.gim.ink" } });
+    render_chat();
+    show_screen("rooms");
+  }, 800);
+};
+
+$("tab-guest").onclick = () => set_mode("guest");
+$("tab-account").onclick = () => set_mode("account");
+
+$("btn-account-login").onclick = () => {
+  set_account_state("pending");
+  clearTimeout(auth_timer);
+  auth_timer = setTimeout(() => {
+    if (state.account === "pending") set_account_state("in");
+  }, 1800);
+};
+
+$("btn-account-success").onclick = () => {
+  clearTimeout(auth_timer);
+  auth_timer = 0;
+  set_account_state("in");
+};
+
+$("btn-account-cancel").onclick = () => {
+  clearTimeout(auth_timer);
+  auth_timer = 0;
+  set_account_state("out");
+};
+
+$("btn-account-enter").onclick = () => {
+  state.session_account = true;
+  sync_account_ui();
+  messages.push({ c: "sys", key: "sys_connected_account", params: { name: "Gim" } });
+  render_chat();
+  show_screen("rooms");
+};
+
+$("btn-account-logout").onclick = () => {
+  clearTimeout(auth_timer);
+  auth_timer = 0;
+  set_account_state("out");
+  set_mode("account");
+  messages.push({ c: "sys", key: "sys_logout" });
+  render_chat();
+  show_screen("connect");
+};
+
+$("btn-logout").onclick = () => {
+  clearTimeout(auth_timer);
+  auth_timer = 0;
+  set_account_state("out");
+  set_mode("account");
+  messages.push({ c: "sys", key: "sys_logout" });
+  render_chat();
+  show_screen("connect");
+};
+
+$("btn-create").onclick = () => {
+  open_room({ title: t("room_title_new", { name: "Gim" }), code: "NEW1", live: false, count: 1, max: 4 });
+  messages.push({ c: "sys", key: "sys_room_created", params: { code: "NEW1" } });
+  render_chat();
+};
+
+$("btn-refresh").onclick = () => {
+  messages.push({ c: "sys", key: "sys_rooms_refreshed" });
+  render_chat();
+};
+
+$("btn-auto-refresh").onclick = (e) => {
+  e.currentTarget.classList.toggle("active");
+};
+
+$("btn-room-refresh").onclick = () => {
+  messages.push({ c: "sys", key: "sys_room_refreshed" });
+  render_chat();
+};
+
+$("btn-prev").onclick = () => {
+  if (state.page <= 0) return;
+  state.page -= 1;
+  render_rooms();
+};
+$("btn-next").onclick = () => {
+  const pages = Math.ceil(ROOMS.length / 5);
+  if (state.page >= pages - 1) return;
+  state.page += 1;
+  render_rooms();
+};
+
+document.querySelectorAll(".sync-mode").forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll(".sync-mode").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    messages.push({ c: "sys", key: "sys_sync_changed", params: { mode: t("sync_" + b.dataset.sync) } });
+    render_chat();
+  };
+});
+
+$("btn-ready").onclick = toggle_ready;
+$("btn-kick").onclick = () => {
+  messages.push({ c: "sys", key: "sys_kicked", params: { name: "Gim" } });
+  render_chat();
+};
+
+$("btn-chat-target").onclick = () => {
+  if (state.screen === "room") return;
+  set_target("global");
+};
+$("btn-send").onclick = send_chat;
+$("chat-input").addEventListener("keydown", (e) => {
+  e.stopPropagation();
+  if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    e.preventDefault();
+    send_chat();
+  }
+});
+$("room-pwd").addEventListener("keydown", (e) => e.stopPropagation());
+$("conn-address").addEventListener("keydown", (e) => e.stopPropagation());
+$("conn-nickname").addEventListener("keydown", (e) => e.stopPropagation());
+$("conn-account-address").addEventListener("keydown", (e) => e.stopPropagation());
+
+$("btn-reset").onclick = () => {
+  state.page = 0;
+  state.ready = false;
+  state.overlay = "";
+  state.session_account = false;
+  state.connecting = false;
+  clearTimeout(auth_timer);
+  auth_timer = 0;
+  chat_cooldown_until = 0;
+  messages = messages.slice(0, 1);
+  $("chat-input").value = "";
+  $("overlay").classList.remove("show");
+  document.body.classList.remove("annotate");
+  set_account_state("out");
+  set_mode("guest");
+  reset_ready();
+  render_rooms();
+  render_chat();
+  show_screen("rooms");
+};
+
+$("lang-select").onchange = (e) => set_lang(e.target.value);
+
+function fit_stage() {
+  const vw = $("viewport").clientWidth;
+  const vh = $("viewport").clientHeight;
+  const scale = Math.min((vw - 24) / 794, (vh - 24) / 450);
+  $("stage").style.transform = `scale(${scale})`;
+}
+
+window.addEventListener("resize", fit_stage);
+
+$("lang-select").value = state.lang;
+apply_i18n();
+set_account_state("out");
+set_mode("guest");
+render_rooms();
+render_chat();
+render_room_header();
+update_ready_ui();
+update_sync_recommend();
+show_screen("rooms");
+fit_stage();
+sync_bar();
+</script>
+</body>
+</html>

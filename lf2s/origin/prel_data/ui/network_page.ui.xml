@@ -1,0 +1,417 @@
+<node id="network_page" name="页面：联网游戏">
+  <component cls="NetworkLogic"/>
+
+  <node id="network_bg" pos="0,0,-450">
+    <node ref="builtin_data/launch/bg.ui.json"/>
+  </node>
+
+  <node id="network_dim" size="794,450" center="0,0" pos="0,0,-400" color="#00000040"/>
+
+  <node id="network_topbar" size="794,40" pos="0,0,0">
+    <node id="network_top_title" i18n="network.online" center="0,0" pos="12,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="bold 20px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_top_sub" center="0,0" pos="84,13" opacity="0.85" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#9b9bff"/>
+    </node>
+    <node id="network_account_chip_bg" size="92,18" center="0,0" pos="320,11" color="#00000040" visible="false">
+      <node id="network_account_chip" center="0.5,0.5" pos="46,9" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+      </node>
+    </node>
+    <node id="network_btn_logout" i18n="network.logout" center="0.5,0.5" pos="440,20" visible="false" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_create" i18n="network.create_room" center="0.5,0.5" pos="505,20" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_refresh" i18n="network.refresh" center="0.5,0.5" pos="580,20" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_auto" i18n="network.auto_refresh" center="0.5,0.5" pos="650,20" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_disconnect" i18n="network.disconnect" center="0.5,0.5" pos="730,20" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_room_refresh" i18n="network.refresh" center="0.5,0.5" pos="665,20" visible="false" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_leave_top" i18n="network.leave" center="0.5,0.5" pos="740,20" visible="false" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#ff9b9b" text_align="center"/>
+    </node>
+  </node>
+
+  <node id="network_connect_panel" size="400,250" center="0,0" pos="197,100">
+    <node id="network_connect_frame_outer" size="400,250" center="0,0" pos="0,0" color="#5A73D6"/>
+    <node id="network_connect_frame_mid" size="398,248" center="0,0" pos="1,1" color="#1F2F6F"/>
+    <node id="network_connect_frame_fill" size="390,240" center="0,0" pos="5,5" color="#2F48A0"/>
+    <node id="network_connect_title" i18n="network.title" center="0,0" pos="10,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="bold 17px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_connect_close" i18n="network.close" center="0.5,0.5" pos="356,20" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_connect_divider" size="384,1" center="0,0" pos="8,32" color="#ffffff29"/>
+
+    <node id="network_tab_guest" i18n="network.guest" center="0,0" pos="16,34" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#ffffff" underline_color="#ffffff" underline_width="1"/>
+    </node>
+    <node id="network_tab_account" i18n="network.account" center="0,0" pos="86,34" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#a8b9ff"/>
+    </node>
+
+    <node id="network_guest_body">
+      <node id="network_address_label" i18n="network.address" center="0,0" pos="16,70" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="13px Arial" fill_style="#9b9bff"/>
+      </node>
+      <node id="network_address_bg" size="324,24" center="0,0" pos="60,66" color="#0000007a">
+        <node id="network_address_input" size="324,24" center="0,0" pos="0,0">
+          <component cls="TextInput">
+            <properties>
+              <number name="maxLength">64</number>
+              <number name="fontSize">14</number>
+              <string name="defaultValue">lfj.gim.ink</string>
+            </properties>
+          </component>
+        </node>
+        <node id="network_address_line" size="324,1" center="0,0" pos="0,23" color="#ffffff2e"/>
+      </node>
+      <node id="network_nickname_label" i18n="network.nickname" center="0,0" pos="16,102" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="13px Arial" fill_style="#9b9bff"/>
+      </node>
+      <node id="network_nickname_bg" size="324,24" center="0,0" pos="60,98" color="#0000007a">
+        <node id="network_nickname_input" size="324,24" center="0,0" pos="0,0">
+          <component cls="TextInput">
+            <properties>
+              <number name="maxLength">16</number>
+              <number name="fontSize">14</number>
+            </properties>
+          </component>
+        </node>
+        <node id="network_nickname_line" size="324,1" center="0,0" pos="0,23" color="#ffffff2e"/>
+      </node>
+      <node id="network_btn_connect" i18n="network.connect" center="0.5,0.5" pos="160,140" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
+      <node id="network_btn_connect_cancel" i18n="network.cancel" center="0.5,0.5" pos="240,140" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
+      <node id="network_guest_note_1" i18n="network.guest_note1" center="0.5,0.5" pos="200,196" opacity="0.5" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+      </node>
+      <node id="network_guest_note_2" i18n="network.guest_note2" center="0.5,0.5" pos="200,212" opacity="0.5" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+      </node>
+    </node>
+
+    <node id="network_account_body" visible="false">
+      <node id="network_account_address_label" i18n="network.address" center="0,0" pos="16,70" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="13px Arial" fill_style="#9b9bff"/>
+      </node>
+      <node id="network_account_address_bg" size="324,24" center="0,0" pos="60,66" color="#0000007a">
+        <node id="network_account_address_input" size="324,24" center="0,0" pos="0,0">
+          <component cls="TextInput">
+            <properties>
+              <number name="maxLength">64</number>
+              <number name="fontSize">14</number>
+              <string name="defaultValue">lfj.gim.ink</string>
+            </properties>
+          </component>
+        </node>
+        <node id="network_account_address_line" size="324,1" center="0,0" pos="0,23" color="#ffffff2e"/>
+      </node>
+
+      <node id="network_account_out">
+        <node id="network_account_out_note_1" i18n="network.account_note1" center="0.5,0.5" pos="200,106" opacity="0.6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+        </node>
+        <node id="network_account_out_note_2" i18n="network.account_note2" center="0.5,0.5" pos="200,122" opacity="0.6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+        </node>
+        <node id="network_btn_account_login" i18n="network.login_gim" center="0.5,0.5" pos="135,158" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+        </node>
+        <node id="network_btn_account_cancel_0" i18n="network.cancel" center="0.5,0.5" pos="255,158" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+        </node>
+      </node>
+
+      <node id="network_account_pending" visible="false">
+        <node id="network_account_pending_note_1" i18n="network.auth_pending1" center="0.5,0.5" pos="200,106" opacity="0.6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+        </node>
+        <node id="network_account_pending_note_2" i18n="network.auth_pending2" center="0.5,0.5" pos="200,122" opacity="0.6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+        </node>
+        <node id="network_btn_account_mock" i18n="network.mock_auth" center="0.5,0.5" pos="135,158" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+        </node>
+        <node id="network_btn_account_cancel_1" i18n="network.cancel" center="0.5,0.5" pos="255,158" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+        </node>
+      </node>
+
+      <node id="network_account_in" visible="false">
+        <node id="network_account_card_bg" size="372,48" center="0,0" pos="14,96" color="#00000038"/>
+        <node id="network_account_avatar_bg" size="40,40" center="0,0" pos="18,100" color="#1F2F6F"/>
+        <node id="network_account_avatar" i18n="G" center="0.5,0.5" pos="38,120" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="bold 20px Arial" fill_style="#ffffff" text_align="center"/>
+        </node>
+        <node id="network_account_name" center="0,0" pos="68,102" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="bold 15px Arial" fill_style="#ffffff"/>
+        </node>
+        <node id="network_account_id" center="0,0" pos="68,122" opacity="0.55" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff"/>
+        </node>
+        <node id="network_account_provider" i18n="gim.ink" center="0,0" pos="330,104" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="12px Arial" fill_style="#8FA6E8"/>
+        </node>
+        <node id="network_account_scope" i18n="network.auth_scope" center="0,0" pos="14,152" opacity="0.6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff"/>
+        </node>
+        <node id="network_btn_account_enter" i18n="network.enter_lobby" center="0.5,0.5" pos="135,178" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+        </node>
+        <node id="network_btn_account_logout" i18n="network.logout" center="0.5,0.5" pos="255,178" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="14px Arial" fill_style="#ff9b9b" text_align="center"/>
+        </node>
+      </node>
+    </node>
+
+    <node id="network_connect_status" center="0.5,0.5" pos="200,232" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="11px Arial" fill_style="#ff9b9b" text_align="center"/>
+    </node>
+  </node>
+
+  <node id="network_rooms_panel" size="482,398" center="0,0" pos="10,42">
+    <node id="network_rooms_frame_outer" size="482,398" center="0,0" pos="0,0" color="#5A73D6"/>
+    <node id="network_rooms_frame_mid" size="480,396" center="0,0" pos="1,1" color="#1F2F6F"/>
+    <node id="network_rooms_frame_fill" size="472,388" center="0,0" pos="5,5" color="#2F48A0"/>
+    <node id="network_rooms_title" i18n="network.room_list" center="0,0" pos="10,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="bold 17px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_rooms_total" center="0,0" pos="120,12" opacity="0.55" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_rooms_divider" size="466,1" center="0,0" pos="8,32" color="#ffffff29"/>
+    <node id="network_room_rows" size="466,320" pos="8,34">
+      <node id="network_room_row" count="5" size="466,56" center="0,0" pos="0,0">
+        <node id="network_room_name" center="0,0" pos="8,4" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="bold 15px Arial" fill_style="#ffffff"/>
+        </node>
+        <node id="network_room_code" center="0,0" pos="166,6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="12px Consolas" fill_style="#9b9bff"/>
+        </node>
+        <node id="network_room_badge_bg" size="48,16" center="0,0" pos="214,4" color="#ffffff1f">
+          <node id="network_room_badge" center="0.5,0.5" pos="24,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+            <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+          </node>
+        </node>
+        <node id="network_room_lock_bg" size="52,16" center="0,0" pos="268,4" color="#ffd08a26" visible="false">
+          <node id="network_room_lock" i18n="network.password" center="0.5,0.5" pos="26,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+            <style font="11px Arial" fill_style="#ffd08a" text_align="center"/>
+          </node>
+        </node>
+        <node id="network_room_pwd_bg" size="96,20" center="0,0" pos="326,2" color="#0000007a" visible="false">
+          <node id="network_room_pwd_input" size="96,20" center="0,0" pos="0,0">
+            <component cls="TextInput">
+              <properties>
+                <number name="maxLength">32</number>
+                <number name="fontSize">12</number>
+                <string name="placeholder">••••</string>
+              </properties>
+            </component>
+          </node>
+          <node id="network_room_pwd_line" size="96,1" center="0,0" pos="0,19" color="#ffffff2e"/>
+        </node>
+        <node id="network_room_join" i18n="network.join" center="0,0" pos="428,2" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="12px Arial" fill_style="#a8b9ff"/>
+        </node>
+        <node id="network_room_owner" center="0,0" pos="8,32" opacity="0.62" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff"/>
+        </node>
+        <node id="network_room_meta" center="0,0" pos="160,32" opacity="0.62" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff"/>
+        </node>
+      </node>
+    </node>
+    <node id="network_rooms_divider_bottom" size="466,1" center="0,0" pos="8,354" color="#ffffff29"/>
+    <node id="network_btn_prev" i18n="network.prev_page" center="0.5,0.5" pos="195,372" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_page_label" center="0.5,0.5" pos="241,372" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff" text_align="center"/>
+    </node>
+    <node id="network_btn_next" i18n="network.next_page" center="0.5,0.5" pos="287,372" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_rooms_status" center="0.5,0.5" pos="241,386" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="10px Arial" fill_style="#ff9b9b" text_align="center"/>
+    </node>
+  </node>
+
+  <node id="network_room_panel" size="482,398" center="0,0" pos="10,42">
+    <node id="network_room_frame_outer" size="482,398" center="0,0" pos="0,0" color="#5A73D6"/>
+    <node id="network_room_frame_mid" size="480,396" center="0,0" pos="1,1" color="#1F2F6F"/>
+    <node id="network_room_frame_fill" size="472,388" center="0,0" pos="5,5" color="#2F48A0"/>
+    <node id="network_room_title" center="0,0" pos="10,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="bold 17px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_room_code_label" center="0,0" pos="240,12" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Consolas" fill_style="#9b9bff"/>
+    </node>
+    <node id="network_room_panel_badge_bg" size="58,16" center="0,0" pos="300,8" color="#ffffff1f">
+      <node id="network_room_panel_badge" center="0.5,0.5" pos="29,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+      </node>
+    </node>
+    <node id="network_room_count" center="1,0" pos="470,12" opacity="0.55" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff" text_align="right"/>
+    </node>
+    <node id="network_room_divider_0" size="466,1" center="0,0" pos="8,32" color="#ffffff29"/>
+
+    <node id="network_sync_label" i18n="network.sync_mode" center="0,0" pos="12,42" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#9b9bff"/>
+    </node>
+    <node id="network_sync_auto" i18n="network.sync_auto" center="0.5,0.5" pos="100,50" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff" text_align="center" underline_color="#ffffff" underline_width="1"/>
+    </node>
+    <node id="network_sync_lockstep" i18n="network.sync_lockstep" center="0.5,0.5" pos="150,50" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_sync_delay" i18n="network.sync_delay" center="0.5,0.5" pos="200,50" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_recommend" center="1,0" pos="466,42" opacity="0.58" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="11px Arial" fill_style="#ffffff" text_align="right"/>
+    </node>
+    <node id="network_room_divider_1" size="466,1" center="0,0" pos="8,62" color="#ffffff29"/>
+
+    <node id="network_room_lfw" center="0,0" pos="12,66" opacity="0.75" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="11px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_room_data_0" center="0,0" pos="12,84" opacity="0.75" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="11px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_room_data_1" center="0,0" pos="12,102" opacity="0.75" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="11px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_room_divider_2" size="466,1" center="0,0" pos="8,120" color="#ffffff29"/>
+
+    <node id="network_pwd_label" i18n="network.password" center="0,0" pos="12,132" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#9b9bff"/>
+    </node>
+    <node id="network_pwd_bg" size="236,22" center="0,0" pos="58,129" color="#0000007a">
+      <node id="network_pwd_input" size="236,22" center="0,0" pos="0,0">
+        <component cls="TextInput">
+          <properties>
+            <number name="maxLength">32</number>
+            <number name="fontSize">12</number>
+          </properties>
+        </component>
+      </node>
+      <node id="network_pwd_line" size="236,1" center="0,0" pos="0,21" color="#ffffff2e"/>
+    </node>
+    <node id="network_pwd_hint" i18n="network.owner_only" center="0,0" pos="304,132" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="11px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_room_divider_3" size="466,1" center="0,0" pos="8,154" color="#ffffff29"/>
+
+    <node id="network_player_rows" size="466,128" pos="8,158">
+      <node id="network_player_row" count="4" size="466,32" center="0,0" pos="0,0">
+        <node id="network_player_name" center="0,0" pos="6,6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="bold 14px Arial" fill_style="#ffffff"/>
+        </node>
+        <node id="network_player_tags" center="0,0" pos="172,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#9b9bff"/>
+        </node>
+        <node id="network_player_rtt" center="0,0" pos="272,8" opacity="0.6" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="11px Arial" fill_style="#ffffff" text_align="center"/>
+        </node>
+        <node id="network_player_state" center="0,0" pos="332,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="12px Arial" fill_style="#9b9bff" text_align="center"/>
+        </node>
+        <node id="network_player_kick" i18n="network.kick" center="0.5,0.5" pos="441,16" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+          <style font="12px Arial" fill_style="#ff9b9b" text_align="center"/>
+        </node>
+      </node>
+    </node>
+    <node id="network_empty_slot" i18n="network.empty_slot" center="0.5,0.5" pos="241,174" opacity="0.32" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff" text_align="center"/>
+    </node>
+    <node id="network_countdown" center="0.5,0.5" pos="241,318" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#ffffff" text_align="center"/>
+    </node>
+    <node id="network_btn_leave" i18n="network.leave" center="0.5,0.5" pos="205,356" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_ready" i18n="network.ready" center="0.5,0.5" pos="285,356" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_room_status" center="0.5,0.5" pos="241,384" visible="false" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="10px Arial" fill_style="#ff9b9b" text_align="center"/>
+    </node>
+  </node>
+
+  <node id="network_chat_panel" size="284,398" center="0,0" pos="500,42">
+    <node id="network_chat_frame_outer" size="284,398" center="0,0" pos="0,0" color="#5A73D6"/>
+    <node id="network_chat_frame_mid" size="282,396" center="0,0" pos="1,1" color="#1F2F6F"/>
+    <node id="network_chat_frame_fill" size="274,388" center="0,0" pos="5,5" color="#2F48A0"/>
+    <node id="network_chat_title" i18n="network.chat" center="0,0" pos="10,8" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="bold 17px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_chat_target" center="1,0" pos="274,12" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff" text_align="right"/>
+    </node>
+    <node id="network_chat_divider" size="268,1" center="0,0" pos="8,32" color="#ffffff29"/>
+    <node id="network_chat_rows" size="268,300" pos="8,36">
+      <node id="network_chat_row" count="15" size="0,19" center="0,0" pos="0,0" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+        <style font="12.5px Arial" fill_style="#ffffff" text_align="left"/>
+      </node>
+    </node>
+    <node id="network_chat_input_divider" size="268,1" center="0,0" pos="8,356" color="#ffffff24"/>
+    <node id="network_btn_chat_target" center="0,0" pos="8,363" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff"/>
+    </node>
+    <node id="network_chat_input_bg" size="168,22" center="0,0" pos="62,358" color="#0000007a">
+      <node id="network_chat_input" size="168,22" center="0,0" pos="0,0">
+        <component cls="TextInput">
+          <properties>
+            <number name="maxLength">100</number>
+            <number name="fontSize">13</number>
+          </properties>
+        </component>
+      </node>
+      <node id="network_chat_input_line" size="168,1" center="0,0" pos="0,21" color="#ffffff2e"/>
+    </node>
+    <node id="network_btn_send" i18n="network.send" center="0.5,0.5" pos="252,369" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+  </node>
+
+  <node id="network_overlay_dim" size="794,450" center="0,0" pos="0,0,20" color="#0000008c"/>
+  <node id="network_overlay_panel" size="344,150" center="0,0" pos="225,150,21">
+    <node id="network_overlay_frame_outer" size="344,150" center="0,0" pos="0,0" color="#5A73D6"/>
+    <node id="network_overlay_frame_mid" size="342,148" center="0,0" pos="1,1" color="#1F2F6F"/>
+    <node id="network_overlay_frame_fill" size="334,140" center="0,0" pos="5,5" color="#2F48A0"/>
+    <node id="network_overlay_title" center="0.5,0.5" pos="172,30" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="bold 18px Arial" fill_style="#ffffff" text_align="center"/>
+    </node>
+    <node id="network_overlay_line_0" center="0.5,0.5" pos="172,62" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="13px Arial" fill_style="#ffffff" text_align="center"/>
+    </node>
+    <node id="network_overlay_line_1" center="0.5,0.5" pos="172,82" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="12px Arial" fill_style="#ffffff" text_align="center"/>
+    </node>
+    <node id="network_btn_continue_solo" i18n="network.continue_solo" center="0.5,0.5" pos="110,118" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_back_lobby" i18n="network.back_lobby" center="0.5,0.5" pos="234,118" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_continue_game" i18n="network.continue_game" center="0.5,0.5" pos="172,118" outlineColor="#000000" outlineWidth="1" outlineAlpha="1">
+      <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+  </node>
+</node>

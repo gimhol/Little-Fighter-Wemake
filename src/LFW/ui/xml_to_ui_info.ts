@@ -151,13 +151,14 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
       }
       case 'img': {
         const img: any = {};
+        const num = (name: string) => child.attr(name) != null ? Number(child.attr(name)) : void 0;
         img.path = child.attr('path') || child.attr('src');
-        img.x = Number(child.attr('x'));
-        img.y = Number(child.attr('y'));
-        img.w = Number(child.attr('w'));
-        img.h = Number(child.attr('h'));
-        img.dw = Number(child.attr('dw')) || img.w;
-        img.dh = Number(child.attr('dh')) || img.h;
+        img.x = num('x');
+        img.y = num('y');
+        img.w = num('w');
+        img.h = num('h');
+        img.dw = num('dw') ?? img.w;
+        img.dh = num('dh') ?? img.h;
         if (child.attr('flip_x') != null) img.flip_x = Number(child.attr('flip_x'));
         if (child.attr('flip_y') != null) img.flip_y = Number(child.attr('flip_y'));
         if (child.attr('wrapS') != null) img.wrapS = Number(child.attr('wrapS'));
@@ -169,6 +170,22 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
         if (child.attr('offsetAnimR') != null) img.offsetAnimR = Number(child.attr('offsetAnimR'));
         if (child.attr('repeatX') != null) img.repeatX = Number(child.attr('repeatX'));
         if (child.attr('repeatY') != null) img.repeatY = Number(child.attr('repeatY'));
+        const np = child.children.find(c => c.tag === 'nine_patch');
+        if (np) {
+          const n = (name: string) => np.attr(name) != null ? Number(np.attr(name)) : void 0;
+          img.nine_patch = {
+            f_l: n('f_l'),
+            f_t: n('f_t'),
+            f_r: n('f_r'),
+            f_b: n('f_b'),
+            f_w: n('f_w'),
+            f_h: n('f_h'),
+            l_w: n('l_w'),
+            t_h: n('t_h'),
+            r_w: n('r_w'),
+            b_h: n('b_h'),
+          };
+        }
         ret.img = img;
         break;
       }
