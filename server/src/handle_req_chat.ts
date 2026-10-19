@@ -35,9 +35,16 @@ export function consume_chat_token(client: Client): boolean {
   return true;
 }
 
+export function find_chat_recipient(client: Client, to: string | undefined): Client | undefined {
+  if (!to) return void 0;
+  for (const c of client.ctx.client_mgr.all)
+    if (c.id === to && c.client_info) return c;
+  return void 0;
+}
+
 export function handle_req_chat(client: Client, req: IReqChat, skip_rate_limit = false): void {
   if (!ensure_player_info(client, req)) return;
-  const { target, text, type, pid } = req;
+  const { target, text, to, type, pid } = req;
   if (!target) {
     client.resp(type, pid, { code: ErrCode.ChatTargetEmpty, error: `target can't be empty` }); return
   }
@@ -71,6 +78,29 @@ export function handle_req_chat(client: Client, req: IReqChat, skip_rate_limit =
       }
       room?.broadcast(type, resp, client);
       client.resp(type, pid, resp);
+      break;
+    }
+    case 'private': {
+      if (!to) {
+        client.resp(type, pid, { code: ErrCode.ChatTargetIncorrect, error: 'private target is required' });
+        break;
+      }
+      if (to === client.id) {
+        client.resp(type, pid, { code: ErrCode.ChatTargetIncorrect, error: 'cannot private chat yourself' });
+        break;
+      }
+      const recipient = find_chat_recipient(client, to);
+      if (!recipient) {
+        client.resp(type, pid, { code: ErrCode.ChatRecipientNotFound, error: 'recipient not found' });
+        break;
+      }
+      if (!skip_rate_limit && !consume_chat_token(client)) {
+        client.resp(type, pid, { code: ErrCode.ChatTooFrequent, error: 'chat too frequent' });
+        break;
+      }
+      const private_resp: TInfo<IRespChat> = { ...resp, to };
+      recipient.resp(type, '', private_resp).catch(() => void 0);
+      client.resp(type, pid, private_resp);
       break;
     }
     default: {

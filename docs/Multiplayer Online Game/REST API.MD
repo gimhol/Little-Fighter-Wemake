@@ -398,12 +398,13 @@ curl -X POST -H "Content-Type: application/json" \
 
 ### POST /api/me/chat
 
-需要 client（玩家 token 且已绑定在线客户端）。走与游戏内聊天完全相同的通道，房间或全局的其它玩家都会收到这条消息，发送者自己的客户端也会收到一条推送。
+需要 client（玩家 token 且已绑定在线客户端）。走与游戏内聊天完全相同的通道，按 `target` 投递；发送者自己的客户端也会收到一条推送。
 
 | 字段 | 类型 | 必填 | 说明 |
 | - | - | - | - |
 | `text` | string | 是 | 消息内容 |
-| `target` | string | 否 | `room`（默认）或 `global` |
+| `target` | string | 否 | `room`（默认）、`global` 或 `private`（私聊，需同时传 `to`） |
+| `to` | string | 否 | 私聊目标客户端 id，`target=private` 时必填 |
 
 ``` bash
 curl -X POST -H "Authorization: Bearer <player token>" -H "Content-Type: application/json" \
@@ -421,6 +422,8 @@ curl -X POST -H "Authorization: Bearer <player token>" -H "Content-Type: applica
 ```
 
 `seq` 与游戏内聊天共用同一个自增序号，可直接用于消息排序与去重。
+
+> `target=private` 时，`to` 必须是当前在线且已上报 ClientInfo 的客户端 id；目标不存在返回 404，响应会回传 `to`。私聊消息会分别推送给目标客户端和发送者。
 
 ### POST /api/ranks
 

@@ -28,4 +28,5 @@ export const enum ErrCode {
   RejoinFailed = 1018,
   AbandonFailed = 1019,
   ChatTooFrequent = 1020,
+  ChatRecipientNotFound = 1021,
 }
