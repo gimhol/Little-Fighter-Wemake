@@ -333,14 +333,15 @@
     <node id="network_countdown" center="0.5,0.5" pos="241,318">
       <style font="13px Arial" fill_style="#ffffff" text_align="center"/>
     </node>
-    <node id="network_btn_leave" i18n="network.leave" center="0.5,0.5" pos="190,356">
-      <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
-    </node>
-    <node id="network_btn_ready" i18n="network.ready" center="0.5,0.5" pos="292,356">
-      <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
-    </node>
-    <node id="network_room_status" center="0.5,0.5" pos="241,377" visible="false">
+    <node id="network_room_status" center="0.5,0.5" pos="241,340" visible="false">
       <style font="10px Arial" fill_style="#ff9b9b" text_align="center"/>
+    </node>
+    <node id="network_room_footer_divider" size="466,1" center="0,0" pos="8,350" color="#ffffff24"/>
+    <node id="network_btn_leave" i18n="network.leave" center="0.5,0.5" pos="190,368">
+      <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+    </node>
+    <node id="network_btn_ready" i18n="network.ready" center="0.5,0.5" pos="292,368">
+      <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
     </node>
   </node>
 
