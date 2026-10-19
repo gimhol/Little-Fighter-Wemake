@@ -1,5 +1,5 @@
 import { MsgEnum } from '../../Net';
-import { handle_req_chat, msg_seq } from '../../handle_req_chat';
+import { consume_chat_token, handle_req_chat, msg_seq } from '../../handle_req_chat';
 import type { Rest } from '../index';
 import { RestError } from '../RestError';
 import { body_of, str_of } from '../read_body';
@@ -32,8 +32,9 @@ export function register_me_routes(rest: Rest) {
     if (!client_info) throw RestError.conflict('客户端还未上报 ClientInfo');
     const target = str_of(body?.target) === 'global' ? 'global' : 'room';
     if (target === 'room' && !client.room) throw RestError.conflict('客户端不在房间内');
+    if (!consume_chat_token(client)) throw RestError.too_many_requests('chat too frequent');
     const seq = msg_seq;
-    handle_req_chat(client, { type: MsgEnum.Chat, is_req: true, pid: '', target, text });
+    handle_req_chat(client, { type: MsgEnum.Chat, is_req: true, pid: '', target, text }, true);
     return { sender: client_info, date: Date.now(), text, target, seq };
   });
 }

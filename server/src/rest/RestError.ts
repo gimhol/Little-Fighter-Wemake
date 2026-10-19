@@ -14,5 +14,6 @@ export class RestError extends Error {
   static method_not_allowed(message = '方法不被允许', code?: string) { return new RestError(405, message, code) }
   static conflict(message: string, code?: string) { return new RestError(409, message, code) }
   static too_large(message: string, code?: string) { return new RestError(413, message, code) }
+  static too_many_requests(message: string, code?: string) { return new RestError(429, message, code) }
   static internal(message = '服务器内部错误', code?: string) { return new RestError(500, message, code) }
 }
