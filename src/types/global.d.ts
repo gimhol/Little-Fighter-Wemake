@@ -30,6 +30,8 @@ interface Window {
   }
   /** B站 Toy JS SDK（入口页引入 toy-sdk.js 后由平台注入，见 docs/dev/Toy JS SDK.md） */
   toy?: ToySDK
+
+  first_page?: string;
 }
 
 /** 桌面客户端的更新状态（`window.lfwm_update`，见 src/desktop_update.ts） */

@@ -379,7 +379,7 @@ function App() {
     on_stage_change: (s) => _set_bg_id(s.bg.id),
     on_pause_change: (v) => _set_paused(v),
     on_dataset_change: (key, value) => {
-      set_world_dataset(d => { d[key] = value as any })
+      set_world_dataset(d => { d[key] = value })
     },
   })
 
@@ -420,7 +420,7 @@ function App() {
         if (node?.components.length)
           console.log("components:", Array.from(node?.components));
         if (node?.children.length)
-          for (const child of node?.children)
+          for (const child of node.children)
             print_ui_tree(child)
         console.groupEnd();
       };
@@ -455,7 +455,7 @@ function App() {
       })
       for (const [id, player] of lfw.players) {
         player.callbacks.add({
-          on_ctrl_changed(value, prev) {
+          on_ctrl_changed(value) {
             set_app_state(draft => {
               if (value === CtrlDevice.TouchScreen && draft.touchpad !== id) {
                 draft.touchpad_enabled = true
@@ -529,6 +529,7 @@ function App() {
       const s_2 = win_w / win_h;
       switch (app_state.render_size_mode) {
         case "fill":
+          // eslint-disable-next-line react-hooks/immutability
           ele.style.width = win_w + "px";
           ele.style.height = win_h + "px";
           break;
@@ -610,6 +611,7 @@ function App() {
     const ele = ele_game_canvas;
     if (!ele) return;
     if (ui_id) {
+      // eslint-disable-next-line react-hooks/immutability
       ele.style.transition = "opacity 1000ms";
       ele.style.opacity = "1";
     } else {
@@ -664,6 +666,7 @@ function App() {
         case "top": workspace.add("slot_1", "up", { id: "panel" }); break;
         case "bottom": workspace.add("slot_1", "down", { id: "panel" }); break;
       }
+      // eslint-disable-next-line react-hooks/immutability
       workspace.root.keep = true
     }
     workspace.confirm()
@@ -763,7 +766,7 @@ function App() {
             onClick={() => lfw?.push_cmd(CMD.F1)}
             src={[img_btn_2_1, img_btn_2_2]} />
         </Show>
-        <Show show={bg_id !== Defines.VOID_BG.id && ui_id !== "settings" && (window as any).first_page == 'init_demo'}>
+        <Show show={bg_id !== Defines.VOID_BG.id && ui_id !== "settings" && window.first_page == 'init_demo'}>
           <ToggleImgButton
             checked={lfw?.world.dataset.playrate != 1}
             onClick={() => lfw?.push_cmd(CMD.F5)}
@@ -784,7 +787,7 @@ function App() {
           }}
           src={[img_btn_1_1, img_btn_1_1]}
         />
-        <Show show={!is_mobile_container && !toy_mobile && (window as any).first_page != 'init_demo'}>
+        <Show show={!is_mobile_container && !toy_mobile && window.first_page != 'init_demo'}>
           <ToggleImgButton
             checked={is_fullscreen}
             onClick={() => toggle_fullscreen()}
