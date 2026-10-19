@@ -378,14 +378,10 @@ class Entity {
   // `holding.team = e.team`（`state/CharacterState_Lying.ts:19` 等）。
   virtual void holding_set_team(const Value& v);
   // `holding.lfw.mt.mark = 'drink_drop'` / `holding.lfw.mt.range(-6, 6)`
-  // （`state/CharacterState_Drink.ts:41-42`）：`mt` 缝已有，`MersenneTwister::mark/range`
-  // 那一层留给下一刀（真数据下只有喝东西状态走这两条）。
-  virtual void holding_mt_mark(const std::u16string& mark) { (void)mark; }
-  virtual Value holding_mt_range(double lo, double hi) {
-    (void)lo;
-    (void)hi;
-    return Value();
-  }
+  // （`state/CharacterState_Drink.ts:34-35`）。`lfw.mt` 是**每 LFW 一个**实例 ⇒ 在喝的人
+  // 身上调与在瓶子身上调是同一条流（`MersenneTwister` 的 mark/range）。
+  virtual void holding_mt_mark(const std::u16string& mark);
+  virtual Value holding_mt_range(double lo, double hi);
   // `is_weapon(e.holding)`（`state/CharacterState_Walking.ts:29`）。
   virtual bool holding_is_weapon() const;
   virtual bool has_catcher() const { return catcher != nullptr; }
@@ -456,12 +452,8 @@ class Entity {
     (void)y;
     (void)z;
   }
-  // `e.lfw.datas.find_fighter("50")`（`state/CharacterState_TransformToLouisEX.ts:9`）：
-  // 只查战士表的那条面还没接（`LFW::datas_fighters_find` 已在，留给后续刀）。
-  virtual Value datas_find_fighter(const std::u16string& oid) {
-    (void)oid;
-    return Value();
-  }
+  // `e.lfw.datas.find_fighter("50")`（`state/CharacterState_TransformToLouisEX.ts:9`）。
+  virtual Value datas_find_fighter(const std::u16string& oid);
   // --- 切片 4CG 落实：控制器面（输入）× 资料面 -----------------------------------
   // `this.ctrl.UD` / `this.ctrl.LR`（`controller/BaseController.ts:56-65`）——`ctrl_` 为空
   // 对应 TS 的「没有控制器」，端口给中性 `0`。

@@ -461,8 +461,8 @@ void CharMenuHead::quit() {` },
       from: `  if (d == 1.0) return 2500;`,
       to: `  if (d == 1.0) return 2600;` },
     { note: "生存判定错绑 stage", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `  return mode.has_value() && *mode == kGameModeSurvival;`,
-      to: `  return mode.has_value() && *mode == kGameModeStage;` },
+      from: `  return is_survival_rank_mode(game_mode());`,
+      to: `  return game_mode() == lfw::game_mode::kStage;` },
     { note: "生存排行重置 dataset 时保留了旧难度（TS b25e6ff9c 之后不再保留）",
       file: "native/lfw/ui/component/game_prepare_logic.cpp",
       from: `      if (v != nullptr) ds.set(k, *v);`,
@@ -490,12 +490,12 @@ void CharMenuHead::quit() {` },
 
     // ============================ on_resume 三模式 ============================
     { note: "生存背景行不隐藏", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `  if (mode.has_value() && *mode == kGameModeSurvival) {
+      from: `  if (is_survival_rank_mode(game_mode())) {
     if (background_row != nullptr) {
       background_row->set_visible(false);
       background_row->set_disabled(true);
     }`,
-      to: `  if (mode.has_value() && *mode == kGameModeSurvival) {
+      to: `  if (is_survival_rank_mode(game_mode())) {
     if (background_row != nullptr) {
       background_row->set_visible(true);
       background_row->set_disabled(true);
@@ -513,12 +513,12 @@ void CharMenuHead::quit() {` },
           oid::survival_rank_oids().begin(), oid::survival_rank_oids().end()));`,
       to: `      char_menu_logic->set_oids(std::vector<std::u16string>());` },
     { note: "舞台行不显示", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `  } else if (mode.has_value() && *mode == kGameModeStage) {
+      from: `  } else if (game_mode() == lfw::game_mode::kStage) {
     if (stage_row != nullptr) {
       stage_row->set_visible(true);
       stage_row->set_disabled(false);
     }`,
-      to: `  } else if (mode.has_value() && *mode == kGameModeStage) {
+      to: `  } else if (game_mode() == lfw::game_mode::kStage) {
     if (stage_row != nullptr) {
       stage_row->set_visible(false);
       stage_row->set_disabled(false);
@@ -548,8 +548,8 @@ void CharMenuHead::quit() {` },
       from: `    if (char_menu_logic != nullptr) char_menu_logic->set_min_player(2.0);`,
       to: `    if (char_menu_logic != nullptr) char_menu_logic->set_min_player(3.0);` },
     { note: "update 只在非生存刷脸", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `  if (mode.has_value() && *mode == kGameModeSurvival) refresh_selection_face();`,
-      to: `  if (mode.has_value() && *mode == kGameModeStage) refresh_selection_face();` },
+      from: `  if (is_survival_rank_mode(game_mode())) refresh_selection_face();`,
+      to: `  if (game_mode() == lfw::game_mode::kStage) refresh_selection_face();` },
 
     // ============================ 选角大头像 ============================
     { note: "刷脸人数用 min", file: "native/lfw/ui/component/game_prepare_logic.cpp",
@@ -582,9 +582,9 @@ void CharMenuHead::quit() {` },
       to: `    clear_rank_rows();
     UINode* const under = node.search_node(u"rank_sel_underline");
     if (under != nullptr) under->set_visible(true);` },
-    { note: "双人榜标记比较反", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `  lfw().survival_rank_2p = player_count() >= 2;`,
-      to: `  lfw().survival_rank_2p = player_count() < 2;` },
+    { note: "双人榜模式比较反", file: "native/lfw/ui/component/game_prepare_logic.cpp",
+      from: `    return player_count() >= 2 ? std::u16string(lfw::game_mode::kSurvivalRank2P)`,
+      to: `    return player_count() < 2 ? std::u16string(lfw::game_mode::kSurvivalRank2P)` },
     { note: "榜单请求广播名错", file: "native/lfw/ui/component/game_prepare_logic.cpp",
       from: `  lfw().broadcast(Value(kBroadcastRankRequest));`,
       to: `  lfw().broadcast(Value(u"rank_request2"));` },
@@ -687,17 +687,17 @@ void CharMenuHead::quit() {` },
       from: `    const double z = mt->range(far, near_v);`,
       to: `    const double z = mt->range(near_v, far);` },
     { note: "生存页 id 错", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `    lfw().srank_mode = true;
+      from: `                                                  : std::u16string(u"50"));
     if (layer != nullptr) {
       UIPushPageOpts opts;
       opts.id = u"stage_mode_page";`,
-      to: `    lfw().srank_mode = true;
+      to: `                                                  : std::u16string(u"50"));
     if (layer != nullptr) {
       UIPushPageOpts opts;
       opts.id = u"stage_mode_page2";` },
-    { note: "生存不置 srank_mode", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `    lfw().srank_mode = true;`,
-      to: `    lfw().srank_mode = false;` },
+    { note: "开局不写对局模式", file: "native/lfw/ui/component/game_prepare_logic.cpp",
+      from: `  lfw().game_mode_value = mode;`,
+      to: `  lfw().game_mode_value.reset();` },
     { note: "生存关卡 id 取成名字", file: "native/lfw/ui/component/game_prepare_logic.cpp",
       from: `    lfw().change_stage(survival_stage.has_value() ? to_string(field_or(*survival_stage, u"id"))
                                                   : std::u16string(u"50"));`,

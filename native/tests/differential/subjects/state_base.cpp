@@ -17,16 +17,13 @@ namespace {
 
 using lfw::Value;
 using lfw::buff::Buff;
-using lfw::buff::BuffEnv;
 using lfw::state::State_Base;
-using lfw::state::StateEnv;
 using trace::parse_value;
 using trace::render_value;
 using trace::split_ws;
 using trace::to_ascii;
 
 std::vector<std::string> g_log;
-BuffEnv g_benv;
 Buff* g_created = nullptr;
 
 std::string render(const Value& v) { return to_ascii(render_value(v)); }
@@ -145,24 +142,22 @@ std::string state_text() {
 }
 
 void bind() {
-  g_benv.find_entity = [](const std::u16string& id) -> lfw::Entity* {
+  fx::shared_lfw().world_override = &fx::shared_world();
+  fx::shared_world().on_find_entity = [](const std::u16string& id) -> lfw::Entity* {
     FakeEnt* e = find_ent(id);
     return e == nullptr ? nullptr : e;
   };
-  g_benv.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  g_benv.find_data = [](const std::u16string&) -> Value { return Value(); };
-  g_benv.world_buffs_set = [](const std::u16string& id, Buff*) {
+  fx::shared_lfw().on_create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
+  fx::shared_lfw().on_datas_find = [](const std::u16string&) -> Value { return Value(); };
+  fx::shared_world().on_buffs_set = [](const std::u16string& id, Buff*) {
     g_log.push_back("world_buffs_set:" + s_of(id));
   };
-  g_benv.world_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
-  g_benv.create_buff = [](const std::u16string& kind, const std::u16string& id) -> Buff* {
+  fx::shared_world().on_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
+  fx::shared_lfw().on_create_buff = [](const std::u16string& kind, const std::u16string& id) -> Buff* {
     g_log.push_back("create_buff:" + s_of(kind) + ":" + s_of(id));
-    g_created = new lfw::buff::Buff_Healing(&g_benv, id, Value(kind));
+    g_created = new lfw::buff::Buff_Healing(fx::shared_lfw(), id, Value(kind));
     return g_created;
   };
-  StateEnv senv;
-  senv.buff_env = &g_benv;
-  lfw::state::set_state_env(senv);
 }
 
 std::u16string value_text(const Value& v) {

@@ -45,8 +45,7 @@ void apply_buff(const ActionEnv& env, const Value& action, Entity& attacker, Ent
                                                           : static_cast<double>(HitFlag::Enemy);
     if (!bit_and(hf, ally_flag)) return;
   }
-  const buff::BuffEnv* benv = env.buff_env();
-  buff::grant_buff(benv, kind, &attacker, &victim, duration);
+  buff::grant_buff(kind, &attacker, &victim, duration);
 }
 
 }

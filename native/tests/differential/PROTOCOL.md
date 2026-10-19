@@ -4706,7 +4706,8 @@ harness op：
     —— 池大小/oids/prev/槽位/步进全从这里读。
   - `plist`：`plist|<pid>:<is_com>|…`（`players_delete` / COM 弹出的唯一读点）。
   - `srankdata <值>`：直接 `lfw.set_survival_rank_data(v)`（走广播链路）。
-  - `sprobe`：`srank_mode|survival_rank_available|survival_rank_2p`。
+  - `sprobe`：`生存排行模式|survival_rank_available|双人榜`（前两项由
+    `is_survival_rank_mode(lfw.game_mode())` 求值，第三项 `game_mode === survival_rank_2p`）。
   - `wbg`：当前背景 id；`dsrd <键>`：看 dataset（`playrate/difficulty/atom_time`…）。
   - `cprops <nid> <cid> <key> <值>`：给**活动组件**设 props（`cset` 只能切 enabled）。
   - `dgrp <group>`：列出该分组斗士 id（查池顺序/池成员）。

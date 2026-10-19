@@ -329,10 +329,10 @@ class LFW : public IResourcesHost,
   bool __debugging = false;
   bool toy_env = false;
   bool danmu_available = false;
-  bool srank_mode = false;
   std::function<void(double)> on_survival_rank_phase;
   bool srank_available = false;
-  bool survival_rank_2p = false;
+  /** 当前对局模式（TS `game_mode`；准备页选定、对局中生效，未指定为 nullopt） */
+  std::optional<std::u16string> game_mode_value;
   std::u16string survival_rank_period = u"all";
   Value survival_rank_data = Value(NullTag{});
 
@@ -382,7 +382,9 @@ class LFW : public IResourcesHost,
   bool disposed_guard(const std::u16string& fn, std::u16string& error);
 
   Keys* keys();
-  World& world() { return *world_; }
+  // `virtual`：`Buff` 直接读 `lfw.world`（TS 的 `readonly world = lfw.world`）；差分台面的假
+  // `LFW` 要把这一面指到自己的 `TestWorld`（真 `LFW` 返回自己持有的那个世界）。
+  virtual World& world() { return *world_; }
   virtual PlayerInfo* player(const std::u16string& player_id);
   // TS `lfw.players.delete(id)`（移除玩家号；队列表是插入序）。
   void players_delete(const std::u16string& player_id);
@@ -567,7 +569,7 @@ class LFW : public IResourcesHost,
                           std::vector<Entity*>& entities);
   virtual bool dev() const { return dev_mode; }
   virtual void debug(const std::u16string& msg);
-  virtual bool survival_rank_mode() const { return srank_mode; }
+  virtual std::optional<std::u16string> game_mode() const { return game_mode_value; }
   virtual bool survival_rank_available() const { return srank_available; }
   virtual void handle_cmds(World& world);
   virtual void ctrl_come(controller::BaseController& ctrl, double x, double y, double z);

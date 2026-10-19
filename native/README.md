@@ -2492,3 +2492,207 @@ close` 四格 ⇒ 它的中心恒为 `窗口宽 - 4×32 - 16`。悬停（拖拽�
 （`reset_world_dataset` 跳过 `difficulty`）。两条新锚点都 killed。
 
 * 验证：差分 265/265、lint 866 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad。
+
+### 2026-10-19（二十四）：UI 文字描边、实体名、剩余数量
+
+用户报的三条渲染缺口，都在 Godot 宿主这一侧（世界/UI 的**绘制**，不碰核心）：
+
+* **UI 文字描边**。数据里用的是**节点级** `outlineColor` / `outlineWidth` / `outlineAlpha`
+  （cooked `prel/ui/*.json5`：25 处 `outlineWidth: 1`，另有 2/4/5 若干），TS 的
+  `UITextRenderer.update()` 把它们塞进文字材质，着色器按 `outlineWidth` 个**纹理像素**采样四邻域
+  往外扩一圈。端口原来只读 `fill_style`，于是所有描边都丢了。
+  现在 `parse_text` 读三个 outline 字段（另留 `style.stroke_style` / `line_width` 与旧数据的
+  `style.back_style.stroke_style` 两条回退），宽度原样当**逻辑像素**
+  （`outlineWidth: 4` ⇒ 4px；canvas `strokeText` 口径 `line_width / 2`），
+  宿主按八个方向逐半径偏移复制铺描边、最后压填充（见下面「描边基准改正」）。
+* **角色脚下的名字**（TS `EntityNameRender`）。端口从没画过：`TextMesh` 的 plain 模式在 TS 里是
+  白字 + 材质 `mixColor`（`get_team_text_color`）+ 1 世界单位描边（`get_team_outline_color`），
+  位置 `y = ground_y - z/2 - 块高`（在脚下）、`x` 按块宽夹在视口里。
+  现在 `GodotWorldRenderer` 每条实体多发一条 `world_text` 绘制项：锚点交给屏幕系，
+  块宽/高与夹取由宿主按字体度量算（渲染器不碰引擎类型）。
+* **头顶的剩余数量**（TS `EntityStatRender` 的 `x${reserve}`）。同一条 `world_text`，
+  `text_below = false` ⇒ 块中心压在精灵顶边上方半个块高。`reserve` 只由关卡道具给
+  （`StageItemInfo.reserve`，数据里 `stage.stage.json5` 有 3/5/8 若干），所以平时看不到。
+
+补的观测面：`GodotDrawItem` 新增 `stroke_*`（世界/UI 共用）与 `world_text` / `text_below` /
+`has_clamp_x` / `clamp_x0` / `clamp_x1` / `clamp_pad`；`_draw()` 里文字项走
+`draw_text_item` → `draw_text_run`（描边 + 填充）/ `draw_world_text_item`（世界锚点）。
+
+**描边基准改正**（用户："你的描边大小基准大小不对"）。两处：
+
+* 宽度口径：`outlineWidth` 是**逻辑像素**，不再除 `style.scale`
+  （缺省 2 ⇒ 早先的描边只有一半粗；DEMO 的 `outlineWidth: 4` 现在就是 4px）。
+* 画法：Godot 的 `draw_string_outline(size)` **不随 size 线性变粗** —— 实测 24px 字形上
+  size 4 / 8 / 16 只出约 1 / 2 / 2px 的带，撑不出 4px。改成自己做偏移复制：
+  半径 1..n，每个半径八个方向各画一遍描边色，再压填充；边缘 alpha 跟字形走。
+  每行最多 `8n + 1` 次 `draw_string`，`demo_mode_page` 600 帧仍是 60 ups。
+
+验证（截图 + 摘要，都是渲染侧，**世界摘要逐位不变**）：
+`--ui-page demo_mode_page` 的 "DEMO" 现在有 `#005A8E` 描边（扫描线量得 4px）、八个角色脚下
+都有队伍色的名字；`--ui-page stage_mode_page --stage 21` 的 STAGE 3-2 标题与角色名同样带描边。
+摘要：`--ui-page main_page` 2400 帧 `b3f9a34a67597b08`、`--stage 1` 900 帧 `4c5ef7aa63c97056`、
+300 帧 `b18b9d0d7892aef5`（与上一刀一致）；差分 265/265、lint 866 clean / 0 failed / 14 warnings、
+anchors 9773 ok / 0 bad。
+
+仍缺（TS 有、端口没画，另行处理）：`EntityStatRender` 的六条小血条（`Bar`）、UI 文字的
+下划线（`underline_color` / `underline_width`，`demo_play_link` 用到）、文字阴影。
+
+### 2026-10-19（二十五）：跟上游 `LFW 改用 GameMode 枚举`
+
+上游 `be59a6aff` 把 `lfw.survival_rank_mode` / `lfw.survival_rank_2p` 两个布尔换成一个
+`GameMode` 字符串枚举（`vs` / `stage` / `survival_rank_1p` / `survival_rank_2p`），
+"是不是生存排行"改由 `is_survival_rank_mode(mode)` 判。
+
+* 新头 `native/lfw/defines/game_mode.h`：`game_mode::kVs|kStage|kSurvivalRank1P|kSurvivalRank2P`
+  + `game_mode_entries()` + `is_survival_rank_mode(const std::optional<std::u16string>&)`。
+* `LFW`：字段 `srank_mode` / `survival_rank_2p` 删掉，换成
+  `std::optional<std::u16string> game_mode_value`（TS 的 `game_mode?`）与缝
+  `virtual std::optional<std::u16string> game_mode() const`。
+  `virtual bool survival_rank_mode() const` 一并删掉（TS 没有这条了），
+  `Entity::update_catching` 与 `E_Val.IsSurvialRankMode` 改读
+  `is_survival_rank_mode(lfw().game_mode())`。
+* `GamePrepareLogic`：原来的 `game_mode()`（读 `props.game_mode` 串）改名 `props_game_mode()`，
+  新增 `std::u16string game_mode()` = TS 的 `get game_mode()`（props 模式 → GameMode；
+  生存按玩家数分 1P/2P）。`on_resume()` 开头 `lfw().game_mode_value = game_mode()`、
+  `start_game()` 里 `lfw().game_mode_value = mode`（替代 `srank_mode=false/true` 两次写），
+  `refresh_survival_rank()` 删掉 `survival_rank_2p` 那句。
+* `StageModeLogic`：三处 `lfw().srank_mode` 改 `is_survival_rank_mode(lfw().game_mode())`；
+  `on_stop()` 改 `lfw().game_mode_value.reset()`。
+* 台面 `subjects/{lfw,world,entity,world_fixture}` 与 `mutations/{lfw_char_menu,entity,get_val}`
+  跟着改（`sprobe`/`srank` 的口径同 TS：`is_survival_rank_mode(game_mode())` 与
+  `game_mode() == kSurvivalRank2P`）。
+
+### 2026-10-19（二十六）：两个跟着查出来的功能缺陷
+
+用户报的 4 条里，这两条的根因都在"端口留了空壳"：
+
+* **Louis 不能 D>J→LouisEX**（有动作但不变身）。`datas/make_weapon_data` 之外，变身走的是
+  `CharacterState_TransformToLouisEX::enter` → `e.lfw.datas.find_fighter("50")`；
+  端口 `Entity::datas_find_fighter` 一直是**返回空值**的占位（注释写着"留给后续刀"）⇒
+  帧 319 的 `state: 9995` 进去以后什么也没发生。现在接到
+  `LFW::datas_fighters_find`（`datas_->find_fighter(oid)`）。
+* **牛奶/啤酒喝完脱落、落地不碎**。`CharacterState_Drink` 收尾那五句 TS 写的是
+  **drop 之前捕获的局部 `holding`** 引用；端口照抄成了 `e.holding_set_*` / `e.holding_mt_*`，
+  而 `drop_holding()` 刚把 `this->holding` 清成 `nullptr` ⇒ 五句全是空操作
+  （瓶子既没被压成 `hp=1`，也没拿到抛出速度）。更糟的是 `holding_mt_range` 当时是
+  返回空 `Value` 的空壳 ⇒ `vx = to_number(undefined)/2 = NaN`，瓶子位置直接变成 NaN。
+  现在：`Entity::holding_mt_mark/range` 落到真 `MersenneTwister`；状态层先抓
+  `Entity* const held = e.holding;` 再做 `held->set_hp_r/set_hp/set_velocity`。
+  瓶子于是 `hp=1`、按 `(vx, 6, 0)` 抛出，落地时 `weapon_drop_hurt: 35` 把它打到 0
+  ⇒ `set_hp` 的 `brokens` / `on_dead` 那一段触发，碎掉。
+  差分台面 `burning_drink` 的被持有物改成独立的 `FakeHeld`（TS 那边它本来就是个独立对象）。
+
+### 2026-10-19（二十七）：buff 的「跨世界缓存」与崩溃定位辅助
+
+用户报的 DvJ 崩溃给了一份只有偏移的 Godot 回溯（`lfw_godot.dll+<偏移>`，no debug info）。
+为此给 `lfw_godot` 加了链接 map（`/MAP`，产物 `native/build/godot/host/godot/lfw_godot.map`），
+按偏移就能查回函数。
+
+拿那份回溯对照 map，落点在 `World::step` → `Entity::update_catching` / `Entity::set_hp` /
+`Entity::spawn` 一带，栈顶在 `buff::Buff::show_effect`（两边构建差 1~2KB，函数边界有漂移，
+只能算近似）。顺这条栈查出一个**真实的悬垂风险**并先修掉：
+
+* `Buff` 是**池化复用**的（`Factory::recycle_buff` → 下一次 `create_buff`），而
+  `_effects` 存的是**裸 `Entity*`**、`_victims` 存的是上一局的实体 id。原样跨世界复用
+  ⇒ `show_effect` / `clear_effects` 会去解引用上一个世界的实体（World 稳定时只是「动错对象」，
+  World 重建时就是野指针）。
+  现在 `Buff::set_env(env)` 一旦发现宿主换了就 `drop_cached_refs()`（清 `_effects` /
+  `_victims` / `_attacker` / `_effect_data`），`show_effect` / `update_effects` 再补
+  `_env`、`victim` 的空判，`reset()` 的挂载位清理也补 `_env` 空判。
+
+验证：差分 265/265（含 `buff` / `buff_healing` / `burning_drink`）、lint 867 clean /
+0 failed / 14 warnings、anchors 9773 ok / 0 bad；`lfw_char_menu` 变异 170 killed / 0 survived。
+
+### 2026-10-19（二十八）：`BuffEnv` 退役 —— buff 直接持 `LFW` / `World`
+
+用户问「`BuffEnv` 为什么不直接用 `LFW`/`World`（运行时）」。答：运行时本来就只用真对象，
+那个 env 是**早期** `LFW`/`World` 还没移植时给差分台面留的六函数缝（`find_entity` /
+`create_entity` / `find_data` / `world_buffs_set/get` / `create_buff`）。TS 的
+`class Buff { readonly lfw: LFW; readonly world: World; constructor(lfw, id, kind) }`
+（`src/LFW/buff/Buff.ts:13,47-51`）—— 直接收 `lfw`、自己记 `world = lfw.world`；
+`grant_buff` 更是从 **victim** 上解构 `{ lfw, world }`，根本没有 env 参数。
+
+改动：
+
+* `buff::Buff`：`BuffEnv` 删除；构造改 `Buff(LFW& lfw, id, kind)`，成员 `LFW* _lfw` +
+  `World* _world`（`lfw()` / `world()` 两个取值器）。六条调用改成
+  `_world->find_entity` / `_lfw->datas_find` / `_lfw->create_entity(*_world, …)` /
+  `_world->buffs_set|buffs_get` / `_lfw->create_buff`。
+* `World` 新增 `virtual void buffs_set(id, Buff*)` / `virtual Buff* buffs_get(id) const`
+  （TS 的 `world.buffs` 是个 `Map`；端口是 `std::vector<pair>`，收成两个方法）。
+* `grant_buff(kind, attacker, victim, duration = 0)`（去掉 env 参数），内部
+  `LFW& lfw = victim->lfw(); World& world = victim->world();`，与 TS 逐字对应。
+* 四处缝字段一起删掉：`StateEnv::buff_env`、`Handlers2Env::buff_env`、`ActionEnv::buff_env`、
+  `HealingEnv::buff_env`；`StateEnv` 因此**空掉**，连 `state_env()` / `set_state_env()`
+  一并删除（`WorldCollisionHost::bind_buff_env` 整块消失）。
+* `Factory::create_buff` 取到池里的实例后 `rebind_lfw(*lfw)`：换主人就丢掉上一局的
+  `_effects`/`_victims`（裸 `Entity*` 与旧 id）。
+* `LFW::world()` 改 `virtual`（真实现仍返回自己那个世界）——差分台面的假 `LFW` 需要把这一面
+  指到 `TestWorld`（`world_override`），否则 `Buff` 会绑到真 `LFW` 内部那个空世界。
+
+台面：`fx::FakeLfw` 新增 `on_datas_find` / `on_create_entity` / `on_create_buff` 三个钩子，
+`fx::TestWorld` 新增 `on_buffs_set` / `on_buffs_get`（都缺省走真实现）；buff 真正
+`mount` 的 11 个 subject 在 `bind()` 里把 `world_override` 指向 `shared_world()`。
+原来那些 `BuffEnv g_benv` / `static BuffEnv keep` 的赋值逐条换成钩子（日志字符串不变）。
+
+验证：差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad；
+三条运行时摘要逐位不变（`b3f9a34a67597b08` / `4c5ef7aa63c97056` / `b18b9d0d7892aef5`）；
+`collision_healing` 变异 11 killed / 0 survived。
+
+### 2026-10-19（二十九）：`buff.h` 的 `set_mark` / `del_mark` 自由函数删除
+
+用户问「`set_mark` / `del_mark` 还有用吗」。它们是**早期副本**：TS 一开始就把这两个做成
+`Entity` 的成员方法（`src/LFW/entity/Entity.ts:2629-2641`），端口 `Entity` 还没移植时先在
+`buff/buff.h` 里写了两个自由函数顶上，后来 `Entity::set_mark/del_mark` 上收了、这两个就一直
+没人删（只剩 4 个 buff 子类的 8 处调用）。
+现在 4 个 `mount()/unmount()` 改成 `victim->set_mark(std::u16string(KIND), id())` /
+`victim->del_mark(...)`（与 TS 逐字同形），自由函数删掉。
+
+顺带修了一个被它掩盖的缺陷：`Entity::set_mark/del_mark` 原先**直接写 `marks` 成员**，而
+`marks_get/marks_set/marks_delete` 是虚的（台面靠它们观测）⇒ 差分台面的假实体走成员方法时
+marks 会写丢。现在成员方法也走那三个虚存取器，与 TS 的 `this.marks.get/set/delete` 一一对应。
+
+验证：差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9769 ok / 0 bad
+（`buff.h` 上那 4 条锚点随自由函数一起删；`Entity::set_mark/del_mark` 的语义变异在
+`entity.mjs`）。
+
+### 2026-10-19（三十）：设置页输入不了玩家名 —— 补上文本输入覆盖层
+
+用户报「设置页面未能输入玩家名称」。真因不在组件：Web 版那张「输入框」是
+`UINodeRenderer.on_resume()` 里 `document.createElement('input')` 出来的**真 DOM 节点**
+（`#text_input`，`.ui_node_style input`：透明底/无边框/继承字体/`text-align:center`），
+`onchange → text_input.text`、`onfocus/onblur → node.focused`；Godot 宿主**一层 DOM 都没有**
+⇒ 那个 `PlayerNameInput` 节点只有模型，屏幕上看得到、点不进、敲不了。
+
+改动（只动宿主，`native/host/godot/**`）：
+
+* `GodotWorldRenderer` 新增 `GodotTextInputBox`（节点 + 组件 + 方框 + 字号 + `style.font`
+  原文 + 文字色），`GodotUINodeRenderer::collect_text_input()` 每帧往 `ui_text_inputs()`
+  里收集（`render()` 清零）。
+* `LfwGodot::sync_text_input()`：每个 step 之后按最后一个方框摆一个真的 `LineEdit`
+  （`memnew`，`Node2D` 的子节点）——三态 `StyleBoxEmpty`、字号按逻辑→画布的 y 缩放取整、
+  `font_color/caret_color` 取节点文字色、**恒居中**（CSS 那条 `input` 规则本来就不看
+  `text_align`）、无文字样式时用 `.ui_node_style` 的 12px；`maxLength` 交给
+  `set_max_length`。文本/焦点两个方向都是**每帧轮询**（等价 `onchange` / `onfocus` /
+  `onblur`），页面一走就拆（等价 `release_dom()`）。
+* 点到框外放焦点：`_input()` 在换成逻辑像素**之前**（还是画布像素，与控件同一套）判一次。
+* 新增 `--text-input <text>[@<frame>]`：`--key` 到不了引擎控件，所以这条口子直接
+  `grab_focus()` + `insert_text_at_caret(...)`（**插入**才让 `maxLength` 生效），`+2` 帧
+  `release_focus()`，`+4` 帧打 `[godot] text-input done: overlay=1 rect=… shown=… comp=…
+  players=…`。`focus=` 报的是打字前控件有没有焦点 ⇒ 配 `--click-window` 就能验"真鼠标点进框"。
+* `--ui-page` / `--key` 之外的用法说明也补进 `usage()`。
+
+⚠ 一个坑记下来：`collect_text_input()` 里**不能**用 `dynamic_cast` 拿组件（核心库是
+`/GR-`）——实测对 `ui::UIComponent` 做 `dynamic_cast` 直接抛 `__non_rtti_object`，进程退出码
+`0xE06D7363`。`find_component()` 已经按 `is_class` 筛过类，`static_cast` 就够。
+
+验证：
+
+* 差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9769 ok / 0 bad；
+* 三条运行时摘要与 `lfw_run` **逐位一致**（`b12e08c00a6e087f` / `9f6ac38ad7b78427` /
+  `c16f58977ff42360`）——这一刀不碰核心；
+* 四条链路实测（`--ui-page settings_ctrl`）：`AB12` → `comp=AB12`、`players=4:AB12`；
+  16 字被 `maxLength` 截成 10；`--click-window 471,13@50` 后 `focus=1`（真鼠标给了焦点）；
+  再点框外 `focus=0`（`onblur` 存盘）；真流程 `--ui-page settings --click 505,42@20`
+  （设置页 → 控制设置 tab）覆盖层落在 `(550,70 106x16)`，打字/存盘同上。
+* 截图 `temp/shot_settings_real.png`：名字框在第四列键盘上方、白字居中，其余画面不变。

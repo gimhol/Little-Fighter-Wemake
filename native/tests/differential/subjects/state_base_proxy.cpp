@@ -21,7 +21,6 @@ using lfw::Array;
 using lfw::Object;
 using lfw::Value;
 using lfw::buff::Buff;
-using lfw::buff::BuffEnv;
 using lfw::state::State_Base;
 using lfw::state::State_15;
 using lfw::state::State_Frozen;
@@ -198,19 +197,13 @@ std::string state_text() {
 }
 
 void bind() {
-  static BuffEnv keep;
-  keep.find_entity = [](const std::u16string&) -> lfw::Entity* { return nullptr; };
-  keep.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  keep.find_data = [](const std::u16string&) -> Value { return Value(); };
-  keep.world_buffs_set = [](const std::u16string&, Buff*) {};
-  keep.world_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
-  keep.create_buff = [](const std::u16string& kind, const std::u16string& id) -> Buff* {
+  g_lfw.world_override = &test_world();
+  // `State_Base::leave` 的 HealSelf 分支会 `grant_buff` ⇒ `world.buffs_get` miss 后走
+  // `lfw.create_buff`；台面把这条路打成一行（TS 的 `lfw.factory.create_buff` 同款）。
+  g_lfw.on_create_buff = [](const std::u16string& kind, const std::u16string& id) {
     g_log.push_back("create_buff:" + s_of(kind) + ":" + s_of(id));
-    return nullptr;
+    return static_cast<Buff*>(nullptr);
   };
-  lfw::state::StateEnv senv;
-  senv.buff_env = &keep;
-  lfw::state::set_state_env(senv);
 }
 
 std::u16string value_text(const Value& v) {

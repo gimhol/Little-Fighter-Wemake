@@ -12,8 +12,6 @@ namespace lfw {
 namespace state {
 namespace {
 
-StateEnv g_env;
-
 constexpr double kMinV = 0.5;
 constexpr double kStateHealSelfHp = 104;
 
@@ -36,10 +34,6 @@ double clamp_velocity(double v) {
 
 }
 
-const StateEnv& state_env() { return g_env; }
-
-void set_state_env(const StateEnv& env) { g_env = env; }
-
 void State_Base::update(Entity& e) { (void)e; }
 
 void State_Base::leave(Entity& e, const Value& next_frame) {
@@ -51,7 +45,7 @@ void State_Base::leave(Entity& e, const Value& next_frame) {
   Entity* const victim = &e;
   const double duration =
       victim == nullptr ? 0.0 : buff::Buff_Healing::duration_of(*victim, kStateHealSelfHp);
-  buff::grant_buff(g_env.buff_env, buff::Buff_Healing::KIND, nullptr, victim, duration);
+  buff::grant_buff(buff::Buff_Healing::KIND, nullptr, victim, duration);
 }
 
 void State_Base::on_restrict(Entity& e, double x, double y, double z) {

@@ -7,6 +7,7 @@
 #include "lfw/defines/defines.h"
 #include "lfw/defines/defines_data.h"
 #include "lfw/defines/facing_flag.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/defines/oid.h"
 #include "lfw/defines/team_enum.h"
 #include "lfw/entity/entity.h"
@@ -166,11 +167,21 @@ BackgroundSwitcher* GamePrepareLogic::bg_switcher() {
              : nullptr;
 }
 
-std::optional<std::u16string> GamePrepareLogic::game_mode() {
+std::optional<std::u16string> GamePrepareLogic::props_game_mode() {
   if (!ensure_props()) return std::nullopt;
   const Value v = props_holder.prop_value(u"game_mode");
   if (is_nullish(v)) return std::nullopt;
   return to_string(v);
+}
+
+std::u16string GamePrepareLogic::game_mode() {
+  const std::optional<std::u16string> mode = props_game_mode();
+  if (mode.has_value() && *mode == kGameModeSurvival) {
+    return player_count() >= 2 ? std::u16string(lfw::game_mode::kSurvivalRank2P)
+                               : std::u16string(lfw::game_mode::kSurvivalRank1P);
+  }
+  if (mode.has_value() && *mode == kGameModeStage) return lfw::game_mode::kStage;
+  return lfw::game_mode::kVs;
 }
 
 double GamePrepareLogic::player_count() {
@@ -181,8 +192,7 @@ double GamePrepareLogic::player_count() {
 }
 
 bool GamePrepareLogic::auto_start_when_ready() {
-  const std::optional<std::u16string> mode = game_mode();
-  return mode.has_value() && *mode == kGameModeSurvival;
+  return is_survival_rank_mode(game_mode());
 }
 
 void GamePrepareLogic::subscribe_lfw() {
@@ -215,8 +225,7 @@ void GamePrepareLogic::subscribe_lfw() {
       }));
   _removers.push_back(
       lfw().callbacks.on(u"on_survival_rank_changed", [this](const LfwCallbacks::Payloads& p) {
-        const std::optional<std::u16string> mode = game_mode();
-        if (!mode.has_value() || *mode != kGameModeSurvival) return;
+        if (!is_survival_rank_mode(game_mode())) return;
         const Value data = p.empty() ? Value() : p[0].value;
         if (!truthy(data)) {
           _rank_entries.clear();
@@ -259,6 +268,7 @@ void GamePrepareLogic::on_start() {
 }
 
 void GamePrepareLogic::on_resume() {
+  lfw().game_mode_value = game_mode();
   UINode* const background_row = node.search_node(u"background_row");
   UINode* const stage_row = node.search_node(u"stage_row");
   UIComponent* const c = node.search_component(CharMenuLogic::class_tag());
@@ -266,8 +276,7 @@ void GamePrepareLogic::on_resume() {
       c != nullptr && is_class(c->clazz(), CharMenuLogic::class_tag())
           ? static_cast<CharMenuLogic*>(c)
           : nullptr;
-  const std::optional<std::u16string> mode = game_mode();
-  if (mode.has_value() && *mode == kGameModeSurvival) {
+  if (is_survival_rank_mode(game_mode())) {
     if (background_row != nullptr) {
       background_row->set_visible(false);
       background_row->set_disabled(true);
@@ -283,7 +292,7 @@ void GamePrepareLogic::on_resume() {
       char_menu_logic->set_oids(std::vector<std::u16string>(
           oid::survival_rank_oids().begin(), oid::survival_rank_oids().end()));
     }
-  } else if (mode.has_value() && *mode == kGameModeStage) {
+  } else if (game_mode() == lfw::game_mode::kStage) {
     if (stage_row != nullptr) {
       stage_row->set_visible(true);
       stage_row->set_disabled(false);
@@ -315,8 +324,7 @@ void GamePrepareLogic::on_resume() {
 
 void GamePrepareLogic::update(double dt) {
   (void)dt;
-  const std::optional<std::u16string> mode = game_mode();
-  if (mode.has_value() && *mode == kGameModeSurvival) refresh_selection_face();
+  if (is_survival_rank_mode(game_mode())) refresh_selection_face();
 }
 
 void GamePrepareLogic::refresh_selection_face() {
@@ -388,8 +396,7 @@ void GamePrepareLogic::layout_rank_rows() {
 }
 
 void GamePrepareLogic::refresh_survival_rank() {
-  const std::optional<std::u16string> mode = game_mode();
-  if (!mode.has_value() || *mode != kGameModeSurvival) return;
+  if (!is_survival_rank_mode(game_mode())) return;
   layout_rank_rows();
   UINode* const title = node.search_node(u"survival_rank_title");
   UINode* const tabs = node.search_node(u"rank_period_tabs");
@@ -417,7 +424,6 @@ void GamePrepareLogic::refresh_survival_rank() {
   else clear_rank_rows();
   // 请求外部(宿主 App)按当前周期拉取最新数据；数据到达后经 on_survival_rank_changed 更新本页
   lfw().survival_rank_period = rank_period;
-  lfw().survival_rank_2p = player_count() >= 2;
   lfw().broadcast(Value(kBroadcastRankRequest));
 }
 
@@ -582,8 +588,8 @@ void GamePrepareLogic::start_game() {
 
   StageSwitcher* const stage_sw = stage_switcher();
   BackgroundSwitcher* const bg_sw = bg_switcher();
-  const std::optional<std::u16string> mode = game_mode();
-  const bool is_survival_rank = mode.has_value() && *mode == kGameModeSurvival;
+  const std::u16string mode = game_mode();
+  const bool is_survival_rank = is_survival_rank_mode(mode);
   if (is_survival_rank) reset_world_dataset();
   std::optional<Value> survival_stage;
   if (is_survival_rank) {
@@ -628,11 +634,10 @@ void GamePrepareLogic::start_game() {
   const double near_v = bg->near_plane();
   const double left = bg->left();
   const double right = bg->right();
-  const bool is_stage_mode =
-      is_survival_rank || (mode.has_value() && *mode == kGameModeStage);
-  const bool is_vs_mode = mode.has_value() && *mode == kGameModeVs;
+  const bool is_stage_mode = is_survival_rank || mode == lfw::game_mode::kStage;
+  const bool is_vs_mode = mode == lfw::game_mode::kVs;
 
-  lfw().srank_mode = false;
+  lfw().game_mode_value = mode;
   MersenneTwister* const mt = lfw().mt();
   mt->mark = u"gpl_start_game_cam_x";
   const double cam_x =
@@ -698,7 +703,6 @@ void GamePrepareLogic::start_game() {
   if (is_survival_rank) {
     lfw().change_stage(survival_stage.has_value() ? to_string(field_or(*survival_stage, u"id"))
                                                   : std::u16string(u"50"));
-    lfw().srank_mode = true;
     if (layer != nullptr) {
       UIPushPageOpts opts;
       opts.id = u"stage_mode_page";

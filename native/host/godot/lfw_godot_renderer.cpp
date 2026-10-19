@@ -18,8 +18,10 @@
 #include "host/headless_host.h"
 #include "lfw/bg/background.h"
 #include "lfw/bg/layer.h"
+#include "lfw/base/team_color.h"
 #include "lfw/camera.h"
 #include "lfw/core/value.h"
+#include "lfw/core/js_string.h"
 #include "lfw/defines/state_enum.h"
 #include "lfw/entity/entity.h"
 #include "lfw/loader/get_import_fallbacks.h"
@@ -612,6 +614,56 @@ void GodotWorldRenderer::emit_sprite(GodotFrame& frame, const Entity& e, const V
   frame.items.push_back(std::move(it));
 }
 
+// 世界空间的一行文字：实体名字（`EntityNameRender`）与剩余数量（`EntityStatRender` 的 `xN`）。
+//
+// TS 那边是 `TextMesh` 的 **plain 模式**：画布按 4 倍超采样画白字，网格缩到「文字块」尺寸，
+// 颜色靠材质的 `mixColor`（队伍文字色）、描边靠材质的 `outlineWidth = TEXT_SUPERSAMPLE` 个
+// 超采样 texel（折回 1 逻辑单位）+ `outlineColor`（队伍描边色）。这里把字号按 `scale_y` 折成
+// 屏幕像素、把队伍两色交给宿主（描边宽度 1 世界单位 ⇒ `max(1, scale_y)` 屏幕像素）。
+void GodotWorldRenderer::emit_world_text(GodotFrame& frame, const Entity& e, double world_x,
+                                         double anchor_world_y, bool below,
+                                         const std::string& text, bool clamp_x) {
+  if (text.empty()) return;
+  GodotDrawItem it;
+  it.pass = 0;
+  it.kind = "text";
+  it.tag = to_utf8(e.id);
+  it.text = text;
+  it.world_text = true;
+  it.text_below = below;
+  // `TextMesh` 的 `DEFAULT_FONT_SIZE = 9`（世界单位）⇒ 屏幕字号 = 9 × 缩放。
+  it.font_size = 9.0 * std::fabs(frame.scale_y);
+  it.x = frame.tx + frame.scale_x * (world_x - frame.cam_x);
+  it.y = frame.screen_h - frame.ty - frame.scale_y * (anchor_world_y - frame.cam_y);
+  const std::u16string team = e.team();
+  double cr = 1, cg = 1, cb = 1, ca = 1;
+  if (parse_color(Value(get_team_text_color(team)), cr, cg, cb, ca)) {
+    it.r = cr;
+    it.g = cg;
+    it.b = cb;
+    it.a = ca;
+  }
+  if (parse_color(Value(get_team_outline_color(team)), cr, cg, cb, ca) && ca > 0.0) {
+    it.stroke_r = cr;
+    it.stroke_g = cg;
+    it.stroke_b = cb;
+    it.stroke_a = ca;
+    // plain 模式的材质描边：`strokeStyle` 把 `outlineWidth` 设成 `TEXT_SUPERSAMPLE`（4）个
+    // 超采样 texel，画布是 4 倍 ⇒ 环的距离正好 1 个世界单位（屏幕 `scale_y` 像素）。
+    it.stroke_w = std::fabs(frame.scale_y);
+  }
+  if (clamp_x) {
+    // TS：`hw = (mesh.scale.x + 10) / 2`，`x = clamp(px, cam_x + hw, cam_x + screen_w/scale_x - hw)`。
+    // 换成屏幕系就是 `hw_px = 块宽/2 + 5 * scale_x`，夹在 `[tx + hw_px, tx + screen_w - hw_px]`
+    // —— 块宽只有宿主量得出来，所以这里只给夹取区间与那 5 个单位。
+    it.has_clamp_x = true;
+    it.clamp_x0 = frame.tx;
+    it.clamp_x1 = frame.tx + frame.screen_w;
+    it.clamp_pad = 5.0 * std::fabs(frame.scale_x);
+  }
+  frame.items.push_back(std::move(it));
+}
+
 void GodotWorldRenderer::emit_entity_shadow(const World& world, GodotFrame& frame,
                                             const Entity& e, const Live& live) {
   const Background* const bg = world.bg();
@@ -791,6 +843,7 @@ void GodotWorldRenderer::render(double dt) {
   ++_render_count;
   _ui_stats = GodotUIStats{};
   _ui_dump_lines.clear();
+  _ui_text_inputs.clear();
   // `BgLayerRender.render(dt)` 是 `offsetX += dt/1000*offsetAnimX`（**dt 是毫秒**；
   // 端口的 `render(dt)` 收到的正是 `step_ms`）⇒ 这里积**秒**。
   if (dt > 0.0) _uv_time += dt / 1000.0;
@@ -954,74 +1007,94 @@ void GodotWorldRenderer::render(double dt) {
     const double blinking = e.blinking();
     const bool visible = !gone && e.invisible() <= 0.0 &&
                          !(blinking > 0.0 && std::fmod(std::floor(blinking / 4.0), 2.0) != 0.0);
-    if (!visible) {
-      ++frame.hidden_entities;
-      continue;
-    }
-    // 锚点：TS `facing === 1 ? -centerx : centerx - width`；抖动是同一条公式上的水平偏移。
-    const Value top = e.frame;
-    const double centerx = num_or(top, u"centerx");
-    const double centery = num_or(top, u"centery");
-    const double width = num_or(top, u"width");
-    const double shaking = num_at(e.shaking);
-    const double shaking_x =
-        shaking > 0.0 ? e.facing * (std::fmod(std::floor(shaking / 2.0), 2.0) != 0.0 ? 1.0 : -1.0)
-                      : 0.0;
-    const double base_anchor_x = e.facing == 1.0 ? -centerx : centerx - width;
-    const Value pic = lfw::field_or(top, u"pic");
-    int drawn = 0;
-    bool had_tex = false;
-    if (!std::holds_alternative<std::monostate>(pic) &&
-        !std::holds_alternative<NullTag>(pic)) {
-      const std::string tex = str_or(lfw::field_or(pic, u"tex"), "");
-      if (!tex.empty()) {
-        had_tex = true;
-        const Resolved& res = resolve_key(e, tex, e.variant);
-        emit_sprite(frame, e, pic, live->rx, live->ry, base_anchor_x + shaking_x, centery, res,
-                    "entity");
-        ++drawn;
+    if (visible) {
+      // 锚点：TS `facing === 1 ? -centerx : centerx - width`；抖动是同一条公式上的水平偏移。
+      const Value top = e.frame;
+      const double centerx = num_or(top, u"centerx");
+      const double centery = num_or(top, u"centery");
+      const double width = num_or(top, u"width");
+      const double shaking = num_at(e.shaking);
+      const double shaking_x =
+          shaking > 0.0 ? e.facing * (std::fmod(std::floor(shaking / 2.0), 2.0) != 0.0 ? 1.0 : -1.0)
+                        : 0.0;
+      const double base_anchor_x = e.facing == 1.0 ? -centerx : centerx - width;
+      const Value pic = lfw::field_or(top, u"pic");
+      int drawn = 0;
+      bool had_tex = false;
+      if (!std::holds_alternative<std::monostate>(pic) &&
+          !std::holds_alternative<NullTag>(pic)) {
+        const std::string tex = str_or(lfw::field_or(pic, u"tex"), "");
+        if (!tex.empty()) {
+          had_tex = true;
+          const Resolved& res = resolve_key(e, tex, e.variant);
+          emit_sprite(frame, e, pic, live->rx, live->ry, base_anchor_x + shaking_x, centery, res,
+                      "entity");
+          ++drawn;
+        }
       }
-    }
-    const Value pics_v = lfw::field_or(top, u"pics");
-    if (const Array* const pics = lfw::as_array(pics_v)) {
-      for (std::size_t i = 0; i < pics->size(); ++i) {
-        const Value& one = pics->at(i);
-        const std::string tex = str_or(lfw::field_or(one, u"tex"), "");
-        if (tex.empty()) continue;
-        const double pw = num_or(one, u"w");
-        // 每层可用 `cx/cy` 覆盖锚点（TS `EntityMainRender.render` 的 `pics` 循环）。
-        const Value cx_v = lfw::field_or(one, u"cx");
-        const double anchor_x =
-            (std::holds_alternative<std::monostate>(cx_v) ||
-             std::holds_alternative<NullTag>(cx_v))
-                ? base_anchor_x
-                : (e.facing == 1.0 ? -num_at(cx_v) : num_at(cx_v) - pw);
-        const Value cy_v = lfw::field_or(one, u"cy");
-        const double anchor_y =
-            (std::holds_alternative<std::monostate>(cy_v) ||
-             std::holds_alternative<NullTag>(cy_v))
-                ? centery
-                : num_at(cy_v);
-        const Resolved& res = resolve_key(e, tex, e.variant);
-        emit_sprite(frame, e, one, live->rx, live->ry, anchor_x + shaking_x, anchor_y, res,
-                    "entity");
-        ++drawn;
+      const Value pics_v = lfw::field_or(top, u"pics");
+      if (const Array* const pics = lfw::as_array(pics_v)) {
+        for (std::size_t i = 0; i < pics->size(); ++i) {
+          const Value& one = pics->at(i);
+          const std::string tex = str_or(lfw::field_or(one, u"tex"), "");
+          if (tex.empty()) continue;
+          const double pw = num_or(one, u"w");
+          // 每层可用 `cx/cy` 覆盖锚点（TS `EntityMainRender.render` 的 `pics` 循环）。
+          const Value cx_v = lfw::field_or(one, u"cx");
+          const double anchor_x =
+              (std::holds_alternative<std::monostate>(cx_v) ||
+               std::holds_alternative<NullTag>(cx_v))
+                  ? base_anchor_x
+                  : (e.facing == 1.0 ? -num_at(cx_v) : num_at(cx_v) - pw);
+          const Value cy_v = lfw::field_or(one, u"cy");
+          const double anchor_y =
+              (std::holds_alternative<std::monostate>(cy_v) ||
+               std::holds_alternative<NullTag>(cy_v))
+                  ? centery
+                  : num_at(cy_v);
+          const Resolved& res = resolve_key(e, tex, e.variant);
+          emit_sprite(frame, e, one, live->rx, live->ry, anchor_x + shaking_x, anchor_y, res,
+                      "entity");
+          ++drawn;
+        }
       }
-    }
-    if (drawn > 0) {
-      ++frame.drawn_entities;
-    } else if (had_tex) {
-      ++frame.no_file_entities;  // 有素材键但没解出文件（素材表里没这个键 / 包里没这张图）
-    } else if (!missing(lfw::field_or(top, u"model"))) {
-      // 只有 3D 模型帧（书类武器就是这样）：不算"没有 2D 精灵"，模型项在下面单独出。
-      ++frame.drawn_entities;
+      if (drawn > 0) {
+        ++frame.drawn_entities;
+      } else if (had_tex) {
+        ++frame.no_file_entities;  // 有素材键但没解出文件（素材表里没这个键 / 包里没这张图）
+      } else if (!missing(lfw::field_or(top, u"model"))) {
+        // 只有 3D 模型帧（书类武器就是这样）：不算"没有 2D 精灵"，模型项在下面单独出。
+        ++frame.drawn_entities;
+      } else {
+        ++frame.no_pic_entities;  // 这一帧根本没有 2D 精灵（例如纯 3D 模型帧）
+      }
+      // `frame.model`：与 2D 精灵**共存**（TS 的 `frame` 可以同时有 `pic` 和 `model`）。
+      const Value model_v = lfw::field_or(top, u"model");
+      if (!missing(model_v)) {
+        emit_model(frame, e, model_v, live->rx, live->ry, shaking_x);
+      }
     } else {
-      ++frame.no_pic_entities;  // 这一帧根本没有 2D 精灵（例如纯 3D 模型帧）
+      ++frame.hidden_entities;
     }
-    // `frame.model`：与 2D 精灵**共存**（TS 的 `frame` 可以同时有 `pic` 和 `model`）。
-    const Value model_v = lfw::field_or(top, u"model");
-    if (!missing(model_v)) {
-      emit_model(frame, e, model_v, live->rx, live->ry, shaking_x);
+    // ---- 名字（`EntityNameRender`）与剩余数量（`EntityStatRender` 的 `xN`）----
+    // ⚠ 两条都只按 `invisible` 取舍（TS 里它们是**独立**的 mesh，不吃实体那条闪烁/`gone` 的
+    // 可见性判断）⇒ 放在 `visible` 之外，否则受击闪烁时名字会跟着闪。
+    if (e.invisible() > 0.0) continue;
+    const double entity_centery = num_or(e.frame, u"centery");
+    const Value name_v = e.name();
+    const std::string name_s =
+        std::holds_alternative<std::u16string>(name_v) ? to_utf8(std::get<std::u16string>(name_v))
+                                                       : std::string();
+    if (!name_s.empty() && lfw::truthy(Value(e.name_visible))) {
+      // `y = ground_y - z/2 - 块高`（块**中心**）⇒ 锚点取地面，文字块整块挂在下方。
+      emit_world_text(frame, e, live->rx, e.ground_y() - (live->rz + 0.2) / 2.0, true, name_s,
+                      /*clamp_x=*/true);
+    }
+    const double reserve = e.reserve();
+    if (reserve != 0.0) {
+      // `y = position.y + centery + 块高/2`（块**中心**）⇒ 锚点取精灵顶边，文字压在它上方。
+      emit_world_text(frame, e, live->rx, live->ry + entity_centery, false,
+                      "x" + to_utf8(number_to_string(reserve)), /*clamp_x=*/false);
     }
   }
 

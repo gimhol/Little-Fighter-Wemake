@@ -36,8 +36,8 @@ void push(const std::string& line) { g_log.push_back(line); }
 // 台面只统计 init，TS 侧同样只统计 init）。
 class FakeBuff : public lfw::buff::Buff {
  public:
-  FakeBuff(const lfw::buff::BuffEnv* env, const std::u16string& id, const lfw::Value& kind)
-      : lfw::buff::Buff(env, id, kind) {}
+  FakeBuff(lfw::LFW& lfw, const std::u16string& id, const lfw::Value& kind)
+      : lfw::buff::Buff(lfw, id, kind) {}
   int inits = 0;
   void init() override { ++inits; }
 };
@@ -94,8 +94,7 @@ struct BuffCreator : lfw::IBuffCreator {
   const std::vector<lfw::Value>& groups() const override { return groups_v; }
   lfw::buff::Buff* create(lfw::LFW* lfw, const std::u16string& id,
                           const lfw::Value& kind) const override {
-    (void)lfw;
-    auto b = std::make_unique<FakeBuff>(nullptr, id, kind);
+    auto b = std::make_unique<FakeBuff>(*lfw, id, kind);
     push("newbuff:" + label + "|" + to_ascii(render_value(kind_v)));
     FakeBuff* const raw = b.get();
     const_cast<BuffCreator*>(this)->owned.push_back(std::move(b));
@@ -311,7 +310,7 @@ int main(int argc, char** argv) {
     } else if (op == "cbuff") {
       const lfw::Value kind = parse_value(t, i);
       const std::u16string id = key_of(t[i++]);
-      lfw::buff::Buff* const ret = g_factory.create_buff(kind, nullptr, id);
+      lfw::buff::Buff* const ret = g_factory.create_buff(kind, &fx::shared_lfw(), id);
       if (ret != nullptr) {
         FakeBuff* const fake = static_cast<FakeBuff*>(ret);
         std::vector<FakeBuff*>& list = g_buffs[label_of_buff_creator(kind)];

@@ -14,6 +14,7 @@
 #include "lfw/core/js_num.h"
 #include "lfw/core/value.h"
 #include "lfw/defines/frame_id.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/entity/entity.h"
 #include "lfw/controller/ball_controller.h"
 #include "lfw/helper/closer_one.h"
@@ -666,7 +667,10 @@ struct EntityLfw : fx::FakeLfw {
     return field_of(g_datas, lfw::to_string(oid));
   }
 
-  bool survival_rank_mode() const override { return g_rank_mode; }
+  std::optional<std::u16string> game_mode() const override {
+    return g_rank_mode ? std::optional<std::u16string>(lfw::game_mode::kSurvivalRank1P)
+                       : std::nullopt;
+  }
   bool survival_rank_available() const override { return g_rank_avail; }
 
   // `lfw.is_cheat(name)`：TS 是 `is_cheat_type(name) && !!world.dataset[name]`，
@@ -1706,7 +1710,7 @@ int main(int argc, char** argv) {
         while (i < t.size()) {
           const std::u16string id = u"b" + to_u16(std::to_string(k));
           g_buffs.push_back(
-              std::make_unique<lfw::buff::Buff>(nullptr, id, parse_value(t, i)));
+              std::make_unique<lfw::buff::Buff>(fx::shared_lfw(), id, parse_value(t, i)));
           g_entity->buffs[id] = g_buffs.back().get();
           ++k;
         }

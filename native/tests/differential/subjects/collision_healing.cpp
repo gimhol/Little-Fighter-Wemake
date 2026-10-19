@@ -24,7 +24,6 @@ using trace::split_ws;
 using trace::to_ascii;
 
 std::vector<std::string> g_log;
-lfw::buff::BuffEnv g_benv;
 lfw::buff::Buff* g_granted = nullptr;
 std::string g_granted_attacker;
 
@@ -62,27 +61,27 @@ Fake g_vic(u"V");
 Collision g_c;
 
 void bind() {
+  fx::shared_lfw().world_override = &fx::shared_world();
   HealingEnv env;
   env.find_entity = [](const std::u16string& id) -> lfw::Entity* {
     if (id == g_att.id) return &g_att;
     if (id == g_vic.id) return &g_vic;
     return nullptr;
   };
-  env.buff_env = []() -> const lfw::buff::BuffEnv* { return &g_benv; };
   lfw::collision::set_healing_env(env);
 
-  g_benv.find_entity = [](const std::u16string& id) -> lfw::Entity* {
+  fx::shared_world().on_find_entity = [](const std::u16string& id) -> lfw::Entity* {
     if (id == g_att.id) return &g_att;
     if (id == g_vic.id) return &g_vic;
     return nullptr;
   };
-  g_benv.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  g_benv.find_data = [](const std::u16string&) -> Value { return Value(); };
-  g_benv.world_buffs_set = [](const std::u16string&, lfw::buff::Buff*) {};
-  g_benv.world_buffs_get = [](const std::u16string&) -> lfw::buff::Buff* { return nullptr; };
-  g_benv.create_buff = [](const std::u16string& kind, const std::u16string& id) {
+  fx::shared_lfw().on_create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
+  fx::shared_lfw().on_datas_find = [](const std::u16string&) -> Value { return Value(); };
+  fx::shared_world().on_buffs_set = [](const std::u16string&, lfw::buff::Buff*) {};
+  fx::shared_world().on_buffs_get = [](const std::u16string&) -> lfw::buff::Buff* { return nullptr; };
+  fx::shared_lfw().on_create_buff = [](const std::u16string& kind, const std::u16string& id) {
     g_log.push_back("create_buff:" + s_of(kind) + ":" + s_of(id));
-    g_granted = new lfw::buff::Buff(&g_benv, id, Value(kind));
+    g_granted = new lfw::buff::Buff(fx::shared_lfw(), id, Value(kind));
     return g_granted;
   };
 }

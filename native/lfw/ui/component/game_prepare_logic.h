@@ -31,7 +31,10 @@ class GamePrepareLogic : public UIComponent {
 
   StageSwitcher* stage_switcher();
   BackgroundSwitcher* bg_switcher();
-  std::optional<std::u16string> game_mode();
+  /** TS `this.props.game_mode`（"vs_mode" / "stage_mode" / "survival"） */
+  std::optional<std::u16string> props_game_mode();
+  /** TS `get game_mode()`：本准备页对应的对局模式（生存排行按玩家数分单人/双人） */
+  std::u16string game_mode();
   double player_count();
   bool auto_start_when_ready();
 

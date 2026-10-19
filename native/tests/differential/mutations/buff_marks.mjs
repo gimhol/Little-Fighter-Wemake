@@ -1,7 +1,10 @@
 /**
  * Mutation spec for `native/lfw/buff/buff_group_attack.cpp` and
- * `native/lfw/buff/buff_electrify.cpp` (plus the `set_mark` / `del_mark` helpers in
- * `native/lfw/buff/buff.h`, which exist only for these subclasses).
+ * `native/lfw/buff/buff_electrify.cpp`.
+ *
+ * 切片 4CQ：`buff.h` 里那两个 `set_mark` / `del_mark` 自由函数已删（它们是 `Entity` 还没移植
+ * 时的副本），子类改调 `victim->set_mark(...)` / `victim->del_mark(...)` —— 这两条语义的变异
+ * 归 `entity.mjs`（那边直接打在 `Entity::set_mark/del_mark` 上）。
  *
  * Disproven / unobservable mutations (proven by reading the TS original, the port
  * and the case file, not by a surviving run):
@@ -70,56 +73,56 @@ export default {
     {
       note: "group attack: mount skips every resolved victim",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: "    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());",
-      to: "    Entity* victim = env()->find_entity(victims[i]);\n    if (victim != nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());",
+      from: "    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());",
+      to: "    Entity* victim = world().find_entity(victims[i]);\n    if (victim != nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());",
     },
     {
       note: "group attack: mount ignores the first victim",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: "  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());",
-      to: "  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());",
+      from: "  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());",
+      to: "  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());",
     },
     {
       note: "group attack: mount writes the mark under another key",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: '    set_mark(*victim, std::u16string(KIND), id(), Value());',
-      to: '    set_mark(*victim, std::u16string(u"Other"), id(), Value());',
+      from: '    victim->set_mark(std::u16string(KIND), id());',
+      to: '    victim->set_mark(std::u16string(u"Other"), id(), Value());',
     },
     {
       note: "group attack: mount stores a constant instead of the buff id",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: '    set_mark(*victim, std::u16string(KIND), id(), Value());',
-      to: '    set_mark(*victim, std::u16string(KIND), std::u16string(u"zz"), Value());',
+      from: '    victim->set_mark(std::u16string(KIND), id());',
+      to: '    victim->set_mark(std::u16string(KIND), std::u16string(u"zz"), Value());',
     },
     {
       note: "group attack: mount passes a defined previous value",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: '    set_mark(*victim, std::u16string(KIND), id(), Value());',
-      to: '    set_mark(*victim, std::u16string(KIND), id(), Value(std::u16string(u"x")));',
+      from: '    victim->set_mark(std::u16string(KIND), id());',
+      to: '    victim->set_mark(std::u16string(KIND), id(), Value(std::u16string(u"x")));',
     },
     {
       note: "group attack: unmount writes the mark instead of deleting it",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: "    set_mark(*victim, std::u16string(KIND), id(), Value());",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: "    victim->set_mark(std::u16string(KIND), id());",
     },
     {
       note: "group attack: unmount deletes unconditionally",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: "    del_mark(*victim, std::u16string(KIND), Value());",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: "    victim->del_mark(std::u16string(KIND), Value());",
     },
     {
       note: "group attack: unmount uses another mark key",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: '    del_mark(*victim, std::u16string(u"Other"), Value(std::u16string(id())));',
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: '    victim->del_mark(std::u16string(u"Other"), Value(std::u16string(id())));',
     },
     {
       note: "group attack: base unmount is skipped",
       file: "native/lfw/buff/buff_group_attack.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
-      to: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
+      to: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }",
     },
     {
       note: "electrify: buff kind changed",
@@ -154,62 +157,38 @@ export default {
     {
       note: "electrify: mount uses the group attack mark kind",
       file: "native/lfw/buff/buff_electrify.cpp",
-      from: "    set_mark(*victim, std::u16string(KIND), id(), Value());",
-      to: '    set_mark(*victim, std::u16string(u"GroupAttack"), id(), Value());',
+      from: "    victim->set_mark(std::u16string(KIND), id());",
+      to: '    victim->set_mark(std::u16string(u"GroupAttack"), id(), Value());',
     },
     {
       note: "electrify: mount ignores the first victim",
       file: "native/lfw/buff/buff_electrify.cpp",
-      from: "  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());",
-      to: "  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());",
+      from: "  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());",
+      to: "  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());",
     },
     {
       note: "electrify: mount stores a constant instead of the buff id",
       file: "native/lfw/buff/buff_electrify.cpp",
-      from: "    set_mark(*victim, std::u16string(KIND), id(), Value());",
-      to: '    set_mark(*victim, std::u16string(KIND), std::u16string(u"zz"), Value());',
+      from: "    victim->set_mark(std::u16string(KIND), id());",
+      to: '    victim->set_mark(std::u16string(KIND), std::u16string(u"zz"), Value());',
     },
     {
       note: "electrify: unmount deletes unconditionally",
       file: "native/lfw/buff/buff_electrify.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: "    del_mark(*victim, std::u16string(KIND), Value());",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: "    victim->del_mark(std::u16string(KIND), Value());",
     },
     {
       note: "electrify: unmount uses another mark key",
       file: "native/lfw/buff/buff_electrify.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: '    del_mark(*victim, std::u16string(u"Other"), Value(std::u16string(id())));',
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: '    victim->del_mark(std::u16string(u"Other"), Value(std::u16string(id())));',
     },
     {
       note: "electrify: base unmount is skipped",
       file: "native/lfw/buff/buff_electrify.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
-      to: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }",
-    },
-    {
-      note: "set_mark: sentinel test uses and",
-      file: "native/lfw/buff/buff.h",
-      from: "  if (std::holds_alternative<std::monostate>(prev) || equals(e.marks_get(key), prev)) {",
-      to: "  if (std::holds_alternative<std::monostate>(prev) && equals(e.marks_get(key), prev)) {",
-    },
-    {
-      note: "del_mark: sentinel test uses and",
-      file: "native/lfw/buff/buff.h",
-      from: "  if (std::holds_alternative<std::monostate>(value) || equals(e.marks_get(key), value)) {",
-      to: "  if (std::holds_alternative<std::monostate>(value) && equals(e.marks_get(key), value)) {",
-    },
-    {
-      note: "del_mark: value match test inverted",
-      file: "native/lfw/buff/buff.h",
-      from: "  if (std::holds_alternative<std::monostate>(value) || equals(e.marks_get(key), value)) {",
-      to: "  if (std::holds_alternative<std::monostate>(value) || !equals(e.marks_get(key), value)) {",
-    },
-    {
-      note: "del_mark: never removes the mark",
-      file: "native/lfw/buff/buff.h",
-      from: "    return e.marks_delete(key);",
-      to: "    return false;",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
+      to: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }",
     },
   ],
 };

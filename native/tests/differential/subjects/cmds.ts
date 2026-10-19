@@ -216,7 +216,7 @@ const fakeLfw: Bag = {
     log.push(`h:cheat=${vstr(name)}`);
     return cheats.has(String(name));
   },
-  survival_rank_mode: false,
+  game_mode: undefined,
   survival_rank_available: false,
   broadcasts: [] as unknown[],
   broadcast: (m: unknown) => log.push(`h:broadcast=${vstr(m)}`),

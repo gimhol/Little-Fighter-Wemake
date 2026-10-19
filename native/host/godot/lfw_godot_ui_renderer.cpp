@@ -196,6 +196,7 @@ void GodotUINodeRenderer::render_subtree(double dt) {
     sync_model();
   }
   compute_global();
+  collect_text_input();
   if (_world->ui_dump_on()) {
     char np[64];
     if (_np_on) {
@@ -393,6 +394,7 @@ void GodotUINodeRenderer::sync_model() {
   _font_css.clear();
   _text_align = 0;
   _tr = _tg = _tb = _ta = 1.0;
+  _sr = _sg = _sb = _sa = _stroke_w = 0.0;
   const Value& tv = n.text();
   if (!nullish(tv)) {
     const Value text_v = lfw::field_or(tv, u"text");
@@ -415,6 +417,71 @@ void GodotUINodeRenderer::sync_model() {
         _tb = fill.b;
         _ta = fill.a;
       }
+      // 描边。数据里实际用的是**节点级** `outlineColor` / `outlineWidth` / `outlineAlpha`
+      //（cooked 的 `prel/ui/*.json5`：25 处 `outlineWidth: 1`，另有 2/4/5 若干），
+      // TS `UITextRenderer.update()` 把它们塞进文字材质的 `outlineColor/Width/Alpha`。
+      // `style.stroke_style` / `line_width`（canvas `strokeText`）与旧数据里的
+      // `style.back_style.stroke_style` 是另外两条路，优先级从高到低：
+      // 节点 outline ⇒ 顶层 stroke_style ⇒ back_style.stroke_style。
+      //
+      // 宽度口径：`outlineWidth` 直接按**逻辑像素**（作者口径：1 ⇒ 1px、4 ⇒ 4px，
+      // 不再除 `style.scale`）；canvas 的 `ctx.lineWidth` 也是逻辑像素，但它是**居中**的
+      //（填充盖掉内侧一半）⇒ 存一半。存下来的值在 `emit_node` 里再乘这一层的缩放（`_gsy`）。
+      double stroke_w = 0.0;
+      const Value node_outline_color = n.outlineColor();
+      const Value node_outline_width = n.outlineWidth();
+      if (!nullish(node_outline_color) && !nullish(node_outline_width)) {
+        const double px_width =
+            std::holds_alternative<double>(node_outline_width) ? std::get<double>(node_outline_width)
+                                                               : 0.0;
+        if (px_width > 0.0) {
+          const Rgb01 stroke = parse_color(str16_or(node_outline_color));
+          if (stroke.found) {
+            double alpha = stroke.a;
+            const Value node_outline_alpha = n.outlineAlpha();
+            if (!nullish(node_outline_alpha)) {
+              alpha = std::holds_alternative<double>(node_outline_alpha)
+                          ? std::get<double>(node_outline_alpha)
+                          : alpha;
+            }
+            if (alpha > 0.0) {
+              _sr = stroke.r;
+              _sg = stroke.g;
+              _sb = stroke.b;
+              _sa = alpha;
+              // `outlineWidth` 按**逻辑像素**算（作者口径：1 ⇒ 1px、4 ⇒ 4px，不除 `style.scale`）。
+              stroke_w = px_width;
+            }
+          }
+        }
+      }
+      if (stroke_w <= 0.0) {
+        Value stroke_style_v = lfw::field_or(style, u"stroke_style");
+        Value line_width_v = lfw::field_or(style, u"line_width");
+        const Value back = lfw::field_or(style, u"back_style");
+        if (!nullish(back)) {
+          const Value back_stroke = lfw::field_or(back, u"stroke_style");
+          const Value back_width = lfw::field_or(back, u"line_width");
+          if (nullish(stroke_style_v)) stroke_style_v = back_stroke;
+          if (!std::holds_alternative<double>(line_width_v)) line_width_v = back_width;
+        }
+        const std::u16string stroke_css = str16_or(stroke_style_v);
+        const double line_width =
+            std::holds_alternative<double>(line_width_v) ? std::get<double>(line_width_v) : 0.0;
+        if (!stroke_css.empty() && line_width > 0.0) {
+          const Rgb01 stroke = parse_color(stroke_css);
+          if (stroke.found && stroke.a > 0.0) {
+            _sr = stroke.r;
+            _sg = stroke.g;
+            _sb = stroke.b;
+            _sa = stroke.a;
+            // canvas 的 `strokeText` 线宽以字形边线为中心（内半 + 外半），而填充压在它上面
+            // ⇒ 看得见的只有外侧那一半。这一支是**带**（不是环），单独标出来。
+            stroke_w = line_width * 0.5;
+          }
+        }
+      }
+      _stroke_w = stroke_w;
     }
   }
 }
@@ -469,6 +536,36 @@ void GodotUINodeRenderer::compute_global() {
       if (_clip_x0 >= _clip_x1 || _clip_y0 >= _clip_y1) _clip_on = false;
     }
   }
+}
+
+// 带 `TextInput` 组件的节点：把方框与文字样式交给宿主，由它摆一个真的 `LineEdit`。
+// 口径对齐 Web 的 `<input>`（`UINodeRenderer.on_resume()` 里创建的 DOM 覆盖层）。
+void GodotUINodeRenderer::collect_text_input() {
+  if (ui == nullptr || !_box_valid) return;
+  // `find_component` 已经按 `is_class` 判过类（`PlayerNameInput` 也算 `TextInput`）⇒ 直接
+  // `static_cast` 就够。⚠ **不能**换成 `dynamic_cast`：核心库是按 `/GR-` 编的
+  //（`host/godot/CMakeLists.txt` 里那条注释），对核心类型做 `dynamic_cast` 会抛
+  // `__non_rtti_object`（实测退出码 0xE06D7363）。
+  ui::TextInput* const input =
+      static_cast<ui::TextInput*>(ui->find_component(ui::TextInput::class_tag()));
+  if (input == nullptr) return;
+  GodotTextInputBox box;
+  box.node = ui;
+  box.input = input;
+  box.x0 = _box_x0;
+  box.y0 = _box_y0;
+  box.x1 = _box_x1;
+  box.y1 = _box_y1;
+  box.font_size = _text.empty() ? 12.0 : _font_size;  // 无文字样式时落 `.ui_node_style` 的 12px
+  box.font_css = _font_css;
+  box.r = _tr;
+  box.g = _tg;
+  box.b = _tb;
+  box.a = _ta;
+  // `.ui_node_style input { text-align: center }`：Web 那层 `<input>` 恒居中（跟节点文字的
+  // `text_align` 无关），所以这里也恒居中。
+  box.text_align = 1;
+  _world->ui_add_text_input(std::move(box));
 }
 
 bool GodotUINodeRenderer::emit_node() {
@@ -544,7 +641,10 @@ bool GodotUINodeRenderer::emit_node() {
     }
   }
   // 3) 文字
-  if (!_text.empty() && _ta > 0.0) {
+  // TS `need_fill` / `need_stroke` 是两个独立开关：填充色透明（或没写）时仍可能只画描边
+  // ⇒ 这里不能再只按 `_ta > 0` 取舍。
+  const bool has_stroke = _stroke_w > 0.0 && _sa > 0.0;
+  if (!_text.empty() && (_ta > 0.0 || has_stroke)) {
     GodotDrawItem it = base_item();
     it.x = x;
     it.y = y;
@@ -558,6 +658,13 @@ bool GodotUINodeRenderer::emit_node() {
     it.g = _tg;
     it.b = _tb;
     it.a = _alpha * _ta;
+    if (has_stroke) {
+      it.stroke_r = _sr;
+      it.stroke_g = _sg;
+      it.stroke_b = _sb;
+      it.stroke_a = _alpha * _sa;
+      it.stroke_w = _stroke_w * std::fabs(_gsy);
+    }
     push(std::move(it));
     ++_world->ui_stats().texts;
     drew = true;

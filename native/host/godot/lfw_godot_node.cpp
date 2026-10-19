@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -27,6 +28,8 @@
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/input_event_pan_gesture.hpp>
+#include <godot_cpp/classes/line_edit.hpp>
+#include <godot_cpp/classes/style_box_empty.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
@@ -242,7 +245,10 @@ const char* LfwGodot::usage() {
          "  --ui-dump     最后一帧逐 UI 节点打一行事实（诊断，不进摘要）\n"
          "  --clip-probe  在逻辑屏幕边界内外各 8 像素贴一圈洋红（画在游戏之上）：证明游戏那一层\n"
          "                真的被裁在内容矩形里（看得见边界**里面**那半圈、黑边干净 = 裁剪生效）。\n"
-         "  --ui-page     装载后把这一页设到第 0 层（id 取自烹饪好的 UI 表；缺省用首页 `init`）\n";
+         "  --ui-page     装载后把这一页设到第 0 层（id 取自烹饪好的 UI 表；缺省用首页 `init`）\n"
+         "  --text-input  脚本化打字：`<text>[@<frame>]`。第 `frame` 帧让文本输入覆盖层（Web 的\n"
+         "                DOM `<input>` 在 Godot 侧的等价物：一个真的 `LineEdit`）拿焦点并整串写入，\n"
+         "                `+2` 帧放掉焦点（⇒ 组件 `on_blur` 存盘），`+4` 帧打一行事实。缺省帧 60。\n";
 }
 
 // `--click <x>,<y>[@<frame>]`：坐标取 `Number(...)` 口径（与 `--pos` 的解析同源）。
@@ -396,6 +402,18 @@ bool LfwGodot::parse_args(const std::vector<std::string>& argv, Args& out) const
     } else if (a == "--ui-page") {
       if (!need(i, v)) return false;
       out.ui_page = from_utf8(v);
+    } else if (a == "--text-input") {
+      if (!need(i, v)) return false;
+      // `<text>[@<frame>]`：只在尾部 `@<digits>` 才算帧号（文本里可以有别的东西）。
+      std::string text = v;
+      const std::size_t at = text.rfind('@');
+      if (at != std::string::npos && at + 1 < text.size() &&
+          text.find_first_not_of("0123456789", at + 1) == std::string::npos) {
+        out.text_input_frame = std::atoi(text.c_str() + at + 1);
+        text.resize(at);
+      }
+      out.text_input = from_utf8(text);
+      out.text_input_given = true;
     } else {
       return false;
     }
@@ -884,6 +902,8 @@ void LfwGodot::_process(double p_delta) {
     const Args::KeyAt* const keyed = inject_keys(frame);
     _host->push_frame(_lfw->world());
     render_world_frame(before);
+    sync_text_input();       // UI 树里有没有 `TextInput` 决定这个 `LineEdit` 在不在（每步一次）
+    probe_text_input(frame);  // `--text-input`：脚本化打字
     stepped = true;
     ++_frames;
     if (clicked != nullptr) {
@@ -935,6 +955,181 @@ void LfwGodot::render_world_frame(long long renders_before) {
     }
     _models->end_frame();
   }
+}
+
+// ---- 文本输入覆盖层（Web 的 DOM `<input>` 在 Godot 侧的等价物）----
+//
+// Web 那边 `UINodeRenderer.on_resume()` 给每个带 `TextInput` 组件的节点 `document.createElement('input')`
+// 并挂进 CSS2D 那棵树（`.ui_node_style input`：透明底、无边框、`text-align:center`、字体/颜色继承）；
+// 本宿主没有 DOM ⇒ 摆一个**真的** `LineEdit`（引擎自带 IME/剪贴板/光标），口径逐条对齐：
+//   * 位置/尺寸 = 那一帧 UI 树里该节点的方框（`GodotTextInputBox`，逻辑像素 → 画布像素）；
+//   * 字体/字号/颜色/对齐 = 该节点的文字样式；`maxLength` 交给 `LineEdit::set_max_length`；
+//   * 文本两个方向都**轮询**同步（不开信号）：`LineEdit` 改了 ⇒ 写组件 `text`（Web 的 `onchange`）；
+//     组件改了（`on_resume` / `on_name_changed`）⇒ 写 `LineEdit`（Web 靠 DOM 值本来就是一份）；
+//   * 引擎焦点 ⇄ 节点焦点：`has_focus()` 由无到有 ⇒ `set_focused(true)`；由有到无 ⇒
+//     `set_focused(false)`（⇒ `PlayerNameInput::on_blur()` 存盘，与 Web 的 `onblur` 同一条）。
+// 页面一走（这一帧的 UI 树里没有它了）就整个拆掉，等价 Web 的 `on_pause()` → `release_dom()`。
+void LfwGodot::sync_text_input() {
+  GodotWorldRenderer* const renderer = _host != nullptr ? _host->world_renderer() : nullptr;
+  if (renderer == nullptr) {
+    destroy_text_input();
+    return;
+  }
+  const std::vector<GodotTextInputBox>& boxes = renderer->ui_text_inputs();
+  if (boxes.empty()) {
+    destroy_text_input();
+    return;
+  }
+  const GodotTextInputBox& box = boxes.back();  // 收集序靠后的压在**上面**（同绘制次序）
+  if (_text_input != nullptr && _text_input_node != box.node) destroy_text_input();
+
+  if (_text_input == nullptr) {
+    _text_input = memnew(godot::LineEdit);
+    _text_input->set_name("lfw_text_input");
+    _text_input->set_mouse_filter(godot::Control::MOUSE_FILTER_STOP);
+    // `.ui_node_style input`：透明底 + 无边框（三态都给空的 `StyleBoxEmpty`）
+    godot::Ref<godot::StyleBoxEmpty> flat;
+    flat.instantiate();
+    for (const char* const state : {"normal", "focus", "read_only"}) {
+      _text_input->add_theme_stylebox_override(state, flat);
+    }
+    add_child(_text_input);
+    _text_input_node = box.node;
+    _text_input_shown = box.input->text();
+    _text_input->set_text(String::utf8(to_utf8(_text_input_shown).c_str()));
+  }
+
+  // ---- 样式（字体/字号/颜色/对齐/长度上限）：值没变就不碰（`add_theme_*_override` 会刷缓存）----
+  const std::optional<double> max_len = box.input->max_length();
+  // 逻辑字号 → 画布像素（`contain` 那一层的缩放；`LineEdit` 的字号是像素口径、不跟缩放走，
+  // 所以窗口缩放也进指纹 —— 拉窗口时得重设一次）。
+  const double scale_y = std::fabs(static_cast<double>(
+      (final_transform().affine_inverse() * contain_transform(window_size_px())).get_scale().y));
+  const int font_px = std::max(
+      1, static_cast<int>(std::lround(box.font_size * (scale_y > 0.0 ? scale_y : 1.0))));
+  char sig[320];
+  std::snprintf(sig, sizeof(sig), "%s|%.3f|%.3f,%.3f,%.3f,%.3f|%d|%d|%d", box.font_css.c_str(),
+                box.font_size, box.r, box.g, box.b, box.a, box.text_align, font_px,
+                max_len.has_value() ? static_cast<int>(*max_len) : -1);
+  if (std::string(sig) != _text_input_style_sig) {
+    _text_input_style_sig = sig;
+    godot::Ref<godot::Font> font = font_for_css(box.font_css);
+    if (!font.is_null()) _text_input->add_theme_font_override("font", font);
+    _text_input->add_theme_font_size_override("font_size", font_px);
+    const godot::Color tint(static_cast<float>(box.r), static_cast<float>(box.g),
+                            static_cast<float>(box.b), static_cast<float>(box.a));
+    _text_input->add_theme_color_override("font_color", tint);
+    _text_input->add_theme_color_override("font_uneditable_color", tint);
+    _text_input->add_theme_color_override("font_placeholder_color", tint);
+    _text_input->add_theme_color_override("caret_color", tint);
+    _text_input->set_horizontal_alignment(
+        box.text_align == 1
+            ? godot::HORIZONTAL_ALIGNMENT_CENTER
+            : (box.text_align == 2 ? godot::HORIZONTAL_ALIGNMENT_RIGHT
+                                   : godot::HORIZONTAL_ALIGNMENT_LEFT));
+    _text_input->set_max_length(max_len.has_value() ? static_cast<int>(*max_len) : 0);
+  }
+
+  // ---- 摆位：逻辑像素 → 画布像素（与 `apply_game_clip` 同一条复合变换）----
+  const godot::Transform2D to_canvas =
+      final_transform().affine_inverse() * contain_transform(window_size_px());
+  const godot::Vector2 p0 = to_canvas.xform(godot::Vector2(static_cast<float>(box.x0),
+                                                           static_cast<float>(box.y0)));
+  const godot::Vector2 p1 = to_canvas.xform(godot::Vector2(static_cast<float>(box.x1),
+                                                           static_cast<float>(box.y1)));
+  _text_input->set_position(p0);
+  _text_input->set_size(p1 - p0);
+
+  // ---- 文本：谁改的就写另一边 ----
+  const std::u16string shown = from_utf8(std::string(_text_input->get_text().utf8().get_data()));
+  const bool edited = shown != _text_input_shown;
+  _text_input_shown = shown;
+  const std::u16string source = box.input->text();
+  if (shown != source) {
+    if (edited) {
+      box.input->set_text(shown);
+    } else {
+      _text_input->set_text(String::utf8(to_utf8(source).c_str()));
+      _text_input_shown = source;
+    }
+  }
+  _text_input_synced = box.input->text();
+
+  // ---- 焦点：引擎 ⇄ 节点 ----
+  const bool has_focus = _text_input->has_focus();
+  if (has_focus && !box.node->focused()) {
+    box.node->set_focused(true);
+  } else if (!has_focus && _text_input_had_focus && box.node->focused()) {
+    box.node->set_focused(false);  // ⇒ `on_blur()`（`PlayerNameInput` 在这里存盘）
+  }
+  _text_input_had_focus = has_focus;
+}
+
+void LfwGodot::destroy_text_input() {
+  _text_input_had_focus = false;
+  _text_input_node = nullptr;
+  _text_input_shown.clear();
+  _text_input_synced.clear();
+  _text_input_style_sig.clear();
+  if (_text_input == nullptr) return;
+  // ⚠ 不碰 `_text_input_node`：页面弹出后节点可能已经被 `UILayer::_trash` 回收。组件那边
+  // 每一帧都同步过（`set_text`），页面自己的 `on_stop()` 会存盘，所以这里只管拆控件。
+  _text_input->release_focus();
+  remove_child(_text_input);
+  _text_input->queue_free();
+  _text_input = nullptr;
+}
+
+// `--text-input <text>[@<frame>]`：脚本化打字（`--key` 到不了引擎控件）。在这里走的是
+// **真控件**那一条（`grab_focus` → `insert_text_at_caret` → `release_focus`），所以它证明的是
+// 「覆盖层能不能收字 + 组件拿不拿得到 + `on_blur` 存不存盘」整条链。
+void LfwGodot::probe_text_input(int frame) {
+  if (!_args.text_input_given) return;
+  const int at = _args.text_input_frame;
+  if (frame == at) {
+    if (_text_input == nullptr) {
+      print_error("[godot] text-input: no TextInput overlay on this page");
+      return;
+    }
+    const bool had_focus = _text_input->has_focus();
+    _text_input->grab_focus();
+    _text_input->set_text(String());
+    _text_input->set_caret_column(0);
+    // 走插入而不是 `set_text`：`maxLength` 生效（Web 那边也是 DOM 自己截的）。
+    _text_input->insert_text_at_caret(String::utf8(to_utf8(_args.text_input).c_str()));
+    print_line("[godot] text-input @frame " + std::to_string(frame) + " type='" +
+               to_utf8(_args.text_input) + "' focus=" + (had_focus ? "1" : "0"));
+    return;
+  }
+  if (frame == at + 2) {
+    if (_text_input != nullptr) _text_input->release_focus();
+    return;
+  }
+  if (frame != at + 4) return;
+  std::string players;
+  const godot::Rect2 rect =
+      _text_input != nullptr
+          ? godot::Rect2(_text_input->get_global_position(), _text_input->get_size())
+          : godot::Rect2();
+  if (_lfw != nullptr) {
+    for (const std::pair<std::u16string, std::unique_ptr<PlayerInfo>>& kv : _lfw->players()) {
+      if (!players.empty()) players += ",";
+      players += to_utf8(kv.first) + ":" +
+                 (kv.second != nullptr ? to_utf8(lfw::to_string(kv.second->name()))
+                                      : std::string("-"));
+    }
+  }
+  print_line("[godot] text-input done: overlay=" +
+             std::string(_text_input != nullptr ? "1" : "0") + " rect=" +
+             (rect.size.x <= 0.0f
+                  ? std::string("-")
+                  : (std::to_string(static_cast<int>(rect.position.x)) + "," +
+                     std::to_string(static_cast<int>(rect.position.y)) + " " +
+                     std::to_string(static_cast<int>(rect.size.x)) + "x" +
+                     std::to_string(static_cast<int>(rect.size.y))))
+                  + " shown='" + to_utf8(_text_input_shown) + "' comp='" +
+             to_utf8(_text_input_synced) + "' players=" +
+             (players.empty() ? std::string("-") : players));
 }
 
 // ---- 指针：平台事件 → `LfwPointingEvent` → `POINTER_*` 命令 ----
@@ -2093,6 +2288,14 @@ void LfwGodot::_input(const godot::Ref<godot::InputEvent>& p_event) {
   LfwPointingEvent e;
   const PointerKind kind = to_pointing_event(p_event, e);
   if (kind == PointerKind::none) return;
+  // 文本输入覆盖层：点到框**外** = Web 里点到 canvas 上（DOM 焦点离开 `<input>` ⇒ `onblur`）。
+  // 这里是**画布像素**（下面才换成逻辑像素），而控件的位置正好也是画布像素。
+  if (_text_input != nullptr && kind == PointerKind::down && _text_input->has_focus()) {
+    const godot::Rect2 rect(_text_input->get_global_position(), _text_input->get_size());
+    if (!rect.has_point(godot::Vector2(static_cast<float>(e.x), static_cast<float>(e.y)))) {
+      _text_input->release_focus();
+    }
+  }
   // 换算：事件进来时是**画布像素**（OS 事件与 `push_input(ev, false)` 都按 `final_transform()` 的逆
   // 换过一遍），游戏的输入口径是**逻辑像素** ⇒ 画布 →（`final`）→ 窗口 →（`contain` 的逆）→ 逻辑
   //（`--click-window` 走的正是这条 ⇒ 它证明的是整条换算，不只是"注入"）。滚轮/触控板的 delta 已经
@@ -2140,6 +2343,7 @@ void LfwGodot::_notification(int p_what) {
     return;
   }
   if (p_what != NOTIFICATION_WM_CLOSE_REQUEST) return;
+  destroy_text_input();
   print_exit_summary();
 }
 
@@ -2266,14 +2470,89 @@ void LfwGodot::_draw() {
 // 2026-10-16 用户报的"Launch 页文字歪了"就是它）。而 `width = item.w`（原本的做法）会让 Godot
 // **自己折行**，与 TS 的 `split_text_to_lines`（只按 `\n` 切、不折行）口径不同。
 // ⇒ 两头都不能用：**自己量行宽、自己摆 x**，`alignment` 固定 LEFT、`width` 固定 -1。
+// 一行文字的描边 + 填充。`pos` 是**基线左端**（`draw_string` 的口径）。
+//
+// 描边用**自己铺的偏移复制**（`stroke_w` 像素的带状）：半径 1..n 的八个方向各画一遍描边色，
+// 最后压上填充。为什么不用 `draw_string_outline`：实测它**不随 `p_size` 线性变粗**
+//（`size` 8 与 16 画出来都是约 2px，见 DESIGN §167.6），而 TS 侧
+//  `outlineWidth` 要到 4~5（DEMO / "Go!"），必须拿到精确的像素厚度。
+// 偏移复制与 TS 着色器的口径也对得上：着色器判据是「中心透明、`outlineWidth` 外有字」⇒
+// 轮廓就是字形按该距离外扩的一圈，边缘 alpha 跟着字形走（这里同样是画字形本身）。
+void LfwGodot::draw_text_run(const godot::Ref<godot::Font>& font, const godot::Vector2& pos,
+                             const std::string& line, int font_size, const godot::Color& color,
+                             bool has_stroke, double stroke_w,
+                             const godot::Color& stroke_color) {
+  const godot::String text = godot::String::utf8(line.c_str());
+  if (has_stroke && stroke_w > 0.0) {
+    static const float kDirs[8][2] = {{-1.0f, 0.0f}, {1.0f, 0.0f},  {0.0f, -1.0f}, {0.0f, 1.0f},
+                                      {-1.0f, -1.0f}, {1.0f, -1.0f}, {-1.0f, 1.0f}, {1.0f, 1.0f}};
+    const int n = std::max(1, static_cast<int>(std::lround(stroke_w)));
+    for (int r = 1; r <= n; ++r) {
+      for (int k = 0; k < 8; ++k) {
+        const float d = static_cast<float>(r);
+        draw_string(font, pos + godot::Vector2(kDirs[k][0] * d, kDirs[k][1] * d), text,
+                    godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size, stroke_color);
+      }
+    }
+  }
+  draw_string(font, pos, text, godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size, color);
+}
+
+// 世界空间的一行文字（实体名 / `xN` 剩余数量，TS `TextMesh` 的 plain 模式）：
+// `item.x/item.y` 是**屏幕锚点**，块尺寸要按字体度量现算（TS 那边是 canvas 量的 `mesh.scale`）。
+//   `text_below` ⇒ 块中心挂在锚点**下方一个块高**（`EntityNameRender`：`y = ground_y - z/2 - 块高`）；
+//   否则块中心挂在锚点**上方半个块高**（`EntityStatRender`：`y = 精灵顶 + 块高/2`）。
+void LfwGodot::draw_world_text_item(const GodotDrawItem& item, const godot::Ref<godot::Font>& font,
+                                    int font_size) {
+  const godot::Color color(static_cast<float>(item.r), static_cast<float>(item.g),
+                           static_cast<float>(item.b), static_cast<float>(item.a));
+  const bool has_stroke = item.stroke_w > 0.0 && item.stroke_a > 0.0;
+  const godot::Color stroke_color(static_cast<float>(item.stroke_r),
+                                  static_cast<float>(item.stroke_g),
+                                  static_cast<float>(item.stroke_b),
+                                  static_cast<float>(item.stroke_a));
+  // 单行（名字与 `xN` 都不会换行），量一次宽高就够。
+  const double text_w = static_cast<double>(
+      font->get_string_size(godot::String::utf8(item.text.c_str()),
+                            godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size)
+          .x);
+  const double ascent = static_cast<double>(font->get_ascent(font_size));
+  const double descent = static_cast<double>(font->get_descent(font_size));
+  const double block_h = ascent + descent;
+  double cx = item.x;
+  if (item.has_clamp_x) {
+    // TS `clamp(position.x, cam_x + hw, …)` 的屏幕版：`hw = 块宽/2 + clamp_pad`。
+    const double hw = text_w * 0.5 + item.clamp_pad;
+    const double lo = item.clamp_x0 + hw;
+    const double hi = item.clamp_x1 - hw;
+    cx = hi >= lo ? std::min(std::max(cx, lo), hi) : (lo + hi) * 0.5;
+  }
+  const double center_y = item.text_below ? item.y + block_h : item.y - block_h * 0.5;
+  const double left = cx - text_w * 0.5;
+  // 基线 = 块顶 + ascent（`TextMesh` 用 `textBaseline = "top"` 的等价口径）。
+  const double baseline = center_y - block_h * 0.5 + ascent;
+  draw_text_run(font, godot::Vector2(static_cast<float>(left), static_cast<float>(baseline)),
+                item.text, font_size, color, has_stroke, item.stroke_w,
+                stroke_color);
+}
+
 void LfwGodot::draw_text_item(const GodotDrawItem& item) {
   if (item.text.empty()) return;
   godot::Ref<godot::Font> font = font_for_css(item.font_css);
   if (font.is_null()) return;
   const int size = static_cast<int>(std::lround(item.font_size > 0.0 ? item.font_size : 9.0));
   const int font_size = size > 0 ? size : 1;
+  if (item.world_text) {
+    draw_world_text_item(item, font, font_size);
+    return;
+  }
   const Color color(static_cast<float>(item.r), static_cast<float>(item.g),
                     static_cast<float>(item.b), static_cast<float>(item.a));
+  const bool has_stroke = item.stroke_w > 0.0 && item.stroke_a > 0.0;
+  const Color stroke_color(static_cast<float>(item.stroke_r),
+                           static_cast<float>(item.stroke_g),
+                           static_cast<float>(item.stroke_b),
+                           static_cast<float>(item.stroke_a));
   const double pad = 2.0;  // `UITextRenderer._normalize_style` 的四边缺省值
   // 先量一遍（块宽 = 最宽一行 + 左右 padding），再定块的左边界：块的**中心** = 节点矩形中心。
   std::vector<std::pair<std::string, double>> lines;
@@ -2315,9 +2594,8 @@ void LfwGodot::draw_text_item(const GodotDrawItem& item) {
       } else if (item.text_align == 2) {
         ax = content_x + std::round(line_max) - line.second;
       }
-      draw_string(font, Vector2(static_cast<float>(ax), static_cast<float>(y)),
-                  String::utf8(line.first.c_str()), godot::HORIZONTAL_ALIGNMENT_LEFT, -1.0f,
-                  font_size, color);
+      draw_text_run(font, Vector2(static_cast<float>(ax), static_cast<float>(y)), line.first,
+                    font_size, color, has_stroke, item.stroke_w, stroke_color);
     }
     y += static_cast<double>(line_h);
   }

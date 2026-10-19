@@ -22,6 +22,7 @@ export * from "./FrameBehavior";
 export * from "./FrameId";
 export * from "./GONE_FRAME_INFO";
 export * from "./GameKey";
+export * from "./GameMode";
 export * from "./HitFlag";
 export * from "./IArmorInfo";
 export * from "./IBdyInfo";

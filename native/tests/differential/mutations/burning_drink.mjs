@@ -174,14 +174,14 @@ export default {
     {
       note: "the held weapon hp_r is not reset",
       file: "native/lfw/state/character_state_drink.cpp",
-      from: "    e.holding_set_hp_r(Value(1.0));",
-      to: "    e.holding_set_hp_r(Value(2.0));",
+      from: "    held->set_hp_r(1.0);",
+      to: "    held->set_hp_r(2.0);",
     },
     {
       note: "the held weapon hp is not reset",
       file: "native/lfw/state/character_state_drink.cpp",
-      from: "    e.holding_set_hp(Value(1.0));",
-      to: "    e.holding_set_hp(Value(0.0));",
+      from: "    held->set_hp(1.0);",
+      to: "    held->set_hp(0.0);",
     },
     {
       note: "the random range is read from the wrong operator",
@@ -204,20 +204,20 @@ export default {
     {
       note: "the thrown velocity drops the random component",
       file: "native/lfw/state/character_state_drink.cpp",
-      from: "    e.holding_set_velocity(Value(vx), Value(6.0), Value(0.0));",
-      to: "    e.holding_set_velocity(Value(0.0), Value(6.0), Value(0.0));",
+      from: "      held->set_velocity(Value(vx), Value(6.0), Value(0.0));",
+      to: "      held->set_velocity(Value(0.0), Value(6.0), Value(0.0));",
     },
     {
       note: "the thrown velocity drops its y component",
       file: "native/lfw/state/character_state_drink.cpp",
-      from: "    e.holding_set_velocity(Value(vx), Value(6.0), Value(0.0));",
-      to: "    e.holding_set_velocity(Value(vx), Value(0.0), Value(0.0));",
+      from: "      held->set_velocity(Value(vx), Value(6.0), Value(0.0));",
+      to: "      held->set_velocity(Value(vx), Value(0.0), Value(0.0));",
     },
     {
       note: "the thrown velocity z component is wrong",
       file: "native/lfw/state/character_state_drink.cpp",
-      from: "    e.holding_set_velocity(Value(vx), Value(6.0), Value(0.0));",
-      to: "    e.holding_set_velocity(Value(vx), Value(6.0), Value(1.0));",
+      from: "      held->set_velocity(Value(vx), Value(6.0), Value(0.0));",
+      to: "      held->set_velocity(Value(vx), Value(6.0), Value(1.0));",
     },
     // ---- State_Burning ----
     {

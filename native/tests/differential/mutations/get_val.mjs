@@ -343,7 +343,7 @@ export default {
     {
       note: "IsSurvialRankMode 读 available 而非 mode",
       file: "native/lfw/loader/get_val_from_entity.cpp",
-      from: `  return flag_of(e.lfw().survival_rank_mode());`,
+      from: `  return flag_of(is_survival_rank_mode(e.lfw().game_mode()));`,
       to: `  return flag_of(e.lfw().survival_rank_available());`,
     },
     {

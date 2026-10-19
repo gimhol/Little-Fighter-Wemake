@@ -56,6 +56,10 @@ get_target_property(GODOTCPP_SUFFIX godot-cpp GODOTCPP_SUFFIX)
 
 if(MSVC)
   target_compile_options(lfw_godot PRIVATE /W4 /permissive- /utf-8)
+  # 崩溃定位用：Godot 的 CrashHandler 只会打 `lfw_godot.dll+<偏移>`（"no debug info"）。
+  # 有了 map 就能把偏移翻成符号：`dumpbin /map` 或直接在 `.map` 里搜 `0001:00xxxxxx`。
+  target_link_options(lfw_godot PRIVATE "/MAP:${CMAKE_CURRENT_BINARY_DIR}/lfw_godot.map"
+                                      "/MAPINFO:EXPORTS")
   # ⚠ **不关 RTTI**（与 `lfw_run` 那边不同）：这一支要过 godot-cpp 的公开面，而
   # `Object::cast_to<T>` 走的是 `dynamic_cast`（`godot-cpp/include/godot_cpp/core/object.hpp:129`）
   # ⇒ `/GR-` 下第一次 `Object::cast_to` 就会把进程带走（实测：加载即崩，退出码 0xE06D7363）。

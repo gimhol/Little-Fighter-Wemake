@@ -18,6 +18,7 @@
 #include "lfw/defines/facing_flag.h"
 #include "lfw/defines/frame_id.h"
 #include "lfw/defines/game_key.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/defines/hit_flag.h"
 #include "lfw/entity/entity_flag.h"
 #include "lfw/entity/entity_ref.h"
@@ -1104,7 +1105,13 @@ void Entity::holding_set_velocity(const Value& x, const Value& y, const Value& z
   if (holding != nullptr) holding->set_velocity(x, y, z);
 }
 
-void Entity::holding_set_team(const Value& v) {
+void Entity::holding_mt_mark(const std::u16string& mark) {
+  (*world().lfw().mt()).mark = mark;
+}
+
+Value Entity::holding_mt_range(double lo, double hi) {
+  return Value((*world().lfw().mt()).range(lo, hi));
+}void Entity::holding_set_team(const Value& v) {
   if (holding != nullptr) holding->set_team(to_string(v));
 }
 
@@ -1128,6 +1135,10 @@ Value Entity::lfw_new_team() const { return Value(world().lfw().new_team()); }
 
 Value Entity::datas_find(const std::u16string& oid) {
   return world().lfw().datas_find(Value(std::u16string(oid)));
+}
+
+Value Entity::datas_find_fighter(const std::u16string& oid) {
+  return world().lfw().datas_fighters_find(Value(std::u16string(oid)));
 }
 
 Value Entity::frame_id() const { return field_or(frame, u"id"); }
@@ -1389,20 +1400,21 @@ void Entity::mp_recovering() {
 
 bool Entity::set_mark(const std::u16string& key, const std::u16string& value,
                       const std::optional<Value>& prev) {
-  const auto it = marks.find(key);
-  const Value cur = it != marks.end() ? Value(it->second) : Value();
+  // TS `this.marks.get(key) == prev` / `this.marks.set(...)`：`marks` 在端口是 `std::map`，
+  // 但台面把 `marks.get/set/delete` 换成了可观测的虚方法 ⇒ 这里必须走那三个（`entity.h`
+  // 的 `marks_get/marks_set/marks_delete`），别直接碰成员，否则假实体的 marks 会写丢。
+  const Value cur = marks_get(key);
   if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {
-    marks[key] = value;
+    marks_set(key, value);
     return true;
   }
   return false;
 }
 
 bool Entity::del_mark(const std::u16string& key, const std::optional<Value>& value) {
-  const auto it = marks.find(key);
-  const Value cur = it != marks.end() ? Value(it->second) : Value();
+  const Value cur = marks_get(key);
   if (!value.has_value() || nullish(*value) || equals(cur, *value)) {
-    return marks.erase(key) != 0;
+    return marks_delete(key);
   }
   return false;
 }
@@ -2714,7 +2726,7 @@ void Entity::apply_opoints(const Value& opoints_value) {
 // ported (`handle_gravity` / `update_velocity` / `update_position`, the recovery
 // layers, the enter-frame chain, `apply_opoints`); the host supplies the tick length
 // (`world.dataset.atom_time`), the puppet list, the stage bounds, `ground.step` and
-// `lfw.survival_rank_mode`.
+// `lfw.game_mode`.
 // ---------------------------------------------------------------------------
 void Entity::update() {
   if ((*world().lfw().mt()).debugging) {
@@ -3109,8 +3121,8 @@ bool Entity::update_catching() {
     enter_frame(gone != nullptr ? *gone : Value());
     return true;
   }
-  if (cp_throwinjury == -1 &&
-      (!world().lfw().survival_rank_mode() || !entity::is_boss(caught->entity_view()))) {
+  if (cp_throwinjury == -1 && (!is_survival_rank_mode(world().lfw().game_mode()) ||
+                               !entity::is_boss(caught->entity_view()))) {
     transfrom_to_another(caught->_data);
     drop_catching();
     caught->catcher = nullptr;

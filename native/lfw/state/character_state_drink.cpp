@@ -47,13 +47,18 @@ void CharacterState_Drink::update(Entity& e) {
     drink->set_mp_h(Value(to_number(drink->mp_h()) + to_number(drink->mp_h_value())));
   }
   if (hp_h_empty && hp_r_empty && mp_h_empty) {
+    // TS 抓的是 drop **之前**的局部 `holding` 引用（`drop_holding()` 只清
+    // `this.holding`，瓶子本身还在）⇒ 后面那几条写的都是这个指针。
+    Entity* const held = e.holding;
     e.drop_holding();
     e.enter_frame(next_frame(Value(std::u16string(frame_id::kAuto))));
-    e.holding_set_hp_r(Value(1.0));
-    e.holding_set_hp(Value(1.0));
     e.holding_mt_mark(u"drink_drop");
     const double vx = to_number(e.holding_mt_range(-6.0, 6.0)) / 2.0;
-    e.holding_set_velocity(Value(vx), Value(6.0), Value(0.0));
+    if (held != nullptr) {
+      held->set_hp_r(1.0);
+      held->set_hp(1.0);
+      held->set_velocity(Value(vx), Value(6.0), Value(0.0));
+    }
   }
 }
 

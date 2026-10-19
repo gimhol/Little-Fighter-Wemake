@@ -59,8 +59,8 @@ export default {
     {
       note: "the granted buff has another kind",
       file: "native/lfw/state/state_base.cpp",
-      from: "  buff::grant_buff(g_env.buff_env, buff::Buff_Healing::KIND, nullptr, victim, duration);",
-      to: '  buff::grant_buff(g_env.buff_env, u"Other", nullptr, victim, duration);',
+      from: "  buff::grant_buff(buff::Buff_Healing::KIND, nullptr, victim, duration);",
+      to: '  buff::grant_buff(u"Other", nullptr, victim, duration);',
     },
     {
       note: "the granted duration ignores the heal amount",
@@ -71,7 +71,7 @@ export default {
     {
       note: "leave never grants",
       file: "native/lfw/state/state_base.cpp",
-      from: "  buff::grant_buff(g_env.buff_env, buff::Buff_Healing::KIND, nullptr, victim, duration);\n",
+      from: "  buff::grant_buff(buff::Buff_Healing::KIND, nullptr, victim, duration);\n",
       to: "",
     },
     {

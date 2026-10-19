@@ -122,26 +122,26 @@ export default {
     {
       note: "感电时长不做缺省",
       file: "native/lfw/collision/handlers2.cpp",
-      from: "                     missing(elec) ? 0 : to_number(elec));",
+      from: "missing(elec) ? 0 : to_number(elec));",
       to: "                     to_number(elec));",
     },
     {
       note: "感电时长缺省值错",
       file: "native/lfw/collision/handlers2.cpp",
-      from: "                     missing(elec) ? 0 : to_number(elec));",
-      to: "                     missing(elec) ? 1 : to_number(elec));",
+      from: "missing(elec) ? 0 : to_number(elec));",
+      to: "missing(elec) ? 1 : to_number(elec));",
     },
     {
       note: "感电 buff 种类写错",
       file: "native/lfw/collision/handlers2.cpp",
-      from: "    buff::grant_buff(g_env.buff_env(), u\"Electroshock\", att, v,",
-      to: "    buff::grant_buff(g_env.buff_env(), u\"Electrify\", att, v,",
+      from: "    buff::grant_buff(u\"Electroshock\", att, v,",
+      to: "    buff::grant_buff(u\"Electrify\", att, v,",
     },
     {
       note: "感电 buff 主客互换",
       file: "native/lfw/collision/handlers2.cpp",
-      from: "    buff::grant_buff(g_env.buff_env(), u\"Electroshock\", att, v,",
-      to: "    buff::grant_buff(g_env.buff_env(), u\"Electroshock\", v, att,",
+      from: "    buff::grant_buff(u\"Electroshock\", att, v,",
+      to: "    buff::grant_buff(u\"Electroshock\", v, att,",
     },
     // ---- handle_itr_catch ----
     {

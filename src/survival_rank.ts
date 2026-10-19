@@ -1,4 +1,4 @@
-import type { LFW, SurvivalRankItem, SurvivalRankPeriod } from "./LFW";
+import { GameMode, type LFW, type SurvivalRankItem, type SurvivalRankPeriod } from "./LFW";
 import { current_connection } from "./pages/network_test/current_connection";
 import {
   get_my_rank as get_my_rank_api,
@@ -148,7 +148,7 @@ function rank_player_fighter(lfw: LFW, player = rank_players(lfw)[0]): string {
 
 /** 双人榜：玩家二的名字与角色（没有第二个玩家时为空字符串） */
 function rank_player2(lfw: LFW): { name: string; fighter: string } {
-  if (!lfw.survival_rank_2p) return { name: '', fighter: '' }
+  if (lfw.game_mode !== GameMode.SurvivalRank2P) return { name: '', fighter: '' }
   const player = rank_players(lfw)[1]
   if (!player) return { name: '', fighter: '' }
   return { name: rank_player_name(lfw, player), fighter: rank_player_fighter(lfw, player) }
@@ -177,7 +177,8 @@ async function merge_fighters(list: SurvivalRankItem[], period: SurvivalRankPeri
 
 /** B站：拉取“榜单+我的排名”后一次性下发（limit≈SDK 上限 100），并顺带学习昵称 */
 async function fetch_toy_rank(lfw: LFW, period: SurvivalRankPeriod): Promise<void> {
-  const board = lfw.survival_rank_2p ? SURVIVAL_RANK_BOARD_2P : SURVIVAL_RANK_BOARD
+  const two = lfw.game_mode === GameMode.SurvivalRank2P
+  const board = two ? SURVIVAL_RANK_BOARD_2P : SURVIVAL_RANK_BOARD
   const list = await get_rank_list({ board, period, limit: 100 })
   const mine = await get_my_rank({ board, period })
   const prev_nickname = get_bili_nickname()
@@ -190,16 +191,17 @@ async function fetch_toy_rank(lfw: LFW, period: SurvivalRankPeriod): Promise<voi
   if (get_bili_nickname() && get_bili_nickname() !== prev_nickname) retro_bili_record()
   lfw.set_survival_rank_data({
     period,
-    list: await merge_fighters(list, period, lfw.survival_rank_2p),
+    list: await merge_fighters(list, period, two),
     mine: mine && mine.ranked ? { rank: mine.rank, score: mine.score } : null,
   })
 }
 
 /** 非 B站环境：从自己的服务器拉取“榜单+我的排名”后下发 */
 async function fetch_api_rank(lfw: LFW, period: SurvivalRankPeriod): Promise<void> {
+  const two = lfw.game_mode === GameMode.SurvivalRank2P
   const [list, mine] = await Promise.all([
-    get_rank_list_api(period, lfw.survival_rank_2p),
-    get_my_rank_api(period, lfw.survival_rank_2p),
+    get_rank_list_api(period, two),
+    get_my_rank_api(period, two),
   ])
   lfw.set_survival_rank_data({
     period,
@@ -219,7 +221,7 @@ function submit_toy_phase(lfw: LFW, reached: number): void {
   const p2 = rank_player2(lfw)
   const fighter = rank_player_fighter(lfw)
   const player = rank_player_name(lfw)
-  const two = !!lfw.survival_rank_2p
+  const two = lfw.game_mode === GameMode.SurvivalRank2P
   save_bili_last_chars({ score: reached, fighter, player, fighter2: p2.fighter, player2: p2.name, two })
   submit_rank_score(reached, two ? SURVIVAL_RANK_BOARD_2P : SURVIVAL_RANK_BOARD).catch(() => { })
   submit_bili_record(reached, get_bili_nickname(), fighter, player, two, p2.fighter, p2.name, get_bili_open_id()).catch(() => { })
@@ -230,7 +232,7 @@ function submit_api_phase(lfw: LFW, reached: number): void {
   if (lfw.survival_rank_invalid) return
   if (!rank_is_host()) return
   const p2 = rank_player2(lfw)
-  submit_rank_score_api(reached, rank_player_name(lfw), rank_player_fighter(lfw), lfw.survival_rank_2p, p2.fighter, p2.name).catch(() => { })
+  submit_rank_score_api(reached, rank_player_name(lfw), rank_player_fighter(lfw), lfw.game_mode === GameMode.SurvivalRank2P, p2.fighter, p2.name).catch(() => { })
 }
 
 // ---------------------------------------------------------------------------

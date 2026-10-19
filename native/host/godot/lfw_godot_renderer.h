@@ -41,6 +41,8 @@
 #include <vector>
 
 #include "lfw/lfw.h"
+#include "lfw/ui/component/text_input.h"
+#include "lfw/ui/uinode.h"
 #include "lfw/world.h"
 
 namespace lfw::host {
@@ -114,6 +116,21 @@ struct GodotDrawItem {
   std::string text;
   double font_size = 0;
   int text_align = 0;
+  // 文字描边：`stroke_w` 是描边的**像素厚度**（向外扩多少），宿主按它铺偏移复制。
+  //   * UI 文字：节点级 `outlineWidth`（**逻辑像素**，1 ⇒ 1px、4 ⇒ 4px）；
+  //   * 世界文字：1 个世界单位（TS plain 模式的 `outlineWidth = TEXT_SUPERSAMPLE` 个 4 倍
+  //     texel ⇒ 折回 1 单位）。
+  double stroke_r = 0, stroke_g = 0, stroke_b = 0, stroke_a = 0, stroke_w = 0;
+  // 世界文字（实体名下 / 剩余数量上，TS `EntityNameRender` / `EntityStatRender`）：
+  // 这一项的 `x/y` 是**屏幕锚点**，块尺寸由宿主按字体度量算（TS 那边是 canvas 量出来的
+  // `mesh.scale`）；`text_below` ⇒ 文字块的**中心**挂在锚点下方一个文字高度（名字：锚点 = 地面），
+  // 否则挂在锚点上方半个文字高度（剩余数量：锚点 = 精灵顶边）。
+  bool world_text = false;
+  bool text_below = false;
+  // 世界文字的横向夹取（TS `clamp(position.x, cam_x + hw, …)`，`hw = (块宽 + 10)/2` 折算到屏幕）：
+  // 宿主用 `[clamp_x0 + hw, clamp_x1 - hw]` 夹锚点，`hw = 块宽/2 + clamp_pad`。
+  bool has_clamp_x = false;
+  double clamp_x0 = 0, clamp_x1 = 0, clamp_pad = 0;
   // `style.font` 的原文（CSS 简写，如 `"bold 18px Arial"`）。字号已经单独抽出来了，
   // 这里留着是为了让 `_draw()` 能按**字族**挑字体 —— 浏览器就是按它渲染的
   //（`TextMesh.ts:66` 直接把整串塞给 `ctx.font`）。
@@ -173,6 +190,20 @@ struct GodotUIStats {
   long long items = 0;        // 绘制项总数
 };
 
+// UI 层里的文本输入框（`TextInput` 组件）。Web 那边 `UINodeRenderer.on_resume()` 给这类节点
+// 挂一层真 DOM `<input>`（`.ui_node_style input`：透明底、无边框、`text-align:center`、继承字体）
+// —— 本宿主没有 DOM ⇒ 渲染器只把**方框 + 样式**留出来，由 `LfwGodot` 摆一个真的 `LineEdit`
+// 上去（`LfwGodot::sync_text_input`）。逐帧清零，跟着那一帧的 UI 树走。
+struct GodotTextInputBox {
+  ui::UINode* node = nullptr;
+  ui::TextInput* input = nullptr;
+  double x0 = 0, y0 = 0, x1 = 0, y1 = 0;  // 逻辑屏幕像素（同 `_box_*`）
+  double font_size = 9;                   // 逻辑像素
+  std::string font_css;                   // `style.font` 原文
+  double r = 1, g = 1, b = 1, a = 1;      // 文字色（同这一节点的文字口径）
+  int text_align = 0;                     // 0 左 / 1 中 / 2 右
+};
+
 // Godot 宿主的 `IWorldRenderer`。
 class GodotWorldRenderer : public IWorldRenderer {
  public:
@@ -216,6 +247,10 @@ class GodotWorldRenderer : public IWorldRenderer {
   GodotUIStats& ui_stats() { return _ui_stats; }
   const GodotUIStats& ui_stats() const { return _ui_stats; }
 
+  // 这一帧 UI 树里的文本输入框（收集序；后收集的在上）。`LfwGodot` 每步之后读它。
+  void ui_add_text_input(GodotTextInputBox box) { _ui_text_inputs.push_back(std::move(box)); }
+  const std::vector<GodotTextInputBox>& ui_text_inputs() const { return _ui_text_inputs; }
+
   // `--ui-dump`：把**最后一帧**每个 UI 节点的一行事实留在 `ui_dump_lines()`（宿主打完就退）。
   void set_ui_dump(bool on) { _ui_dump_on = on; }
   bool ui_dump_on() const { return _ui_dump_on; }
@@ -256,6 +291,10 @@ class GodotWorldRenderer : public IWorldRenderer {
   // `frame.model` 的一条绘制项（TS `EntityMainRender` 的 `model_node` 摆位 + 动画参数）。
   void emit_model(GodotFrame& frame, const Entity& e, const Value& model, double world_x,
                   double world_y, double shaking_x);
+  // 世界空间的一行文字（TS `TextMesh` 的 plain 模式：实体名下 / `xN` 剩余数量上）。
+  // `anchor_world_y` 是锚点（名字 = 地面、剩余数量 = 精灵顶边）；`below` 见 `GodotDrawItem`。
+  void emit_world_text(GodotFrame& frame, const Entity& e, double world_x, double anchor_world_y,
+                       bool below, const std::string& text, bool clamp_x);
 
   LFW* _lfw = nullptr;
   HeadlessHost* _host = nullptr;
@@ -267,6 +306,7 @@ class GodotWorldRenderer : public IWorldRenderer {
   std::map<std::string, std::vector<std::string>> _variant_keys;  // 素材变体表
   std::vector<GodotDrawItem> _ui_buf;  // 本层收集中的 UI 绘制项（`ui_begin/end_layer` 之间）
   GodotUIStats _ui_stats;
+  std::vector<GodotTextInputBox> _ui_text_inputs;  // 这一帧 UI 树里的文本输入框
   bool _ui_dump_on = false;
   std::vector<std::string> _ui_dump_lines;
   int _render_count = 0;

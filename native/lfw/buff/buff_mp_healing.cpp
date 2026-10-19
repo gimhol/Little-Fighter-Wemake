@@ -1,5 +1,7 @@
 #include "lfw/buff/buff_mp_healing.h"
 
+#include "lfw/world.h"
+
 #include "lfw/utils/math/base.h"
 
 namespace lfw {
@@ -17,9 +19,9 @@ void Buff_MpHealing::mount() {
   Buff::mount();
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
-    set_mark(*victim, std::u16string(KIND), id(), Value());
+    victim->set_mark(std::u16string(KIND), id());
     set_ticks(to_number(victim->dataset(u"mp_healing_ticks")));
   }
 }
@@ -35,9 +37,9 @@ void Buff_MpHealing::on_tick(Entity* attacker, Entity* victim) {
 void Buff_MpHealing::unmount() {
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
-    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));
+    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));
   }
   Buff::unmount();
 }

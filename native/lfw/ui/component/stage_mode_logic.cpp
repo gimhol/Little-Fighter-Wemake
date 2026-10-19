@@ -7,6 +7,7 @@
 
 #include "lfw/core/js_string.h"
 #include "lfw/defines/game_key.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/defines/stage_actions.h"
 #include "lfw/lfw.h"
 #include "lfw/stage/stage.h"
@@ -126,8 +127,8 @@ void StageModeLogic::handle_phase_changed(const stage::StageCallbackArgs& a) {
   stage::Stage* const stage = a.stage;
   const Value& curr = a.a;
   const Value& prev = a.b;
-  if (lfw().srank_mode && !lfw().survival_rank_invalid() && chapter_of(stage) == u"survival" &&
-      lfw().on_survival_rank_phase) {
+  if (is_survival_rank_mode(lfw().game_mode()) && !lfw().survival_rank_invalid() &&
+      chapter_of(stage) == u"survival" && lfw().on_survival_rank_phase) {
     lfw().on_survival_rank_phase(stage->phase_idx());
   }
   if (stage == nullptr || stage->is_chapter_finish()) return;
@@ -233,7 +234,7 @@ void StageModeLogic::on_start() {
         });
   }
 
-  if (lfw().srank_mode && !lfw().survival_rank_invalid() &&
+  if (is_survival_rank_mode(lfw().game_mode()) && !lfw().survival_rank_invalid() &&
       chapter_of(world().stage()) == u"survival" && lfw().on_survival_rank_phase) {
     lfw().on_survival_rank_phase(world().stage()->phase_idx());
   }
@@ -241,13 +242,13 @@ void StageModeLogic::on_start() {
 
 void StageModeLogic::on_stop() {
   UIComponent::on_stop();
-  lfw().srank_mode = false;
+  lfw().game_mode_value.reset();
   world().clear();
   remove_listeners();
 }
 
 void StageModeLogic::update(double dt) {
-  if (lfw().srank_mode) {
+  if (is_survival_rank_mode(lfw().game_mode())) {
     if (_rank_hint_cheat != nullptr) _rank_hint_cheat->set_visible(lfw().survival_rank_cheated());
     if (_rank_hint_mods != nullptr) _rank_hint_mods->set_visible(lfw().survival_rank_modded());
   }

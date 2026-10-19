@@ -289,7 +289,6 @@ void bind() {
     g_log.push_back("summary:" + s_of(a->id) + ":" + render(injury) + ":" + s_of(v->id) + ":" +
                     render(prev_hp));
   };
-  g_h2.buff_env = []() { return static_cast<const lfw::buff::BuffEnv*>(nullptr); };
   g_h2.is_fighter = [](const lfw::Entity& e) {
     return lfw::entity::is_fighter_data(e.data());
   };

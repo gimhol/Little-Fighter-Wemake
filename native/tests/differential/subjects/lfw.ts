@@ -9,7 +9,7 @@
 import { Ditto } from "../../../../src/LFW/ditto/Instance";
 import { CMDS, get_pointer_cursors } from "../../../../src/LFW/cmds";
 import { is_human_ctrl } from "../../../../src/LFW/entity/type_check";
-import { Defines } from "../../../../src/LFW/defines";
+import { Defines, GameMode, is_survival_rank_mode } from "../../../../src/LFW/defines";
 import { ImageInfo } from "../../../../src/LFW/ditto";
 import { Expression } from "../../../../src/LFW/base/Expression";
 import { Factory } from "../../../../src/LFW/Factory";
@@ -2207,13 +2207,12 @@ async function run_ops(): Promise<void> {
       const n = nextKey();
       push(`str|${n}|${render_value(lfw.string(n))}`);
     } else if (op === "srank") {
-      lfw.survival_rank_mode = true;
+      lfw.game_mode = GameMode.SurvivalRank2P;
       lfw.survival_rank_available = true;
-      lfw.survival_rank_2p = true;
       lfw.survival_rank_period = "week";
       lfw.set_survival_rank_data({ period: "week", list: [], mine: null });
       push(
-        `srank|${lfw.survival_rank_mode ? 1 : 0}${lfw.survival_rank_available ? 1 : 0}${lfw.survival_rank_2p ? 1 : 0}|${lfw.survival_rank_period}|cheated=${lfw.survival_rank_cheated ? 1 : 0}|modded=${lfw.survival_rank_modded ? 1 : 0}|invalid=${lfw.survival_rank_invalid ? 1 : 0}`,
+        `srank|${is_survival_rank_mode(lfw.game_mode) ? 1 : 0}${lfw.survival_rank_available ? 1 : 0}${lfw.game_mode === GameMode.SurvivalRank2P ? 1 : 0}|${lfw.survival_rank_period}|cheated=${lfw.survival_rank_cheated ? 1 : 0}|modded=${lfw.survival_rank_modded ? 1 : 0}|invalid=${lfw.survival_rank_invalid ? 1 : 0}`,
       );
     } else if (op === "randinfo") {
       const e = make_real_entity(lfw.world, { type: 8, id: "rx" }) as Rec;
@@ -3418,7 +3417,7 @@ async function run_ops(): Promise<void> {
     } else if (op === "srankdata") {
       lfw.set_survival_rank_data(parseValue(t, i) as never);
     } else if (op === "sprobe") {
-      push(`sprobe|${lfw.survival_rank_mode ? 1 : 0}|${lfw.survival_rank_available ? 1 : 0}|${lfw.survival_rank_2p ? 1 : 0}`);
+      push(`sprobe|${is_survival_rank_mode(lfw.game_mode) ? 1 : 0}|${lfw.survival_rank_available ? 1 : 0}|${lfw.game_mode === GameMode.SurvivalRank2P ? 1 : 0}`);
     } else if (op === "wbg") {
       const bg = lfw.world.bg as { id?: string } | undefined;
       push(`wbg|${bg ? String(bg.id) : "-"}`);

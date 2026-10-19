@@ -203,29 +203,14 @@ void WorldCollisionHost::handle(collision::Collision& c) {
 }
 
 buff::Buff* WorldCollisionHost::find_buff(const std::u16string& id) const {
-  for (size_t i = 0; i < _world->buffs.size(); ++i) {
-    if (_world->buffs[i].first == id) return _world->buffs[i].second;
-  }
-  return nullptr;
+  return _world->buffs_get(id);
 }
 
 buff::Buff* WorldCollisionHost::create_buff(const std::u16string& kind,
                                             const std::u16string& id) {
   buff::Buff* const b = _world->lfw().create_buff(kind, id);
   if (b == nullptr) return nullptr;
-  // 出生即带 env（TS 的 `Buff` 构造就有 `lfw`）：`Factory::create_buff` 那一路只能给出
-  // env=nullptr 的实例，`grant_buff` 虽也会补一次，但直接走 `create_buff` 的调用方（例如
-  // 那些只判空的分支）拿到的对象在此之前是**不能碰**的。
-  b->set_env(&_buff_env);
-  bool replaced = false;
-  for (size_t i = 0; i < _world->buffs.size(); ++i) {
-    if (_world->buffs[i].first == id) {
-      _world->buffs[i].second = b;
-      replaced = true;
-      break;
-    }
-  }
-  if (!replaced) _world->buffs.emplace_back(id, b);
+  _world->buffs_set(id, b);
   return b;
 }
 
@@ -264,7 +249,6 @@ void WorldCollisionHost::bind() {
   bind_weapon_is_hit();
   bind_ball_frozen();
   bind_healing();
-  bind_buff_env();
   ensure_published();
 }
 
@@ -496,7 +480,6 @@ void WorldCollisionHost::bind_action() {
     return _world->find_entity(id);
   };
   _action.is_ally = [](const Entity& a, const Entity& v) { return a.is_ally(v); };
-  _action.buff_env = [this]() -> const buff::BuffEnv* { return &_buff_env; };
 }
 
 void WorldCollisionHost::bind_handlers2() {
@@ -514,7 +497,6 @@ void WorldCollisionHost::bind_handlers2() {
     summary_mgr().apply_damage(entity_helpers_value(*a), injury, entity_helpers_value(*v),
                                prev_hp);
   };
-  _handlers2.buff_env = [this]() -> const buff::BuffEnv* { return &_buff_env; };
   _handlers2.is_fighter = [](const Entity& e) { return entity::is_fighter_data(e.data()); };
   _handlers2.calc_velocity = [this](collision::Collision& c) {
     return collision::calc_itr_velocity(collision_helpers_value(c));
@@ -661,33 +643,7 @@ void WorldCollisionHost::bind_healing() {
   _healing.find_entity = [this](const std::u16string& id) -> Entity* {
     return _world->find_entity(id);
   };
-  _healing.buff_env = [this]() -> const buff::BuffEnv* { return &_buff_env; };
 }
 
-void WorldCollisionHost::bind_buff_env() {
-  _buff_env.find_entity = [this](const std::u16string& id) -> Entity* {
-    return _world->find_entity(id);
-  };
-  // `lfw.factory.create_entity(world, data)`
-  _buff_env.create_entity = [this](const Value& data) -> Entity* {
-    return _world->lfw().create_entity(*_world, data);
-  };
-  _buff_env.find_data = [this](const std::u16string& oid) {
-    return _world->lfw().datas_find(Value(oid));
-  };
-  _buff_env.world_buffs_set = [this](const std::u16string& id, buff::Buff* b) {
-    for (size_t i = 0; i < _world->buffs.size(); ++i) {
-      if (_world->buffs[i].first == id) {
-        _world->buffs[i].second = b;
-        return;
-      }
-    }
-    _world->buffs.emplace_back(id, b);
-  };
-  _buff_env.world_buffs_get = [this](const std::u16string& id) { return find_buff(id); };
-  _buff_env.create_buff = [this](const std::u16string& kind, const std::u16string& id) {
-    return create_buff(kind, id);
-  };
-}
 
 }

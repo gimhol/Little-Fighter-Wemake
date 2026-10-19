@@ -26,7 +26,6 @@ using lfw::Object;
 using lfw::Value;
 using lfw::DrinkInfo;
 using lfw::buff::Buff;
-using lfw::buff::BuffEnv;
 using lfw::state::CharacterState_Drink;
 using lfw::state::State_Base;
 using lfw::state::State_Burning;
@@ -193,7 +192,22 @@ struct FakeEnt : lfw::Entity {
   }
 };
 
+// TS 台面的 `holding` 是个**独立对象**（`drop_holding()` 之后局部引用仍然有效）⇒ 端口的状态层
+// 现在抓的是真指针，台面就给它一个只做「写入记账」的假被持有物：hp/hp_r 落到喝的人的
+// `_hold_hp`/`_hold_hp_r`（TS 那两个 setter 是静默的），`set_velocity` 打 `holding_set_velocity` 行。
+struct FakeHeld : FakeEnt {
+  explicit FakeHeld(FakeEnt* owner) : FakeEnt(owner->_id), _owner(owner) {}
+  FakeEnt* _owner = nullptr;
+  void set_hp(double v) override { _owner->_hold_hp = Value(v); }
+  void set_hp_r(double v) override { _owner->_hold_hp_r = Value(v); }
+  void set_velocity(const Value& x, const Value& y, const Value& z) override {
+    g_log.push_back(s_of(_id) + ":holding_set_velocity:" + render(x) + ":" + render(y) + ":" +
+                    render(z));
+  }
+};
+
 FakeEnt* g_ent = nullptr;
+FakeHeld* g_hold = nullptr;
 Value g_state;
 Value g_velocity;
 State_Base* g_obj = nullptr;
@@ -212,18 +226,6 @@ std::string state_text() {
 }
 
 void bind() {
-  static BuffEnv keep;
-  keep.find_entity = [](const std::u16string&) -> lfw::Entity* { return nullptr; };
-  keep.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  keep.find_data = [](const std::u16string&) -> Value { return Value(); };
-  keep.world_buffs_set = [](const std::u16string&, Buff*) {};
-  keep.world_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
-  keep.create_buff = [](const std::u16string&, const std::u16string&) -> Buff* {
-    return nullptr;
-  };
-  lfw::state::StateEnv senv;
-  senv.buff_env = &keep;
-  lfw::state::set_state_env(senv);
 }
 
 std::u16string value_text(const Value& v) {
@@ -240,6 +242,7 @@ int main(int argc, char** argv) {
   }
   bind();
   g_ent = new FakeEnt(u"E1");
+  g_hold = new FakeHeld(g_ent);
 
   std::ifstream in(argv[1]);
   if (!in) {
@@ -314,6 +317,7 @@ int main(int argc, char** argv) {
         g_ent->bounced = lfw::truthy(g_ent->_bounced);
       } else if (sub == "holding") {
         g_ent->_has_holding = lfw::truthy(parse_value(t, i));
+        g_ent->holding = g_ent->_has_holding ? g_hold : nullptr;
       } else if (sub == "holdhp") {
         g_ent->_hold_hp = parse_value(t, i);
       } else if (sub == "holdhpr") {

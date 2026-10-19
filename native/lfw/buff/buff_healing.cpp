@@ -1,5 +1,7 @@
 #include "lfw/buff/buff_healing.h"
 
+#include "lfw/world.h"
+
 #include <cmath>
 
 #include "lfw/utils/math/base.h"
@@ -19,9 +21,9 @@ void Buff_Healing::mount() {
   Buff::mount();
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
-    set_mark(*victim, std::u16string(KIND), id(), Value());
+    victim->set_mark(std::u16string(KIND), id());
     set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));
   }
 }
@@ -41,9 +43,9 @@ void Buff_Healing::on_tick(Entity* attacker, Entity* victim) {
 void Buff_Healing::unmount() {
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
-    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));
+    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));
   }
   Buff::unmount();
 }

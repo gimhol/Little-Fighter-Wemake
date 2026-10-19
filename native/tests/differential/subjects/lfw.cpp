@@ -27,6 +27,7 @@
 #include "lfw/core/js_string.h"
 #include "lfw/core/json.h"
 #include "lfw/defines/defines_data.h"
+#include "lfw/defines/game_mode.h"
 #include "lfw/entity/entity.h"
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/factory.h"
@@ -3762,9 +3763,9 @@ int main(int argc, char** argv) {
       } else if (op == "srankdata") {
         lfw.set_survival_rank_data(parse_value(t, i));
       } else if (op == "sprobe") {
-        push(std::string("sprobe|") + (lfw.srank_mode ? "1" : "0") + "|" +
+        push(std::string("sprobe|") + (lfw::is_survival_rank_mode(lfw.game_mode()) ? "1" : "0") + "|" +
              (lfw.survival_rank_available() ? "1" : "0") + "|" +
-             (lfw.survival_rank_2p ? "1" : "0"));
+             (lfw.game_mode() == lfw::game_mode::kSurvivalRank2P ? "1" : "0"));
       } else if (op == "wbg") {
         lfw::Background* const bg = lfw.world().bg();
         push("wbg|" + (bg != nullptr ? to_ascii(lfw::to_string(bg->id())) : std::string("-")));
@@ -3930,17 +3931,17 @@ int main(int argc, char** argv) {
       const std::u16string n = key_of(t[i++]);
       push("str|" + to_ascii(n) + "|" + to_ascii(render_value(lfw.string(lfw::Value(n)))));
     } else if (op == "srank") {
-      lfw.srank_mode = true;
+      lfw.game_mode_value = lfw::game_mode::kSurvivalRank2P;
       lfw.srank_available = true;
-      lfw.survival_rank_2p = true;
       lfw.survival_rank_period = u"week";
       lfw::Object data;
       data.set(u"period", lfw::Value(std::u16string(u"week")));
       data.set(u"list", lfw::Value(std::make_shared<lfw::Array>()));
       data.set(u"mine", lfw::Value(lfw::NullTag{}));
       lfw.set_survival_rank_data(lfw::Value(std::make_shared<lfw::Object>(data)));
-      push(std::string("srank|") + (lfw.survival_rank_mode() ? "1" : "0") +
-           (lfw.survival_rank_available() ? "1" : "0") + (lfw.survival_rank_2p ? "1" : "0") + "|" +
+      push(std::string("srank|") + (lfw::is_survival_rank_mode(lfw.game_mode()) ? "1" : "0") +
+           (lfw.survival_rank_available() ? "1" : "0") +
+           (lfw.game_mode() == lfw::game_mode::kSurvivalRank2P ? "1" : "0") + "|" +
            to_ascii(lfw.survival_rank_period) + "|cheated=" + (lfw.survival_rank_cheated() ? "1" : "0") +
            "|modded=" + (lfw.survival_rank_modded() ? "1" : "0") + "|invalid=" +
            (lfw.survival_rank_invalid() ? "1" : "0"));
