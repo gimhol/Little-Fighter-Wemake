@@ -41,6 +41,8 @@
 #include <vector>
 
 #include "lfw/lfw.h"
+#include "lfw/ui/component/text_input.h"
+#include "lfw/ui/uinode.h"
 #include "lfw/world.h"
 
 namespace lfw::host {
@@ -188,6 +190,20 @@ struct GodotUIStats {
   long long items = 0;        // 绘制项总数
 };
 
+// UI 层里的文本输入框（`TextInput` 组件）。Web 那边 `UINodeRenderer.on_resume()` 给这类节点
+// 挂一层真 DOM `<input>`（`.ui_node_style input`：透明底、无边框、`text-align:center`、继承字体）
+// —— 本宿主没有 DOM ⇒ 渲染器只把**方框 + 样式**留出来，由 `LfwGodot` 摆一个真的 `LineEdit`
+// 上去（`LfwGodot::sync_text_input`）。逐帧清零，跟着那一帧的 UI 树走。
+struct GodotTextInputBox {
+  ui::UINode* node = nullptr;
+  ui::TextInput* input = nullptr;
+  double x0 = 0, y0 = 0, x1 = 0, y1 = 0;  // 逻辑屏幕像素（同 `_box_*`）
+  double font_size = 9;                   // 逻辑像素
+  std::string font_css;                   // `style.font` 原文
+  double r = 1, g = 1, b = 1, a = 1;      // 文字色（同这一节点的文字口径）
+  int text_align = 0;                     // 0 左 / 1 中 / 2 右
+};
+
 // Godot 宿主的 `IWorldRenderer`。
 class GodotWorldRenderer : public IWorldRenderer {
  public:
@@ -230,6 +246,10 @@ class GodotWorldRenderer : public IWorldRenderer {
   // 观测面（诊断行）：UI 那一遍的计数（`GodotUINodeRenderer` 填）。
   GodotUIStats& ui_stats() { return _ui_stats; }
   const GodotUIStats& ui_stats() const { return _ui_stats; }
+
+  // 这一帧 UI 树里的文本输入框（收集序；后收集的在上）。`LfwGodot` 每步之后读它。
+  void ui_add_text_input(GodotTextInputBox box) { _ui_text_inputs.push_back(std::move(box)); }
+  const std::vector<GodotTextInputBox>& ui_text_inputs() const { return _ui_text_inputs; }
 
   // `--ui-dump`：把**最后一帧**每个 UI 节点的一行事实留在 `ui_dump_lines()`（宿主打完就退）。
   void set_ui_dump(bool on) { _ui_dump_on = on; }
@@ -286,6 +306,7 @@ class GodotWorldRenderer : public IWorldRenderer {
   std::map<std::string, std::vector<std::string>> _variant_keys;  // 素材变体表
   std::vector<GodotDrawItem> _ui_buf;  // 本层收集中的 UI 绘制项（`ui_begin/end_layer` 之间）
   GodotUIStats _ui_stats;
+  std::vector<GodotTextInputBox> _ui_text_inputs;  // 这一帧 UI 树里的文本输入框
   bool _ui_dump_on = false;
   std::vector<std::string> _ui_dump_lines;
   int _render_count = 0;

@@ -12320,3 +12320,93 @@ bool Entity::set_mark(key, value, prev) {
 `never removes the mark`）随自由函数一起删；同等语义由 `entity.mjs` 的
 `set_mark treats a null prev as a real value` / `del_mark ignores the previous value` /
 `del_mark compares the previous value strictly` / `del_mark always reports a deletion` 覆盖。
+
+## 172. 文本输入的 DOM 覆盖层在 Godot 侧的等价物（2026-10-19）
+
+用户报「设置页面未能输入玩家名称」。真因不是组件不会写回，而是**那一层 `document` 不存在**：
+Web 版把「输入框」做成了一个真的 DOM 节点，Godot 宿主没有任何对应物，设置页上那个
+`PlayerNameInput` 节点只有模型（`TextInput._text`），屏幕上看得到、点不进、敲不了。
+
+### 172.1. Web 那一边（口径基准）
+
+`src/DittoImpl/renderer/UINodeRenderer.ts` 的节点生命周期里：
+
+```ts
+on_resume(): void {
+  if (this.ui.root === this.ui) this.attach_ui_layer()
+  const text_input = this.ui.find_component(TextInput)
+  if (text_input) {
+    const ele_input = this._input = document.createElement('input')
+    ele_input.id = "text_input"
+    const { maxLength, defaultValue, text } = text_input
+    ...
+    ele_input.value = text
+    ele_input.onchange = () => text_input.text = ele_input.value   // 输入 → 组件
+    ele_input.onfocus  = () => text_input.node.focused = true      // 焦点 → 节点
+    ele_input.onblur   = () => text_input.node.focused = false     // ⇒ PlayerNameInput.on_blur 存盘
+    this.dom.appendChild(ele_input)
+  }
+}
+on_pause(): void { ...; if (text_input) this.release_dom() }        // 页面一走就拆
+```
+
+样式来自 `ui_node_style.module.scss` 的 `input { }`：透明底、无边框、`font-size/font/color`
+全继承、`width/height: 100%`、`text-align: center`、`pointer-events: all`。
+
+### 172.2. 端口：渲染器留方框，宿主摆真控件
+
+`LineEdit` 是引擎的 `Control`，能白拿 IME / 剪贴板 / 光标 —— 差的是"摆在哪、多大、什么字体"。
+这些全在渲染器那一遍里（`GodotUINodeRenderer` 才知道 `_box_*` 与文字样式），所以拆成两半：
+
+* `GodotUINodeRenderer::collect_text_input()`：节点带 `TextInput` 组件（`find_component` 按
+  `is_class` 判，`PlayerNameInput` 也算）就往后收集一个 `GodotTextInputBox`——
+  方框 + 字号 + `style.font` 原文 + 文字色。`GodotWorldRenderer::render()` 每帧清零。
+  ⚠ 这里用 `static_cast`（`find_component` 已经筛过类）而不是 `dynamic_cast`：核心库是
+  `/GR-`（见 `host/godot/CMakeLists.txt`），对核心类型做 `dynamic_cast` 会抛
+  `__non_rtti_object`（实测退出码 `0xE06D7363`）。
+* `LfwGodot::sync_text_input()`（每步一次，`render_world_frame` 之后）：拿最后一个方框
+  （收集序靠后的压在上面），按需 `memnew(godot::LineEdit)` / 摆位 / 拆掉。
+
+三个细节：
+
+| 口径 | 做法 |
+| --- | --- |
+| 摆位 | 逻辑像素 → 画布像素用 `final_transform().affine_inverse() * contain_transform(window_size_px())`（与 `apply_game_clip` 同一条复合变换）；`LineEdit` 是 `Node2D` 的子节点（场景里只有这一个节点、变换是单位阵）⇒ 直接 `set_position/set_size` |
+| 样式 | 三态 `StyleBoxEmpty`（透明无边框）；字号按上式的 y 缩放取整；`font_color/caret_color` 取节点的文字色；**恒 `text-align: center`**（CSS 那条 `input` 规则就是恒居中，与节点文字的 `text_align` 无关）；无文字样式的节点用 `.ui_node_style` 的 12px（不是端口 UI 文字的 9px 缺省） |
+| 两个方向 | 不开信号，**每帧轮询**：`LineEdit` 的值变了 ⇒ 写组件（等价 `onchange`）；组件变了（`on_resume` / `on_name_changed`）⇒ 写 `LineEdit`。焦点同理：`has_focus()` 由无到有 ⇒ `node->set_focused(true)`；由有到无 ⇒ `set_focused(false)`（⇒ `PlayerNameInput::on_blur()` 存盘） |
+
+拆控件的时机就是"这一帧的 UI 树里没有它了"（页面弹出 / 节点不可见 / 换了一个节点），等价
+Web 的 `on_pause() → release_dom()`。⚠ **不碰** `_text_input_node`：页弹出后
+`UILayer::_trash` 会回收节点，那时它可能已经是别人的内存；组件的 `text` 每帧都同步过，
+页面自己的 `on_stop()` 会存盘，所以拆的时候只管控件。
+
+点到框外要放焦点（Web 里是 DOM 焦点离开 `<input>` ⇒ `onblur`）：`_input()` 在把事件换成
+逻辑像素**之前**判一次（那时还是画布像素，正好与控件同一套坐标），落在框外就
+`release_focus()`。
+
+### 172.3. `--text-input <text>[@<frame>]`：脚本化打字
+
+`--key` 到不了引擎控件（它走 `HeadlessHost::key_down`），所以另加一条验收口子：第 `frame`
+帧让覆盖层 `grab_focus()` + `insert_text_at_caret(...)`（**插入**而不是 `set_text`，
+`maxLength` 才生效），`+2` 帧 `release_focus()`（⇒ `on_blur` 存盘），`+4` 帧打一行事实：
+
+```
+[godot] text-input @frame 70 type='MOUSE' focus=1
+[godot] text-input done: overlay=1 rect=418,5 106x16 shown='MOUSE' comp='MOUSE'
+        players=1:1,2:2,3:3,4:MOUSE,5:5,6:6,7:7,8:8
+```
+
+`focus=` 是**打字那一帧之前**控件有没有焦点 —— 拿它验"真鼠标点进框里"（配
+`--click-window <窗口像素>`：引擎那条 GUI 路会给 `LineEdit` 焦点）。实测三条链：
+
+| 跑法 | 结果 |
+| --- | --- |
+| `--ui-page settings_ctrl --text-input AB12` | `comp='AB12'`、`players=4:AB12`（存盘生效） |
+| 同上，`ABCDEFGHIJKLMNOP`（16 字） | `AB12`←`maxLength` 10 截成 `ABCDEFGHIJ` |
+| `--click-window 471,13@50 --text-input MOUSE@70` | `focus=1`（真鼠标点到控件上）、`players=4:MOUSE` |
+| 先点框里再点框外（`700,400@50`） | `focus=0`（`onblur` 那条链通了）、`players=4:X` |
+| `--ui-page settings --click 505,42@20`（真流程：设置页 → 控制设置 tab） | 覆盖层出现在 `(550,70 106x16)`，打字/存盘同上 |
+
+截图 `temp/shot_settings_real.png`：名字框在第四列键盘上方、白字居中（12px），其余画面不变。
+三条运行时摘要与 `lfw_run` 逐位一致（`b12e08c00a6e087f` / `9f6ac38ad7b78427` /
+`c16f58977ff42360`）—— 这一刀只动宿主（`native/host/godot/**`），核心一行未改。

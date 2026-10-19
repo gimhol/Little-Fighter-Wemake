@@ -2655,3 +2655,44 @@ marks 会写丢。现在成员方法也走那三个虚存取器，与 TS 的 `th
 验证：差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9769 ok / 0 bad
 （`buff.h` 上那 4 条锚点随自由函数一起删；`Entity::set_mark/del_mark` 的语义变异在
 `entity.mjs`）。
+
+### 2026-10-19（三十）：设置页输入不了玩家名 —— 补上文本输入覆盖层
+
+用户报「设置页面未能输入玩家名称」。真因不在组件：Web 版那张「输入框」是
+`UINodeRenderer.on_resume()` 里 `document.createElement('input')` 出来的**真 DOM 节点**
+（`#text_input`，`.ui_node_style input`：透明底/无边框/继承字体/`text-align:center`），
+`onchange → text_input.text`、`onfocus/onblur → node.focused`；Godot 宿主**一层 DOM 都没有**
+⇒ 那个 `PlayerNameInput` 节点只有模型，屏幕上看得到、点不进、敲不了。
+
+改动（只动宿主，`native/host/godot/**`）：
+
+* `GodotWorldRenderer` 新增 `GodotTextInputBox`（节点 + 组件 + 方框 + 字号 + `style.font`
+  原文 + 文字色），`GodotUINodeRenderer::collect_text_input()` 每帧往 `ui_text_inputs()`
+  里收集（`render()` 清零）。
+* `LfwGodot::sync_text_input()`：每个 step 之后按最后一个方框摆一个真的 `LineEdit`
+  （`memnew`，`Node2D` 的子节点）——三态 `StyleBoxEmpty`、字号按逻辑→画布的 y 缩放取整、
+  `font_color/caret_color` 取节点文字色、**恒居中**（CSS 那条 `input` 规则本来就不看
+  `text_align`）、无文字样式时用 `.ui_node_style` 的 12px；`maxLength` 交给
+  `set_max_length`。文本/焦点两个方向都是**每帧轮询**（等价 `onchange` / `onfocus` /
+  `onblur`），页面一走就拆（等价 `release_dom()`）。
+* 点到框外放焦点：`_input()` 在换成逻辑像素**之前**（还是画布像素，与控件同一套）判一次。
+* 新增 `--text-input <text>[@<frame>]`：`--key` 到不了引擎控件，所以这条口子直接
+  `grab_focus()` + `insert_text_at_caret(...)`（**插入**才让 `maxLength` 生效），`+2` 帧
+  `release_focus()`，`+4` 帧打 `[godot] text-input done: overlay=1 rect=… shown=… comp=…
+  players=…`。`focus=` 报的是打字前控件有没有焦点 ⇒ 配 `--click-window` 就能验"真鼠标点进框"。
+* `--ui-page` / `--key` 之外的用法说明也补进 `usage()`。
+
+⚠ 一个坑记下来：`collect_text_input()` 里**不能**用 `dynamic_cast` 拿组件（核心库是
+`/GR-`）——实测对 `ui::UIComponent` 做 `dynamic_cast` 直接抛 `__non_rtti_object`，进程退出码
+`0xE06D7363`。`find_component()` 已经按 `is_class` 筛过类，`static_cast` 就够。
+
+验证：
+
+* 差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9769 ok / 0 bad；
+* 三条运行时摘要与 `lfw_run` **逐位一致**（`b12e08c00a6e087f` / `9f6ac38ad7b78427` /
+  `c16f58977ff42360`）——这一刀不碰核心；
+* 四条链路实测（`--ui-page settings_ctrl`）：`AB12` → `comp=AB12`、`players=4:AB12`；
+  16 字被 `maxLength` 截成 10；`--click-window 471,13@50` 后 `focus=1`（真鼠标给了焦点）；
+  再点框外 `focus=0`（`onblur` 存盘）；真流程 `--ui-page settings --click 505,42@20`
+  （设置页 → 控制设置 tab）覆盖层落在 `(550,70 106x16)`，打字/存盘同上。
+* 截图 `temp/shot_settings_real.png`：名字框在第四列键盘上方、白字居中，其余画面不变。

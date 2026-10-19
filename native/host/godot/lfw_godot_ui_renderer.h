@@ -66,6 +66,7 @@ class GodotUINodeRenderer : public ui::IUINodeRenderer {
   void step_local(double dt);  // 指数平滑（TS `render()` 的两个 `lerp`）
   void sync_model();           // `lifetime` 一变同步一次（TS `sync()`）
   void compute_global();       // 父坐标系 → 屏幕坐标 + 屏幕盒子 + 继承来的裁剪
+  void collect_text_input();   // 带 `TextInput` 的节点 ⇒ 交给宿主摆 `LineEdit`
   bool emit_node();            // 出一个节点的绘制项；返回"画了没有"
   bool emit_image(const GodotDrawItem& proto, double x, double y, double w, double h,
                   bool mirror_x);

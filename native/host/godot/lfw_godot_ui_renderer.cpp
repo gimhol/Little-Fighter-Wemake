@@ -196,6 +196,7 @@ void GodotUINodeRenderer::render_subtree(double dt) {
     sync_model();
   }
   compute_global();
+  collect_text_input();
   if (_world->ui_dump_on()) {
     char np[64];
     if (_np_on) {
@@ -535,6 +536,36 @@ void GodotUINodeRenderer::compute_global() {
       if (_clip_x0 >= _clip_x1 || _clip_y0 >= _clip_y1) _clip_on = false;
     }
   }
+}
+
+// 带 `TextInput` 组件的节点：把方框与文字样式交给宿主，由它摆一个真的 `LineEdit`。
+// 口径对齐 Web 的 `<input>`（`UINodeRenderer.on_resume()` 里创建的 DOM 覆盖层）。
+void GodotUINodeRenderer::collect_text_input() {
+  if (ui == nullptr || !_box_valid) return;
+  // `find_component` 已经按 `is_class` 判过类（`PlayerNameInput` 也算 `TextInput`）⇒ 直接
+  // `static_cast` 就够。⚠ **不能**换成 `dynamic_cast`：核心库是按 `/GR-` 编的
+  //（`host/godot/CMakeLists.txt` 里那条注释），对核心类型做 `dynamic_cast` 会抛
+  // `__non_rtti_object`（实测退出码 0xE06D7363）。
+  ui::TextInput* const input =
+      static_cast<ui::TextInput*>(ui->find_component(ui::TextInput::class_tag()));
+  if (input == nullptr) return;
+  GodotTextInputBox box;
+  box.node = ui;
+  box.input = input;
+  box.x0 = _box_x0;
+  box.y0 = _box_y0;
+  box.x1 = _box_x1;
+  box.y1 = _box_y1;
+  box.font_size = _text.empty() ? 12.0 : _font_size;  // 无文字样式时落 `.ui_node_style` 的 12px
+  box.font_css = _font_css;
+  box.r = _tr;
+  box.g = _tg;
+  box.b = _tb;
+  box.a = _ta;
+  // `.ui_node_style input { text-align: center }`：Web 那层 `<input>` 恒居中（跟节点文字的
+  // `text_align` 无关），所以这里也恒居中。
+  box.text_align = 1;
+  _world->ui_add_text_input(std::move(box));
 }
 
 bool GodotUINodeRenderer::emit_node() {

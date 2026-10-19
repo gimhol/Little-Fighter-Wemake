@@ -843,6 +843,7 @@ void GodotWorldRenderer::render(double dt) {
   ++_render_count;
   _ui_stats = GodotUIStats{};
   _ui_dump_lines.clear();
+  _ui_text_inputs.clear();
   // `BgLayerRender.render(dt)` 是 `offsetX += dt/1000*offsetAnimX`（**dt 是毫秒**；
   // 端口的 `render(dt)` 收到的正是 `step_ms`）⇒ 这里积**秒**。
   if (dt > 0.0) _uv_time += dt / 1000.0;

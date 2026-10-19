@@ -57,6 +57,7 @@
 #include <godot_cpp/classes/audio_stream_player.hpp>
 #include <godot_cpp/classes/font.hpp>
 #include <godot_cpp/classes/input_event.hpp>
+#include <godot_cpp/classes/line_edit.hpp>
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/variant/color.hpp>
 #include <godot_cpp/variant/vector2i.hpp>
@@ -70,6 +71,7 @@
 #include "host/godot/lfw_godot_titlebar.h"
 #include "lfw/base/clock.h"
 #include "lfw/lfw.h"
+#include "lfw/ui/uinode.h"
 
 namespace lfw::host {
 
@@ -161,6 +163,12 @@ class LfwGodot : public Node2D {
     // 裁剪失效 ⇒ 黑边里各多出 8 像素洋红。截图里一眼可辨（见 README「窗口外观」）。
     bool clip_probe = false;
     std::u16string ui_page;             // `--ui-page <id>`：装载后把这一页设到第 0 层（等价点进去）
+    // `--text-input <text>[@<frame>]`：脚本化**打字**（`--key` 走不到引擎控件）。第 `frame` 帧
+    // 让文本输入覆盖层拿焦点并整串写入，`+2` 帧放掉焦点（⇒ 组件的 `on_blur` 存盘），`+4` 帧
+    // 打一行 `[godot] text-input:` 事实。等价 Web 里"点进输入框 + 敲字 + 点到别处"。
+    std::u16string text_input;
+    int text_input_frame = 60;
+    bool text_input_given = false;
     // `--lang <code>`：UI 语言码（`LFW::set_lang`，**在 `load` 之前**）。空 = 用系统区域
     //（`OS::get_locale()`；Web 版那一半是 `navigator.language.toLowerCase()`）。
     std::u16string lang;
@@ -212,6 +220,13 @@ class LfwGodot : public Node2D {
   void install_text_metrics();
   void report_frame(int frame) const;
   void render_world_frame(long long renders_before);  // 每步补一次 `render_once` + `take_frame`
+
+  // ---- 文本输入（Web 的 DOM `<input>` 覆盖层在 Godot 侧的等价物）----
+  // 每步之后按渲染器留出来的 `GodotTextInputBox` 摆一个真的 `LineEdit`（位置/字号/颜色跟着
+  // 节点方框走），文本与焦点两个方向都**轮询**同步（谁变了就把另一边写回去）。
+  void sync_text_input();
+  void destroy_text_input();
+  void probe_text_input(int frame);  // `--text-input <text>[@<frame>]`：脚本化打字（验收到此一游）
   // ---- 指针（`_input` 那一半）----
   // UI 逻辑视口尺寸（数据里的 `dataset.screen_w × screen_h`）；UI 的坐标空间就是它。
   void ui_screen_size(double& w, double& h) const;
@@ -359,6 +374,16 @@ class LfwGodot : public Node2D {
   // 字体解析与缓存（`style.font` 的 CSS 简写 → 引擎的 `Font`；见 `lfw_godot_font.h`）。
   // 文字**度量**与 `_draw()` 都走它 ⇒ 量出来的尺寸与画出来的字是同一个字体、同一个字号。
   lfw::host::FontCache _fonts;
+
+  // 文本输入覆盖层（Web 的 `<input>` 的等价物）：只有 UI 树里出现 `TextInput` 节点时存在。
+  // ⚠ `_text_input_node` 只是**这一帧**的弱引用（页弹出后 `UILayer::_trash` 会把它析构/回收），
+  // 只在"这一帧的 `GodotTextInputBox` 指向它"时用。
+  godot::LineEdit* _text_input = nullptr;
+  lfw::ui::UINode* _text_input_node = nullptr;
+  std::u16string _text_input_shown;   // 上一次看到的 `LineEdit` 文本（判断谁改了值）
+  std::u16string _text_input_synced;  // 上一次写回组件的文本（`--text-input` 验收用）
+  std::string _text_input_style_sig;  // 字体/字号/颜色/对齐/长度上限的指纹（变了才刷主题）
+  bool _text_input_had_focus = false;  // 引擎焦点由有变无 ⇒ 组件 `set_focused(false)`
 
   // `style.font` 原文 → 字体（解析不到字族时返回引擎的 fallback 字体）。
   godot::Ref<godot::Font> font_for_css(const std::string& css);
