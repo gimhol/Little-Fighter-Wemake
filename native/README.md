@@ -2602,3 +2602,39 @@ anchors 9773 ok / 0 bad。
 
 验证：差分 265/265（含 `buff` / `buff_healing` / `burning_drink`）、lint 867 clean /
 0 failed / 14 warnings、anchors 9773 ok / 0 bad；`lfw_char_menu` 变异 170 killed / 0 survived。
+
+### 2026-10-19（二十八）：`BuffEnv` 退役 —— buff 直接持 `LFW` / `World`
+
+用户问「`BuffEnv` 为什么不直接用 `LFW`/`World`（运行时）」。答：运行时本来就只用真对象，
+那个 env 是**早期** `LFW`/`World` 还没移植时给差分台面留的六函数缝（`find_entity` /
+`create_entity` / `find_data` / `world_buffs_set/get` / `create_buff`）。TS 的
+`class Buff { readonly lfw: LFW; readonly world: World; constructor(lfw, id, kind) }`
+（`src/LFW/buff/Buff.ts:13,47-51`）—— 直接收 `lfw`、自己记 `world = lfw.world`；
+`grant_buff` 更是从 **victim** 上解构 `{ lfw, world }`，根本没有 env 参数。
+
+改动：
+
+* `buff::Buff`：`BuffEnv` 删除；构造改 `Buff(LFW& lfw, id, kind)`，成员 `LFW* _lfw` +
+  `World* _world`（`lfw()` / `world()` 两个取值器）。六条调用改成
+  `_world->find_entity` / `_lfw->datas_find` / `_lfw->create_entity(*_world, …)` /
+  `_world->buffs_set|buffs_get` / `_lfw->create_buff`。
+* `World` 新增 `virtual void buffs_set(id, Buff*)` / `virtual Buff* buffs_get(id) const`
+  （TS 的 `world.buffs` 是个 `Map`；端口是 `std::vector<pair>`，收成两个方法）。
+* `grant_buff(kind, attacker, victim, duration = 0)`（去掉 env 参数），内部
+  `LFW& lfw = victim->lfw(); World& world = victim->world();`，与 TS 逐字对应。
+* 四处缝字段一起删掉：`StateEnv::buff_env`、`Handlers2Env::buff_env`、`ActionEnv::buff_env`、
+  `HealingEnv::buff_env`；`StateEnv` 因此**空掉**，连 `state_env()` / `set_state_env()`
+  一并删除（`WorldCollisionHost::bind_buff_env` 整块消失）。
+* `Factory::create_buff` 取到池里的实例后 `rebind_lfw(*lfw)`：换主人就丢掉上一局的
+  `_effects`/`_victims`（裸 `Entity*` 与旧 id）。
+* `LFW::world()` 改 `virtual`（真实现仍返回自己那个世界）——差分台面的假 `LFW` 需要把这一面
+  指到 `TestWorld`（`world_override`），否则 `Buff` 会绑到真 `LFW` 内部那个空世界。
+
+台面：`fx::FakeLfw` 新增 `on_datas_find` / `on_create_entity` / `on_create_buff` 三个钩子，
+`fx::TestWorld` 新增 `on_buffs_set` / `on_buffs_get`（都缺省走真实现）；buff 真正
+`mount` 的 11 个 subject 在 `bind()` 里把 `world_override` 指向 `shared_world()`。
+原来那些 `BuffEnv g_benv` / `static BuffEnv keep` 的赋值逐条换成钩子（日志字符串不变）。
+
+验证：差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad；
+三条运行时摘要逐位不变（`b3f9a34a67597b08` / `4c5ef7aa63c97056` / `b18b9d0d7892aef5`）；
+`collision_healing` 变异 11 killed / 0 survived。

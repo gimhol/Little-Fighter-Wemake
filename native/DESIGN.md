@@ -10768,7 +10768,7 @@ TS 侧覆写的是 `Entity.play_sound`；两边日志形状都是 `(sounds, pos)
 `flags.sound` / `drop_sounds`），绕过了实体方法 ⇒ Message 帧的夹取会丢。改成 `play_sound(...)`
 后与 TS 的 `this.play_sound(...)` 一一对上，且日志（`position_value(position)` 那份）逐位不变。
 
-### 143.2. buff 的 `BuffEnv` 谁负责装
+### 143.2. buff 的 `BuffEnv` 谁负责装（⚠ 已退役，见 §170）
 
 TS 的 `Buff` 构造就拿 `lfw`（`new B(lfw, id, B.KIND)`），实例里的 `this.lfw.world...` 永远有效。
 端口的 `Buff` 收 `const BuffEnv*`，而 `Factory::create_buff(kind, lfw, id)` 手里只有 `LFW*`
@@ -12163,3 +12163,105 @@ holding.set_velocity(vx, 6, 0);
 碎裂本身不需要额外代码：`Entity::set_hp` 在 `o > 0 && v <= 0` 时已经会
 `apply_opoints(base.brokens)` + 播 `dead_sounds` + 进 `frame.on_dead ?? data.on_dead`
 （武器表里 `on_dead = NEXT_FRAME_GONE`）。
+
+
+## 170. `BuffEnv` 退役（2026-10-19）
+
+### 170.1. 它当初为什么存在
+
+切片 4B 的年代，`LFW` / `World` / `Entity` 都还没移植，buff 只能对着「宿主」写。为了既能在
+运行时跑、又能在差分台面里注入假实体，端口给 `Buff` 收了一张六函数表：
+
+```cpp
+struct BuffEnv {
+  std::function<Entity*(const std::u16string&)> find_entity;
+  std::function<Entity*(const Value&)>          create_entity;
+  std::function<Value(const std::u16string&)>   find_data;
+  std::function<void(const std::u16string&, Buff*)> world_buffs_set;
+  std::function<Buff*(const std::u16string&)>   world_buffs_get;
+  std::function<Buff*(const std::u16string&, const std::u16string&)> create_buff;
+};
+```
+
+**运行时从来没用过别的东西** —— `WorldCollisionHost::bind_buff_env()` 把这六条全部接到
+`_world` / `_world->lfw()` 上，没有任何分支。所以它唯一的价值就是「台面能替换」。
+
+### 170.2. TS 的形状
+
+```ts
+export abstract class Buff {
+  readonly lfw: LFW;
+  readonly world: World;
+  constructor(lfw: LFW, id: string, kind: string | number) {
+    this.lfw = lfw;
+    this.kind = kind;
+    this.world = lfw.world;      // ← 从 lfw 上取，不是参数
+    this._id = id;
+  }
+}
+export function grant_buff(kind, attacker, victim, duration = 0) {
+  const { lfw, world } = victim; // ← 从 victim 上解构，没有 env
+  ...
+}
+```
+
+### 170.3. 端口现在的形状
+
+```cpp
+class Buff {
+  Buff(LFW& lfw, const std::u16string& id, const Value& kind);
+  LFW& lfw() const { return *_lfw; }
+  World& world() const { return *_world; }
+ private:
+  LFW* _lfw = nullptr;    // 每局稳定（LFW 是单例，World 存活到 dispose）
+  World* _world = nullptr;
+};
+Buff* grant_buff(const std::u16string& kind, Entity* attacker, Entity* victim,
+                 double duration = 0);
+```
+
+六条调用一一落到真实对象上：
+
+| 旧 env | 现在 |
+| --- | --- |
+| `find_entity(id)` | `_world->find_entity(id)` |
+| `create_entity(data)` | `_lfw->create_entity(*_world, data)` |
+| `find_data(oid)` | `_lfw->datas_find(Value(oid))` |
+| `world_buffs_set/get(id)` | `_world->buffs_set/buffs_get(id)`（`World` 新增的两个 `virtual`） |
+| `create_buff(kind, id)` | `_lfw->create_buff(kind, id)` |
+
+`World::buffs` 是 `std::vector<std::pair<id, Buff*>>`（TS 是 `Map`）⇒ 收成
+`buffs_set` / `buffs_get` 两个方法：既让 `Buff` 不必知道容器形状，也让台面能挂钩子。
+
+### 170.4. 连带删掉的东西
+
+* `StateEnv`（只剩 `buff_env` 一格）⇒ 空壳，连 `state_env()` / `set_state_env()` 一起删。
+* `Handlers2Env::buff_env` / `ActionEnv::buff_env` / `HealingEnv::buff_env`。
+* `WorldCollisionHost::bind_buff_env()` 整个函数与 `_buff_env` 成员。
+* 21 个台面的 `static BuffEnv keep;` / `BuffEnv g_benv;` 与它们的赋值。
+
+### 170.5. 池化复用的归属
+
+`Factory::create_buff` 会从 `buff_graves_maps` 里取回收实例。TS 的 `lfw`/`world` 是
+`readonly` 且全局只有一个 `World` ⇒ 永不失效；端口为了不把「属于上个世界的裸
+`Entity*`」带进新世界，加了一条：
+
+```cpp
+void Buff::rebind_lfw(LFW& lfw) {
+  if (_lfw == &lfw) return;
+  drop_cached_refs();      // _effects / _victims / _attacker / _effect_data
+  _lfw = &lfw; _world = &lfw.world();
+}
+```
+
+`Factory::create_buff` 在 `reset(id)` **之前**调它（`reset` 本身也会清 effects/victims，
+所以正常路径是双保险）。
+
+### 170.6. 台面怎么接
+
+* `fx::FakeLfw` 三个钩子：`on_datas_find(const u16string&)`、`on_create_entity(const Value&)`、
+  `on_create_buff(kind, id)`，缺省走真实现（原来 `h:datasfind=` / `h:create=` 的日志保留）。
+* `fx::TestWorld` 两个钩子：`on_buffs_set` / `on_buffs_get`，缺省走 `World::buffs_*`。
+* `LFW::world()` 改 `virtual`，`FakeLfw::world_override` 让台面把 `lfw.world` 指到
+  `TestWorld`（**只有真的会 mount buff 的 11 个 subject 才设**；不设时保持真实现，免得
+  平白构造一个 `World` 多出两条 `change_bg` 日志）。

@@ -17,7 +17,6 @@ namespace {
 
 using lfw::Value;
 using lfw::buff::Buff;
-using lfw::buff::BuffEnv;
 using lfw::buff::Buff;
 using trace::parse_value;
 using trace::render_value;
@@ -25,7 +24,6 @@ using trace::split_ws;
 using trace::to_ascii;
 
 std::vector<std::string> g_log;
-BuffEnv g_benv;
 
 std::string render(const Value& v) { return to_ascii(render_value(v)); }
 std::string s_of(const std::u16string& s) { return to_ascii(s); }
@@ -178,14 +176,15 @@ std::string state_text() {
 }
 
 void bind() {
-  g_benv.find_entity = [](const std::u16string& id) -> lfw::Entity* { return find_ent(id); };
-  g_benv.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  g_benv.find_data = [](const std::u16string&) -> Value { return Value(); };
-  g_benv.world_buffs_set = [](const std::u16string& id, Buff*) {
+  fx::shared_lfw().world_override = &fx::shared_world();
+  fx::shared_world().on_find_entity = [](const std::u16string& id) -> lfw::Entity* { return find_ent(id); };
+  fx::shared_lfw().on_create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
+  fx::shared_lfw().on_datas_find = [](const std::u16string&) -> Value { return Value(); };
+  fx::shared_world().on_buffs_set = [](const std::u16string& id, Buff*) {
     g_log.push_back("world_buffs_set:" + s_of(id));
   };
-  g_benv.world_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
-  g_benv.create_buff = [](const std::u16string&, const std::u16string&) -> Buff* { return nullptr; };
+  fx::shared_world().on_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
+  fx::shared_lfw().on_create_buff = [](const std::u16string&, const std::u16string&) -> Buff* { return nullptr; };
 }
 
 std::u16string value_text(const Value& v) {
@@ -195,9 +194,9 @@ std::u16string value_text(const Value& v) {
 
 void run_make() {
   if (g_cls == "mp_healing") {
-    g_buff.reset(new lfw::buff::Buff_MpHealing(&g_benv, g_buff_id, Value(g_kind)));
+    g_buff.reset(new lfw::buff::Buff_MpHealing(fx::shared_lfw(), g_buff_id, Value(g_kind)));
   } else {
-    g_buff.reset(new lfw::buff::Buff_Healing(&g_benv, g_buff_id, Value(g_kind)));
+    g_buff.reset(new lfw::buff::Buff_Healing(fx::shared_lfw(), g_buff_id, Value(g_kind)));
   }
   for (size_t i = 0; i < g_victims.size(); ++i) {
     if (i == 0) {

@@ -113,8 +113,7 @@ class TestBuff : public lfw::buff::Buff {
   bool call_del_id(const std::u16string& id) { return del_id(id); }
 };
 
-lfw::buff::BuffEnv g_env;
-TestBuff g_buff(&g_env, std::u16string(), lfw::Value(std::u16string(u"k")));
+TestBuff g_buff(fx::shared_lfw(), std::u16string(), lfw::Value(std::u16string(u"k")));
 std::map<std::u16string, std::unique_ptr<TestBuff>> g_made;
 TestBuff* g_sync = nullptr;
 
@@ -137,30 +136,31 @@ lfw::Entity* find_entity(const std::u16string& id) {
 }
 
 void bind() {
-  g_env.find_entity = [](const std::u16string& id) { return find_entity(id); };
-  g_env.create_entity = [](const lfw::Value&) -> lfw::Entity* {
+  fx::shared_lfw().world_override = &fx::shared_world();
+  fx::shared_world().on_find_entity = [](const std::u16string& id) { return find_entity(id); };
+  fx::shared_lfw().on_create_entity = [](const lfw::Value&) -> lfw::Entity* {
     if (!lfw::truthy(g_create_entity_ok)) return nullptr;
     const std::u16string nid = u"E" + u16(std::to_string(++g_entity_seq));
     g_log.push_back("create_entity:" + u8(nid));
     return ensure(nid);
   };
-  g_env.find_data = [](const std::u16string& oid) {
+  fx::shared_lfw().on_datas_find = [](const std::u16string& oid) {
     g_log.push_back("find_data:" + u8(oid));
     return g_data;
   };
-  g_env.world_buffs_set = [](const std::u16string& id, lfw::buff::Buff*) {
+  fx::shared_world().on_buffs_set = [](const std::u16string& id, lfw::buff::Buff*) {
     g_log.push_back("world_buffs_set:" + u8(id));
   };
-  g_env.world_buffs_get = [](const std::u16string& id) -> lfw::buff::Buff* {
+  fx::shared_world().on_buffs_get = [](const std::u16string& id) -> lfw::buff::Buff* {
     auto it = g_made.find(id);
     g_log.push_back("world_buffs_get:" + u8(id) + ":" + flag(it != g_made.end()));
     return it == g_made.end() ? nullptr : it->second.get();
   };
-  g_env.create_buff = [](const std::u16string& kind, const std::u16string& id) -> lfw::buff::Buff* {
+  fx::shared_lfw().on_create_buff = [](const std::u16string& kind, const std::u16string& id) -> lfw::buff::Buff* {
     const bool ok = lfw::truthy(g_create_buff_ok);
     g_log.push_back("create_buff:" + u8(kind) + ":" + u8(id) + ":" + flag(ok));
     if (!ok) return nullptr;
-    auto b = std::make_unique<TestBuff>(&g_env, id, lfw::Value(kind));
+    auto b = std::make_unique<TestBuff>(fx::shared_lfw(), id, lfw::Value(kind));
     TestBuff* p = b.get();
     g_made.emplace(id, std::move(b));
     return p;
@@ -267,7 +267,7 @@ int main(int argc, char** argv) {
       if (sub == "new") {
         const std::u16string id = trace::parse_js_string_literal(t[i++]);
         const lfw::Value kind = parse_value(t, i);
-        g_buff = TestBuff(&g_env, id, kind);
+        g_buff = TestBuff(fx::shared_lfw(), id, kind);
         g_sync = nullptr;
         emit("buff new" + buff_text());
         continue;
@@ -363,7 +363,7 @@ int main(int argc, char** argv) {
       const std::u16string aid = trace::parse_js_string_literal(t[i++]);
       const std::u16string vid = trace::parse_js_string_literal(t[i++]);
       const double dur = trace::to_double(t[i++]);
-      lfw::buff::Buff* b = lfw::buff::grant_buff(&g_env, kind, find_entity(aid), find_entity(vid), dur);
+      lfw::buff::Buff* b = lfw::buff::grant_buff(kind, find_entity(aid), find_entity(vid), dur);
       std::string s = b == nullptr ? std::string("-") : u8(b->id());
       std::string st = b == nullptr ? std::string() : buff_text_of(*b);
       emit("grant " + u8(kind) + " " + s + st + " |" + log_text());

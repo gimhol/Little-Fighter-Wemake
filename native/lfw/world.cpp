@@ -1219,6 +1219,23 @@ void World::handle_cmds() {
 
 Entity* World::find_entity(const std::u16string& id) const { return map_get(entity_map, id); }
 
+void World::buffs_set(const std::u16string& id, buff::Buff* b) {
+  for (std::pair<std::u16string, buff::Buff*>& kv : buffs) {
+    if (kv.first == id) {
+      kv.second = b;
+      return;
+    }
+  }
+  buffs.emplace_back(id, b);
+}
+
+buff::Buff* World::buffs_get(const std::u16string& id) const {
+  for (const std::pair<std::u16string, buff::Buff*>& kv : buffs) {
+    if (kv.first == id) return kv.second;
+  }
+  return nullptr;
+}
+
 std::optional<collision::Collision> World::get_collision(const std::u16string& aid,
                                                         const std::u16string& vid) const {
   return pair_collisions_.first(aid, vid);

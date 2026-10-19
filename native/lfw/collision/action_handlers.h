@@ -21,7 +21,6 @@ struct ActionEnv {
   std::function<void(const std::u16string& msg)> alert;
   std::function<Entity*(const std::u16string& id)> find_entity;
   std::function<bool(const Entity& a, const Entity& v)> is_ally;
-  std::function<const buff::BuffEnv*()> buff_env;
 };
 
 Value run_action(const ActionEnv& env, const std::u16string& type, const Value& action,

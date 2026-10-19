@@ -132,8 +132,8 @@ export default {
     {
       note: "mount ignores the first victim",
       file: "native/lfw/buff/buff_electroshock.cpp",
-      from: "  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;",
-      to: "  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;",
+      from: "  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;",
+      to: "  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;",
     },
     {
       note: "mount does not halve the duration",
@@ -156,8 +156,8 @@ export default {
     {
       note: "mount ignores the resolved victim",
       file: "native/lfw/buff/buff_electroshock.cpp",
-      from: "    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    const Value state = victim->state();\n    if (equals(state, Value(static_cast<double>(StateEnum::Injured)))) continue;",
-      to: "    Entity* victim = env()->find_entity(victims[i]);\n    if (victim != nullptr) continue;\n    const Value state = victim->state();\n    if (equals(state, Value(static_cast<double>(StateEnum::Injured)))) continue;",
+      from: "    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    const Value state = victim->state();\n    if (equals(state, Value(static_cast<double>(StateEnum::Injured)))) continue;",
+      to: "    Entity* victim = world().find_entity(victims[i]);\n    if (victim != nullptr) continue;\n    const Value state = victim->state();\n    if (equals(state, Value(static_cast<double>(StateEnum::Injured)))) continue;",
     },
   ],
 };

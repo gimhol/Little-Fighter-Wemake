@@ -16,7 +16,6 @@ namespace collision {
 // 切片 4CE：`IHealingEntity` 已退役 ⇒ 缝里直接是 `lfw::Entity`。
 struct HealingEnv {
   std::function<Entity*(const std::u16string& id)> find_entity;
-  std::function<const buff::BuffEnv*()> buff_env;
 };
 
 const HealingEnv& healing_env();

@@ -258,6 +258,10 @@ class World {
   void clear();
   void reset_game_time();
   virtual Entity* find_entity(const std::u16string& id) const;
+  // `world.buffs.set(id, b)` / `world.buffs.get(id)`（TS 的 `Map`；端口是 `std::vector` 的
+  // 有序对）。`virtual`：`Buff` 直接读这两个面，差分台面（`TestWorld`）要能把它们换成日志。
+  virtual void buffs_set(const std::u16string& id, buff::Buff* b);
+  virtual buff::Buff* buffs_get(const std::u16string& id) const;
   std::optional<collision::Collision> get_collision(const std::u16string& aid,
                                                    const std::u16string& vid) const;
   bool has_collision(const std::u16string& aid, const std::u16string& vid) const;

@@ -24,7 +24,8 @@
  *    three `grant_buff` arguments that follow the kind is behaviour preserving for
  *    this harness; the observable orderings are covered by the "handed to
  *    grant_buff" pair below.
- * 4. `g_env.buff_env()` is a resource accessor with no alternative expression.
+ * 4. `world.buffs_get` / `lfw.create_buff` 是从 victim 实体上取到的（TS `grant_buff` 同样从
+ *    `victim` 上解构 `lfw`/`world`），没有可替换的 env 参数。
  */
 export default {
   subject: "collision_healing",
@@ -74,32 +75,32 @@ export default {
     {
       note: "buff kind misspelled",
       file: "native/lfw/collision/healing.cpp",
-      from: '  buff::grant_buff(g_env.buff_env(), u"Healing", a, v,',
-      to: '  buff::grant_buff(g_env.buff_env(), u"healing", a, v,',
+      from: '  buff::grant_buff(u"Healing", a, v,',
+      to: '  buff::grant_buff(u"Healing", a, v,'.replace('u"Healing"', 'u"healing"'),
     },
     {
       note: "attacker handed to grant_buff is the victim",
       file: "native/lfw/collision/healing.cpp",
-      from: "  buff::grant_buff(g_env.buff_env(), u\"Healing\", a, v,\n                   buff::Buff_Healing::duration_of(*v, to_number(injury)));",
-      to: '  buff::grant_buff(g_env.buff_env(), u"Healing", v, v,\n                   buff::Buff_Healing::duration_of(*v, to_number(injury)));',
+      from: "  buff::grant_buff(u\"Healing\", a, v, buff::Buff_Healing::duration_of(*v, to_number(injury)));",
+      to: '  buff::grant_buff(u"Healing", v, v, buff::Buff_Healing::duration_of(*v, to_number(injury)));',
     },
     {
       note: "victim handed to grant_buff is the attacker",
       file: "native/lfw/collision/healing.cpp",
-      from: "  buff::grant_buff(g_env.buff_env(), u\"Healing\", a, v,\n                   buff::Buff_Healing::duration_of(*v, to_number(injury)));",
-      to: '  buff::grant_buff(g_env.buff_env(), u"Healing", a, a,\n                   buff::Buff_Healing::duration_of(*v, to_number(injury)));',
+      from: "  buff::grant_buff(u\"Healing\", a, v, buff::Buff_Healing::duration_of(*v, to_number(injury)));",
+      to: '  buff::grant_buff(u"Healing", a, a, buff::Buff_Healing::duration_of(*v, to_number(injury)));',
     },
     {
       note: "duration is not derived from the injury",
       file: "native/lfw/collision/healing.cpp",
-      from: "                   buff::Buff_Healing::duration_of(*v, to_number(injury)));",
-      to: "                   0.0);",
+      from: "buff::Buff_Healing::duration_of(*v, to_number(injury)));",
+      to: "0.0);",
     },
     {
       note: "duration reads the attacker dataset",
       file: "native/lfw/collision/healing.cpp",
-      from: "                   buff::Buff_Healing::duration_of(*v, to_number(injury)));",
-      to: "                   buff::Buff_Healing::duration_of(*a, to_number(injury)));",
+      from: "buff::Buff_Healing::duration_of(*v, to_number(injury)));",
+      to: "buff::Buff_Healing::duration_of(*a, to_number(injury)));",
     },
   ],
 };

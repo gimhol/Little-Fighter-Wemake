@@ -25,7 +25,6 @@ using lfw::Entity;
 using lfw::EnterFrameResult;
 using lfw::Value;
 using lfw::buff::Buff;
-using lfw::buff::BuffEnv;
 using lfw::state::WeaponState_Base;
 using lfw::state::WeaponState_InTheSky;
 using lfw::state::WeaponState_OnGround;
@@ -253,16 +252,6 @@ std::string state_text() {
 }
 
 void bind() {
-  static BuffEnv keep;
-  keep.find_entity = [](const std::u16string&) -> lfw::Entity* { return nullptr; };
-  keep.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  keep.find_data = [](const std::u16string&) -> Value { return Value(); };
-  keep.world_buffs_set = [](const std::u16string&, Buff*) {};
-  keep.world_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
-  keep.create_buff = [](const std::u16string&, const std::u16string&) -> Buff* { return nullptr; };
-  lfw::state::StateEnv senv;
-  senv.buff_env = &keep;
-  lfw::state::set_state_env(senv);
 }
 
 }

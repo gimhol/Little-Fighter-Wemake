@@ -23,7 +23,6 @@ struct Handlers2Env {
   std::function<Entity*(const std::u16string& id)> find_entity;
   std::function<void(Entity* a, const Value& injury, Entity* v, const Value& prev_hp)>
       summary_apply_damage;
-  std::function<const buff::BuffEnv*()> buff_env;
   std::function<bool(const Entity& e)> is_fighter;
   std::function<ItrVelocity(Collision& c)> calc_velocity;
 };

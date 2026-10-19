@@ -3,6 +3,8 @@
 #include <memory>
 
 #include "lfw/defines/gone_frame_info.h"
+#include "lfw/lfw.h"
+#include "lfw/world.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/type_cast.h"
 
@@ -32,9 +34,18 @@ std::array<double, 5> times_read(const Value& v) {
 
 }
 
-Buff::Buff(const BuffEnv* env, const std::u16string& id, const Value& kind)
-    : _env(env), _id(id), _kind(kind) {
+Buff::Buff(LFW& lfw, const std::u16string& id, const Value& kind)
+    : _lfw(&lfw), _world(&lfw.world()), _id(id), _kind(kind) {
   _lifetime.set_lifes(1.0);
+}
+
+// 池化复用可能把这个对象交给别的 `LFW`（`Factory::create_buff` 那条路）⇒ 上一局的
+// `_effects` / `_victims` / `_effect_data` 全部作废。
+void Buff::rebind_lfw(LFW& lfw) {
+  if (_lfw == &lfw) return;
+  drop_cached_refs();
+  _lfw = &lfw;
+  _world = &lfw.world();
 }
 
 Entity* Buff::attacter() {
@@ -43,7 +54,7 @@ Entity* Buff::attacter() {
     return _attacker;
   }
   if (_attacker != nullptr && _attacker->id == _attacker_id) {
-    _attacker = _env->find_entity(_attacker_id);
+    _attacker = _world->find_entity(_attacker_id);
     return _attacker;
   }
   return _attacker;
@@ -52,9 +63,9 @@ Entity* Buff::attacter() {
 void Buff::reset(const std::u16string& id) {
   clear_effects();
   const std::u16string prev = _id;
-  if (prev != id && _env != nullptr) {
+  if (prev != id) {
     for (const std::u16string& vid : _victims) {
-      Entity* v = _env->find_entity(vid);
+      Entity* v = _world->find_entity(vid);
       if (v != nullptr) v->buffs_delete(prev);
     }
   }
@@ -70,7 +81,7 @@ void Buff::reset(const std::u16string& id) {
 }
 
 void Buff::set_attacker_by_id(const std::u16string& id) {
-  _attacker = _env->find_entity(id);
+  _attacker = _world->find_entity(id);
   _attacker_id = id;
 }
 
@@ -81,7 +92,7 @@ void Buff::set_attacker_entity(Entity* e) {
 
 void Buff::set_victim(Entity* victim) {
   for (const std::u16string& vid : _victims) {
-    Entity* v = _env->find_entity(vid);
+    Entity* v = _world->find_entity(vid);
     if (v != nullptr) v->buffs_set(_id, this);
   }
   _victims.clear();
@@ -121,7 +132,7 @@ Value Buff::effect_data() {
   const std::u16string oid = effect_oid();
   if (oid.empty()) return Value();
   if (!_effect_data_loaded) {
-    _effect_data = _env->find_data(oid);
+    _effect_data = _lfw->datas_find(Value(oid));
     _effect_data_loaded = true;
   }
   return _effect_data;
@@ -163,16 +174,16 @@ void Buff::drop_cached_refs() {
 }
 
 void Buff::show_effect(Entity* victim) {
-  if (_env == nullptr || victim == nullptr) return;
+  if (victim == nullptr) return;
   Entity* effect = nullptr;
   for (const auto& e : _effects) {
     if (e.first == victim->id) effect = e.second;
   }
-  if (effect != nullptr && _env->find_entity(effect->id) == nullptr) effect = nullptr;
+  if (effect != nullptr && _world->find_entity(effect->id) == nullptr) effect = nullptr;
   if (effect == nullptr) {
     const Value data = effect_data();
     if (!truthy(data)) return;
-    effect = _env->create_entity(data);
+    effect = _lfw->create_entity(*_world, data);
     if (effect == nullptr) return;
     effect->set_outline_alpha(0);
     effect->set_outline_width(0);
@@ -193,7 +204,6 @@ void Buff::show_effect(Entity* victim) {
 }
 
 void Buff::update_effects() {
-  if (_env == nullptr) return;
   if (_effects.empty() && effect_oid().empty()) return;
   for (size_t i = 0; i < _effects.size();) {
     const std::u16string vid = _effects[i].first;
@@ -202,7 +212,7 @@ void Buff::update_effects() {
     for (const std::u16string& v : _victims) {
       if (v == vid) keep = true;
     }
-    if (keep && _env->find_entity(vid) != nullptr && _env->find_entity(effect->id) != nullptr) {
+    if (keep && _world->find_entity(vid) != nullptr && _world->find_entity(effect->id) != nullptr) {
       ++i;
       continue;
     }
@@ -210,7 +220,7 @@ void Buff::update_effects() {
     _effects.erase(_effects.begin() + static_cast<std::ptrdiff_t>(i));
   }
   for (const std::u16string& vid : _victims) {
-    Entity* victim = _env->find_entity(vid);
+    Entity* victim = _world->find_entity(vid);
     if (victim != nullptr) show_effect(victim);
   }
 }
@@ -223,21 +233,21 @@ void Buff::update(double d) {
       attacker = attacter();
       resolved = true;
     }
-    for (const std::u16string& vid : _victims) on_update(attacker, _env->find_entity(vid));
+    for (const std::u16string& vid : _victims) on_update(attacker, _world->find_entity(vid));
   }
   if (_ticker.add(d) && has_on_tick()) {
     if (!resolved) {
       attacker = attacter();
       resolved = true;
     }
-    for (const std::u16string& vid : _victims) on_tick(attacker, _env->find_entity(vid));
+    for (const std::u16string& vid : _victims) on_tick(attacker, _world->find_entity(vid));
   }
   if (_lifetime.add() && has_on_end()) {
     if (!resolved) {
       attacker = attacter();
       resolved = true;
     }
-    for (const std::u16string& vid : _victims) on_end(attacker, _env->find_entity(vid));
+    for (const std::u16string& vid : _victims) on_end(attacker, _world->find_entity(vid));
   }
   update_effects();
 }
@@ -257,7 +267,7 @@ Value Buff::to_snapshot() const {
 
 void Buff::read_snapshot(const Value& s) {
   _attacker_id = to_string(field_or(s, u"attacker_id"));
-  _attacker = _attacker_id.empty() ? nullptr : _env->find_entity(_attacker_id);
+  _attacker = _attacker_id.empty() ? nullptr : _world->find_entity(_attacker_id);
   _level = to_number(field_or(s, u"level"));
   _mounted = truthy(field_or(s, u"mounted"));
   _victims.clear();
@@ -271,7 +281,7 @@ void Buff::read_snapshot(const Value& s) {
 void Buff::mount() {
   if (_mounted) return;
   _mounted = true;
-  _env->world_buffs_set(_id, this);
+  _world->buffs_set(_id, this);
 }
 
 void Buff::unmount() {
@@ -281,24 +291,21 @@ void Buff::unmount() {
     const std::u16string vid = _victims[0];
     del_effect(vid);
     del_id(vid);
-    Entity* v = _env->find_entity(vid);
+    Entity* v = _world->find_entity(vid);
     if (v != nullptr) v->buffs_delete(_id);
   }
 }
 
-Buff* grant_buff(const BuffEnv* env, const std::u16string& kind, Entity* attacker,
-                 Entity* victim, double duration) {
-  const std::u16string id = kind + u"_" + (victim != nullptr ? victim->id : std::u16string());
-  Buff* buf = nullptr;
-  if (env->world_buffs_get) buf = env->world_buffs_get(id);
-  if (buf == nullptr && env->create_buff) buf = env->create_buff(kind, id);
+Buff* grant_buff(const std::u16string& kind, Entity* attacker, Entity* victim,
+                 double duration) {
+  if (victim == nullptr) return nullptr;
+  LFW& lfw = victim->lfw();
+  World& world = victim->world();
+  const std::u16string id = kind + u"_" + victim->id;
+  Buff* buf = world.buffs_get(id);
+  if (buf == nullptr) buf = lfw.create_buff(kind, id);
   if (buf == nullptr) return nullptr;
-  // TS 的 `new B(lfw, id, B.KIND)` 在**构造时**就把 `lfw`/`world` 存进实例，所以 `mount()` /
-  // `update()` / `attacter()` 里的 `this.lfw...` 永远有值；端口的 `Buff` 改收 `const BuffEnv*`，
-  // 而 `Factory::create_buff` 手里只有 `LFW*`（没有 env）⇒ env 只能在「发牌」这一刻补上。
-  // 不补就是**空指针解引用**：`mount()` 的第一句 `_env->world_buffs_set(...)` 直接崩
-  // （`Factory::create_buff` 那条路造的 buff 全是 env=nullptr 的，见 `buff/registry.cpp`）。
-  buf->set_env(env);
+  buf->rebind_lfw(lfw);
   buf->set_lifetime(0);
   buf->set_duration(duration);
   buf->set_level(buf->level() + 1);

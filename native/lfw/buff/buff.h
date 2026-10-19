@@ -12,12 +12,18 @@
 
 namespace lfw {
 
+class LFW;
+class World;
+
 namespace buff {
 
 class Buff;
 
 // 实体接口已退役（切片 4BY）：`buff` 系统直接以 `lfw::Entity` 为宿主面，原先的
 // `Entity` 窄接口连同其 34 个方法一并删除（空值与缺省语义由 `Entity` 自身承担）。
+// 切片 4CP：`BuffEnv` 也退役 —— TS 的 `Buff` 构造收 `lfw: LFW` 并自己记 `this.world = lfw.world`，
+// 端口照做（`_lfw` / `_world` 两个只读句柄），`find_entity` / `datas.find` / `create_entity` /
+// `world.buffs` / `factory.create_buff` 全都走 `LFW`/`World` 自己的（虚）方法。
 
 inline bool set_mark(Entity& e, const std::u16string& key, const std::u16string& value,
                      const Value& prev) {
@@ -35,21 +41,17 @@ inline bool del_mark(Entity& e, const std::u16string& key, const Value& value) {
   return false;
 }
 
-struct BuffEnv {
-  std::function<Entity*(const std::u16string& id)> find_entity;
-  std::function<Entity*(const Value& data)> create_entity;
-  std::function<Value(const std::u16string& oid)> find_data;
-  std::function<void(const std::u16string& id, Buff* b)> world_buffs_set;
-  std::function<Buff*(const std::u16string& id)> world_buffs_get;
-  std::function<Buff*(const std::u16string& kind, const std::u16string& id)> create_buff;
-};
-
 class Buff {
  public:
   // `virtual`：端口有 7 个 buff 子类，台面按 `std::unique_ptr<Buff>` 持有派生对象 ⇒ 非虚析构
   // 会让派生析构永不执行（clang 只在编译到删除点时才报；删除点在台面里）。
   virtual ~Buff() = default;
-  Buff(const BuffEnv* env, const std::u16string& id, const Value& kind);
+  // TS `constructor(lfw: LFW, id, kind)`。`LFW` 与 `World` 都是**每局一个**的稳定对象
+  // （`LFW::world()` 返回同一个 `World`），所以这两个指针不会悬空。
+  Buff(LFW& lfw, const std::u16string& id, const Value& kind);
+
+  LFW& lfw() const { return *_lfw; }
+  World& world() const { return *_world; }
 
   const std::u16string& id() const { return _id; }
   const std::vector<std::u16string>& victims() const { return _victims; }
@@ -68,15 +70,11 @@ class Buff {
   size_t effects_size() const { return _effects.size(); }
   Entity* attacter();
 
-  // 池化复用（`Factory::recycle_buff` → 下一次 `create_buff`）会把这个对象交给**下一个**
-  // 世界的实体；而 `_effects` 是裸 `Entity*`、`_victims` 是上一局的 id ⇒ 换宿主时必须丢掉。
-  void set_env(const BuffEnv* env) {
-    if (_env != nullptr && _env != env) drop_cached_refs();
-    _env = env;
-  }
-  const BuffEnv* env() const { return _env; }
-  virtual void init() {}
   void reset(const std::u16string& id);
+  // 池化复用（`Factory::recycle_buff` → 下一次 `create_buff`）可能把这个对象交给别的 `LFW`
+  // ⇒ 换主人时丢掉上一局的实体缓存（`_effects` 是裸 `Entity*`、`_victims` 是上一局的 id）。
+  void rebind_lfw(LFW& lfw);
+  virtual void init() {}
   void set_attacker_by_id(const std::u16string& id);
   void set_attacker_entity(Entity* e);
   void set_victim(Entity* victim);
@@ -117,7 +115,8 @@ class Buff {
   /** 丢掉一切「属于某个世界的实体」的缓存（`_effects` 是裸指针、`_victims` 是 id）。 */
   void drop_cached_refs();
 
-  const BuffEnv* _env = nullptr;
+  LFW* _lfw = nullptr;
+  World* _world = nullptr;
   std::u16string _id;
   Value _kind;
   Entity* _attacker = nullptr;
@@ -132,8 +131,10 @@ class Buff {
   bool _effect_data_loaded = false;
 };
 
-Buff* grant_buff(const BuffEnv* env, const std::u16string& kind, Entity* attacker,
-                 Entity* victim, double duration);
+// TS `grant_buff(kind, attacker, victim, duration = 0)`：`lfw` / `world` 从 **victim** 上取
+//（`const { lfw, world } = victim`），没有 env 参数。
+Buff* grant_buff(const std::u16string& kind, Entity* attacker, Entity* victim,
+                 double duration = 0);
 
 }
 }

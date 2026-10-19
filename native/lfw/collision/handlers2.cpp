@@ -47,8 +47,7 @@ void handle_injury(Collision& c, double scale, bool keep_toughness) {
   g_env.summary_apply_damage(att, Value(injury), v, Value(prev_hp));
   if (att->marks_has(u"Electrify") && g_env.is_fighter(*v)) {
     const Value elec = att->dataset(u"electrify_duration");
-    buff::grant_buff(g_env.buff_env(), u"Electroshock", att, v,
-                     missing(elec) ? 0 : to_number(elec));
+    buff::grant_buff(u"Electroshock", att, v, missing(elec) ? 0 : to_number(elec));
   }
 }
 

@@ -1,5 +1,7 @@
 #include "lfw/buff/buff_electroshock.h"
 
+#include "lfw/world.h"
+
 #include "lfw/defines/state_enum.h"
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/utils/math/round_float.h"
@@ -31,7 +33,7 @@ void Buff_Electroshock::mount() {
   Buff::mount();
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
     const Value state = victim->state();
     if (equals(state, Value(static_cast<double>(StateEnum::Injured)))) continue;

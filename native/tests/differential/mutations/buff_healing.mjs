@@ -109,8 +109,8 @@ export default {
     {
       note: "healing: mount ignores the first victim",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: '  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());',
-      to: '  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = env()->find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());',
+      from: '  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());',
+      to: '  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());',
     },
     {
       note: "healing: on_tick is never scheduled",

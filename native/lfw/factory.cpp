@@ -168,6 +168,8 @@ buff::Buff* Factory::create_buff(const FactoryKey& kind, LFW* lfw, const std::u1
     if (taken.has_value()) ret = *taken;
   }
   if (ret == nullptr) ret = b->create(lfw, id, b->kind());
+  if (ret == nullptr) return nullptr;
+  if (lfw != nullptr) ret->rebind_lfw(*lfw);
   ret->reset(id);
   ret->init();
   return ret;

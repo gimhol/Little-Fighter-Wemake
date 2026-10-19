@@ -19,13 +19,8 @@ namespace state {
 // （`CharacterState_*` / `WeaponState_*` / `BallState_*`）现在直接收 `lfw::Entity&`，
 // 原来那 155 个成员的实体面收进了 `Entity`（见 `entity/entity.h` 的「状态面」一节与
 // DESIGN §142）。
-
-struct StateEnv {
-  const buff::BuffEnv* buff_env = nullptr;
-};
-
-const StateEnv& state_env();
-void set_state_env(const StateEnv& env);
+// 切片 4CP：`StateEnv` 里最后一格 `buff_env` 也退役了（`grant_buff` 从 victim 上取
+// `lfw`/`world`，与 TS 同形）⇒ 这个空壳连同 `state_env()` / `set_state_env()` 一并删除。
 
 class State_Base {
  public:

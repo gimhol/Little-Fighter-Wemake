@@ -85,7 +85,6 @@ class WorldCollisionHost {
   void bind_weapon_is_hit();
   void bind_ball_frozen();
   void bind_healing();
-  void bind_buff_env();
 
   // `collision.attacker` / `.victim` → `Entity`（台面里的假实体给 `nullptr`）。
   static Entity* entity_of_collision_a(const collision::Collision& c);
@@ -121,7 +120,6 @@ class WorldCollisionHost {
   collision::WeaponIsHitEnv _weapon_is_hit;
   collision::BallFrozenEnv _ball_frozen;
   collision::HealingEnv _healing;
-  buff::BuffEnv _buff_env;
 
   // `lfw.acquire_collision()`：TS 的对象池 `Graves`（`LFW.ts:891`）**没有任何**
   // `recycle_collision` 调用者 ⇒ 池永远是空的 ⇒ 每次都是新对象。端口按同样的行为给「每次

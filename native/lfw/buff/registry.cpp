@@ -16,8 +16,7 @@ namespace lfw {
 namespace buff {
 namespace {
 
-// TS 的 `IInstCls`：类上带 `KIND` / `GROUPS`，构造是 `new B(lfw, id, B.KIND)`。端口的
-// `Buff` 构造收 `const BuffEnv*`（宿主随 `grant_buff` 设置）⇒ 这里给 `nullptr`。
+// TS 的 `IInstCls`：类上带 `KIND` / `GROUPS`，构造是 `new B(lfw, id, B.KIND)`。
 template <typename B>
 Value kind_value() {
   if constexpr (std::is_same_v<std::decay_t<decltype(B::KIND)>, const char16_t*>) {
@@ -48,8 +47,8 @@ class BuffCreator : public IBuffCreator {
   }
   const std::vector<Value>& groups() const override { return groups_value<B>(); }
   Buff* create(LFW* lfw, const std::u16string& id, const Value& kind) const override {
-    (void)lfw;
-    return new B(nullptr, id, kind);
+    if (lfw == nullptr) return nullptr;
+    return new B(*lfw, id, kind);
   }
 };
 

@@ -1,5 +1,7 @@
 #include "lfw/buff/buff_electrify.h"
 
+#include "lfw/world.h"
+
 namespace lfw {
 namespace buff {
 
@@ -17,7 +19,7 @@ void Buff_Electrify::mount() {
   Buff::mount();
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
     set_mark(*victim, std::u16string(KIND), id(), Value());
   }
@@ -26,7 +28,7 @@ void Buff_Electrify::mount() {
 void Buff_Electrify::unmount() {
   const std::vector<std::u16string>& victims = this->victims();
   for (size_t i = 0; i < victims.size(); ++i) {
-    Entity* victim = env()->find_entity(victims[i]);
+    Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
     del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));
   }

@@ -140,9 +140,11 @@ inline lfw::Entity* new_fake_entity(World& world, const Value& data) {
 class StubHost;
 // 只暴露 `ILfwHost&`：`StubHost` 在 subject 的 TU 里是不完整类型，而构造 `LFW` 只需要基类引用。
 lfw::ILfwHost& shared_stub_host();
+// `FakeLfw::world()` 要指向台面的 `TestWorld`，而后者定义在 `FakeLfw` 之后
+// （且 `TestWorld` 的构造要用 `FakeLfw` 实例）⇒ 走前置声明，定义在 `shared_world()` 旁边。
+lfw::World& fake_world();
 
 // 台面共享的假 `lfw`。
-//
 // 切片 4CM：它原来是 `IWorldLfw` 的实现（那是「`LFW` 未移植」年代的窄缝），现在**派生真
 // `lfw::LFW`**（宿主用上面的静音 headless 宿主），只覆写各用例脚本化的那些面 ——
 // 不覆写的面走 `LFW` 的真实现。这样做的直接理由：`ui::UILayers` / `DatMgr` / `LFW` 自身的
@@ -162,6 +164,22 @@ class FakeLfw : public lfw::LFW {
 
   // ---- `IStageLfw` ----
   lfw::MersenneTwister* mt() override { return &g_mt; }
+
+  // `Buff` 直接读 `lfw.world()`（TS `readonly world = lfw.world`）。真 `LFW` 返回自己持有的
+  // 那个世界；台面里 `TestWorld` 才是实体所在的世界 ⇒ 由需要的 subject 在 `bind()` 里把
+  // `world_override` 指过去（不指的时候保持真实现，免得「从没用过台面世界」的 subject
+  // 平白多构造一个 `World`、多出两条日志）。
+  lfw::World* world_override = nullptr;
+  World& world() override {
+    return world_override != nullptr ? *world_override : lfw::LFW::world();
+  }
+
+  // buff 家族台面的三个 `lfw` 级钩子（切片 4CP：`BuffEnv` 退役后 `Buff` 直接走
+  // `lfw().datas_find` / `lfw().create_entity` / `lfw().create_buff`）。设了就完全接管。
+  std::function<Value(const std::u16string&)> on_datas_find;
+  std::function<lfw::Entity*(const Value&)> on_create_entity;
+  std::function<lfw::buff::Buff*(const std::u16string& kind, const std::u16string& id)>
+      on_create_buff;
 
   Value datas_backgrounds_find(const Value& id) override {
     for (const Value& d : g_bg_datas) {
@@ -224,6 +242,7 @@ class FakeLfw : public lfw::LFW {
   }
 
   Value datas_find(const Value& oid) override {
+    if (on_datas_find) return on_datas_find(lfw::to_string(oid));
     push("h:datasfind=" + vstr(oid));
     for (const Value& d : g_datas) {
       if (lfw::strict_equals(lfw::field_or(d, u"id"), oid)) return d;
@@ -261,9 +280,16 @@ class FakeLfw : public lfw::LFW {
   }
 
   lfw::Entity* create_entity(World& world, const Value& data) override {
+    if (on_create_entity) return on_create_entity(data);
     lfw::Entity* const raw = new_fake_entity(world, data);
     push("h:create=" + to_ascii(raw->id));
     return raw;
+  }
+
+  // `lfw.factory.create_buff(kind, lfw, id)`（`Buff` 里 `world.buffs_get` miss 时那条路）。
+  lfw::buff::Buff* create_buff(const std::u16string& kind, const std::u16string& id) override {
+    if (on_create_buff) return on_create_buff(kind, id);
+    return lfw::LFW::create_buff(kind, id);
   }
 
   lfw::Entity* create_entity_with_player(const std::u16string& player_id, World& world,
@@ -435,6 +461,9 @@ class TestWorld : public World {
   std::function<Value(const std::u16string&)> on_stage_value;
   std::function<Value(const std::u16string&)> on_bg_value;
   std::function<Entity*(const std::u16string&)> on_find_entity;
+  // `world.buffs.set/get`（TS 的 `world.buffs` Map；`Buff::mount` / `grant_buff` 直接读）。
+  std::function<void(const std::u16string&, lfw::buff::Buff*)> on_buffs_set;
+  std::function<lfw::buff::Buff*(const std::u16string&)> on_buffs_get;
   std::function<std::vector<Entity*>()> on_puppets_values;
   std::function<void(Entity&)> on_add_entities;
   std::function<std::vector<double>(Entity&)> on_get_bound;
@@ -465,6 +494,17 @@ class TestWorld : public World {
   Entity* find_entity(const std::u16string& id) const override {
     if (on_find_entity) return on_find_entity(id);
     return World::find_entity(id);
+  }
+  void buffs_set(const std::u16string& id, lfw::buff::Buff* b) override {
+    if (on_buffs_set) {
+      on_buffs_set(id, b);
+      return;
+    }
+    World::buffs_set(id, b);
+  }
+  lfw::buff::Buff* buffs_get(const std::u16string& id) const override {
+    if (on_buffs_get) return on_buffs_get(id);
+    return World::buffs_get(id);
   }
   std::vector<Entity*> puppets_values() override {
     if (on_puppets_values) return on_puppets_values();
@@ -530,6 +570,11 @@ inline TestWorld& shared_world() {
   static TestWorld w;
   return w;
 }
+
+// 与 `shared_world()` 配对的假 `lfw`（`shared_world().lfw()` 就是它）。
+inline FakeLfw& shared_lfw() { return g_lfw; }
+
+inline lfw::World& fake_world() { return shared_world(); }
 
 // ---- 真 `LFW` 的台面通路（切片 4CL）----
 //

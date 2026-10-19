@@ -18,7 +18,6 @@ namespace {
 
 using lfw::Value;
 using lfw::buff::Buff;
-using lfw::buff::BuffEnv;
 using lfw::state::CharacterState_Base;
 using trace::parse_value;
 using trace::render_value;
@@ -161,17 +160,6 @@ std::string state_text() {
 }
 
 void bind() {
-  BuffEnv benv;
-  benv.find_entity = [](const std::u16string&) -> lfw::Entity* { return nullptr; };
-  benv.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  benv.find_data = [](const std::u16string&) -> Value { return Value(); };
-  benv.world_buffs_set = [](const std::u16string&, Buff*) {};
-  benv.world_buffs_get = [](const std::u16string&) -> Buff* { return nullptr; };
-  benv.create_buff = [](const std::u16string&, const std::u16string&) -> Buff* { return nullptr; };
-  static BuffEnv keep = benv;
-  lfw::state::StateEnv senv;
-  senv.buff_env = &keep;
-  lfw::state::set_state_env(senv);
 }
 
 std::u16string value_text(const Value& v) {

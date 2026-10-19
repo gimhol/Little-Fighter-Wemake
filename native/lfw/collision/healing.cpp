@@ -23,8 +23,7 @@ void handle_healing(Collision& c) {
   Entity* v = g_env.find_entity(c.vid);
   if (v == nullptr) return;
 
-  buff::grant_buff(g_env.buff_env(), u"Healing", a, v,
-                   buff::Buff_Healing::duration_of(*v, to_number(injury)));
+  buff::grant_buff(u"Healing", a, v, buff::Buff_Healing::duration_of(*v, to_number(injury)));
 }
 
 }

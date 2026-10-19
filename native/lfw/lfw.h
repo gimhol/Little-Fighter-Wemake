@@ -382,7 +382,9 @@ class LFW : public IResourcesHost,
   bool disposed_guard(const std::u16string& fn, std::u16string& error);
 
   Keys* keys();
-  World& world() { return *world_; }
+  // `virtual`：`Buff` 直接读 `lfw.world`（TS 的 `readonly world = lfw.world`）；差分台面的假
+  // `LFW` 要把这一面指到自己的 `TestWorld`（真 `LFW` 返回自己持有的那个世界）。
+  virtual World& world() { return *world_; }
   virtual PlayerInfo* player(const std::u16string& player_id);
   // TS `lfw.players.delete(id)`（移除玩家号；队列表是插入序）。
   void players_delete(const std::u16string& player_id);

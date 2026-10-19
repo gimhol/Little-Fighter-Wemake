@@ -1710,7 +1710,7 @@ int main(int argc, char** argv) {
         while (i < t.size()) {
           const std::u16string id = u"b" + to_u16(std::to_string(k));
           g_buffs.push_back(
-              std::make_unique<lfw::buff::Buff>(nullptr, id, parse_value(t, i)));
+              std::make_unique<lfw::buff::Buff>(fx::shared_lfw(), id, parse_value(t, i)));
           g_entity->buffs[id] = g_buffs.back().get();
           ++k;
         }

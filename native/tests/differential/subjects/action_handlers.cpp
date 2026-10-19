@@ -210,7 +210,6 @@ lfw::Entity* find_fixture_entity(const std::u16string& id) {
 }
 
 ActionEnv g_env;
-lfw::buff::BuffEnv g_benv;
 lfw::Value g_data_found;
 bool g_has_data = false;
 bool g_ally = false;
@@ -230,6 +229,7 @@ void sync_emitters(Fake& f) {
 }
 
 void bind() {
+  fx::shared_lfw().world_override = &fx::shared_world();
   g_all = {&g_a, &g_v, &g_other};
   // `world.find_entity(id)`：TS 台面上就是 `worldStub.entity_map.get(id)` 那一层。
   fx::shared_world().on_find_entity = [](const std::u16string& id) { return find_fixture_entity(id); };
@@ -253,20 +253,19 @@ void bind() {
     g_log.push_back(std::string("is_ally:") + (g_ally ? "1" : "0"));
     return g_ally;
   };
-  g_env.buff_env = []() { return &g_benv; };
   // Buff 面同样以真 `Entity` 为准入（4BY 起 `buff_entity()` 退役）⇒ 直接认台面自己。
-  g_benv.find_entity = [](const std::u16string& id) -> lfw::Entity* {
+  fx::shared_world().on_find_entity = [](const std::u16string& id) -> lfw::Entity* {
     if (id == g_a.id) return &g_a;
     if (id == g_v.id) return &g_v;
     return nullptr;
   };
-  g_benv.create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
-  g_benv.find_data = [](const std::u16string&) -> Value { return Value(); };
-  g_benv.world_buffs_set = [](const std::u16string&, lfw::buff::Buff*) {};
-  g_benv.world_buffs_get = [](const std::u16string&) -> lfw::buff::Buff* { return nullptr; };
-  g_benv.create_buff = [](const std::u16string& kind, const std::u16string& id) {
+  fx::shared_lfw().on_create_entity = [](const Value&) -> lfw::Entity* { return nullptr; };
+  fx::shared_lfw().on_datas_find = [](const std::u16string&) -> Value { return Value(); };
+  fx::shared_world().on_buffs_set = [](const std::u16string&, lfw::buff::Buff*) {};
+  fx::shared_world().on_buffs_get = [](const std::u16string&) -> lfw::buff::Buff* { return nullptr; };
+  fx::shared_lfw().on_create_buff = [](const std::u16string& kind, const std::u16string& id) {
     g_log.push_back("create_buff:" + s_of(kind) + ":" + s_of(id));
-    g_granted = new lfw::buff::Buff(&g_benv, id, Value(kind));
+    g_granted = new lfw::buff::Buff(fx::shared_lfw(), id, Value(kind));
     return g_granted;
   };
 }

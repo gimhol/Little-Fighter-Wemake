@@ -189,7 +189,6 @@ Fake g_vic(u"V");
 Collision g_c;
 Handlers2Env g_h2;
 HandlersEnv g_henv;
-lfw::buff::BuffEnv g_benv;
 lfw::buff::Buff* g_granted = nullptr;
 Value g_recov = Value(0.25);
 Value g_vel = Value(0.0);
@@ -199,6 +198,7 @@ bool g_is_fighter = true;
 Value g_collision_dataset;
 
 void bind() {
+  fx::shared_lfw().world_override = &fx::shared_world();
   g_h2.warn = [](const std::u16string& m) { g_log.push_back("warn:" + s_of(m)); };
   g_h2.hp_recoverability = []() { return g_recov; };
   g_h2.find_entity = [](const std::u16string& id) -> Entity* {
@@ -211,7 +211,6 @@ void bind() {
     g_log.push_back("summary:" + s_of(a->id) + ":" + render(injury) + ":" + s_of(v->id) + ":" +
                     render(prev_hp));
   };
-  g_h2.buff_env = []() { return &g_benv; };
   g_h2.is_fighter = [](const Entity& e) { return lfw::entity::is_fighter_data(e.data()); };
   g_h2.calc_velocity = [](Collision&) -> ItrVelocity {
     ItrVelocity v;
@@ -255,18 +254,18 @@ void bind() {
   g_henv.buff_mount = [](const std::u16string&) {};
   g_c.env = &g_henv;
 
-  g_benv.find_entity = [](const std::u16string& id) -> Entity* {
+  fx::shared_world().on_find_entity = [](const std::u16string& id) -> Entity* {
     if (id == g_att.id) return &g_att;
     if (id == g_vic.id) return &g_vic;
     return nullptr;
   };
-  g_benv.create_entity = [](const Value&) -> Entity* { return nullptr; };
-  g_benv.find_data = [](const std::u16string&) -> Value { return Value(); };
-  g_benv.world_buffs_set = [](const std::u16string&, lfw::buff::Buff*) {};
-  g_benv.world_buffs_get = [](const std::u16string&) -> lfw::buff::Buff* { return nullptr; };
-  g_benv.create_buff = [](const std::u16string& kind, const std::u16string& id) {
+  fx::shared_lfw().on_create_entity = [](const Value&) -> Entity* { return nullptr; };
+  fx::shared_lfw().on_datas_find = [](const std::u16string&) -> Value { return Value(); };
+  fx::shared_world().on_buffs_set = [](const std::u16string&, lfw::buff::Buff*) {};
+  fx::shared_world().on_buffs_get = [](const std::u16string&) -> lfw::buff::Buff* { return nullptr; };
+  fx::shared_lfw().on_create_buff = [](const std::u16string& kind, const std::u16string& id) {
     g_log.push_back("create_buff:" + s_of(kind) + ":" + s_of(id));
-    g_granted = new lfw::buff::Buff(&g_benv, id, Value(kind));
+    g_granted = new lfw::buff::Buff(fx::shared_lfw(), id, Value(kind));
     return g_granted;
   };
 }
