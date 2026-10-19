@@ -40,12 +40,9 @@ bool non_empty(const std::optional<std::u16string>& v) {
   return v.has_value() && !v->empty();
 }
 
-// JS `String(v)` / `Number(v)`：缺省分别是 `undefined` / `NaN`。
+// JS `String(v)`：缺省是 `undefined`。
 Value str_or_undef(const std::optional<std::u16string>& v) {
   return v.has_value() ? Value(*v) : Value();
-}
-Value num_or_nan(const std::optional<std::u16string>& v) {
-  return to_number(v.has_value() ? Value(*v) : Value());
 }
 
 Value nums_or_undef(const std::optional<std::vector<double>>& ns) {
@@ -223,15 +220,19 @@ Value xml_to_ui_info(const IXMLElement& el) {
       auto img = std::make_shared<Object>();
       const std::optional<std::u16string> path_attr = child->attr(u"path");
       img->set(u"path", non_empty(path_attr) ? Value(*path_attr) : str_or_undef(child->attr(u"src")));
-      img->set(u"x", num_or_nan(child->attr(u"x")));
-      img->set(u"y", num_or_nan(child->attr(u"y")));
-      const Value w_v = num_or_nan(child->attr(u"w"));
+      const auto num_attr_value = [&](const char16_t* name) -> Value {
+        const std::optional<std::u16string> v = child->attr(name);
+        return v.has_value() ? to_number(Value(*v)) : Value();
+      };
+      img->set(u"x", num_attr_value(u"x"));
+      img->set(u"y", num_attr_value(u"y"));
+      const Value w_v = num_attr_value(u"w");
       img->set(u"w", w_v);
-      const Value h_v = num_or_nan(child->attr(u"h"));
+      const Value h_v = num_attr_value(u"h");
       img->set(u"h", h_v);
-      const Value dw_v = num_or_nan(child->attr(u"dw"));
+      const Value dw_v = num_attr_value(u"dw");
       img->set(u"dw", truthy(dw_v) ? dw_v : w_v);
-      const Value dh_v = num_or_nan(child->attr(u"dh"));
+      const Value dh_v = num_attr_value(u"dh");
       img->set(u"dh", truthy(dh_v) ? dh_v : h_v);
       const char16_t* const num_keys[] = {
           u"flip_x",      u"flip_y",      u"wrapS",        u"wrapT",
@@ -242,6 +243,16 @@ Value xml_to_ui_info(const IXMLElement& el) {
         if (const std::optional<std::u16string> v = child->attr(name); v.has_value()) {
           img->set(name, to_number(Value(*v)));
         }
+      }
+      if (const IXMLElement* np = child->child_by_tag(u"nine_patch"); np != nullptr) {
+        auto np_obj = std::make_shared<Object>();
+        const char16_t* const np_keys[] = {u"f_l", u"f_t", u"f_r", u"f_b", u"f_w",
+                                           u"f_h", u"l_w", u"t_h", u"r_w", u"b_h"};
+        for (const char16_t* k : np_keys) {
+          const std::optional<std::u16string> v = np->attr(k);
+          np_obj->set(k, v.has_value() ? to_number(Value(*v)) : Value());
+        }
+        img->set(u"nine_patch", Value(np_obj));
       }
       ret->set(u"img", Value(img));
     } else if (tag == u"template") {

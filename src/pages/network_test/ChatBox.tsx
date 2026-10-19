@@ -12,22 +12,22 @@ import { Button } from "../../Component/Buttons/Button";
 import Combine from "../../Component/Combine";
 import { Flex, type IFlexProps } from "../../Component/Flex";
 import { Input, type InputRef } from "../../Component/Input";
-import { type IRespChat, MsgEnum } from "../../Net";
+import { ErrCode, type IConnError, type IRespChat, MsgEnum } from "../../Net";
 import { is_editing_element } from "../../Utils/is_editing_element";
 import { Connection } from "./Connection";
 import styles from "./styles.module.scss";
 import { useRoom } from "./useRoom";
-export const enum ChatTarget {
+const enum ChatTarget {
   Global = 'global',
   Room = 'room',
   Private = 'private',
 }
-export const chat_target_labels = {
+const chat_target_labels = {
   [ChatTarget.Global]: "全局",
   [ChatTarget.Room]: "房间",
   [ChatTarget.Private]: "私聊"
 } as const
-export const all_chat_targets: [ChatTarget, ReactNode][] = [
+const all_chat_targets: [ChatTarget, ReactNode][] = [
   [ChatTarget.Global, '全局'],
   [ChatTarget.Room, '房间']
 ]
@@ -37,13 +37,18 @@ export interface IChatBoxProps extends IFlexProps {
 const list_styles = { verticalScrollBarThumb: { backgroundColor: 'rgba(255,255,255,0.3)' } }
 const msg_item_height = parseInt(styles.msg_item_height);
 const msg_list_height = 240;
+const CHAT_SEND_COOLDOWN_MS = 800;
+const CHAT_RATE_LIMIT_BACKOFF_MS = 1200;
 function ChatBoxView(props: IChatBoxProps, fref: ForwardedRef<HTMLDivElement>) {
   const { conn = null, ..._p } = props;
   const { room } = useRoom(conn)
+  const ref_room = useRef(room);
+  // eslint-disable-next-line react-hooks/refs
+  ref_room.current = room;
   const chat_targets = useMemo(() => {
-    if (room) return all_chat_targets;
-    return all_chat_targets.filter(v => v[0] !== 'room')
-  }, [!room])
+    if (room) return all_chat_targets.filter(v => v[0] === ChatTarget.Room);
+    return all_chat_targets.filter(v => v[0] === ChatTarget.Global);
+  }, [room])
   const ref_input = useRef<InputRef>(null);
   const [chat_target, set_chat_target, ref_chat_target] = useStateRef(ChatTarget.Global);
   const [chat_msg_text, set_chat_msg_text, ref_chat_msg_text] = useStateRef<string>('');
@@ -51,52 +56,61 @@ function ChatBoxView(props: IChatBoxProps, fref: ForwardedRef<HTMLDivElement>) {
   const [msgs, set_msgs, ref_msgs] = useStateRef<IRespChat[]>([]);
   const [is_bottom, set_is_bottom] = useStateRef(true)
   const ref_list = useRef<ListRef>(null)
+  const ref_chat_cooldown_until = useRef(0);
   useEffect(() => {
     set_chat_target(r => {
       if (r === ChatTarget.Private) return r
       else if (room) return ChatTarget.Room;
       else return ChatTarget.Global;
     })
-  }, [room])
+  }, [room, set_chat_target])
   useEffect(() => {
     if (!room && chat_target === ChatTarget.Room)
       set_chat_target(ChatTarget.Global)
-  }, [!room, chat_target]);
+  }, [room, chat_target, set_chat_target]);
 
   useEffect(() => {
     if (!conn) return;
     const cancel = conn.callbacks.add({
       on_message: (resp) => {
         switch (resp.type) {
-          case MsgEnum.Chat:
+          case MsgEnum.Chat: {
+            if (ref_room.current && resp.target === ChatTarget.Global) break;
             const list = ref_list.current;
             if (!list) break;
             const { y } = ref_list.current!.getScrollInfo()
-            const dist_to_bottom = msg_item_height * msgs.length - y - msg_list_height
+            const visible_count = ref_msgs.current.filter(m =>
+              !(ref_room.current && m.target === ChatTarget.Global)).length;
+            const dist_to_bottom = msg_item_height * visible_count - y - msg_list_height
             set_is_bottom(dist_to_bottom < 20)
             set_msgs(v => [...v.slice(-100), resp]);
             break;
+          }
         }
       }
     })
     return () => cancel()
-  }, [conn])
+  }, [conn, ref_msgs, set_is_bottom, set_msgs])
 
   const send = () => {
     if (!conn) return;
     if (ref_chat_msg_sending.current) return;
     const text = (ref_chat_msg_text.current ?? '').trim();
     if (!text) return;
+    const now = Date.now();
+    if (now < ref_chat_cooldown_until.current) return;
+    ref_chat_cooldown_until.current = now + CHAT_SEND_COOLDOWN_MS;
     const input = ref_input.current?.input;
     const keep_focus = !!input && document.activeElement === input;
     set_chat_msg_sending(true)
     conn.send(MsgEnum.Chat, {
       target: ref_chat_target.current,
       text
-    }).then(r => {
+    }).then(() => {
       set_chat_msg_text('');
     }).catch(e => {
-
+      if ((e as IConnError)?.lfw?.code === ErrCode.ChatTooFrequent)
+        ref_chat_cooldown_until.current = Date.now() + CHAT_RATE_LIMIT_BACKOFF_MS;
     }).finally(() => {
       set_chat_msg_sending(false)
       if (keep_focus && input && document.activeElement === document.body)
@@ -139,12 +153,16 @@ function ChatBoxView(props: IChatBoxProps, fref: ForwardedRef<HTMLDivElement>) {
   }
   useShortcut('alt+y', !conn, switch_chat_target, window)
   useShortcut('alt+t', !conn, open_input_box, window)
+  const visible_msgs = useMemo(
+    () => room ? msgs.filter(m => m.target !== ChatTarget.Global) : msgs,
+    [msgs, room])
+
   useEffect(() => {
     if (!is_bottom) return;
     const list = ref_list.current;
     if (!list) return;
     list.scrollTo(Number.MAX_SAFE_INTEGER)
-  }, [is_bottom, msgs])
+  }, [is_bottom, visible_msgs])
 
   let input_prefix_classname = styles.msg_item;
   switch (chat_target!) {
@@ -179,9 +197,9 @@ function ChatBoxView(props: IChatBoxProps, fref: ForwardedRef<HTMLDivElement>) {
         virtual
         className={styles.msg_list}
         style={msg_list_style}
-        data={msgs}
+        data={visible_msgs}
         ref={ref_list}
-        height={Math.min(msg_list_height, msg_item_height * msgs.length)}
+        height={Math.min(msg_list_height, msg_item_height * visible_msgs.length)}
         styles={list_styles}
         itemHeight={msg_item_height}
         itemKey={i => i.seq !== undefined ? '' + i.seq : `${i.date}:${i.sender?.id ?? ''}:${i.text}`}>
@@ -207,7 +225,7 @@ function ChatBoxView(props: IChatBoxProps, fref: ForwardedRef<HTMLDivElement>) {
           ref={ref_input}
           maxLength={100}
           data-flex={1}
-          onFocus={e => set_ipt_focus(true)}
+          onFocus={() => set_ipt_focus(true)}
           onBlur={e => {
             set_ipt_focus(false)
             const next = e.relatedTarget as Node | null

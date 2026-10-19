@@ -34,6 +34,7 @@ import { CMD } from "./LFW/defines/CMD";
 import { SyncRenderEnum } from "./LFW/defines/SyncRenderEnum";
 import { Defines } from "./LFW/defines/defines";
 import { Ditto, type IZip } from "./LFW/ditto";
+import { Factory } from "./LFW/Factory";
 import type { IUIInfo } from "./LFW/ui/IUIInfo.dat";
 import { range } from "./LFW/utils/math/range";
 import { Loading } from "./LoadingImg";
@@ -70,9 +71,12 @@ import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
 import { Networking } from "./pages/network_test/Networking";
+import { NetworkLogic } from "./pages/network_test/NetworkLogic";
 import { useCallbacks } from "./pages/network_test/useCallbacks";
 import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { is_toy_env } from "./toy_sdk";
+
+Factory.register_component(NetworkLogic);
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"
 type debug_ui_pos = "left" | "right" | "top" | "bottom"
@@ -269,7 +273,8 @@ function App() {
     on_broadcast: (message, lfw) => {
       switch (message) {
         case 'network_game':
-          set_networking(prev => !prev)
+          if (params.network === '1') set_networking(prev => !prev)
+          else if (lfw.layers.ui?.id !== 'network_page') lfw.layers.push_page({ id: 'network_page' }, 1)
           break;
         case 'select_extra_data':
         case 'select_mods':

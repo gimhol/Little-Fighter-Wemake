@@ -34,6 +34,7 @@
   "ui/main_page.ui.json5",
   "ui/move_table_page.ui.json5",
   "ui/network_loading_page.ui.json5",
+  "ui/network_page.ui.xml",
   "ui/nine_patch_test.ui.json5",
   "ui/player_keys_hints.ui.json5",
   "ui/player_score_row.ui.json5",

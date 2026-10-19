@@ -131,18 +131,47 @@ export class UINodeRenderer implements IUINodeRenderer {
     const text_input = this.ui.find_component(TextInput)
     if (text_input) {
       const ele_input = this._input = document.createElement('input');
-      ele_input.id = "text_input"
-      const { maxLength, defaultValue, text } = text_input
+      ele_input.id = this.ui.id ? `text_input_${this.ui.id}` : "text_input"
+      const { maxLength, defaultValue, text, placeholder } = text_input
       if (is_num(maxLength)) ele_input.maxLength = maxLength
       else ele_input.removeAttribute('maxLength')
       if (is_str(defaultValue)) ele_input.defaultValue = defaultValue
       else ele_input.removeAttribute('defaultValue')
+      if (is_str(placeholder)) ele_input.placeholder = placeholder
       ele_input.value = text
+      ele_input.style.textAlign = text_input.node.style.text_align || 'left'
+      ele_input.style.padding = '0 6px'
+      ele_input.style.boxSizing = 'border-box'
       ele_input.onchange = () => text_input.text = ele_input.value
+      ele_input.onkeydown = (e) => {
+        if (e.key !== 'Enter') return;
+        text_input.text = ele_input.value;
+        text_input.on_submit?.();
+        e.preventDefault();
+      }
       ele_input.onfocus = () => text_input.node.focused = true
       ele_input.onblur = () => text_input.node.focused = false
       this.dom.appendChild(ele_input)
     }
+  }
+
+  get_input_value(): string {
+    if (this._input) return this._input.value;
+    return this.ui.find_component(TextInput)?.text ?? '';
+  }
+
+  set_input_value(value: string): void {
+    const text_input = this.ui.find_component(TextInput);
+    if (text_input) text_input.text = value;
+    if (this._input) this._input.value = value;
+  }
+
+  set_input_placeholder(value: string): void {
+    if (this._input) this._input.placeholder = value;
+  }
+
+  focus_input(): void {
+    this._input?.focus();
   }
 
   on_pause(): void {
@@ -179,8 +208,15 @@ export class UINodeRenderer implements IUINodeRenderer {
     this._bg_layer_proxy?.removeFromParent();
   }
 
-  on_show(): void { }
-  on_hide(): void { }
+  on_show(): void {
+    this.mesh.visible = true;
+    this.show_dom();
+  }
+
+  on_hide(): void {
+    this.mesh.visible = false;
+    this.hide_dom();
+  }
   on_start() {
     this.update_center_and_size()
     const { x, y, z } = this.ui;
@@ -547,8 +583,14 @@ export class UINodeRenderer implements IUINodeRenderer {
     if (this._dom) {
       this._dom.style.opacity = '' + this.mesh.material.alpha
       if (this._input) {
-        this._input.style.fontSize = this._dom.style.height;
-        this._input.style.lineHeight = this._dom.style.height;
+        const font_size = this.ui.find_component(TextInput)?.fontSize;
+        if (is_num(font_size)) {
+          this._input.style.fontSize = `${font_size}px`;
+          this._input.style.lineHeight = 'normal';
+        } else {
+          this._input.style.fontSize = this._dom.style.height;
+          this._input.style.lineHeight = this._dom.style.height;
+        }
       }
     }
     this._img = ui.image
