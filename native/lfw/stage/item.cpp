@@ -183,7 +183,7 @@ bool Item::spawn() {
   if (times.has_value() && truthy(Value(*times))) *times = *times - 1.0;
 
   e->set_outline_color_raw(is_nullish(outline_color) ? Value(std::u16string()) : outline_color);
-  if (entity::is_fighter(ref_of(*e))) {
+  if (entity::is_fighter(*e)) {
     e->set_outline_color_raw(is_nullish(outline_color) ? Value(std::u16string(u"#FF0000"))
                                                        : outline_color);
     e->set_stat_bar(0.0);
@@ -204,7 +204,7 @@ bool Item::spawn() {
   const Value min_z = z_is_num ? z : Value(_stage->far_plane());
   const Value max_z = z_is_num ? js_add(z, range_z) : Value(_stage->near_plane());
   const bool y_is_num = is_num(y);
-  const double y_default = entity::is_weapon(ref_of(*e)) ? 300.0 : 0.0;
+  const double y_default = entity::is_weapon(*e) ? 300.0 : 0.0;
   const Value min_y = y_is_num ? y : Value(y_default);
   const Value max_y = y_is_num ? js_add(y, range_y) : Value(y_default);
 
@@ -247,7 +247,7 @@ bool Item::spawn() {
     e->set_mp(to_number(mp));
   }
 
-  if (entity::is_fighter(ref_of(*e))) {
+  if (entity::is_fighter(*e)) {
     e->set_name(field_or(field_or(e->data(), u"base"), u"name"));
   }
 
@@ -257,7 +257,7 @@ bool Item::spawn() {
   if (equals(facing, Value(1.0)) || equals(facing, Value(-1.0))) e->set_facing(facing);
   if (is_str(act)) {
     e->enter_frame_by_id(act);
-  } else if (entity::is_fighter(ref_of(*e))) {
+  } else if (entity::is_fighter(*e)) {
     e->enter_frame_by_id(Value(std::u16string(u"running_0")));
   } else {
     // `Defines.NEXT_FRAME_AUTO` 是个 `{ id: "auto" }` 对象（不是数字）⇒ 走运行时表取原值。

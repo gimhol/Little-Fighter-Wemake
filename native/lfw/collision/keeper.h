@@ -36,18 +36,21 @@ struct HandlerConfig {
   bool has_v_state = false;
 };
 
+// `collision.attacker` / `.victim` 是活实体（`ActorHandle`）⇒ 这几条缝收 `Collision`
+// 自己就能读到那一对，不需要宿主再记「当前判定的是谁」。
 struct KeeperEnv {
-  std::function<double()> attacker_state;
-  std::function<double()> victim_state;
-  // `victim.data`（`handle` 末尾读 `victim.data.base.hit_sounds`）。缝里没有实体
-  // （见 `handlers2.h` 那批缝的同一处境）⇒ 宿主按「当前判定的那一对」回答。
-  std::function<Value()> victim_data;
-  std::function<void(const std::u16string& fn, Collision& c)> call_handler;  std::function<bool(CollisionActor& first, CollisionActor& second, const Value& itr)>
+  std::function<double(const Collision& c)> attacker_state;
+  std::function<double(const Collision& c)> victim_state;
+  // `victim.data`（`handle` 末尾读 `victim.data.base.hit_sounds`）。
+  std::function<Value(const Collision& c)> victim_data;
+  std::function<void(const std::u16string& fn, Collision& c)> call_handler;
+  // `!handle_ball_frozen(victim, attacker, itr)`
+  std::function<bool(const ActorHandle& first, const ActorHandle& second, const Value& itr)>
       ball_frozen;
   std::function<void(const std::u16string& type, const Value& action, Collision& c)> run_action;
   std::function<void(Collision& c)> victim_push_collided;
   std::function<void(Collision& c)> attacker_push_collision;
-  std::function<void(const Value& sounds)> victim_play_sound;
+  std::function<void(const Collision& c, const Value& sounds)> victim_play_sound;
 };
 
 const KeeperEnv& keeper_env();

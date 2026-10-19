@@ -13,12 +13,15 @@ import { UIHelper } from "../../../../src/LFW/helper/UIHelper";
 import { WeaponsHelper } from "../../../../src/LFW/helper/WeaponsHelper";
 import { Keys } from "../../../../src/LFW/Keys";
 import { MersenneTwister } from "../../../../src/LFW/utils/math/MersenneTwister";
+import { eval_number } from "../../../../src/LFW/utils/eval_number";
 
 import { keyOf, parseValue, readCaseLines, splitWs } from "./trace_util";
 
 type Rec = Record<string, any>;
 
 const log: string[] = [];
+// `eval_number` 的具名量上下文（`evctx` op 填，跨行保留）。
+const ev_ctx: Record<string, number> = {};
 function push(s: string): void {
   log.push(s);
 }
@@ -384,6 +387,18 @@ function main(): void {
         order,
       );
       push(`pick:${ret === undefined ? "u" : ret}`);
+    } else if (op === "evctx") {
+      const name = nextKey();
+      const v = Number(next());
+      ev_ctx[name] = v;
+      push(`evctx:${name}=${v}`);
+    } else if (op === "evn") {
+      const v = parseValue(t, i);
+      try {
+        push(`evn:${eval_number(v as never, ev_ctx)}`);
+      } catch {
+        push("evn:err");
+      }
     } else {
       fail(`unknown op '${op}'`);
     }

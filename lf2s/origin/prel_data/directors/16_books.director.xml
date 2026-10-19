@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="books" name="Books">
+  <director name="Red Book: GroupAttack">
+    <actors>
+      <actor id="davis_top" oid="justin" x="midX - 75" z="midZ + (far - midZ) * 0.6">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="davis_bottom" oid="justin" x="midX - 75" z="midZ + (near - midZ) * 0.6">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit_top" oid="bandit" count="3">
+        <layout type="line" axis="x" x="midX + 105" z="midZ + (far - midZ) * 0.6" length="60" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit_bottom" oid="bandit" count="3">
+        <layout type="line" axis="x" x="midX + 105" z="midZ + (near - midZ) * 0.6" length="60" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="book" oid="book_red" x="midX - 51" z="midZ + (far - midZ) * 0.6" />
+    </actors>
+    <timeline>
+      <entry after="1000">
+        <input target="davis_top" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="davis_top" db_hit="R" />
+        <input target="davis_bottom" db_hit="R" />
+      </entry>
+      <entry after="30">
+        <input target="davis_top" click="j" />
+        <input target="davis_bottom" click="j" />
+      </entry>
+      <entry after="30">
+        <input target="davis_top">
+          <step click="j" />
+          <step click="a" />
+        </input>
+        <input target="davis_bottom">
+          <step click="j" />
+          <step click="a" />
+        </input>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Green Book: Electrify">
+    <actors>
+      <actor id="john_top" oid="john" x="midX - 30" z="midZ + (far - midZ) * 0.6">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="john_bottom" oid="john" x="midX - 30" z="midZ + (near - midZ) * 0.6">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit_top" oid="bandit" x="midX + 30" z="midZ + (far - midZ) * 0.6">
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit_bottom" oid="bandit" x="midX + 30" z="midZ + (near - midZ) * 0.6">
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="book" oid="book_green" x="midX - 6" z="midZ + (far - midZ) * 0.6" />
+    </actors>
+    <timeline>
+      <entry after="1000">
+        <input target="john_top" click="a" />
+      </entry>
+      <entry wait="1000" />
+      <entry repeat="2000" interval="1000">
+        <entry>
+          <input target="john_top" click="a" />
+          <input target="john_bottom" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Blue Book: MpHealing">
+    <actors>
+      <actor id="dennis_top" oid="dennis" x="midX - 30" z="far">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+      <actor id="dennis_bottom" oid="dennis" x="midX - 30" z="near">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="as_key_role" type="bool" value="true" />
+        </values>
+      </actor>
+      <actor id="book" oid="book_blue" x="midX - 10" z="far" />
+    </actors>
+    <timeline>
+      <entry after="1000">
+        <input target="dennis_top" click="a" />
+      </entry>
+      <entry after="1000">
+        <input target="dennis_top" click="d,R,a" />
+        <input target="dennis_bottom" click="d,R,a" />
+      </entry>
+      <entry repeat="2000" interval="100">
+        <entry>
+          <input target="dennis_top" click="a" />
+          <input target="dennis_bottom" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+</directors>

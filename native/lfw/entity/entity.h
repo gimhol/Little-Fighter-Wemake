@@ -304,7 +304,8 @@ class Entity {
   virtual void set_fuse_bys(const Value& v);
   virtual void set_dismiss_data(const Value& v) { dismiss_data = v; }
   virtual void set_dismiss_time(const Value& v);
-  // `this.play_sound(sounds, pos = this.position)`；单参版本用自身位置。
+  // `this.play_sound(sounds, pos = this.position)`；单参版本用自身位置。Message 帧的 x 夹取
+  // （TS 里就在这个方法里）也在这里 —— 见 `entity.cpp`。
   virtual void play_sound(const Value& sounds, const Value& pos);
   virtual void play_sound(const Value& sounds);
   // `this.spark_point(r0, r1)`：TS 返回 `[x, y, z]`，端口按调用方已有的出参形状给。

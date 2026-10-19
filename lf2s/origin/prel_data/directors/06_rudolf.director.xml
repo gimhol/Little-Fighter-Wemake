@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="rudolf" name="Rudolf">
+  <director name="Rudolf J + ^|v + D + D&gt;J">
+    <actors>
+      <actor id="rudolf" oid="rudolf" count="2">
+        <layout type="line" axis="x" x="midX" z="midZ" length="200" />
+        <values>
+          <value name="team" type="strs" value="1,1" />
+          <value name="facing" type="nums" value="-1,1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="100">
+        <input target="rudolf" click="j" />
+      </entry>
+      <entry after="200">
+        <input target="rudolf[0]" key_down="U" />
+        <input target="rudolf[1]" key_down="D" />
+      </entry>
+      <entry after="200">
+        <input target="rudolf[0]">
+          <step click="d" />
+          <step key_down="U" />
+        </input>
+        <input target="rudolf[1]">
+          <step click="d" />
+          <step key_down="D" />
+        </input>
+      </entry>
+      <entry after="100">
+        <input target="rudolf[0]">
+          <step click="R,j" />
+          <step key_up="U" />
+        </input>
+        <input target="rudolf[1]">
+          <step click="L,j" />
+          <step key_up="D" />
+        </input>
+      </entry>
+    </timeline>
+  </director>
+</directors>

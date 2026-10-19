@@ -101,8 +101,8 @@ export default {
     {
       note: "reidentify 不认领名单里的新引用",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  const Value id = field_or(ref, u"id");`,
-      to: `  const Value id = Value();`,
+      from: `  const TargetHandle current = chasing;`,
+      to: `  const TargetHandle current;`,
     },
     {
       note: "update_lookup 的 StopOnLost 早退门写反",
@@ -119,8 +119,8 @@ export default {
     {
       note: "update_lookup 的失效清理判反",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  if (!still_valid) chasing = Value();`,
-      to: `  if (still_valid) chasing = Value();`,
+      from: `  if (!still_valid) chasing = TargetHandle();`,
+      to: `  if (still_valid) chasing = TargetHandle();`,
     },
     {
       note: "update_lookup 的 UntilLost 判成 Default",
@@ -131,20 +131,20 @@ export default {
     {
       note: "update_lookup 的停追分支判成 UntilLost",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  if (truthy(current) && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)) {`,
-      to: `  if (truthy(current) && stratedy == static_cast<double>(ChaseStrategy::UntilLost)) {`,
+      from: `  if (!current.nullish() && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)) {`,
+      to: `  if (!current.nullish() && stratedy == static_cast<double>(ChaseStrategy::UntilLost)) {`,
     },
     {
       note: "update_lookup 的 Default 清空判成 UntilLost",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = Value();`,
-      to: `  if (stratedy == static_cast<double>(ChaseStrategy::UntilLost)) chasing = Value();`,
+      from: `  if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = TargetHandle();`,
+      to: `  if (stratedy == static_cast<double>(ChaseStrategy::UntilLost)) chasing = TargetHandle();`,
     },
     {
       note: "update_lookup 忘了跳过 ghosted 的候选",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `    if (!truthy(field_or(e2, u"ghosted")) && should_chase(e2)) {`,
-      to: `    if (should_chase(e2)) {`,
+      from: `    if (!truthy(field_or(e2.ref(), u"ghosted")) && should_chase(e2.ref())) {`,
+      to: `    if (should_chase(e2.ref())) {`,
     },
     {
       note: "update_lookup 的最近距离比较写反",
@@ -156,8 +156,8 @@ export default {
       note: "update_lookup 找到目标后不记 chasing",
       file: "native/lfw/controller/ball_controller.cpp",
       from: `  chasing = found;
-  aim_at(found);`,
-      to: `  aim_at(found);`,
+  aim_at(found.ref());`,
+      to: `  aim_at(found.ref());`,
     },
     {
       note: "update 的「帧变了」判反",
@@ -266,20 +266,20 @@ export default {
       note: "stop_chasing 不清 chasing",
       file: "native/lfw/controller/ball_controller.cpp",
       from: `  dir_z = 0;
-  chasing = Value();`,
+  chasing = TargetHandle();`,
       to: `  dir_z = 0;`,
     },
     {
       note: "closer_one 的远近比较写反",
       file: "native/lfw/helper/closer_one.cpp",
-      from: `    return manhattan_xz(s, t1) > manhattan_xz(s, t2) ? t2 : t1;`,
-      to: `    return manhattan_xz(s, t1) < manhattan_xz(s, t2) ? t2 : t1;`,
+      from: `  if (truthy(t1) && truthy(t2)) return distance_of(t1) > distance_of(t2) ? t2 : t1;`,
+      to: `  if (truthy(t1) && truthy(t2)) return distance_of(t1) < distance_of(t2) ? t2 : t1;`,
     },
     {
       note: "closer_one 的两者都缺判成或",
       file: "native/lfw/helper/closer_one.cpp",
-      from: `  if (truthy(t1) && truthy(t2)) {`,
-      to: `  if (truthy(t1) || truthy(t2)) {`,
+      from: `  if (truthy(t1) && truthy(t2)) return distance_of(t1) > distance_of(t2) ? t2 : t1;`,
+      to: `  if (truthy(t1) || truthy(t2)) return distance_of(t1) > distance_of(t2) ? t2 : t1;`,
     },
     {
       note: "closer_one 忽略 s 的缺失",

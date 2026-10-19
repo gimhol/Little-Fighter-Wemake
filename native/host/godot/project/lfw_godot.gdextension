@@ -1,0 +1,10 @@
+[configuration]
+
+entry_symbol = "lfw_godot_library_init"
+compatibility_minimum = "4.7"
+
+[libraries]
+
+; 一份产物（G1 骨架只跑 headless 验收）：两种 feature 都指同一个 DLL。
+windows.debug.x86_64 = "res://bin/lfw_godot.dll"
+windows.release.x86_64 = "res://bin/lfw_godot.dll"

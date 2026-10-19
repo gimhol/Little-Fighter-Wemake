@@ -287,18 +287,18 @@ export default {
     {
       note: "F7：过滤条件反了（治武器不治 fighter）",
       file: "native/lfw/cmds/cmd_f.cpp",
-      from: `    if (!entity::is_fighter(ref_of(*e))) continue;`,
-      to: `    if (!entity::is_weapon(ref_of(*e))) continue;`,
+      from: `    if (!entity::is_fighter(*e)) continue;`,
+      to: `    if (!entity::is_weapon(*e)) continue;`,
     },
     {
       note: "F9：过滤条件反了（杀 fighter 不杀武器）",
       file: "native/lfw/cmds/cmd_f.cpp",
       from: `  const std::vector<Entity*> entities = world.entities;
   for (Entity* const e : entities) {
-    if (e != nullptr && entity::is_weapon(ref_of(*e))) e->set_hp(0.0);`,
+    if (e != nullptr && entity::is_weapon(*e)) e->set_hp(0.0);`,
       to: `  const std::vector<Entity*> entities = world.entities;
   for (Entity* const e : entities) {
-    if (e != nullptr && entity::is_fighter(ref_of(*e))) e->set_hp(0.0);`,
+    if (e != nullptr && entity::is_fighter(*e)) e->set_hp(0.0);`,
     },
     // ------------------------------------------------------------ KILL 系
     {
@@ -310,11 +310,11 @@ export default {
     {
       note: "KILL：整队比较恒真（全 fighter 通杀）",
       file: "native/lfw/cmds/cmd_kill.cpp",
-      from: `      if (entity::is_fighter(ref_of(*e)) &&
+      from: `      if (entity::is_fighter(*e) &&
           strict_equals(Value(e->team()), Value(*team))) {
         e->set_hp(0.0);
       }`,
-      to: `      if (entity::is_fighter(ref_of(*e)) &&
+      to: `      if (entity::is_fighter(*e) &&
           true) {
         e->set_hp(0.0);
       }`,
@@ -322,11 +322,11 @@ export default {
     {
       note: "KILL：整队击杀写 hp=2（不是 0）",
       file: "native/lfw/cmds/cmd_kill.cpp",
-      from: `      if (entity::is_fighter(ref_of(*e)) &&
+      from: `      if (entity::is_fighter(*e) &&
           strict_equals(Value(e->team()), Value(*team))) {
         e->set_hp(0.0);
       }`,
-      to: `      if (entity::is_fighter(ref_of(*e)) &&
+      to: `      if (entity::is_fighter(*e) &&
           strict_equals(Value(e->team()), Value(*team))) {
         e->set_hp(2.0);
       }`,

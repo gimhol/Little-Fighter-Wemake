@@ -16,7 +16,9 @@ namespace collision {
 struct Handlers4Env {
   std::function<Entity*(const std::u16string& id)> find_entity;
   std::function<bool(const Entity& e)> is_fighter;
-  std::function<Value(const Value& frame_id, const Value& throwings, const Value& in_the_skys)>
+  // `attacker.find_align_frame(frame_id, throwings, in_the_skys)`：读活实体。
+  std::function<Value(const Collision& c, const Value& frame_id, const Value& throwings,
+                      const Value& in_the_skys)>
       find_align_frame;
 };
 

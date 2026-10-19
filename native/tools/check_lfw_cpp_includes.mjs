@@ -45,8 +45,23 @@ const FORBIDDEN_SYSTEM_HEADERS = new Map([
   ["regex", "locale / implementation defined matching"],
   ["locale", "locale dependent; use js_string"],
   ["cstring", "only allowed in files listed in CSTRING_ALLOW"],
-  ["windows.h", "Windows host API"],
 ]);
+
+// 尖括号侧按**模式**禁（不用逐个拼大小写）：`<Windows.h>` / `<windowsx.h>` 都算。
+const FORBIDDEN_SYSTEM_HEADER_PATTERNS = [
+  { re: /^windows/i, why: "Windows host API" },
+];
+
+// 引号侧：平台实现（Godot / Emscripten / SDL / Windows）**只能**落在 `native/host/**`。
+// 引号形式原本只检查「有没有跑出 `native/lfw`」⇒ `#include "godot_cpp/godot.hpp"` 会静默通过
+//（从 `native/lfw/ui/` 解析成 `native/lfw/ui/godot_cpp/godot.hpp`，仍在 `native/lfw` 里）。
+// 这里**显式点名**目标名，命中即 error（DESIGN §G10）。
+const FORBIDDEN_QUOTED_HEADERS = [
+  { re: /^godot_cpp\//, why: "Godot implementation must live in native/host/godot" },
+  { re: /^emscripten\.h$/, why: "Emscripten implementation must live in native/host/wasm" },
+  { re: /^SDL/i, why: "platform implementation must live in native/host" },
+  { re: /^windows/i, why: "Windows implementation must live in native/host" },
+];
 
 const FORBIDDEN_CALLS = [
   {
@@ -120,13 +135,23 @@ for (const file of files) {
       if (ALLOWED_SYSTEM_HEADERS.has(key)) continue;
       if (key === "cstring" && CSTRING_ALLOW.has(rel)) continue;
 
-      const reason = FORBIDDEN_SYSTEM_HEADERS.get(key);
-      if (reason) {
+      const pattern = FORBIDDEN_SYSTEM_HEADER_PATTERNS.find((p) => p.re.test(key));
+      const reason = FORBIDDEN_SYSTEM_HEADERS.get(key) ?? (pattern ? pattern.why : null);
+      if (reason !== null && reason !== undefined) {
         msgs.push({ line, level: "error", text: `#include <${key}> is banned - ${reason}` });
       } else {
         msgs.push({ line, level: "error", text: `#include <${key}> is not whitelisted` });
       }
     } else {
+      const named = FORBIDDEN_QUOTED_HEADERS.find((p) => p.re.test(target));
+      if (named) {
+        msgs.push({
+          line,
+          level: "error",
+          text: `#include "${target}" is banned - ${named.why} (README 硬规则)`,
+        });
+        continue;
+      }
       const resolved = resolve(dirname(file), target);
       if (!resolved.startsWith(LFW + sep) && resolved !== LFW) {
         msgs.push({ line, level: "error", text: `#include "${target}" escapes native/lfw` });

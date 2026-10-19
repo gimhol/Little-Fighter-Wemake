@@ -23,6 +23,8 @@
 #include "lfw/defines/weapon_type.h"
 #include "lfw/entity/entity_ref.h"
 #include "lfw/entity/entity_type_check.h"
+#include "lfw/entity/gen_field.h"
+#include "lfw/ui/uilayer.h"
 #include "lfw/ui/uinode.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/base.h"
@@ -133,16 +135,28 @@ std::vector<Entity*> World::puppets_values() {
 
 std::optional<Value> World::gen_field(const Value& holder, const std::u16string& kind,
                                       Entity& emitter) {
-  (void)holder;
-  (void)kind;
-  (void)emitter;
-  return std::nullopt;
+  // TS 的 `opoint.__gen_dvx?.get(emitter)`：闭包型走侧表、表达式型现编译，细节在
+  // `lfw/entity/gen_field.cpp`。
+  return gen_field_eval(holder, kind, emitter.frame, emitter.data(), *lfw().mt());
 }
 
-// `this.play_sound(...)`：音频切片未移植 ⇒ 宿主缝（`World::play_sound` 的默认实现空转）。
+// TS `Entity.play_sound` 的收尾那两行（`World` 侧接的一次缝，TS 里是直接 `this.lfw.sounds.play`）：
+// 数组逐条播、单条播；`!sounds?.length`（空串 / null / 数字）什么都不做。位置是三个数
+// （TS 的调用形状 `play(name, x, y, z)`）。
 void World::play_sound(const Value& sounds, const Value& pos) {
-  (void)sounds;
-  (void)pos;
+  const double x = to_number(field_or(pos, u"x"));
+  const double y = to_number(field_or(pos, u"y"));
+  const double z = to_number(field_or(pos, u"z"));
+  if (const Array* const arr = as_array(sounds)) {
+    if (arr->size() == 0) return;
+    for (size_t i = 0; i < arr->size(); ++i) {
+      lfw().sounds_play(arr->at(i), Value(x), Value(y), Value(z));
+    }
+    return;
+  }
+  if (!std::holds_alternative<std::u16string>(sounds)) return;
+  if (std::get<std::u16string>(sounds).empty()) return;
+  lfw().sounds_play(sounds, Value(x), Value(y), Value(z));
 }
 
 // ---- `Stage` 要的 `world.*` 面（4CR：`IStageWorld` 退役后并入本类）----
@@ -366,7 +380,7 @@ bool World::vec_has(const std::vector<std::u16string>& v, const std::u16string& 
 void World::add_entities(Entity& e) {
   if (map_get(entity_map, e.id) != nullptr) return;
 
-  if (entity::is_fighter(ref_of(e))) {
+  if (entity::is_fighter(e)) {
     callbacks.call(u"on_fighter_add",
                    {WorldCallbackArgs{this, &e, nullptr, nullptr, Value(), Value(),
                                       std::u16string(), 0.0, 0.0, 0.0, false}});
@@ -452,9 +466,65 @@ void World::add_collision(const collision::Collision& c) {
 void World::render_once(double dt) {
   const double t0 = clock_now();
   renderer_->render(dt);
+  // TS 的 UI 渲染面入口（`WorldRenderer.ts:236-239`）在**世界渲染器内部**：实体那遍之后、
+  // 五遍绘制之前，每层一次 `layers.at(i)?.ui?.renderer.render(dt, dfactor)`。端口的世界
+  // 渲染器缝（`IWorldRenderer::render(dt)`）是原子的（五遍都在宿主里）⇒ 只能贴着它调，
+  // 每帧一次、同一个 `dt` 与 `dfactor`。位置在 `t0`/`spent` 之间：TS 的 `render_cost`
+  // 量的是含 UI 那一遍的整次 `renderer.render(dt)`。
+  render_ui_layers(dt);
   const double spent = clock_now() - t0;
   render_cost = truthy(Value(render_cost)) ? render_cost * 0.9 + spent * 0.1 : spent;
 }
+
+// `WorldRenderer.ts:187-204`：帧内比例是渲染器**自己**算的（`IWorldRenderer::render(dt)`
+// 不传它）。这里给 UI 渲染面算一份同样的 —— 输入全是核心自己的状态
+//（`TU` / `lifetime` / `fps_value()` / `UPS`），所以每一份宿主都拿得到，不必各自再算。
+double World::ui_render_dfactor(double dt) {
+  const double tu = TU;
+  const double utime = lifetime_;
+  if (fps_value() <= to_number(dataset.get(u"UPS"))) {
+    // 渲染不比 tick 快 ⇒ 不需要插值（缺省的 `sync_render = FPS_60` + `UPS = 60` 走这一支）。
+    df_utime_ = utime;
+    df_dtime_ = tu;
+    df_dfactor_ = 1.0;
+  } else if (df_utime_ != utime) {
+    // tick 边界那一帧：`dfactor = 0`。
+    df_utime_ = utime;
+    df_dtime_ = 0.0;
+    df_dfactor_ = 0.0;
+  } else {
+    df_dtime_ = std::min(df_dtime_ + dt, tu);
+    df_dfactor_ = std::min(df_dtime_ / tu, 1.0);
+  }
+  return df_dfactor_;
+}
+
+// TS `WorldRenderer.render` 里的那三行（`WorldRenderer.ts:236-239`）：
+//   for (let i = 0; i < layers.length; i++) layers.at(i)?.ui?.renderer.render(dt, dfactor)
+// 洞（`at` 为空）与没有页的层都按 TS 的 `?.` 跳过；有页的层每帧算**一次**尝试，没人接就
+// 记一次 `unhandled`（D4 的缺口：渲染面在端口是空默认体）。
+void World::render_ui_layers(double dt) {
+  const double dfactor = ui_render_dfactor(dt);
+  ui::UILayers* const layers = lfw_->ui_layers();
+  if (layers == nullptr) return;
+  ui::UINodeRenderCalls& calls = ui::ui_node_render_calls();
+  for (double i = 0; i < layers->length(); i += 1) {
+    ui::UILayer* const layer = layers->at(i);
+    if (layer == nullptr) continue;
+    ++calls.calls;
+    ui::UINode* const node = layer->ui();
+    ui::IUINodeRenderer* const r = node != nullptr ? node->renderer : nullptr;
+    if (r == nullptr) {
+      ++calls.unhandled;
+      continue;
+    }
+    r->render(dt, dfactor);
+  }
+}
+
+long long World::ui_render_calls() const { return ui::ui_node_render_calls().calls; }
+
+long long World::ui_render_unhandled() const { return ui::ui_node_render_calls().unhandled; }
 
 void World::update_camera() {
   const double old_cam_x = round(camera_->position.x);
@@ -667,7 +737,7 @@ std::vector<double> World::get_bound(Entity& e) {
   const Stage& s = *stage_;
   double l = -9007199254740991.0;  // `Number.MIN_SAFE_INTEGER`
   double r = 9007199254740991.0;   // `Number.MAX_SAFE_INTEGER`
-  if (entity::is_fighter(ref_of(e))) {
+  if (entity::is_fighter(e)) {
     if (e.team() == to_string(s.team())) {
       l = s.enemy_l;
       r = s.enemy_r;
@@ -675,7 +745,7 @@ std::vector<double> World::get_bound(Entity& e) {
       l = s.player_l;
       r = s.player_r;
     }
-  } else if (entity::is_weapon(ref_of(e)) && e.base_type() == static_cast<double>(WeaponEnum::Drink)) {
+  } else if (entity::is_weapon(e) && e.base_type() == static_cast<double>(WeaponEnum::Drink)) {
     l = s.drink_l;
     r = s.drink_r;
   }
@@ -704,7 +774,7 @@ const Vector3& World::restrict(Entity& e) {
   const double far_v = b[3];
   x = clamp(x, left, right);
   z = clamp(z, far_v, near_v);
-  if (entity::is_weapon(ref_of(e))) {
+  if (entity::is_weapon(e)) {
     if (e.is_on_ground && x < left - e.l_len || x > right + e.r_len) {
       e.enter_frame(defines_value(u"Defines.NEXT_FRAME_GONE"));
       e.terrain = ground.base();
@@ -713,7 +783,7 @@ const Vector3& World::restrict(Entity& e) {
       restrict_result_.z = z;
       return restrict_result_;
     }
-  } else if (entity::is_ball(ref_of(e))) {
+  } else if (entity::is_ball(e)) {
     if (x < left - 800 - e.l_len || x > right + 800 + e.r_len) {
       e.enter_frame(defines_value(u"Defines.NEXT_FRAME_GONE"));
       e.terrain = ground.base();
@@ -836,7 +906,7 @@ void World::step() {
     }
     a->update();
 
-    if (entity::is_fighter(ref_of(*a))) {
+    if (entity::is_fighter(*a)) {
       if (a->hp() > 0) {
         double count = 0;
         for (const std::pair<std::u16string, double>& kv : team_alive_counts_) {
@@ -910,7 +980,7 @@ void World::step() {
   for (size_t i = 0; i < len; ++i) {
     Entity* const a = entities[i];
     if (frame_is_gone(*a)) continue;
-    if (entity::is_weapon(ref_of(*a)) && a->is_on_ground) {
+    if (entity::is_weapon(*a) && a->is_on_ground) {
       const double section = round(a->position.x / kWeaponXSection);
       double count = 0;
       for (const std::pair<double, double>& kv : ground_weapon_counts) {
@@ -995,7 +1065,7 @@ void World::step() {
       }
     }
     mark_players_alive(*entity, false);
-    if (entity::is_fighter(ref_of(*entity))) {
+    if (entity::is_fighter(*entity)) {
       callbacks.call(u"on_fighter_del",
                      {WorldCallbackArgs{this, entity, nullptr, nullptr, Value(), Value(),
                                         std::u16string(), 0.0, 0.0, 0.0, false}});
@@ -1256,7 +1326,7 @@ void World::calc_alives() {
   puppet_teams.clear();
   team_alive_counts_.clear();
   for (Entity* const e : entities) {
-    if (!entity::is_fighter(ref_of(*e))) continue;
+    if (!entity::is_fighter(*e)) continue;
     if (e->hp() <= 0) continue;
     const std::u16string team = e->team();
     double count = 0;

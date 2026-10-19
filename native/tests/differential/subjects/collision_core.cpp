@@ -12,6 +12,7 @@
 
 namespace {
 
+using lfw::collision::ActorHandle;
 using lfw::collision::Collision;
 using lfw::collision::CollisionActor;
 using lfw::collision::CollisionCoreEnv;
@@ -96,15 +97,15 @@ lfw::Value priority_of(double t) {
 }
 
 void bind() {
-  g_core.get_bounding = [](const CollisionActor&, const lfw::Value& frame, const lfw::Value&) {
+  g_core.get_bounding = [](const ActorHandle&, const lfw::Value& frame, const lfw::Value&) {
     return cube_of(frame);
   };
   g_core.dataset = []() { return g_e.dataset; };
-  g_core.victim_get_v_rest = [](const std::u16string& aid) {
-    g_log.push_back("get_v_rest:" + s_of(aid) + ":" + flag(g_e.v_rest));
+  g_core.victim_get_v_rest = [](const Collision& c) {
+    g_log.push_back("get_v_rest:" + s_of(c.aid) + ":" + flag(g_e.v_rest));
     return g_e.v_rest;
   };
-  g_core.attacker_is_ally = []() {
+  g_core.attacker_is_ally = [](const Collision&) {
     g_log.push_back("is_ally:" + flag(g_e.is_ally));
     return g_e.is_ally;
   };
@@ -138,14 +139,14 @@ void bind() {
     g_log.push_back("tester_run:" + flag(ret));
     return ret;
   };
-  g_core.find_entity = [](const std::u16string& id, CollisionActor& out) {
+  g_core.find_entity = [](const std::u16string& id, ActorHandle& out) {
     g_log.push_back("find_entity:" + s_of(id));
     if (id == g_e.a.id) {
-      out = g_e.a;
+      out = ActorHandle::of(g_e.a);
       return true;
     }
     if (id == g_e.v.id) {
-      out = g_e.v;
+      out = ActorHandle::of(g_e.v);
       return true;
     }
     return false;
@@ -411,8 +412,8 @@ int main(int argc, char** argv) {
     }
     if (op == "new") {
       CollisionInits inits;
-      inits.attacker = g_e.a;
-      inits.victim = g_e.v;
+      inits.attacker = ActorHandle::of(g_e.a);
+      inits.victim = ActorHandle::of(g_e.v);
       inits.aframe = g_e.a.frame;
       inits.bframe = g_e.v.frame;
       inits.itr = g_e.itr;
@@ -425,7 +426,8 @@ int main(int argc, char** argv) {
       continue;
     }
     if (op == "get") {
-      Collision* c = lfw::collision::collision_get(g_core, g_e.a, g_e.v);
+      Collision* c = lfw::collision::collision_get(g_core, ActorHandle::of(g_e.a),
+                                                   ActorHandle::of(g_e.v));
       if (c == nullptr) {
         std::printf("get no || %s\n", op_text().c_str());
       } else {

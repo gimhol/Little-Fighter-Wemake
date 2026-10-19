@@ -91,50 +91,17 @@ void WorldCollisionHost::mt_mark(const std::u16string& mark) {
   if (mt != nullptr) mt->mark = mark;
 }
 
-// TS 的 `collision_new` 直接读活实体的这些字段；端口按 `CollisionActor` 的字段逐个投影。
-collision::CollisionActor WorldCollisionHost::actor_of(Entity& e) const {
-  collision::CollisionActor a;
-  a.id = e.id;
-  a.px = e.position.x;
-  a.py = e.position.y;
-  a.pz = e.position.z;
-  a.data_id = to_string(field_or(e.data(), u"id"));
-  a.data_type = to_number(field_or(e.data(), u"type"));
-  a.frame = e.frame;
-  a.itr_prefabs = field_or(e.data(), u"itr_prefabs");
-  // `a.bearer?.frame.wpoint?.attacking`
-  a.bear_wpoint_attacking =
-      e.bearer == nullptr
-          ? Value()
-          : field_or(field_or(e.bearer->frame, u"wpoint"), u"attacking");
-  a.marks_group_attack = e.marks.find(std::u16string(buff::Buff_GroupAttack::KIND)) != e.marks.end();
-  a.dropping = e.dropping;
-  a.arest = Value(e.arest());
-  a.has_catcher = e.catcher != nullptr;
-  // `victim.catcher.frame.cpoint?.hurtable`
-  a.catcher_hurtable =
-      e.catcher == nullptr ? Value() : field_or(field_or(e.catcher->frame, u"cpoint"), u"hurtable");
-  a.invulnerable = Value(e.invulnerable());
-  a.bot_ignore = e.bot_ignore();
-  a.team = Value(e.team());
-  a.emitter = from_str(e.emitter());
-  a.spawn_time = Value(e.spawn_time());
-  a.is_bot_ctrl = e.ctrl() != nullptr && e.ctrl()->is_bot();
-  return a;
+// TS 的 `collision.attacker` 就是活实体；端口包成 `ActorHandle`（台面里退回快照）。
+collision::ActorHandle WorldCollisionHost::actor_of(Entity& e) const {
+  return collision::ActorHandle::of(e);
 }
 
-collision::CollisionActor WorldCollisionHost::actor_of_id(const std::u16string& id) const {
-  Entity* const e = _world->find_entity(id);
-  if (e == nullptr) return collision::CollisionActor{};
-  return actor_of(*e);
+Entity* WorldCollisionHost::entity_of_collision_a(const collision::Collision& c) {
+  return const_cast<Entity*>(c.attacker.entity());
 }
 
-Entity* WorldCollisionHost::entity_of_collision_a(const collision::Collision& c) const {
-  return _world->find_entity(c.aid);
-}
-
-Entity* WorldCollisionHost::entity_of_collision_v(const collision::Collision& c) const {
-  return _world->find_entity(c.vid);
+Entity* WorldCollisionHost::entity_of_collision_v(const collision::Collision& c) {
+  return const_cast<Entity*>(c.victim.entity());
 }
 
 // `is_fall` / `is_armor_work` / `calc_itr_velocity` / `calc_stiffness` 收的是 `Value` 形状的
@@ -216,24 +183,16 @@ void WorldCollisionHost::reset_collisions() { _collisions.clear(); }
 
 collision::Collision* WorldCollisionHost::collision_get(Entity& a, Entity& v) {
   ensure_published();
-  _cur_a = &a;
-  _cur_v = &v;
   return collision::collision_get(_core, actor_of(a), actor_of(v));
 }
 
 bool WorldCollisionHost::collision_test(collision::Collision& c) {
   ensure_published();
-  _cur_a = entity_of_collision_a(c);
-  _cur_v = entity_of_collision_v(c);
   return collision::collision_test(c);
 }
 
 void WorldCollisionHost::handle(collision::Collision& c) {
   ensure_published();
-  Entity* const prev_a = _cur_a;
-  Entity* const prev_v = _cur_v;
-  _cur_a = entity_of_collision_a(c);
-  _cur_v = entity_of_collision_v(c);
   c.env = &_handlers;
   c.core = &_core;
   // `handlers.cpp` 里的 `c.dataset` 是 TS 的 `attacker.world.dataset`（`handle_stiffness` 的
@@ -241,8 +200,6 @@ void WorldCollisionHost::handle(collision::Collision& c) {
   // 4C 那一刀在没有宿主时把它留成了「由 harness 直接设」的行为缝字段，这里补上真值。
   c.dataset = _world->world_dataset();
   collision::collisions_keeper().handle(c);
-  _cur_a = prev_a;
-  _cur_v = prev_v;
 }
 
 buff::Buff* WorldCollisionHost::find_buff(const std::u16string& id) const {
@@ -256,6 +213,10 @@ buff::Buff* WorldCollisionHost::create_buff(const std::u16string& kind,
                                             const std::u16string& id) {
   buff::Buff* const b = _world->lfw().create_buff(kind, id);
   if (b == nullptr) return nullptr;
+  // 出生即带 env（TS 的 `Buff` 构造就有 `lfw`）：`Factory::create_buff` 那一路只能给出
+  // env=nullptr 的实例，`grant_buff` 虽也会补一次，但直接走 `create_buff` 的调用方（例如
+  // 那些只判空的分支）拿到的对象在此之前是**不能碰**的。
+  b->set_env(&_buff_env);
   bool replaced = false;
   for (size_t i = 0; i < _world->buffs.size(); ++i) {
     if (_world->buffs[i].first == id) {
@@ -287,7 +248,6 @@ void WorldCollisionHost::clear_globals() {
   collision::set_weapon_is_hit_env(collision::WeaponIsHitEnv());
   collision::set_ball_frozen_env(collision::BallFrozenEnv());
   collision::set_healing_env(collision::HealingEnv());
-  loader::set_collision_val_env(loader::CollisionValEnv());
 }
 
 void WorldCollisionHost::bind() {
@@ -320,19 +280,14 @@ void WorldCollisionHost::publish_globals() {
   collision::set_ball_frozen_env(_ball_frozen);
   collision::set_healing_env(_healing);
 
-  loader::CollisionValEnv val_env;
-  val_env.find_entity = [this](const std::u16string& id) -> const Entity* {
-    return _world->find_entity(id);
-  };
-  loader::set_collision_val_env(val_env);
 }
 
 void WorldCollisionHost::bind_core() {
   // `world.get_bounding(a, aframe, itr)`
-  _core.get_bounding = [this](const collision::CollisionActor& a, const Value& frame,
+  _core.get_bounding = [this](const collision::ActorHandle& a, const Value& frame,
                               const Value& box) {
     collision::Cube cube;
-    Entity* const e = _world->find_entity(a.id);
+    Entity* const e = const_cast<Entity*>(a.entity());
     if (e == nullptr) return cube;
     const Value b = _world->get_bounding(*e, frame, box);
     cube.left = to_number(field_or(b, u"left"));
@@ -345,15 +300,18 @@ void WorldCollisionHost::bind_core() {
   };
   // `a.world.dataset`
   _core.dataset = [this]() { return _world->world_dataset(); };
-  // `victim.get_v_rest(c.aid)`：缝里没有 victim（见类注释第 2 条）。
-  _core.victim_get_v_rest = [this](const std::u16string& aid) {
-    if (_cur_v == nullptr) return false;
-    return truthy(Value(_cur_v->get_v_rest(aid)));
+  // `victim.get_v_rest(c.aid)`
+  _core.victim_get_v_rest = [this](const collision::Collision& c) {
+    Entity* const v = entity_of_collision_v(c);
+    if (v == nullptr) return false;
+    return truthy(Value(v->get_v_rest(c.aid)));
   };
   // `attacker.is_ally(victim)`
-  _core.attacker_is_ally = [this]() {
-    if (_cur_a == nullptr || _cur_v == nullptr) return false;
-    return _cur_a->is_ally(*_cur_v);
+  _core.attacker_is_ally = [](const collision::Collision& c) {
+    Entity* const a = entity_of_collision_a(c);
+    Entity* const v = entity_of_collision_v(c);
+    if (a == nullptr || v == nullptr) return false;
+    return a->is_ally(*v);
   };
   _core.acquire_collision = [this]() -> collision::Collision& { return acquire_collision(); };
   _core.new_id = [this]() { return _world->lfw().new_id(); };
@@ -363,7 +321,7 @@ void WorldCollisionHost::bind_core() {
   _core.tester_run = [this](const Value& tester, collision::Collision& c) {
     return tester_run(tester, c);
   };
-  _core.find_entity = [this](const std::u16string& id, collision::CollisionActor& out) {
+  _core.find_entity = [this](const std::u16string& id, collision::ActorHandle& out) {
     Entity* const e = _world->find_entity(id);
     if (e == nullptr) return false;
     out = actor_of(*e);
@@ -386,15 +344,18 @@ void WorldCollisionHost::bind_core() {
 
 void WorldCollisionHost::bind_keeper() {
   // `collision.attacker.state` / `collision.victim.state`
-  _keeper.attacker_state = [this]() {
-    return _cur_a == nullptr ? 0.0 : to_number(_cur_a->state());
+  _keeper.attacker_state = [](const collision::Collision& c) {
+    Entity* const a = entity_of_collision_a(c);
+    return a == nullptr ? 0.0 : to_number(a->state());
   };
-  _keeper.victim_state = [this]() {
-    return _cur_v == nullptr ? 0.0 : to_number(_cur_v->state());
+  _keeper.victim_state = [](const collision::Collision& c) {
+    Entity* const v = entity_of_collision_v(c);
+    return v == nullptr ? 0.0 : to_number(v->state());
   };
   // `victim.data`（`handle` 末尾的 `victim.data.base.hit_sounds`）
-  _keeper.victim_data = [this]() {
-    return _cur_v == nullptr ? Value() : _cur_v->data();
+  _keeper.victim_data = [](const collision::Collision& c) {
+    Entity* const v = entity_of_collision_v(c);
+    return v == nullptr ? Value() : v->data();
   };
   _keeper.call_handler = [this](const std::u16string& fn, collision::Collision& c) {
     if (fn == u"handle_itr_catch") {
@@ -434,10 +395,10 @@ void WorldCollisionHost::bind_keeper() {
     }
   };
   // `!handle_ball_frozen(victim, attacker, itr)`
-  _keeper.ball_frozen = [this](collision::CollisionActor& first,
-                               collision::CollisionActor& second, const Value& itr) {
-    Entity* const v = _world->find_entity(first.id);
-    Entity* const a = _world->find_entity(second.id);
+  _keeper.ball_frozen = [this](const collision::ActorHandle& first,
+                               const collision::ActorHandle& second, const Value& itr) {
+    Entity* const v = const_cast<Entity*>(first.entity());
+    Entity* const a = const_cast<Entity*>(second.entity());
     if (v == nullptr || a == nullptr) return false;
     return collision::handle_ball_frozen(*v, *a, itr);
   };
@@ -459,9 +420,10 @@ void WorldCollisionHost::bind_keeper() {
     Entity* const a = entity_of_collision_a(c);
     if (a != nullptr) a->collision_list.push_back(c);
   };
-  _keeper.victim_play_sound = [this](const Value& sounds) {
-    if (_cur_v == nullptr) return;
-    _cur_v->play_sound(sounds);
+  _keeper.victim_play_sound = [this](const collision::Collision& c, const Value& sounds) {
+    Entity* const v = entity_of_collision_v(c);
+    if (v == nullptr) return;
+    v->play_sound(sounds);
   };
 }
 
@@ -476,17 +438,21 @@ void WorldCollisionHost::bind_handlers() {
     if (a != nullptr && v != nullptr) a->pick(*v);
   };
   // `attacker.itr_motionless`
-  _handlers.attacker_itr_motionless = [this]() {
-    return _cur_a == nullptr ? Value() : Value(_cur_a->itr_motionless());
+  _handlers.attacker_itr_motionless = [](const collision::Collision& c) {
+    Entity* const a = entity_of_collision_a(c);
+    return a == nullptr ? Value() : Value(a->itr_motionless());
   };
-  _handlers.attacker_set_motionless = [this](const Value& v) {
-    if (_cur_a != nullptr) _cur_a->set_motionless(to_number(v));
+  _handlers.attacker_set_motionless = [](const collision::Collision& c, const Value& v) {
+    Entity* const a = entity_of_collision_a(c);
+    if (a != nullptr) a->set_motionless(to_number(v));
   };
-  _handlers.victim_set_shaking = [this](const Value& v) {
-    if (_cur_v != nullptr) _cur_v->set_shaking(to_number(v));
+  _handlers.victim_set_shaking = [](const collision::Collision& c, const Value& v) {
+    Entity* const victim = entity_of_collision_v(c);
+    if (victim != nullptr) victim->set_shaking(to_number(v));
   };
-  _handlers.attacker_set_arest = [this](double v) {
-    if (_cur_a != nullptr) _cur_a->set_arest(v);
+  _handlers.attacker_set_arest = [](const collision::Collision& c, double v) {
+    Entity* const a = entity_of_collision_a(c);
+    if (a != nullptr) a->set_arest(v);
   };
   // `world.buffs.get(id)`
   _handlers.buff_get = [this](const std::u16string& id) { return find_buff(id) != nullptr; };
@@ -566,15 +532,16 @@ void WorldCollisionHost::bind_handlers3() {
     return entity::is_weapon_data(field_or(e.data(), u"type"));
   };
   // `victim.spark_point(a_cube, b_cube)`
-  _handlers3.spark_point = [this](const collision::Cube& a, const collision::Cube& b, double& x,
-                                  double& y, double& z) {
-    if (_cur_v == nullptr) {
+  _handlers3.spark_point = [](const collision::Collision& c, const collision::Cube& a,
+                              const collision::Cube& b, double& x, double& y, double& z) {
+    Entity* const v = entity_of_collision_v(c);
+    if (v == nullptr) {
       x = 0;
       y = 0;
       z = 0;
       return;
     }
-    _cur_v->spark_point(a, b, x, y, z);
+    v->spark_point(a, b, x, y, z);
   };
   _handlers3.spark = [this](double x, double y, double z, const Value& type) {
     _world->spark(x, y, z, to_string(type));
@@ -593,10 +560,11 @@ void WorldCollisionHost::bind_handlers4() {
   };
   _handlers4.is_fighter = [](const Entity& e) { return entity::is_fighter_data(e.data()); };
   // `attacker.find_align_frame(frame_id, throwings, in_the_skys)`
-  _handlers4.find_align_frame = [this](const Value& frame_id, const Value& throwings,
-                                       const Value& in_the_skys) {
-    if (_cur_a == nullptr) return Value();
-    return _cur_a->find_align_frame(to_string(frame_id), throwings, in_the_skys);
+  _handlers4.find_align_frame = [](const collision::Collision& c, const Value& frame_id,
+                                   const Value& throwings, const Value& in_the_skys) {
+    Entity* const a = entity_of_collision_a(c);
+    if (a == nullptr) return Value();
+    return a->find_align_frame(to_string(frame_id), throwings, in_the_skys);
   };
 }
 
@@ -640,9 +608,12 @@ void WorldCollisionHost::bind_nbd_defend() {
     _world->spark(to_number(x), to_number(y), to_number(z), to_string(type));
   };
   // 「只在防御里触发」的那四个动作：TS 走 `collision_action_handlers[handler_type]`。
-  _nbd_defend.dispatch = [this](const std::u16string& handler_type, const Value& action) {
-    if (_cur_a == nullptr || _cur_v == nullptr) return;
-    collision::run_action(_action, handler_type, action, *_cur_a, *_cur_v, Value(NullTag{}),
+  _nbd_defend.dispatch = [this](const collision::Collision& c, const std::u16string& handler_type,
+                                const Value& action) {
+    Entity* const a = entity_of_collision_a(c);
+    Entity* const v = entity_of_collision_v(c);
+    if (a == nullptr || v == nullptr) return;
+    collision::run_action(_action, handler_type, action, *a, *v, Value(NullTag{}),
                           Value(NullTag{}));
   };
 }
@@ -652,12 +623,14 @@ void WorldCollisionHost::bind_weapon_is_hit() {
     return _world->find_entity(id);
   };
   // `victim.spark_point(a_cube, b_cube)`
-  _weapon_is_hit.spark_point = [this](const collision::Cube& a, const collision::Cube& b) {
+  _weapon_is_hit.spark_point = [](const collision::Collision& c, const collision::Cube& a,
+                                  const collision::Cube& b) {
     collision::SparkPoint sp;
     double x = 0;
     double y = 0;
     double z = 0;
-    if (_cur_v != nullptr) _cur_v->spark_point(a, b, x, y, z);
+    Entity* const victim = entity_of_collision_v(c);
+    if (victim != nullptr) victim->spark_point(a, b, x, y, z);
     sp.x = Value(x);
     sp.y = Value(y);
     sp.z = Value(z);

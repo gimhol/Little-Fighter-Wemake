@@ -328,7 +328,7 @@ void Stage::set_phase(const Value& phase) {
     std::vector<Value> teams;
     for (Entity* const f : _world->puppet_list()) set_add(teams, Value(f->team()));
     for (Entity* const f : _world->entity_list()) {
-      if (!entity::is_fighter(ref_of(*f)) || !set_has(teams, Value(f->team()))) continue;
+      if (!entity::is_fighter(*f) || !set_has(teams, Value(f->team()))) continue;
       if (f->hp() <= 0.0 && truthy(Value(hp_respawn))) {
         const double hp = hp_respawn < 1.0 ? lfw::min(f->hp_max() * hp_respawn, f->hp_max())
                                            : lfw::min(hp_respawn, f->hp_max());
@@ -398,7 +398,7 @@ void Stage::set_phase(const Value& phase) {
   std::vector<Value> teams;
   for (Entity* const v : _world->puppet_list()) set_add(teams, Value(v->team()));
   for (Entity* const e : _world->entity_list()) {
-    if (!entity::is_fighter(ref_of(*e)) || !set_has(teams, Value(e->team()))) continue;
+    if (!entity::is_fighter(*e) || !set_has(teams, Value(e->team()))) continue;
     if (strict_equals(player_f, Value(1.0)) || strict_equals(player_f, Value(-1.0))) {
       e->set_facing(player_f);
     }
@@ -485,7 +485,7 @@ double Stage::ce() {
   }
   if (!truthy(Value(count))) {
     for (Entity* const e : _world->entity_list()) {
-      if (!entity::is_fighter(ref_of(*e)) || !truthy(Value(e->mounted())) || e->hp() <= 0.0) {
+      if (!entity::is_fighter(*e) || !truthy(Value(e->mounted())) || e->hp() <= 0.0) {
         continue;
       }
       if (!strict_equals(Value(e->team()), Value(std::u16string(team_enum::kTeam_1)))) continue;
@@ -521,7 +521,7 @@ void Stage::spawn(const Value& phase, const Value& obj, double count) {
 void Stage::kill_all() {
   for (const std::unique_ptr<Item>& o : items) {
     for (Entity* const e : o->objects()) {
-      if (entity::is_fighter(ref_of(*e)) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
+      if (entity::is_fighter(*e) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
     }
   }
 }
@@ -530,7 +530,7 @@ void Stage::kill_soliders() {
   for (const std::unique_ptr<Item>& o : items) {
     if (!truthy(field_or(o->info(), u"is_soldier"))) continue;
     for (Entity* const e : o->objects()) {
-      if (entity::is_fighter(ref_of(*e)) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
+      if (entity::is_fighter(*e) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
     }
   }
 }
@@ -539,7 +539,7 @@ void Stage::kill_boss() {
   for (const std::unique_ptr<Item>& o : items) {
     if (!truthy(field_or(o->info(), u"is_boss"))) continue;
     for (Entity* const e : o->objects()) {
-      if (entity::is_fighter(ref_of(*e)) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
+      if (entity::is_fighter(*e) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
     }
   }
 }
@@ -550,7 +550,7 @@ void Stage::kill_others() {
       continue;
     }
     for (Entity* const e : o->objects()) {
-      if (entity::is_fighter(ref_of(*e)) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
+      if (entity::is_fighter(*e) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
     }
   }
 }
@@ -563,8 +563,8 @@ void Stage::dispose() {
   std::vector<Value> player_teams;
   for (Entity* const v : _world->puppet_list()) set_add(player_teams, Value(v->team()));
   for (Entity* const e : _world->entity_list()) {
-    if (entity::is_fighter(ref_of(*e)) && set_has(player_teams, Value(e->team()))) continue;
-    if (entity::is_weapon(ref_of(*e)) && e->bearer != nullptr &&
+    if (entity::is_fighter(*e) && set_has(player_teams, Value(e->team()))) continue;
+    if (entity::is_weapon(*e) && e->bearer != nullptr &&
         set_has(player_teams, Value(e->bearer->team()))) {
       continue;
     }
@@ -623,7 +623,7 @@ bool Stage::should_goto_next_stage() {
   if (is_chapter_finish() || !is_stage_finish()) return false;
 
   for (Entity* const e : _world->entity_list()) {
-    if (!entity::is_fighter(ref_of(*e))) continue;  // 非角色不判断
+    if (!entity::is_fighter(*e)) continue;  // 非角色不判断
     if (e->hp() <= 0.0) continue;                   // 无血，不判断
     if (e->position.x >= cam_r) continue;           // 已达右侧，不判断
     const Value ctrl = e->ctrl_view();
@@ -660,5 +660,26 @@ void Stage::update() {
   check_dialog_end();
 }
 
+
+// `Object.assign(stage, {near, far})`（导演的 `stage` 动作）：TS 的两个裸字段在端口是
+// `_near` / `_far`（`near` / `far` 是 `<windows.h>` 的宏名），这里是唯一写口。
+void Stage::assign_number(const std::u16string& key, double v) {
+  if (key == u"left") { left = v; return; }
+  if (key == u"right") { right = v; return; }
+  if (key == u"near") { _near = v; return; }
+  if (key == u"far") { _far = v; return; }
+  if (key == u"width") { width = v; return; }
+  if (key == u"depth") { depth = v; return; }
+  if (key == u"player_l") { player_l = v; return; }
+  if (key == u"player_r") { player_r = v; return; }
+  if (key == u"cam_l") { cam_l = v; return; }
+  if (key == u"cam_r") { cam_r = v; return; }
+  if (key == u"enemy_l") { enemy_l = v; return; }
+  if (key == u"enemy_r") { enemy_r = v; return; }
+  if (key == u"drink_l") { drink_l = v; return; }
+  if (key == u"drink_r") { drink_r = v; return; }
+  if (key == u"phase_time") { phase_time = v; return; }
+  if (key == u"dialog_time") { dialog_time = v; return; }
+}
 }
 }

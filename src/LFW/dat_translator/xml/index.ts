@@ -43,5 +43,6 @@ export * from "./xml_x_qube";
 export * from "./xml_x_stage_info";
 export * from "./xml_x_stage_object_info";
 export * from "./xml_x_stage_phase_info";
+export * from "./xml_x_director";
 export * from "./xml_x_wpoint";
 /*** AUTO EXPORT END ***/

@@ -18,16 +18,16 @@ export default {
   cases: ["collision_val"],
   mutations: [
     {
-      note: "attacker_of 拿 victim 的 id 找实体",
+      note: "attacker_of 读成 victim",
       file: "native/lfw/loader/get_val_from_collision.cpp",
-      from: `return g_env.find_entity ? g_env.find_entity(c.attacker.id) : nullptr;`,
-      to: `return g_env.find_entity ? g_env.find_entity(c.victim.id) : nullptr;`,
+      from: `const Entity* attacker_of(const Ctx& c) { return c.attacker.entity(); }`,
+      to: `const Entity* attacker_of(const Ctx& c) { return c.victim.entity(); }`,
     },
     {
-      note: "victim_of 拿 attacker 的 id 找实体",
+      note: "victim_of 读成 attacker",
       file: "native/lfw/loader/get_val_from_collision.cpp",
-      from: `return g_env.find_entity ? g_env.find_entity(c.victim.id) : nullptr;`,
-      to: `return g_env.find_entity ? g_env.find_entity(c.attacker.id) : nullptr;`,
+      from: `const Entity* victim_of(const Ctx& c) { return c.victim.entity(); }`,
+      to: `const Entity* victim_of(const Ctx& c) { return c.attacker.entity(); }`,
     },
     {
       note: "num_of 判反",
@@ -585,14 +585,14 @@ Value v_falling`,
     {
       note: "victim_is_chasing 拿 attacker 的 id 比",
       file: "native/lfw/loader/get_val_from_collision.cpp",
-      from: `  return num_of(strict_equals(Value(c.victim.id), field_of(ctrl->chasing, u"id")));`,
-      to: `  return num_of(strict_equals(Value(c.attacker.id), field_of(ctrl->chasing, u"id")));`,
+      from: `  return num_of(c.victim.id() == ctrl->chasing.id());`,
+      to: `  return num_of(c.attacker.id() == ctrl->chasing.id());`,
     },
     {
       note: "victim_is_chasing 的相等判反",
       file: "native/lfw/loader/get_val_from_collision.cpp",
-      from: `  return num_of(strict_equals(Value(c.victim.id), field_of(ctrl->chasing, u"id")));`,
-      to: `  return num_of(!strict_equals(Value(c.victim.id), field_of(ctrl->chasing, u"id")));`,
+      from: `  return num_of(c.victim.id() == ctrl->chasing.id());`,
+      to: `  return num_of(!(c.victim.id() == ctrl->chasing.id()));`,
     },
     {
       note: "armor_work 的结果判反",

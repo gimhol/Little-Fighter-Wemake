@@ -29,8 +29,6 @@ namespace {
 using Ctx = collision::Collision;
 using G = ValGetter<Ctx>;
 
-CollisionValEnv g_env;
-
 Value num_of(bool b) { return Value(b ? 1.0 : 0.0); }
 
 Value field_of(const Value& v, const char16_t* key) { return field_or(v, key); }
@@ -54,15 +52,11 @@ bool group_has(const Value& group, const char16_t* want) {
 }
 
 // `c.attacker` / `c.victim` 在 TS 里就是那两个活实体（读的时候才取字段），端口的
-// `Collision` 只有 `CollisionActor` 快照 ⇒ 用宿主装的缝按 `id` 找回来。找不到（没装缝 /
-// 世界里已经没有这个 id）时读实体的项给 `undefined`（TS 那时会抛 `TypeError`，见 DESIGN）。
-const Entity* attacker_of(const Ctx& c) {
-  return g_env.find_entity ? g_env.find_entity(c.attacker.id) : nullptr;
-}
+// `Collision` 也直接带着它们（`ActorHandle`）⇒ 不需要再按 `id` 去世界表里找。
+// 台面里的假实体给 `nullptr`，读实体的项给 `undefined`（TS 那时会抛 `TypeError`）。
+const Entity* attacker_of(const Ctx& c) { return c.attacker.entity(); }
 
-const Entity* victim_of(const Ctx& c) {
-  return g_env.find_entity ? g_env.find_entity(c.victim.id) : nullptr;
-}
+const Entity* victim_of(const Ctx& c) { return c.victim.entity(); }
 
 template <typename Fn>
 Value with_attacker(const Ctx& c, Fn fn) {
@@ -246,14 +240,14 @@ Value victim_threw(const Ctx& c, const std::u16string&, BinOp) {
   return with_victim(c, [](const Entity& e) { return num_of(truthy(Value(e.throwinjury))); });
 }
 
-// `is_ball_ctrl(c.attacker.ctrl) && c.victim === c.attacker.ctrl.chasing`：端口的目标是
-// **引用**、`victim` 是快照 ⇒ 用 `id` 比（实体的 id 唯一）。
+// `is_ball_ctrl(c.attacker.ctrl) && c.victim === c.attacker.ctrl.chasing`：`chasing` 是
+// `TargetHandle`、`victim` 是碰撞快照 ⇒ 按 `id` 比（实体 id 唯一）。
 Value victim_is_chasing(const Ctx& c, const std::u16string&, BinOp) {
   const Entity* a = attacker_of(c);
   if (a == nullptr) return Value(0.0);
   const controller::BaseController* ctrl = a->ctrl();
   if (ctrl == nullptr || !ctrl->is_ball_ctrl()) return Value(0.0);
-  return num_of(strict_equals(Value(c.victim.id), field_of(ctrl->chasing, u"id")));
+  return num_of(c.victim.id() == ctrl->chasing.id());
 }
 
 // --- 属性 ---------------------------------------------------------------------
@@ -439,10 +433,6 @@ Value v_db_click_left(const Ctx& c, const std::u16string&, BinOp) { return v_db_
 Value v_db_click_right(const Ctx& c, const std::u16string&, BinOp) { return v_db_click(c, gk::kR); }
 
 }
-
-const CollisionValEnv& collision_val_env() { return g_env; }
-
-void set_collision_val_env(const CollisionValEnv& env) { g_env = env; }
 
 const std::vector<std::pair<std::u16string, G>>& collision_val_getters() {
   static const std::vector<std::pair<std::u16string, G>> table = {

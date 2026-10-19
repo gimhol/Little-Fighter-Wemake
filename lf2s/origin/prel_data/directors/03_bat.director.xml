@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="bat" name="Bat">
+  <director name="Bat D^J">
+    <actors>
+      <actor id="bat" oid="bat" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="hp" type="num" value="1" />
+          <value name="hp_r" type="num" value="200" />
+          <value name="stat_bar" type="num" value="1" />
+          <value name="mp" type="num" value="1000000" />
+          <value name="mp_max" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="stat_bar" type="num" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="1000">
+      <entry after="500">
+        <input target="bat" click="d,U,j" />
+      </entry>
+      <entry wait="500" />
+    </timeline>
+  </director>
+  <director name="Bat D^J (No Enemies)">
+    <actors>
+      <actor id="bat" oid="bat" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="bat" click="d,U,j" />
+    </setup>
+  </director>
+  <director name="Bat D^J (Less Than 3 Enemies)">
+    <actors>
+      <actor id="bat" oid="bat" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="2">
+        <layout type="line" axis="x" x="midX" z="midZ" length="400" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="hp" type="num" value="50" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="bat" click="d,U,j" />
+    </setup>
+  </director>
+  <director name="Bat D^J (Many Enemies)">
+    <actors>
+      <actor id="bat" oid="bat" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="blinking" type="num" value="99999" />
+          <value name="invulnerable" type="num" value="99999" />
+          <value name="hp" type="num" value="1" />
+          <value name="hp_r" type="num" value="1" />
+          <value name="stat_bar" type="num" value="1" />
+          <value name="mp" type="num" value="1000000" />
+          <value name="mp_max" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="40" ctrl="bot" player_id="$keep">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="hp" type="num" value="50" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="1000">
+      <entry>
+        <input target="bat" click="d,U,j" />
+      </entry>
+      <entry wait="300" />
+    </timeline>
+  </director>
+</directors>

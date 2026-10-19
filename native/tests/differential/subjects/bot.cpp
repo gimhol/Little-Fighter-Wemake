@@ -149,7 +149,7 @@ std::string targets_text(const lfw::bot::NearestTargets& nt) {
   for (std::size_t i = 0; i < nt.targets().size(); ++i) {
     if (i != 0) s += ",";
     const lfw::bot::BotTarget& t = nt.targets()[i];
-    s += name_of(t.entity) + ":" + num(t.distance) + ":" + render(t.defendable);
+    s += name_of(t.entity.ref()) + ":" + num(t.distance) + ":" + render(t.defendable);
   }
   s += "]";
   return s;
@@ -238,8 +238,10 @@ void sync_env() {
   g_env.is_on_ground = lfw::truthy(lfw::field_or(g_me, u"is_on_ground"));
   g_env.name = lfw::field_or(g_me, u"name");
   g_env.data = lfw::field_or(g_me, u"data");
-  g_env.holding = lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"), Value(NullTag{}));
-  g_env.catching = lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{}));
+  g_env.holding = lfw::TargetHandle::of(
+      lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"), Value(NullTag{})));
+  g_env.catching = lfw::TargetHandle::of(
+      lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{})));
   const Value blockers = lfw::field_or(g_me, u"blockers");
   const lfw::Array* const bl = lfw::as_array(blockers);
   g_env.blockers_count = bl != nullptr ? static_cast<double>(bl->size()) : 0;
@@ -533,7 +535,7 @@ int main(int argc, char** argv) {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
       const Value target = fx_arg(name, lineno);
       nt->del([&target](const lfw::bot::BotTarget& b) {
-        return lfw::strict_equals(b.entity, target);
+        return b.entity.same(lfw::TargetHandle::of(target));
       });
       emit(line + " ||  | " + sets_text());
     } else if (op == "ntsnap") {
@@ -545,7 +547,7 @@ int main(int argc, char** argv) {
         std::string s = "[";
         for (std::size_t k = 0; k < nt->entities().size(); ++k) {
           if (k != 0) s += ",";
-          s += name_of(nt->entities()[k]);
+          s += name_of(nt->entities()[k].ref());
         }
         return s + "]";
       }());
@@ -600,6 +602,17 @@ int main(int argc, char** argv) {
                     : op == "enter_avoid" ? g_ctrl->is_enter_avoid_zone(target)
                                           : g_ctrl->is_leave_avoid_zone(target);
       emit(line + " || " + join_log() + " | v=" + render(Value(v)));
+    } else if (op == "selfref") {
+      // `self_ref_of_env` 的**形状**钉子：TS 的 `me` 是活实体（`ctrl.entity`），端口的替身
+      // 只有 `{ id, position }` —— 少了 `id`，`CtrlEnv::resolve`（`is_ray_hit(me, …)` 的
+      // 那一半）就解不回实体，带 `e_ray` 的 bot 招式恒被拒（见 `bot_env.h`）。
+      sync_env();
+      const Value ref = lfw::bot::self_ref_of_env(g_env);
+      std::vector<Value> v;
+      v.push_back(lfw::field_or(ref, u"id"));
+      v.push_back(lfw::field_or(ref, u"position"));
+      emit(line + " || " + join_log() + " | v=" +
+           render(Value(std::make_shared<lfw::Array>(std::move(v)))));
     } else if (op == "act") {
       const std::u16string where = trace::parse_js_string_literal(t[i++]);
       const Value action = parse_value(t, i);
@@ -663,23 +676,23 @@ int main(int argc, char** argv) {
     } else if (op == "follow") {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
       g_ctrl->follow(fx_arg(name, lineno));
-      emit(line + " ||  | following=" + name_of(g_ctrl->following) + " goingto=" +
+      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "move") {
       g_ctrl->move();
-      emit(line + " ||  | following=" + name_of(g_ctrl->following) + " goingto=" +
+      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "stay") {
       sync_env();
       g_ctrl->stay();
-      emit(line + " ||  | following=" + name_of(g_ctrl->following) + " goingto=" +
+      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "come") {
       const double x = trace::to_double(t[i++]);
       const double y = trace::to_double(t[i++]);
       const double z = trace::to_double(t[i++]);
       g_ctrl->come(x, y, z);
-      emit(line + " ||  | following=" + name_of(g_ctrl->following) + " goingto=" +
+      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "get") {
       const std::string& field = t[i++];
@@ -736,9 +749,9 @@ int main(int argc, char** argv) {
       } else if (field == "goingto") {
         payload = render(g_ctrl->goingto);
       } else if (field == "following") {
-        payload = name_of(g_ctrl->following);
+        payload = name_of(g_ctrl->following.ref());
       } else if (field == "watching") {
-        payload = name_of(g_ctrl->watching);
+        payload = name_of(g_ctrl->watching.ref());
       } else if (field == "bot_frame") {
         payload = render(g_ctrl->bot_frame);
       } else if (field == "bot_id") {

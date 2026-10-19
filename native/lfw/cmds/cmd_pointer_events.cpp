@@ -52,6 +52,19 @@ class UiSet {
   }
   void clear() { _items.clear(); }
   const std::vector<ui::UINode*>& items() const { return _items; }
+  // 把**已经销毁**的节点从这个集合里剔掉，回剩下的（顺序不变）。
+  // TS 的 `Set<UINode>` 引用着那些对象 ⇒ 页面销毁后对它们派发 `leave` 无害（孤儿对象设个标志）；
+  // 端口这边那些节点已经 `delete` 了，再去读就是悬垂指针（实测：点一下换页的那个按钮、再动一下
+  // 鼠标就 signal 11）⇒ 派发前先筛。
+  std::vector<ui::UINode*> live_items() {
+    std::vector<ui::UINode*> out;
+    out.reserve(_items.size());
+    for (ui::UINode* const ui : _items) {
+      if (is_live_uinode(ui)) out.push_back(ui);
+    }
+    _items = out;
+    return out;
+  }
 
  private:
   std::vector<ui::UINode*> _items;
@@ -425,7 +438,7 @@ void cmd_pointer_move(CMDS& c) {
       }
     }
   }
-  for (ui::UINode* ui : state.on_uis.items()) ui->on_pointer_leave();
+  for (ui::UINode* ui : state.on_uis.live_items()) ui->on_pointer_leave();
   state.on_uis.clear();
   for (ui::UINode* ui : enter_uis.items()) {
     ui->on_pointer_enter();
@@ -471,7 +484,7 @@ void cmd_pointer_up(CMDS& c) {
       }
     }
   }
-  for (ui::UINode* ui : state.down_uis.items()) {
+  for (ui::UINode* ui : state.down_uis.live_items()) {
     ui::LFWPointerEvent event = make_nan_event(*b);
     ui->on_pointer_cancel(event);
   }
@@ -503,7 +516,7 @@ void cmd_pointer_cancel(CMDS& c) {
   if (!b) return;
   move_cursor(c, std::nullopt, false);
   IPointerState& state = pointer_state(c);
-  for (ui::UINode* ui : state.down_uis.items()) {
+  for (ui::UINode* ui : state.down_uis.live_items()) {
     ui::LFWPointerEvent event = make_nan_event(*b);
     ui->on_pointer_cancel(event);
   }
@@ -535,7 +548,7 @@ void cmd_pointer_leave(CMDS& c) {
   IPointerState& state = pointer_state(c);
   if (targets->paths.empty()) {
     move_cursor(c, true);
-    for (ui::UINode* ui : state.on_uis.items()) ui->on_pointer_leave();
+    for (ui::UINode* ui : state.on_uis.live_items()) ui->on_pointer_leave();
     state.on_uis.clear();
     return;
   }

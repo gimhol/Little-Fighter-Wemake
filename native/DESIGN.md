@@ -417,7 +417,10 @@ using Value = std::variant<
 
 ### 5.23. 宿主（`native/host/`，M1 headless 入口） —— 偏差与限制（同时登记在 README 的偏差表）
 
-1. 宿主不渲染 / 不出声 / 不解图 / 不接指针：`ui_image_load` 给零尺寸占位并计数，`md5` 是
+1. 宿主不渲染 / 不出声 / 不解图 / 不接指针：`ui_image_load` 给零尺寸占位并计数（但 `w`/`h`/`scale`
+   **三个键必须给**：`0/0/1` —— 核心侧 `UIImgLoader::load` 会算 `node.resize(w / scale, h / scale)`，
+   缺字段就是 `undefined / undefined = NaN` 写进节点尺寸，那个节点从此什么都不画；能真解图的宿主
+   应当覆写成真值，见 `LfwGodotHost::ui_image_load`），`md5` 是
    占位哈希，`Ditto.Cache` 只在内存里，`zip_*`（下载 / 读 blob / 缓存）一律「没有」——
    所以只走 `ZipItem{path, IZip*}` 这条**对象**加载路，不走 `load_zip_from_url`。
 3. `--zip` 必须给**已解包**目录（README 里给了 `Expand-Archive` 两行），压缩包本体留到
@@ -531,7 +534,8 @@ zip/renderer）、`IWorldRenderer`、`IPlayerInfoHost`、`IXML`/`IXMLElement`、
 `ITickerOptions`。
 
 渲染 / 音频的宿主实现（`IWorldRenderer` / `IUINodeRenderer` / sounds）仍只到宿主缝；
-按「改真货」的成本分级见 7.2 的 K2 / K4。
+按「改真货」的成本分级见 7.2 的 K2 / K4。（**音频**这一格 2026-10-16 落进了 Godot 宿主：
+`sounds_*` 的语义 + 算式在 `LfwGodotHost`、解码/播放在 `lfw_godot_node.cpp`，`HeadlessHost` 仍是空实现。）
 
 ### 7.2. 「假货清单」（按「改真货」的可行性分级）
 
@@ -561,17 +565,22 @@ zip/renderer）、`IWorldRenderer`、`IPlayerInfoHost`、`IXML`/`IXMLElement`、
 - ~~`ui_component.h:125-129` `debug/warn/log` 空转 + `make_debugging` 未移植~~ **已结清（前述）**：`base/debugging.{h,cpp}` 装上真闭包体、走 `lfw().host()` 的 `debug|warn|log` 缝，
   改道过的告警也归位（`move_table_logic.cpp` 的 `warn(...)`）。TS 对位 `UIComponent.ts:53-57` +
   `base\Debugging.ts:10-29`。**S**（~30 行）
-- `headless_host.cpp:146` `md5`（注释自认「不是真 MD5」）⇔ `DittoImpl\md5.ts`(19)；`ui_load_img` 的键用它。**S**
-- `sounds_play*`（`headless_host.cpp:191-205` 只计数）+ `world.cpp:142` `play_sound` 默认空转 ⇔
+- ~~`headless_host.cpp:146` `md5`（注释自认「不是真 MD5」）⇔ `DittoImpl\md5.ts`(19)；`ui_load_img` 的键用它。**S**~~ **已结清**：真 MD5（RFC 1321）落在 `host/common/zip_file.cpp`（`md5_hex`），字符串按 UTF-8 喂 —— 与 SparkMD5 同值（`dist/data.zip` = 清单里的 `6143b821…`）。
+- `sounds_play*`（`headless_host.cpp:191-205` 只计数）+ `world.cpp:144` `play_sound` 默认空转 ⇔
   `Sounds.ts`122 + `Modern.ts`307 + `Fallback.ts`171。**L**
 - `NullWorldRenderer`（`headless_host.h:37-46` 只计数）⇔ `WorldRenderer.ts`392 + `EntityMainRender.ts`757。**L**
 - `ManualClock::add→0` / `NoopTimeout::add→0`（`headless_host.h:20-34`）⇔ `Clock.ts`33 / `Timeout.ts`9 /
   `Interval.ts`9 ⇒ `Ticker` 不自驱、台面手工推帧。**S–M**
-- `IUINodeRenderer` 渲染面未移植（`ui_node_renderer.h:9`）；`create_ui_node_renderer` 默认 **nullptr**
-  （`lfw.h:179-182`，`uinode.cpp:106` 用它）⇔ `UINodeRenderer.ts`530。**L**
+- `create_ui_node_renderer` 默认 **nullptr**（`lfw.h:179-182`，`uinode.cpp:106-109` 用它）⇒ 没有一份宿主会给真
+  渲染器；接口面已补齐（`ui_node_renderer.h:32-70`，17 个虚函数全带默认体）、调用点也在核心
+  （`world.cpp` 的 `render_ui_layers` ⇔ TS `WorldRenderer.ts:236-239`），但**绘制实现**还是空的
+  （⇔ `UINodeRenderer.ts`530；引擎无关的那一半可照 `HeadlessUINodeRenderer.ts`）。
+  统计行 `UI render calls: N (unhandled: M)`（D4）。**L**
 - `image_bitmap` 明确拒绝（`fs_zip.cpp:94-98`）+ `import_as_image_bitmap`（`headless_host.cpp:318-324`）⇔
   `ImageMgr.ts`404 + `handle_image_operation.ts`67。**L**
-- `FsZip` 只认**解包目录**、无 DEFLATE/中央目录（`fs_zip.h:15`）⇔ `DittoImpl\Zip.ts`154。**M**
+- ~~`FsZip` 只认**解包目录**、无 DEFLATE/中央目录（`fs_zip.h:15`）⇔ `DittoImpl\Zip.ts`154。**M**~~
+  **已结清**：真 `.zip` 在 `host/common/zip_file.{h,cpp}`（中央目录 + stored/deflate + 自带 inflate），
+  `FsZip` 保留给 `--zip <dir>` 那条路。
 - `measure_text` 近似（`headless_host.cpp:211`）⇔ `ImageMgr` / `TextMesh.ts`276（`UINode.ts:438/470` 用）。**M**
 - 细项：`dat_mgr.cpp:227` 跳过逐地形告警、`preprocess_entity_data.cpp:264` 不收集错误、
   `fighter_thumb.h:16` `on_show` 桩（`PlayerScore` 已搬、只是没接线）、`world.h:135 gen_field`。**S–M**
@@ -594,20 +603,27 @@ zip/renderer）、`IWorldRenderer`、`IPlayerInfoHost`、`IXML`/`IXMLElement`、
 `IWorldRenderer`、
 `IUINodeRenderer`、`IPlayerInfoHost`、`IResourcesHost`、`IClock`/`ITimeout`、`IRenderScheduler`、
 `ITickerOptions`、`IXML`/`IXMLElement`、`IZip`/`IZipObject`、`ditto` 包。headless 实现分三档：
-**忠实的什么都不做**（`images_init` / `keyboard_init` / `pointings_*` / `*_dispose`，`headless_host.h:83-160`）、
+**忠实的什么都不做**（`images_init` / `keyboard_init` / `pointings_init` / `*_dispose`，
+`headless_host.h:83-160`）、
 **偷工减料**（就是 K2 那张表）、**忠实且完整**（`IXML` 293+517 行 vs TS 274+62、JSON/JSON5、文件 I/O、
-`FsZip` 索引）。
+`FsZip` 索引、`host/common/zip_file.{h,cpp}` 的真 `.zip` + 真 MD5）。
 
 **依赖顺序（省到贵，括号=成本）**
 
 1. ~~`make_debugging`（S）~~ **已结清** —— 真 `Ditto.debug/warn/Log` 路由
    已恢复，改道过的告警已归位。
-2. 真 MD5（S）—— 抹掉一条自认的谎；真图片/zip 键的前提。
+2. ~~真 MD5（S）~~ **已结清** —— 真 MD5 在 `host/common/zip_file.cpp`（`md5_hex`），
+   走 `HeadlessHost::md5`（`ui_load_img` 的键）与 `zip_download` 的校验。
 3. 真 `IClock`/`ITimeout`/`IRenderScheduler`（S–M）—— `Ticker` 自驱，台面不必手推帧。
 4. 真 `IPlayerInfoHost` 缓存（S，`HeadlessHost` 已有真实现）—— 删掉 `FakePlayerHost` 及其 K1 覆写。
-5. 真 `IZip`（DEFLATE + 中央目录，M）—— 与第 10 步配对，`FakeZip*` 才能退。
+5. ~~真 `IZip`（DEFLATE + 中央目录，M）~~ **已结清** —— `host/common/zip_file.{h,cpp}`（stored/deflate +
+   自带 inflate + ZIP64 明确拒绝），`HeadlessHost::zip_read_blob/read_buf/download` 接上；
+   `--zip-diff` 逐条比对过 `prel.zip` 161/161、`data.zip` 633/633（名字 + 大小 + 内容 MD5）。
+   `FakeZip*` 那一簇退不退是台面的事（它们测的是 `ZipMgr` 的记账，不是读包）。
 6. `IXML` 根元素 `data`（S–M）—— `resources.h:18-46` 自己记了「脚本化标记」的偏差。
-7. `IUINodeRenderer` + 真 `UINodeRenderer`（L）—— **必须与第 8 步同刀**；之后 `UINode::update` 才不必是虚。
+7. ~~`IUINodeRenderer` 的接口面 + 每层调用点~~ **已结清**（D4）；**会画的 `UINodeRenderer` 实现**
+   也已落地（Godot 宿主，§G2「UI 那一遍」）—— 与真 `IWorldRenderer` 分成了**两刀**（原先写"必须同刀"，
+   实测不必：两半各自独立、都在核心之外）。真画出来之后 `UINode::update` 才不必是虚。
 8. 真 `IWorldRenderer`（L，新子系统）—— **必须早于「台面用真组件」**；退掉 `FakeRenderer`/`QuietRenderer`，
    `add_entities`/`del_entities` 这些钩子才可能真。
 9. sounds 宿主（L）—— 退掉 sounds 那一簇与 `World::play_sound` 默认。
@@ -617,7 +633,8 @@ zip/renderer）、`IWorldRenderer`、`IPlayerInfoHost`、`IXML`/`IXMLElement`、
     `event.stopped()` 早退与 `KEY_EVENT` 的 `stage.control_disabled` 可真覆盖；`set_local_cursor`
     还要等光标渲染路径（`CursorRender.ts` 250）⇒ 在第 8/10 之后。
 
-**已复核**（抽查）：`headless_host.cpp` 的 `md5` 注释自认「不是真 MD5」✓；
+**已复核**（抽查）：~~`headless_host.cpp` 的 `md5` 注释自认「不是真 MD5」~~ **已不再成立**（真 MD5 已落地，
+见 §7.2 K2）；
 `create_ui_node_renderer` 默认 `nullptr`（`lfw.h:179-182`）✓；`FakeComp` 派生真 `UIComponent` 且经真
 `Factory::register_component` 注册 ✓。
 
@@ -1002,6 +1019,16 @@ holding 一族、`world_*` / `ref_*` / `ctrl_*` / `datas_find*`、`ground_segmen
    SameValueZero 上不同（记在偏差表）。
 6. `create_entity` / `create_entity_with_bot` 的 `states` 实参：台面两侧都不传（端口是
    `state::States*`）。
+7. ⚠ **`states` 的缺省值必须落到全局 `ENTITY_STATES` 上**（`state::entity_states()`）。
+   TS 里 `Entity.constructor` / `reset` 的形参缺省值是 `ENTITY_STATES`
+   （`src/LFW/entity/Entity.ts:586` / `:595`），`common_creator(world, data, states?)` 也是**可选**的
+   （`Entity.ts:2628`）⇒ 真实装配路径（`LFW` → `World` → `Factory` → `common_creator`）拿到的是
+   **那张全局表**。端口曾经在 `LFW` 构造里 `std::make_unique<state::States>()` 造了一张**空表**
+   （2026-10-08 的 LFW 门面切片）⇒ `set_state` 每次 miss、退化成 `States::fallback` 现造的兜底状态，
+   **状态对象里的跳/冲刺/落地/受伤逻辑全都不跑**（只剩数据帧自带的 `dvx`/`dvz`）——
+   用户报的"角色离不开地面"就是这个。现在 `LFW::_states` 直接指向 `state::entity_states()`。
+   ⚠ 差分台面**量不出这条**：`world_fixture.h` 与 TS 的 `world.ts:514` 两边都显式传一张空 `States`
+   （那条缝是给台面用的），LFW 的真实装配路径不在台面覆盖范围内 ⇒ **台面绿不等于装配对**。
 
 ### 8.26. `stage/Expressions` + `stage/Status` + `bg/Background` + `bg/Layer` —— 有意不覆盖
 
@@ -1129,7 +1156,7 @@ tool 实现）。这些在 `native/lfw/CMakeLists.txt` 里都是 `lfw_core` 的�
 |---|---|---|
 | `ILfwHost` | `native/lfw/lfw.h:134-288` | **70**（64 纯虚 + 6 有默认体：`pointings_grab/ungrab/grabbing`、`is_desktop`、`create_ui_node_renderer`、`warn_async`） |
 | `IWorldRenderer` | `native/lfw/world.h:61-68` | 4 |
-| `IUINodeRenderer` | `native/lfw/ui/ui_node_renderer.h:13-25` | 9（全部有默认体） |
+| `IUINodeRenderer` | `native/lfw/ui/ui_node_renderer.h:32-70` | 17 + 数据成员 `ui`（全部有默认体；= TS 的 16 面，`visible` 拆成 get/set） |
 | `IPlayerInfoHost` | `native/lfw/player_info.h:45-56` | 4 |
 | `IResourcesHost` | `native/lfw/resources.h:30-48` | 6 |
 | `IZip` | `native/lfw/ditto/zip/i_zip.h:15-25` | 4（3 纯虚 + `md5()` 默认） |
@@ -1151,7 +1178,7 @@ tool 实现）。这些在 `native/lfw/CMakeLists.txt` 里都是 `lfw_core` 的�
 | 2 | 生命周期 / 回调注册 / 指针夺取 | 18 | `lfw.h:140-154,157-170,237-239` | `Sounds`/`ImageMgr`/`Keyboard.ts`/`Pointings.ts`/`ui/UIInputHandle.ts` |
 | 3 | 音频 | 18 | `lfw.h:208-232` | `sounds/Modern.ts` + `sounds/Sounds.ts`（+ `sounds/Fallback.ts`） |
 | 4 | 世界渲染 | 5 | `lfw.h:177` + `world.h:61-68` | `renderer/WorldRenderer.ts` 一族 |
-| 5 | UI 渲染 | 10 | `lfw.h:179-182` + `ui_node_renderer.h:13-25` | `renderer/UINodeRenderer.ts`（+ `HeadlessUINodeRenderer.ts` 先例） |
+| 5 | UI 渲染 | 18 | `lfw.h:179-182` + `ui_node_renderer.h:32-70` | `renderer/UINodeRenderer.ts`（+ `HeadlessUINodeRenderer.ts` 先例） |
 | 6 | 玩家信息（`Ditto.Cache`） | 3（+4 转发） | `lfw.h:245-247` / `player_info.h:45-56` | `cache/Cache.ts` + `AsyncCache.ts` |
 | 7 | 资源 / 图片（`Importer` / `ImageMgr` / `XML`） | 9（+6 转发） | `lfw.h:184-191,249-257` / `resources.h:30-48` | `Importer.ts`、`ImageMgr/ImageMgr.ts`、`handle_image_operation.ts`、`xml/XML.ts` |
 | 8 | zip（`IZip` / `IZipObject` / `Ditto.Cache`） | 17 | `lfw.h:269-287` + `i_zip.h:15-25` + `i_zip_object.h:16-30` | `Zip.ts`、`LazyZip.ts`、`download/`、`cache/` |
@@ -1178,8 +1205,8 @@ tool 实现）。这些在 `native/lfw/CMakeLists.txt` 里都是 `lfw_core` 的�
 | 1 | `lfw.h:196` `dev` / `:198` `now` / `:199,203-205` `warn/error/log/debug_msg` / `:202` `warn_async` / `:193` `md5` / `:242` `measure_text` / `:265` `lang_apply` / `:174-175` `*_forget` / `:172` `is_desktop` | `init.ts:55-61`、`md5.ts:1-6`、`ImageMgr.ts:184-190`、`cache/Cache.ts`、`download/partial_store.ts` | (a) 同步；(b) 只给日志/告警 | `warn_async` 天然是"晚一点"，端口已把它建模成另一个口（`lfw.h:200-202`），JS 侧用微任务队列即可 |
 | 2 | `lfw.h:140-154` init/callback 注册、`:237-239` dispose、`:157-170` grab/ungrab/grabbing | `sounds/Sounds.ts`、`ImageMgr.ts`、`Keyboard.ts:44-50`、`Pointings.ts:15-27`、`ui/UIInputHandle.ts` | (a) + (d) | `grab/ungrab/grabbing` 一旦 hit test 进 WASM（W10）就整支 (d) |
 | 3 | `lfw.h:208-219` 播放族、`:222-232` 音量/静音、`:234-235` 声音回调 | `sounds/Modern.ts`、`sounds/Sounds.ts` | (b) 命令缓冲 | `sounds_play_bgm` 返回 `std::function<void()>`（`lfw.h:208`）⇒ 过界时落成停止句柄，见 W6 |
-| 4 | `lfw.h:177` `create_world_renderer` + `world.h:64-67` | `renderer/WorldRenderer.ts:23` | (b) 命令缓冲 | `render(dt)` 是唯一入口（`world.cpp:452` 调 `renderer_->render(dt)`） |
-| 5 | `lfw.h:179-182` + `ui_node_renderer.h:13-25` | `renderer/UINodeRenderer.ts:36` | (b) 命令缓冲 + (d) | 端口的 `IUINodeRenderer` **没有** `render()`/`add`/`del`，所以绘制发射器必须是新写的（W5）；9 个生命周期钩子由 `UINode` 调（`uinode.cpp:558-728`），可以给一个共享空实现 |
+| 4 | `lfw.h:177` `create_world_renderer` + `world.h:64-67` | `renderer/WorldRenderer.ts:23` | (b) 命令缓冲 | `render(dt)` 是唯一入口（`world.cpp:453` 调 `renderer_->render(dt)`） |
+| 5 | `lfw.h:179-182` + `ui_node_renderer.h:32-70` | `renderer/UINodeRenderer.ts:36` | (b) 命令缓冲 + (d) | 接口面已齐（`render`/`add`/`del`/`parent`/`x`/`y`/`visible`，全带默认体）且核心已有调用点（`world.cpp` 的 `render_ui_layers`）；**绘制发射器**仍得新写（W5）——端口没有一份会画的实现，默认体只记 `unhandled` |
 | 6 | `lfw.h:245-247` / `player_info.h:49-55` | `cache/Cache.ts`、`AsyncCache.ts` | (a) 同步 | TS 侧是 `Promise`（`src/LFW/ditto/cache/ICache.ts:11`），端口是同步（`player_info.h:49-55`）⇒ 必须**预取或失败**，见 W9 |
 | 7 | `lfw.h:184` `load_img` / `:187-188` `ui_image_load` / `:191` `ui_image_pin` / `:249-256` `import_as_*` / `:257` `xml_parse` | `ImageMgr.ts:194-211`、`handle_image_operation.ts`、`Importer.ts`、`resources.h:30-48` 对应的 `Resources.import_*`（`src/LFW/Resources.ts:25-90`） | (a) + (c)：图片 = 句柄 + 异步完成回调 | `import_*` 在 TS 里是"zip 未命中才走的网络回退"（`src/LFW/Resources.ts:25-33`），而端口是同步 ⇒ 未定（W9/W14） |
 | 8 | `lfw.h:269-287` + `i_zip.h:18-22` + `i_zip_object.h:19-29` | `Zip.ts:75-163`、`LazyZip.ts`、`download/`、`cache/` | (a) 批量灌入 + (c) 下载完成 | TS 的条目读取全是 `async`（`Zip.ts:40-73`），端口的 `IZipObject` 全是同步 `bool`（`i_zip_object.h:19-29`）⇒ 必须"JS 先备好字节"，见 W9 |
@@ -1275,13 +1302,13 @@ uint64_t lfw_digest(void* lfw);           /* core/state_hash.h，用来跟 lfw_r
 | 面 | 为什么 |
 |---|---|
 | `IWorldRenderer::render`（`world.h:66`） | 一帧几百~上千次绘制；而 JS 侧**根本看不到** `World`/`Entity`（它们在 WASM 内存里），每次绘制都要回头查一次状态 ⇒ 必须改成"WASM 内遍历、一次交一批" |
-| UI 绘制（`ui_node_renderer.h` 一族） | 同上；而且端口的 `IUINodeRenderer` 连 `render()` 都没有（只有生命周期，`ui_node_renderer.h:13-25`），逐节点过界也没有接口可挂 |
+| UI 绘制（`ui_node_renderer.h` 一族） | 同上；接口面与核心的调用点（`world.cpp` 的 `render_ui_layers`）都在了，但**一份会画的实现都没有**（默认体只记 `unhandled`，`ui_node_renderer.h:59-63`）⇒ 逐节点过界今天没人接 |
 | `ILfwHost::sounds_play` / `sounds_play_bgm`（`lfw.h:208-210`） | 每帧几十次；TS 的 `Sounds` 自己带排队/去重（`src/DittoImpl/sounds/Sounds.ts`），逐次过界会把排队语义搬到 JS 而时间轴留在 WASM |
 | 输入（`lfw.h:82-106`、`:145-154`） | 一次 DOM 事件一次跨界；且 TS 里指针事件本来就先被 `UIInputHandle` 攒成 `push_cmd`（`UIInputHandle.ts:42-56`）——WASM 侧保留这个"攒"的语义，只是攒在 WASM 里 |
 
 **允许逐次过界的白名单**（便宜且低频）：`now()`、`clock_add/del/hidden`、`timeout_add/del`、
 `render_add/del`、`dev()`、`is_desktop()`、`warn/error/log/debug_msg`、`md5`、
-`measure_text`（UI 构建期，且有缓存，`uinode.cpp:176-201`）、`ui_image_load`/`ui_image_pin`
+`measure_text`（UI 构建期，且有缓存，`uinode.cpp:178-203`）、`ui_image_load`/`ui_image_pin`
 （装载/换页期）、`sounds_volume*` 等 getter/setter（用户操作才触发）。
 
 ### W5. 渲染命令缓冲格式
@@ -1308,8 +1335,8 @@ uint64_t lfw_digest(void* lfw);           /* core/state_hash.h，用来跟 lfw_r
 
 **双缓冲**：`frames[2]` + `write_index` / `ready_index`。理由不是"多线程"，而是**同一帧里
 `render` 可能被调两次**：`World::update_once` 在 `sync_render == Sync/Half` 时会自己
-`render_once(dt)`（`world.cpp:1039-1052`），而 `World::start_render` 注册的 raf 回调
-（`world.cpp:570-599`）也会 `render_once(real_dt)`。JS 在 raf 回调返回后才读 `ready` 那一块，
+`render_once(dt)`（`world.cpp:1096-1109`），而 `World::start_render` 注册的 raf 回调
+（`world.cpp:627-656`）也会 `render_once(real_dt)`。JS 在 raf 回调返回后才读 `ready` 那一块，
 所以"写入中的缓冲"永远不被读。
 
 **谁分配谁释放**：WASM 拥有缓冲（建议 `std::vector<uint8_t>`，按需 `resize`），JS 只读
@@ -1320,7 +1347,7 @@ uint64_t lfw_digest(void* lfw);           /* core/state_hash.h，用来跟 lfw_r
 
 | opcode | 负载（要点） | 依据 |
 |---|---|---|
-| `BEGIN_FRAME` | 帧头 | `world.cpp:452` 是唯一渲染入口 |
+| `BEGIN_FRAME` | 帧头 | `world.cpp:453` 是唯一渲染入口 |
 | `BEGIN_PASS` / `END_PASS` | pass id：`ui_bg` / `bg` / `entities` / `fg` / `ui_fg` | `WorldRenderer.ts:256-273` 的固定次序（`clearDepth` 分隔） |
 | `SPRITE` | tex, clip(x,y,w,h), dst(x,y,w,h), origin(ox,oy), rot(cos,sin), flip | `EntityMainRender.ts:707-747`（`pic.x/y/w/h`、`ox/oy`、`__cos_r/__sin_r`、`set_clip`） |
 | `TINT` | mix_color(handle 或 rgba), opacity | `EntityMainRender.ts:786-796`（`mixColor`、`alpha`） |
@@ -1408,7 +1435,7 @@ JS 的 `Map` = **JS 自有**（WASM 只见句柄）；`REG_STR` 是唯一"JS 往
 ```
 
 **谁驱动四个槽**：JS 实现 `IClock` / `ITimeout` / `IRenderScheduler` 三件（W4 的表），WASM 里的
-`Ticker`（`ticker.h:21-188`）与 `World::start_render`（`world.cpp:570-599`）**按 TS 原样跑**：
+`Ticker`（`ticker.h:21-188`）与 `World::start_render`（`world.cpp:627-656`）**按 TS 原样跑**：
 
 * `Clock.add` 必须是**一次性批量 flush**：TS 的 `Clock.ts:9-22` 用一个 `MessageChannel`
   在下一个宏任务里把整批跑完并清空。端口的 `render_scheduler.h:7-14` 专门记过"把它和 raf
@@ -1495,16 +1522,22 @@ JSZip 的 `file()` / `file()` + 正则索引是**同步**的（`Zip.ts:122-141`�
 
 * 键 → `LFW::on_key_down/up`（`lfw.h:411-412`；`LFW` 自己就是 `LfwKeyboardCallback`，
   `lfw.h:297-299`），注册走 `keyboard_add_callback`（`lfw.h:145`，TS 侧是
-  `Keyboard.ts:44-50` 的 `callback.add`）。
-* 指针 → **端口现在没有 `UIInputHandle`**：`pointings_add_ui_input` 是宿主面
-  （`lfw.h:147`，`lfw.cpp:249` 调它），TS 那份实现在 `ui/UIInputHandle.ts` 里用
-  three.js `Raycaster` 打网格（`UIInputHandle.ts:119-126`）算出节点路径，再
-  `push_cmd(CMD.POINTER_*, '--paths=…')`（`UIInputHandle.ts:42-56,76-88`）。
-* ⇒ **把 hit test 搬进 WASM**：几何本来就在 WASM（`UINode::cross()` / `rect()` / `geo()` /
-  `hit()`，`native/lfw/ui/uinode.h:126-152`，`uinode.cpp:287-330`），WASM 宿主新写一个
-  `WasmUIInputHandle` 复现"DOM 事件 → 命中节点 → 组 `CMD.POINTER_*` 命令"
-  （命令解析器已经全在 `native/lfw/cmds/cmd_pointer_events.cpp` 里，且 `--paths` 的读法
-  `read_targets` 就在那儿）。JS 不再参与 hit test。
+  `Keyboard.ts:44-50` 的 `callback.add`）。**已落地**：`HeadlessHost::keyboard_add_callback`
+  把 `LFW` 登记进 `_kb_callbacks`，平台事件的一侧是 `HeadlessHost::key_down/key_up`
+  （Godot 的 `_input`、`lfw_run --key` / Godot `--key` 都走它；`times` 从 0 起算）。
+* 指针 → **端口的 `UIInputHandle` 已落地**：`host/common/ui_input_handle.{h,cpp}` 是
+  `DittoImpl/ui/HeadlessUIInputHandle.ts` 的逐条镜像（在 `UINode` 模型上做矩形命中测试、
+  组 `--paths/--pages/--points` 再 `push_cmd(CMD.POINTER_*)`，**无引擎类型**），注册点是
+  `HeadlessHost::pointings_add_ui_input`（`lfw.cpp:249` 调它）；平台事件进来的一侧见
+  `ILfwHost` 之外的注入面 `HeadlessHost::emit_pointer_*`（Godot 的 `_input` 与
+  `lfw_run --click` 都走它）。真 `UIInputHandle.ts:119-126` 那份用 three.js `Raycaster`；
+  端口按 headless 那一份的几何口径（`UINode::cross()/geo()`，`native/lfw/ui/uinode.h:126-152`、
+  `uinode.cpp:289-332`）等价实现。
+* ⇒ **WASM 直接复用同一份**：`host/common/ui_input_handle.{h,cpp}` 已经是引擎无关的（不含任何
+  引擎头，只吃 `LfwPointingEvent` + `LFW::push_cmd`）⇒ W10 那个 `WasmUIInputHandle` 不必另写，
+  只需把 DOM 事件变成 `LfwPointingEvent` 再喂 `emit_pointer_*`。
+  （命令解析器全在 `native/lfw/cmds/cmd_pointer_events.cpp` 里，`--paths` 的读法
+  `read_targets` 就在那儿。）JS 不再参与 hit test。
 * 这样 `grab/ungrab/grabbing`（`lfw.h:157-170`）与 `set_local_cursor` 的**写面**
   （`cmd_pointer_events.h:43-45`；DESIGN §8.29 记着它"平台层调用、无 op 驱动"）都变成
   **WASM 内部**的事；JS 只**读**光标（`get_pointer_cursors`，`cmd_pointer_events.h:40-42`
@@ -1525,7 +1558,7 @@ JSZip 的 `file()` / `file()` + 正则索引是**同步**的（`Zip.ts:122-141`�
 | `now()`（`lfw.h:198`） | 允许（墙钟） | `new MersenneTwister(Date.now())`；`Clock.now = performance.now`（`Clock.ts:3-6`） |
 | 步进时机（raf / timeout / MessageChannel 触发） | 允许 | `Render.ts` / `Clock.ts` 本身就是墙钟 |
 | `measure_text` 的返回值（`lfw.h:242`） | 允许（字体/设备相关），但**同设备同版本内必须稳定** | `ImageMgr.ts:184-190` 走 canvas `measureText` |
-| 图片尺寸/缩放（`ui_image_load` 的 w/h/scale） | 允许 | 设备解码 + 文件名里的 `@nX` |
+| 图片尺寸/缩放（`ui_image_load` 的 w/h/scale） | 允许（**但不许缺**：核心侧 `UIImgLoader::load` 拿它算 `node.resize(w / scale, h / scale)`、`cook_ui_info` 拿它给零轴补尺寸，缺了就是 `NaN` 写进节点尺寸） | 设备解码 + 文件名里的 `@nX`；`HeadlessHost` 给 `0/0/1`（有限占位），`LfwGodotHost` 覆写成"命中条目 + PNG 头"的真值 |
 | 音频、下载进度 | 允许 | 纯平台 |
 | `md5`（`lfw.h:193`） | **必须逐位**（与 SparkMD5 一致） | `ui_load_img.cpp:65-68` 用 md5 拼图片 key；`Zip.ts` 用它做缓存名 |
 
@@ -1628,8 +1661,8 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
     的帧上"浏览器 digest == `lfw_run` digest"**可能**分叉。**未定**：是靠"这些帧无 libm"绕开，
     还是容忍 ULP。
 11. **还没量的事**：UI 每帧的绘制指令条数、命令缓冲每帧字节数、`measure_text` 的每帧调用次数
-    （`auto_size_by_text` 有 key 缓存，`uinode.cpp:176-201`，但换语言/换页会重算）、
-    以及 `FPS`/`UPS` 两个上报回调（`world.cpp:1043-1064` 的 `on_fps_update` / `on_ups_update`）
+    （`auto_size_by_text` 有 key 缓存，`uinode.cpp:178-203`，但换语言/换页会重算）、
+    以及 `FPS`/`UPS` 两个上报回调（`world.cpp:1100-1121` 的 `on_fps_update` / `on_ups_update`）
     要不要也让 JS 看见。
 
 ---
@@ -1654,7 +1687,8 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 - **数据路线**：JS 预写 MEMFS（浏览器用 `bundle.json` + `bundle.bin` 一次拉取）；`.wasm` 不带数据；端口零改动。
 - **下一步（W13 第 3 步 / W5）**：渲染**实现一律落在宿主侧** —— `native/host/wasm/**`（C++ 侧）+ `native/web/**`
   （JS 侧）：在那儿写 `IWorldRenderer`/`IUINodeRenderer` 的"绘制汇"，经**宿主工厂**
-  `create_world_renderer`/`create_ui_node_renderer` 挂上去（现在是 `NullWorldRenderer`/`nullptr`），
+  `create_world_renderer`/`create_ui_node_renderer` 挂上去（headless 那份仍是 `NullWorldRenderer`；
+  `native/host/thin/**` 已经先把这条挂点接上了，换的是**录制**实现，不是这里的字节命令缓冲），
   每帧写「帧头 + UI/世界指令」进 wasm 侧双缓冲，JS 用 `lfw_cmd_buffer_ptr/len` 取字节画到 `<canvas>`。
   ⚠ **`native/lfw/**` 只留接口与逻辑，不许落任何平台实现**（硬规则见 README「硬规则」节）。
 
@@ -1674,9 +1708,10 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 
 - **Godot = 宿主实现 #3**，与 `native/host/headless_host.{h,cpp}`（headless，测试用）、
   `native/host/wasm/**`（浏览器，WASM）**平级**。Godot 的全部代码放 `native/host/godot/**`。
-- `native/lfw/**` 只许增加**引擎通用**的缺口。当前在册的只有一条：`IUINodeRenderer` 的**渲染面未移植**
-  （`native/lfw/ui/ui_node_renderer.h:13-25`，文件头注释自述 `render` / `add` / `del` / `parent` / `x` /
-  `y` / `visible` 属渲染面）。**不许**因为 Godot 而往核心加任何东西。
+- `native/lfw/**` 只许增加**引擎通用**的缺口。当前在册的只有一条，而且已经补到核心侧、没有引擎词：
+  `IUINodeRenderer` 的**渲染面**（`render` / `add` / `del` / `parent` / `x` / `y` / `visible`）与**每层一次的
+  调用点**（`world.cpp` 的 `render_ui_layers`，TS `WorldRenderer.ts:236-239`）都已移植，但**绘制实现**
+  是空的（`render` 的默认体只记 `unhandled`，见 D4）。**不许**因为 Godot 而往核心加任何东西。
 - **硬规则原文**（`native/README.md:16-30`）：「**平台实现一律不许落在 `native/lfw/**`**：渲染、音频、
   图片、输入、时钟、wasm/ABI 这些**具体实现**只放 `native/host/**`（C++ 侧）与 `native/web/**`
   （JS 侧）；核心只留**接口**与**逻辑**。`lfw.h` 里与平台相关的东西只允许是"**宿主工厂**"
@@ -1696,17 +1731,20 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 
 | 宿主面 | 端口位置（已读） | Godot 侧（需验证） |
 |---|---|---|
-| `ILfwHost` | `lfw/lfw.h:135-288`。70 个成员面 = **64 纯虚 + 6 有默认体**：`pointings_grab`（`:157-161` 回 `false`）、`pointings_ungrab`（`:162-165` 空）、`pointings_grabbing`（`:167-170` 回 `nullptr`）、`is_desktop`（`:172` 回 `false`）、`create_ui_node_renderer`（`:179-182` 回 `nullptr`）、`warn_async`（`:202` 转调 `warn`）。**没有"未移植的成员"**——写不写得出真货是**实现方**的事（默认体只是省事，不等于缺功能） | 一个 `LfwGodotHost : ILfwHost`（+ `IResourcesHost`，见下），成员是 Godot 侧句柄 |
+| `ILfwHost` | `lfw/lfw.h:135-288`。70 个成员面 = **64 纯虚 + 6 有默认体**：`pointings_grab`（`:157-161` 回 `false`）、`pointings_ungrab`（`:162-165` 空）、`pointings_grabbing`（`:167-170` 回 `nullptr`）、`is_desktop`（`:172` 回 `false`）、`create_ui_node_renderer`（`:179-182` 回 `nullptr`）、`warn_async`（`:202` 转调 `warn`）。**没有"未移植的成员"**——写不写得出真货是**实现方**的事（默认体只是省事，不等于缺功能） | **已落定（G1 骨架）**：`LfwGodotHost` **继承** `host/headless_host.h` 的 `HeadlessHost` —— 那本身就是 `ILfwHost` + `IResourcesHost` + `IPlayerInfoHost` 的一份完整实现（`ZIPError` 之外的 64 个纯虚一个都不必重写），Godot 侧的差异只在「帧从哪来」与「输出」两处 |
 | `IClock` / `ITimeout` | `lfw/base/clock.h:11-28`；注入走全局槽 `set_clock`/`set_timeout`（`:31-46`） | **注入虚拟时钟**（G3），不是 Godot 的真实时间 |
 | `IRenderScheduler` | `lfw/base/render_scheduler.h:15-19`；槽 `set_render_scheduler`（`:21-25`） | **故意不装**（槽空 ⇒ `render_add` 回 0，`:29-31`） |
 | `IWorldRenderer` | `lfw/world.h:61-68`：`add_entity(Entity&)` / `del_entity(Entity&)` / `render(double dt)` / `dispose()` | 一棵 Godot 节点树 + 每实体一个节点（需验证） |
 | `IEntityRenderer` | `lfw/entity/entity.h:34-37` —— 是 `struct`，只有一个 `render(double dt, double dfactor)` | 每实体一个渲染对象（需验证） |
-| `IUINodeRenderer` | `lfw/ui/ui_node_renderer.h:13-25`。已移植的只有生命周期/焦点转发（`del_self` / `on_start` / `on_stop` / `on_resume` / `on_pause` / `on_show` / `on_hide` / `on_foucs` / `on_blur`），而它们**全是有空体的非纯虚**（不实现也能编过）；**渲染面（`render`/`add`/`del`/`parent`/`x`/`y`/`visible`）未移植** | 每个 `UINode` 一个 `Control`/`CanvasItem`（需验证）；**得先把渲染面补进端口**（G4） |
+| `IUINodeRenderer` | `lfw/ui/ui_node_renderer.h:32-70`。接口面齐了：9 个生命周期/焦点转发（`del_self` / `on_start` / `on_stop` / `on_resume` / `on_pause` / `on_show` / `on_hide` / `on_foucs` / `on_blur`）+ 7 个渲染面（`render` / `add` / `del` / `parent` / `x` / `y` / `visible`），**全是带默认体的非纯虚**（不实现也能编过；`render` 的默认体只记 `unhandled`）。核心每帧每层调一次（`world.cpp` 的 `render_ui_layers`） | 每个 `UINode` 一个 `Control`/`CanvasItem`（需验证）；**只剩"画"没写**：递归与可见规则照 TS 哪一份实现自定（G4） |
 | `IResourcesHost` | `lfw/resources.h:30-49`（`import_as_json` / `blob_url` / `array_buffer` / `image_bitmap` / `text` + `xml_parse`）。⚠ 与 `ILfwHost` 是**两个**接口，`LFW` 同时继承它（`lfw.h:297-299`） | `import_as_*` 走 Godot 文件 API（需验证）；`image_bitmap` 得先有真解码（G7） |
 | `IPlayerInfoHost` | `lfw/player_info.h:45-56`（`cache_get` / `cache_del` / `cache_put` + `warn`） | `user://` 存档（需验证）；headless 的真实现是内存 map（`host/headless_host.cpp:221-239`） |
-| `IZip` / `IZipObject` | `lfw/ditto/zip/i_zip.h:15-31`（`name` / `file(string)` / `file(regex)` / `md5`）、`i_zip_object.h:16-29`（`name` / `json` / `text` / `blob_url` / `array_buffer` / `image_bitmap`） | 需要一个**能读 zip 的 IO 层**（Godot 侧候选：`ZIPReader`，需验证）。现在只有"目录当 zip"（G6） |
+| `IZip` / `IZipObject` | `lfw/ditto/zip/i_zip.h:15-31`（`name` / `file(string)` / `file(regex)` / `md5`）、`i_zip_object.h:16-29`（`name` / `json` / `text` / `blob_url` / `array_buffer` / `image_bitmap`） | **已落地**（`host/common/zip_file.{h,cpp}`：中央目录 + stored/deflate，引擎无关）；`--zip <dir>` 那条仍走"目录当 zip"（G6）。Godot 的 `ZIPReader` 没走这条路（它的入参是 `PackedByteArray`，而包是宿主按 URL 自己读进来的） |
 | `IXML` / `IXMLElement` | `lfw/ditto/xml/i_xml.h:16`、`i_xml_element.h:35` | **不需要 Godot**：端口已有纯逻辑 `ToolXML`（`native/lfw/ditto/xml/tool_xml.*`），headless 就是这么接的（`host/headless_host.cpp:327`） |
 | `IUIEvent` | `lfw/ui/ui_event.h:14-18`（`stopped()` / `stop_propagation()` / `stop_immediate_propagation()`） | **不需要 Godot**：纯状态类（同文件 `LFWUIEvent` / `LFWPointerEvent` / `LFWKeyEvent`），输入事件在 `native/host/godot/**` 里翻译成它 |
+| 指针入径（**不在 `ILfwHost` 上**，宿主侧的注入面） | `host/headless_host.h` 的 `emit_pointer_down/move/up/cancel/click/wheel` + `emit_pointer_enter/leave` + `click_ui(x,y)`（命令走 `LFW::push_cmd`）；命中测试在 `host/common/ui_input_handle.{h,cpp}`（引擎无关，镜像 `DittoImpl/ui/HeadlessUIInputHandle.ts`） | Godot 的 `_input`（`_ready` 里 `set_process_input(true)`）：`InputEventMouseButton`（含 4 向滚轮）/ `InputEventMouseMotion` / `InputEventPanGesture` → `LfwPointingEvent` → 注入面。坐标 = **逻辑屏幕像素**（与 `_draw()` 同一套；逻辑屏幕恒 794×450，
+`project.godot` 的 stretch 是 `disabled` ⇒ 窗口像素由宿主的 `contain_transform()` 逆变换换回逻辑像素） |
+| 键盘入径（**不在 `ILfwHost` 上**，宿主侧的注入面） | `host/headless_host.h` 的 `key_down(key, device_type)` / `key_up(...)`（`times` 从 **0** 起算，重复按下递增；`_kb_callbacks` 快照迭代）+ `pressed_keys()`；`--key*` 的键名口径在 `host/common/key_code.h` | Godot 的 `_input`：`InputEventKey` → 小写 `KeyboardEvent.key`（`dom_key_of_godot`：控制键查表 + `get_unicode()`；**抬起事件没有 `unicode`**，字母/数字用 `keycode` 兜底，`Shift+A` 落回 `a`）→ 注入面；`--key <name>[@frame]` / `--key-down` / `--key-up` 是同一注入面的脚本口 |
 | `IUIImgLoaderNode` | `lfw/ui/ui_img_loader.h:20-28`（`lfw()` / `set_image(Value)` / `resize(w,h)`） | **不需要 Godot**：端口内已有 `UINodeImgAdapter`（同文件 `:72`） |
 
 ⚠ 两个容易踩的点：
@@ -1714,10 +1752,37 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 1. **`IClock` / `ITimeout` / `IRenderScheduler` 不走 `ILfwHost`**，走的是 `lfw::set_clock` /
    `set_timeout` / `set_render_scheduler` 三个全局槽（`base/clock.h:31-46`、
    `base/render_scheduler.h:21-25`）。WASM 宿主就是这么接的（W15「跨界只有两块：时钟 + 日志」）。
-2. **`IUINodeRenderer` 的"未移植"在类型上看不出来**：那些方法有默认空体，Godot 实现可以一行不写却
-   编得过 —— 所以"渲染面没搬"这件事只能靠**文档 + 机检**钉住，别指望编译器。
+2. **`IUINodeRenderer` 的"没实现"在类型上看不出来**：那些方法全有默认体，Godot 实现可以一行不写却
+   编得过 —— 所以"还没画"这件事只能靠**文档 + 统计行**钉住（`render` 的默认体记 `unhandled`，
+   宿主打 `UI render calls: N (unhandled: M)`），别指望编译器。
 
 ### G2. 两种集成形态
+
+**窗口外观（已落地）**：照 Electron 桌面端（`desktop/app/main.mjs:915` `frame: false`、
+`src/App.tsx:705-813` 自绘的 **11 个控件** + `src/App.module.scss` 的 `.top_bar` / `.wails_drag`）：
+Godot 宿主也设 `WINDOW_FLAG_BORDERLESS` 并自绘顶栏（`native/host/godot/lfw_godot_titlebar.h` 只管布局/命中，
+`lfw_godot_node.cpp` 管可见性求值与动作）：`.wails_drag` 拖拽层（悬停 `#88888855`）、11 个 `btn_*.png`
+控件（32×32 缩 0.6 / 悬停 0.8、右对齐、次序 = DOM 次序、按 `src/App.tsx` 那个 `Show show=` 一条条求值）、
+两个音量控件的悬停竖直滑杆（`sounds_set_bgm_volume` / `sounds_set_sound_volume`）、全屏隐藏、条上点击先被
+`titlebar_consume` 吞掉（只有控件盒 + 拖拽层 + 打开的弹层吞，条底那 3.2 像素的缝照 Electron 漏给画布；
+`borderless` 在 Windows 是 `WS_POPUP` ⇒ 另留 6 像素 `window_start_resize` 带）。
+窗口默认 `1.5×`（= Electron 的 1191×675）。⚠ **contain + 居中由宿主自己做**（`project.godot` 的
+`stretch/mode` 是 `disabled`）：那一档 `canvas_items` + `aspect=keep` 会把"画布"整个压进内容区、
+**渲染目标本身就只等于内容区** ⇒ 画到窗口右端的自绘顶栏被切掉、`--screenshot` 也抓不到黑边。
+现在一份矩阵（`lfw_godot_node.cpp` 的 `contain_transform()`，口径照 `Window::_update_viewport_size()`
+的 keep 分支）同时管三件事：游戏那一层的**绘制**缩放/居中、`_input()` 里窗口像素 → 逻辑像素的
+**换算**、`contain_rect()` 交给 `canvas_item_set_clip` + `custom_rect` 的**裁剪**（逻辑屏幕外的绘制
+不漏进黑边；`--clip-probe` 是它的观测量）⇒ **逻辑屏幕恒 794×450**，UI/世界的坐标与三条摘要都不受
+影响；字体过采样补成引擎在 `canvas_items` 下的自动值（`MAX(内容缩放)`）⇒ 1.5× 的文字光栅化与切片
+之前逐像素一致。**只有顶栏那一层按 DOM 的 CSS 像素判**（绘制时用 `Viewport::get_final_transform()` 的逆 ×
+`DisplayServer::screen_get_scale()` 贴回画布 —— CSS 像素是 OS 的**逻辑**像素，Godot 的窗口像素是**物理**
+像素，不换算的话 125%/150% 的屏上条会小一档；命中时除**同一个**数，`titlebar_display_scale()` 一处数字
+两条路；并用 `canvas_item_add_clip_ignore` 越过上面那条裁剪）⇒ 条铺满整窗宽、按钮贴**窗口**右上角；
+**条高 32 / 控件盒 32 / 图 19.2 / 拖拽层 28.8 / 边缘带 6 都是 CSS 常量**：既不随窗口尺寸、也不随 contain
+缩放变化，只随显示缩放整体放大（`[godot] titlebar:` 行的 `bar=` / `icon=` / `scale=` 是回归口）；
+`--screenshot` 抓的是**整窗**（黑边 + 条 + 画面）。开关：`--titlebar native|none|custom`
+（缺省 `custom`）、`--window-scale N`（缺省 1.5）、`--icons <dir>`（那 11 张 PNG 在仓库的 `src/assets`，
+**不在数据包里**）。
 
 **(a) GDExtension（推荐）**：Godot 拥有进程与主循环，端口编成静态库 `lfw_core`
 （`native/lfw/CMakeLists.txt:1`）链进扩展，宿主在 `_process` 里驱动。
@@ -1740,7 +1805,7 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 **端口事实**（已读）：
 
 - `LFW` 的**构造函数**里就自己起了世界：`native/lfw/lfw.cpp:246` `world_->start_update();`（下一行
-  `start_render()`）；`World::start_update` 在 `native/lfw/world.cpp:1104`。
+  `start_render()`）；`World::start_update` 在 `native/lfw/world.cpp:1161`。
 - 驱动它的是端口自己的 `Ticker`（`native/lfw/base/ticker.h:23`）。**但 Ticker 不会自己动**：它靠
   `Ticker::schedule()` 里的 `clock_add` / `timeout_add`（`ticker.h:113-124`）排下一跳 ⇒ **槽是空的时候它
   就是死的**（headless 的 `ManualClock::add→0` / `NoopTimeout::add→0`，`host/headless_host.h:20-34`，
@@ -1768,15 +1833,15 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 ```
 native\build\msvc-x64\bin\lfw_run.exe --root dist ^
   --zip native\build\host-data\prel --frames 300 --every 300
-  ⇒ digest=7335aa25f4e1ce86（warns=0）
+  ⇒ digest=a7edd32e19a43ea9（warns=0）
 
 … --zip native\build\host-data\prel --zip native\build\host-data\data ^
   --fighter 1 --fighter 4 --stage 1 --frames 900 --every 900
-  ⇒ digest=e4a9437292047044（warns=1）
+  ⇒ digest=13945ad1144c968d（warns=1）
 
 … --zip native\build\host-data\prel --zip native\build\host-data\data ^
   --stage 0 --fighter 1 --fighter 4 --vs --frames 600 --every 600
-  ⇒ digest=f29d3bb1ea330c32（warns=1）
+  ⇒ digest=61c42c78c9d0bcac（warns=1）
 ```
 
 （`digest` 口径见 `native/README.md:260`：「实体表（按 id 排序）的位置/血量/队/状态」的 FNV-1a。
@@ -1788,9 +1853,11 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
   把**活对象**交给宿主，之后每帧只调一次 `render(dt)`，宿主**自己**去读实体当前状态。
   这跟 Godot 的场景树天然同构（进世界 = 建节点、出世界 = 删节点、每帧遍历重读属性）⇒ 比 W5 那套"WASM 内
   遍历、每帧攒一批绘制指令、JS 只读缓冲"**简单一档**（同进程 ⇒ `Entity&` 是同一块内存，不用序列化）。
-- **前置条件**：`IUINodeRenderer` 的**渲染面还没移植**（G1 那张表）。⇒ 顺序是
-  **先补端口、再写 Godot 渲染器**，不能反。DESIGN §7.2 的"依赖顺序"把这条与真 `IWorldRenderer`
-  绑成"**必须与第 8 步同刀**"（第 7 条），理由一样。
+- **前置条件已满足**：`IUINodeRenderer` 的**渲染面已移植**（接口面 + 每层一次的调用点，G1 那张表 /
+  D4）⇒ 顺序上"先补端口、再写 Godot 渲染器"的前半已经做完。DESIGN §7.2 的
+  "依赖顺序"把这条与真 `IWorldRenderer` 绑成"**必须与第 8 步同刀**"（第 7 条）——实测**不必**：
+  两半都落定之后（世界在 G2 第二半、UI 在本节），两刀各自独立、都在核心之外，唯一真正共享的是
+  "绘制项 + `_draw()`"这一层。
 - **契约必须引擎中立**，而且这件事是**可证伪**的：同一个接口现在已经有**两份**宿主实现在跑
   （headless + WASM），`native/README.md` 的 DESIGN 摘录写着「WASM 宿主与它是**同一批接口的两个实现**，
   不许互相依赖」（`DESIGN.md:1532`）。Godot 一来就是**第三份** ⇒ 只要有一份实现被迫写"只有 Godot 才需要"
@@ -1817,14 +1884,18 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
 - **两边的目录模型不一样**：
   - 端口/headless：`--root <dist>` 下读 `builtin_data/…`；`--zip <目录>` 指的是**已经解开**的包目录
     （`native/README.md:235-243`：`native\build\host-data\prel`、`native\build\host-data\data`）。
+    `HeadlessHost::resolve` 按 TS `Importer.get_possible_url_list` 的口径试两档：先 `<root>/<路径>`，
+    再 `<root>/builtin_data/<路径>`（`roots = ["builtin_data"]`）—— 缺第二档时 `!launch/bg.png`
+    这类路径解析不到（TS 找得到）。
   - Godot：`res://`（只读资源）/ `user://`（可写）/ 外部数据目录（需验证）三套模型，导出后 `res://`
     在 pck 里（需验证）。
-- ⚠ **现在的 `native/host/fs_zip.{h,cpp}` 只是"目录当 zip 用"**：`fs_zip.h:15-17` 自述「只支持「已解包的
-  包」——压缩包本体（中央目录 / DEFLATE）留到宿主 zip 那一刀」；README 的偏差表也记着
-  （`native/README.md:436`：`host/FsZip` 只吃「已解包」的目录）。`image_bitmap` 明确拒绝
-  （`host/fs_zip.cpp:94-98`）。
-  ⇒ **真 zip 就在 Godot 这一刀换掉**（G7 第 5 行）；Godot 侧有现成的 zip 读法（候选 `ZIPReader`，
-  需验证），不必自己写 DEFLATE。
+- ⚠ **`native/host/fs_zip.{h,cpp}` 只是"目录当 zip 用"**：`fs_zip.h:15-17` 自述「只支持「已解包的
+  包」」。**真 `.zip` 已经补上**：`native/host/common/zip_file.{h,cpp}`（中央目录 + stored/deflate，
+  ZIP64 明确拒绝）接在 `HeadlessHost::zip_read_blob/read_buf/download` 上，`--zip <dir>` 那条路仍走
+  `FsZip`。`image_bitmap` 仍明确拒绝（`host/fs_zip.cpp` / `host/common/zip_file.cpp`），
+  宿主自己解码（§G2 第二半）。
+  ⇒ 两种包对象在 Godot 侧都要能读字节：`GodotWorldRenderer::read_resource` 认
+  `FsZipObject` 与 `ZipFileObject` 两种（`--zip` 的目录 / 菜单 `load_data()` 装进来的真 `.zip`）。
 - 数据怎么进宿主：WASM 那套是"JS 先灌 MEMFS，**端口零改动**"（`native/README.md:318-319`）。Godot 同款
   思路：把**解包目录或 zip** 放到 Godot 读得到的地方，`FsZip` / 新的 zip 实现照旧按条目名读 ⇒ **核心零改动**。
 
@@ -1835,16 +1906,18 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
 
 | # | 假货（现状，已核对代码） | Godot 侧候选（需验证） | "done" 的判据 |
 |---|---|---|---|
-| 1 | **MD5**：`host/headless_host.cpp:146-147` 注释自认「⚠ 不是真 MD5：只保证「同输入同输出」」 | 需要一份 MD5（候选 `HashingContext`，需验证） | 与 `DittoImpl/md5.ts`（SparkMD5）**逐位一致** —— DESIGN 的 W11 表把 `md5` 标成"**必须逐位**"（`DESIGN.md:1529`，理由是 `ui_load_img.cpp:65-68` 用它拼图片 key） |
-| 2 | **sounds**：`host/headless_host.cpp:186-209` 只计数（`sounds_play` / `sounds_play_bgm` / `sounds_load`…）；`World::play_sound` 默认空转（§7.2 K2） | `AudioStreamPlayer` / `AudioStreamPlayer2D`（需验证） | `ILfwHost` 注释里那套语义（音量 clamp / 同值早退 / 变更发 `on_*_volume_changed`，`lfw.h:222-256`）落地；`sounds_play_bgm` 回一个**真能停** BGM 的闭包 |
+| 1 | ~~**MD5**：`host/headless_host.cpp:146-147` 注释自认「⚠ 不是真 MD5：只保证「同输入同输出」」~~ **已结清**（自写 RFC 1321，`host/common/zip_file.cpp`；Godot 的 `HashingContext` 没用上） | —— | 与 `DittoImpl/md5.ts`（SparkMD5）**逐位一致**：`dist/data.zip` = 清单里的 `6143b821a34cc4a0f0d05270f2b43e28` ✓ |
+| 2 | ~~**sounds**：`host/headless_host.cpp:186-209` 只计数（`sounds_play` / `sounds_play_bgm` / `sounds_load`…）；`World::play_sound` 默认空转（§7.2 K2）~~ **已换真货**（`host/godot/lfw_godot_host.{h,cpp}` 放 `__Modern` 的语义与算式 + `lfw_godot_node.cpp` 做解码/播放，2026-10-16） | `AudioStreamPlayer` + 每槽一条总线 + `AudioEffectPanner`（**实测可用**：驱动 `WASAPI 48kHz` / `Dummy`） | `ILfwHost` 注释里那套语义（音量 clamp / 同值早退 / 变更发 `on_*_volume_changed`，`lfw.h:222-256`）落地；`sounds_play_bgm` 回一个**真能停** BGM 的闭包 ✓（`req_id` 闭包 + `_random_next` 那条 `CMD.BGM '?'` 回环）。⚠ 两处仍需知道：① `AudioStreamPlayer` **没有 pan** ⇒ 用 `gain = (l+r)/2` + `pan = (r-l)/(l+r)` 送进 panner，在 Godot 4.7.1 的法则（`lvol = clamp(1∓pan)`，单声道输入下 `out = gain·(1∓pan)`）下**逐值等于** `(l, r)`；② 音效槽只有 24 个（抢槽时把被顶掉的那条当场还给宿主） |
 | 3 | **images**：`import_as_image_bitmap` 明确拒绝（`host/headless_host.cpp:318-324`）、`fs_zip.cpp:94-98` 同 | `Image` / `ImageTexture`（需验证） | `ui_image_load` 的 w/h/scale 口径对得上（`@nX` 缩放）；DESIGN 允许与 TS 有设备差，但**同设备同版本内必须稳定**（`DESIGN.md:1527`） |
-| 4 | **文本度量**：`measure_text` 近似（`host/headless_host.cpp:211`） | `Font` 度量（需验证） | 允许偏差（`DESIGN.md:1526`：允许字体/设备相关，**同设备同版本内必须稳定**）；`auto_size_by_text` 有 key 缓存（`uinode.cpp:176-201`），别每帧重算 |
-| 5 | **zip**：`FsZip` 只认解包目录、无 DEFLATE/中央目录（`host/fs_zip.h:15-17`、`native/README.md:436`） | zip 读取（候选 `ZIPReader`，需验证） | 真包（`dist/*.zip`）直接能装；`file_regex` 那 4 条固定模式（`lfw/ditto/zip/i_zip.h:33-56`）行为不变 |
+| 4 | ~~**文本度量**：`measure_text` 近似（`host/headless_host.cpp:211`）~~ **已换真货**（`host/godot/lfw_godot_font.{h,cpp}` + `lfw_godot_node.cpp` 的 `install_text_metrics`）：按 `style.font` 的 CSS 简写挑字族/字重（`SystemFont`，`Arial Black` 拆成 `Arial`@900），并把 `TextMesh.split_text_to_lines` 的**四边内边距 2** 算进 `w/h` | 引擎 `Font` 度量（已落地） | 允许偏差（`DESIGN.md:1526`：允许字体/设备相关，**同设备同版本内必须稳定**）；`auto_size_by_text` 有 key 缓存（`uinode.cpp:176-201`），别每帧重算。⚠ 仍有一处允许偏差：**行高**口径不同 —— TS 是 canvas 的 `fontBoundingBoxAscent + Descent`（Arial ≈1.111em），引擎 `Font::get_height` 是 ≈1.167em ⇒ 每行多 1 像素；宽度已经逐项对齐（±1）。对拍账见 `native/README.md`「与 Web 版对不上的地方」 |
+| 5 | ~~**zip**：`FsZip` 只认解包目录、无 DEFLATE/中央目录（`host/fs_zip.h:15-17`、`native/README.md:436`）~~ **已结清**（`host/common/zip_file.{h,cpp}`：中央目录 + stored/deflate + 自写 inflate；没用 Godot 的 `ZIPReader` —— 那一层要 `PackedByteArray`，而这里的包是宿主自己按 URL 读进来的） | —— | 真包（`dist/*.zip`）直接能装：`--zip-diff` 逐条比对 161/161 与 633/633（名字 + 大小 + 内容 MD5）；`file_regex` 那 4 条固定模式（`lfw/ditto/zip/i_zip.h:33-56`）行为不变 |
 | 6 | **时钟/定时器**：`ManualClock::add→0` / `NoopTimeout::add→0`（`host/headless_host.h:20-34`） | **不换！** | 换真货 = 改成"固定步长 + 注入虚拟时钟"（G3 第 2/3 条），**不是**接 Godot 的真实时间 |
 | 7 | **光标**：端口能读出指针状态（`get_pointer_cursors`，`lfw/cmds/cmd_pointer_events.cpp:362-365`），但**渲染路径没有**（`MouseShadow` 那一支；§7.2 依赖顺序第 12 条也记着 `set_local_cursor` 要等光标渲染路径） | `TextureRect` / `Node2D` 画光标（需验证） | 跟 G4 的契约走：**先有 UI 渲染面，再谈光标** |
 
-⚠ **顺序约束**（照 §7.2 那张"省到贵"表）：真 MD5 是**真图片 / zip 键的前提**；`IUINodeRenderer` 与真
-`IWorldRenderer` **必须同刀**；sounds 与 images 排在渲染之后。**别按"哪条最容易"排期。**
+⚠ **顺序约束**（照 §7.2 那张"省到贵"表）：~~真 MD5 是**真图片 / zip 键的前提**~~（已在**核心之外**
+落地：`host/common/zip_file.cpp`）；`IUINodeRenderer` 与真
+`IWorldRenderer` 当年写成"**必须同刀**"（第 7 条）——**已实测可拆**（Godot 宿主先落世界、后落 UI，
+两次都没动核心）；~~sounds 与 images 排在渲染之后~~（sounds 已在 2026-10-16 落地）。**别按"哪条最容易"排期。**
 
 ### G8. 切片与验收
 
@@ -1853,14 +1926,49 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
 `msvc-x64` 验收** —— 别把 Godot 的头文件路径塞进 `lfw_core` 的 `target_include_directories`。
 
 - **G1 骨架**（宿主立起来，**渲染用假/空实现**）：`native/host/godot/**` 建
-  `LfwGodotHost : ILfwHost, IResourcesHost`（**两个**接口，G1 的 ⚠ 第 1 条的兄弟项）；IO 走 Godot 文件
-  API（需验证）；`ManualClock` 同款虚拟时钟 + 固定步长（G3）；`IWorldRenderer` 先给计数版
-  （照抄 `NullWorldRenderer`，`host/headless_host.h:37-46`）。
-  **验收**：在 Godot 里复现 **G3 那三条摘要** —— 这是唯一能证明"宿主换对了"的硬指标。
-- **G2 绘制契约**：补端口 `IUINodeRenderer` 的渲染面（`native/lfw/ui/ui_node_renderer.h`，属 G0 允许的
-  "引擎通用缺口"）→ 写 Godot 的 `IWorldRenderer` / `IUINodeRenderer`。
-  **验收**：差分台面与 lint 不退化（`npm run native all`）+ 目视一帧 UI 与世界都画出来（**目视无自动化
-  判据，记"未定"**）。
+  `LfwGodotHost`（`HeadlessHost` 的**子类** ⇒ 复用装载 / `IZip` / 存档 / XML / `import_as_*` 那批
+  源文件；**这一刀没走 Godot 文件 API**：数据仍由 `FsZip` 按目录名读，同 §G6 的口径）+
+  `LfwGodot : Node`（第二半起改成 `Node2D`，为的是 `_draw()`；命令行 → `host/common/lfw_boot.h` 的
+  共享装配 → §G3 的固定步长推帧 → 摘要）。
+  虚拟时钟 + 固定步长（G3）；⚠ `IWorldRenderer` 当时就是 `HeadlessHost` 的 `NullWorldRenderer`（计数版）
+  —— **G2 第二半已把它换成会画的那一份**（`LfwGodotHost::create_world_renderer`）。
+  **验收**：✅ **已落定** —— Godot 4.7.1 headless 里三条摘要与 `lfw_run` **逐位一致**
+  （`a7edd32e19a43ea9` / `13945ad1144c968d` / `61c42c78c9d0bcac`；连 `warns` / `ignored_images` /
+  `renderer(±)` / `clock=` 也对得上）。跑法见 `native/README.md`「Godot 宿主」。
+  ⚠ 三条实测（都会让人白花一天）：Godot 跑工程时 **cwd = 工程目录**（`--path` 的副作用）⇒ 数据路径写绝对；
+  本 target **不许 `/GR-`**（`Object::cast_to<T>` 走 `dynamic_cast`，见 §G9 第 1 条）；
+  扩展**不写进 `.godot/extension_list.cfg` 就静默不加载**（首跑要 `<godot> --headless --import`）。
+- **G2 绘制契约**：端口 `IUINodeRenderer` 的渲染面**已补齐**（`native/lfw/ui/ui_node_renderer.h:32-70`，
+  属 G0 允许的"引擎通用缺口"；调用点在 `world.cpp` 的 `render_ui_layers`）。
+  - **第二半（世界那一遍）已落定**：`native/host/godot/lfw_godot_renderer.{h,cpp}`（`IWorldRenderer`
+    的实现：帧级上下文 + 逐实体 + 逐背景层 → **引擎无关**的绘制项）+ `lfw_godot_textures.{h,cpp}`
+    （资源字节 → `Image::load_png_from_buffer` → `ImageTexture` 缓存）+ `LfwGodot : Node2D` 的
+    `_draw()`（唯一一处 `draw_*`）。**真图**：`files[tex]` 的变体表 + `get_import_fallbacks` 的 `@Nx`
+    回退解析出条目名，字节经 `FsZipObject::read` 从数据包读（`image_bitmap` 那条拒绝路**没动**，
+    核心一个字节都不碰）；三份 bg/角色/影子都是**贴了图的**（`textures=18 ok/0 fail`）。
+    次序照 `WorldRenderer.render_layers`（背景层 → 影子 → 实体按组 z 远→近 → 前景层）。
+  - **背景层那几条口径**（照 TS `BgRender` / `BgLayerRender`，2026-10-16 落定，实测见
+    `README.md`「2026-10-16」那条"纯色 bg 层"）：① `dst_w/dst_h = has_pic ? (dw ?? 源图宽) : (w || width)`；
+    ② **颜色只在没有纹理时生效**（`if (!src_texture && color !== void 0) m.color.set(color)`），纯色层
+    画成一块**纯填色矩形**（`GodotDrawItem.flat`，不查纹理、不画"取不到图"的占位色块）；③ 颜色值的口径 =
+    three.js `Color.set`（**数字 = `0xRRGGBB`** / 字符串 = `#rgb`·`#rrggbb`·`rgb()`·`rgba()`），**不是** UI 那套
+    ARGB 的 `int_to_rgba`；④ `absolute` 层挂 `cam_node`（`position.x = cam_x`、y 不动）⇒ 屏幕上
+    `x ≡ info.x`、与相机/zoom 无关；非 absolute 才走 `cam*(1-zoom) + x + parallax - cam`。
+    **还没做**：`offsetAnim*` 的 UV 偏移动画、`opacity < 1`（见 `README.md` 缺口表 #4）。
+  - **UI 那一遍已落定**：`native/host/godot/lfw_godot_ui_renderer.{h,cpp}`（`IUINodeRenderer` 的实现：
+    锚点矩形 / 父子坐标系累计 / `z` 升序 / 可见与递归 / 图片裁剪 + `@Nx` + 平铺 + UV 动画 / **九宫格** /
+    文字 / `clip_children` 求交 / `background|foreground` 两遍叠加 → 同一批**引擎无关**的绘制项，按
+    `pass = -1|0|+1` 落进五遍次序的 UI 那两遍）+ `LfwGodotHost::create_ui_node_renderer` 覆写
+    （每节点一份，所有权归节点）+ 宿主侧文字度量（`ThemeDB` 的默认字体；见 D5-10）+
+    **`LfwGodotHost::ui_image_load` 覆写**（把 `w/h/scale` 补成真值 —— 核心侧 `UIImgLoader::load`
+    与 `cook_ui_info` 都要这三个数，缺了就是 NaN，见 §G2 末段）。
+    统计行 `UI render calls: N (unhandled: 0)`。**没画的**：逐像素描边、`clip_children` 的
+    部分越界（`draw_*` 没有逐项裁剪 ⇒ 整项取舍）、文字的下划线/阴影/描边、3D 模型。
+  - **验收**：差分台面与 lint 不退化（`npm run native all`）+ **三条摘要逐位不变**（渲不渲染都不许动
+    模拟：`a7edd32e19a43ea9` / `13945ad1144c968d` / `61c42c78c9d0bcac`，`renderer(±)` / `ignored_images`
+    也逐位相同）+ **目视**：`--screenshot <png> --shot-frame N`（窗口跑，别加 `--headless`）存一张
+    794×450 的图 —— 见 `native/README.md`「画面存档」。⚠ 目视仍**无自动化判据**（"画得对不对"这一条
+    记**未定**）；世界那一遍没画的：3D 模型帧、名字/血条、调试指标层、`greyscale`、逐图旋转。
 - **G3 音频/图片/zip/MD5/文本度量**：G7 那张表。
   **验收**：MD5 与 `md5.ts` 逐位一致（可自动化）；zip 能装真包；**三条摘要仍逐位一致** —— 换宿主最容易
   在这一步翻车。
@@ -1872,10 +1980,18 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
 
 - **构建开关冲突（第一天就会撞上）**：核心是**零异常 / 零 RTTI**（`native/lfw/CMakeLists.txt:366-369`：
   MSVC `/GR-` + `_HAS_EXCEPTIONS=0`，clang/GCC `-fno-exceptions -fno-rtti`；硬规则见
-  `native/README.md:29-44`）。Godot 自己的构建用不用异常/RTTI、与关掉这两个开关的 `lfw_core` 能不能混编
-  ⇒ **需验证**。先做这个实验，再排期。
-- **GDExtension 的 ABI/版本锁定与热重载**：需验证（对你打算用的 Godot 版本，确认 GDExtension 的兼容
-  承诺与绑定生成方式）。
+  `native/README.md:29-44`）。**已实测**：godot-cpp 那份静态库自己就关异常
+  （`GODOTCPP_DISABLE_EXCEPTIONS=ON`，即 `_HAS_EXCEPTIONS=0`）；**但 RTTI 不能关** ——
+  `Object::cast_to<T>` 走 `dynamic_cast`（`godot-cpp/include/godot_cpp/core/object.hpp:129`），
+  `/GR-` 编出来的扩展一加载就把进程带走（退出码 `0xE06D7363`）。⇒ `host/godot` 这一支只关
+  `_HAS_EXCEPTIONS`、**保留 RTTI**；RTTI 不改任何 `std::` 类型的布局，与 `/GR-` 的 `lfw_core`
+  混编对 `Value`（`std::variant`）这条边界是安全的。
+- **GDExtension 的 ABI/版本锁定与热重载**：**4.7 那条线已在 G1 骨架里跑通**（热重载仍未验证）。
+  上游 godot-cpp **没有 4.7 线**（分支只到 4.5 + master/10.0.0）⇒ 用 4.5 的 C++ 侧，但绑定按
+  **引擎自己 dump** 的 `extension_api.json` / `gdextension_interface.h` 生成（`--dump-extension-api` /
+  `--dump-gdextension-interface`）。两版接口对比：函数指针 173 → 179、**0 个被删**，19 个结构体逐字相同
+  （4.7 新增 `GDExtensionClassCreationInfo6`）。⚠ 首跑必须 `<godot> --headless --import` 生成
+  `.godot/extension_list.cfg`，否则扩展**静默不加载**。
 - **只编 `lfw_core`**：`native/lfw/CMakeLists.txt:1` 是 `add_library(lfw_core STATIC …)`，但同一套 CMake 的
   `all` 里有 **117 个可执行文件**（`lfw_run` + 116 个 `lfw_trace_*`，`native/README.md:290`）⇒
   **只编 `lfw_core`**，别把 117 个 target 拖进扩展构建。
@@ -1892,8 +2008,18 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
   真时间，**摘要就不可复现** ⇒ 必须留一个"固定 `now()`"的开关（`lfw_run` 的对位是 `--time`，
   `native/README.md:261-262`），且 G1 骨架的验收**必须**跑固定值那条。
 - **Godot 的输入语义 vs 端口的 `IUIEvent`**：端口里指针事件是被攒成命令的
-  （`cmds/cmd_pointer_events.*`，W10 讨论了"hit test 要不要搬"）。Godot 侧别在 `host/godot/**` 里**另做
-  一套命中测试**再去和端口的几何打架 —— 端口已经有几何与 `UINode::hit`（W10 的论证）。
+  （`cmds/cmd_pointer_events.*`，W10 讨论了"hit test 要不要搬"）。命中测试**已经**在
+  `host/common/ui_input_handle.{h,cpp}`（引擎无关、镜像 `HeadlessUIInputHandle.ts`）；
+  Godot 侧只做"平台事件 → `LfwPointingEvent`"（`lfw_godot_node.cpp` 的 `_input`，
+  坐标换算与 `_draw` 用的逻辑屏幕像素同一套）⇒ **别在 `host/godot/**` 里再写一套命中测试**，
+  也别去改端口的几何。键盘同理：`_input` 里只把 `InputEventKey` 翻成小写
+  `KeyboardEvent.key`（`dom_key_of_godot`）再喂 `HeadlessHost::key_down/key_up` ——
+  核心只认这个字符串口径（TS 的 `Keyboard.ts` 就是这么把 DOM 键交给 `LFW` 的）。
+  ⚠ **抬起事件也必须翻得出同一个键名**：Godot 的 `InputEventKey` 在**抬起**时不填 `unicode`
+  （实测 `j` 的 up 是 `keycode=74 / uni=0`）⇒ 只按 `unicode` 推名字会把所有字母/数字键的**抬起
+  静默丢掉**，`Keyboard` 那边 `times` 就永远不回到 0，第二次按下被当成操作系统的重复
+  （`LFW::on_key_down` 只在 `times == 0` 时翻 `KEY_EVENT`）⇒ **按一次之后那个键就死了**。
+  所以 `dom_key_of_godot` 是"查表 → `unicode` → `keycode`（字母/数字）"三档，见 README 那条实测。
 
 ### G10. 机检
 
@@ -1911,8 +2037,8 @@ G0 那条硬规则**已经有**一条机检在跑：`native/tools/check_lfw_cpp_
   ⇒ `#include "godot_cpp/godot.hpp"` 从 `native/lfw/ui/` 解析成 `native/lfw/ui/godot_cpp/godot.hpp`，
   **仍在 `native/lfw` 里 ⇒ 静默通过**。这是唯一的洞，也正是最可能被写出来的那种写法。
 
-⇒ **要加的检查**（**加在 `check_lfw_cpp_includes.mjs` 里**，不新建脚本文件名 —— `native/tools/` 下现有
-17 个脚本，这个是 include 规则的既有归属）：给引号分支加一份"**显式点名**"的目标名规则，命中即 error，
+⇒ **已加的检查**（加在 `check_lfw_cpp_includes.mjs` 里 —— `native/tools/` 下现有 17 个脚本，
+这个是 include 规则的既有归属）：给引号分支加了一份"**显式点名**"的目标名规则，命中即 error，
 报错信息直接引用硬规则：
 
 - 目标名以 `godot_cpp/` 开头 ⇒ `platform implementation must live in native/host/godot (README 硬规则)`；
@@ -1920,8 +2046,9 @@ G0 那条硬规则**已经有**一条机检在跑：`native/tools/check_lfw_cpp_
 - 目标名匹配 `/^SDL/i` ⇒ `platform implementation must live in native/host`；
 - 顺带把尖括号侧 `windows.h` 那条从"精确文件名"放宽成 `/^windows/i`（`<Windows.h>`、`<windowsx.h>`）。
 
-判据：`npm run native lint` 仍然 **0 failed**（现在 `native/lfw` 是干净的）；加完规则后故意写一行
-`#include "godot_cpp/godot.hpp"` 应当**报错**。
+判据：`npm run native lint` 仍然 **0 failed**（`native/lfw` 是干净的：**847 clean / 0 failed /
+9 warnings**，锚点 **9764 ok / 0 bad**）；故意写一行 `#include "godot_cpp/godot.hpp"`（或 `<Windows.h>`）
+会**报错**（实测 2 failed；删掉即回到 0）。
 
 ## ★ 薄宿主（SDL 路线）：绘制契约的参照实现
 
@@ -1953,7 +2080,8 @@ zip/XML）所需要的**最小引擎**。产物是 `native/host/<薄宿主>/**` 
 ⚠ **它与 headless 的关系**：headless 是**最薄**的宿主 —— 渲染 / 音频 / 图片 / 指针全是空实现
 （`native/host/headless_host.h:58-182`），世界渲染器是只计数的 `NullWorldRenderer`
 （`headless_host.h:39-50`）。薄宿主是它的**超集**：一样"薄"，但**真画**。所以第一版可以照抄
-headless 的形状，再把空实现逐个换掉（S7 的切片）。
+headless 的形状，再把空实现逐个换掉（S7 的切片）—— `native/host/thin/**` 就是照这个做法落的第一刀
+（同一批源文件 + 一个 `create_world_renderer` 覆写），只是那一刀换上去的是**录制**、还不是像素。
 
 ⚠ **注意 headless 不只是"测试用"**：WASM 宿主**直接复用**同一批源文件
 （`native/host/wasm/CMakeLists.txt` 把 `host/common/lfw_boot.cpp`、`host/headless_host.cpp` 与
@@ -1971,14 +2099,20 @@ headless 的形状，再把空实现逐个换掉（S7 的切片）。
   —— **两种完全不同的落法装得下同一个接口**，这才叫中立。
 - **它很便宜**：第一份实现要发明边界（W4 的函数表 / W5 的命令缓冲 / W7 的 scratch / W8 的帧纪律），
   第二份只要"填表"。薄宿主是第 4 份 ⇒ 它该是**流水线作业**，而不是又一轮设计。
-- ⚠ **具体危险（本仓库已核对）**：`IUINodeRenderer` 的 9 个成员**全是非纯虚、空体**
-  （`native/lfw/ui/ui_node_renderer.h:16-24`：`del_self` / `on_start` / `on_stop` / `on_resume` /
-  `on_pause` / `on_show` / `on_hide` / `on_foucs` / `on_blur`）⇒ **"没搬"这件事编译器看不见**：
-  宿主一行不写也编得过，什么都不画也不会失败。现状正是如此 —— `create_ui_node_renderer` 默认回
-  `nullptr`（`lfw.h:179-182`），`HeadlessHost` **没有覆写它**（`headless_host.h` 里没有这个成员名）
-  ⇒ `UINode` 构造里拿到的是空指针（`native/lfw/ui/uinode.cpp:106-107`），之后每一处调用都带判空
-  （`uinode.cpp:558-728` 那一族 `renderer != nullptr`）⇒ **UI 渲染面可以永远为空，且没有任何东西报错。**
+- ⚠ **具体危险（本仓库已核对）**：`IUINodeRenderer` 的成员**全是非纯虚**（`native/lfw/ui/ui_node_renderer.h:41-70`）
+  ⇒ **"没搬/没实现"这件事编译器看不见**：宿主一行不写也编得过，什么都不画也不会失败。接口面与调用点
+  都已补齐（17 个虚函数 + 每层一次的调用点），但 **`render` 的默认体仍然只是记一次 `unhandled`** ——
+  也就是说"没画"这件事现在是**有数**的，而不是会失败的：现状仍是 `create_ui_node_renderer` 默认回
+  `nullptr`（`lfw.h:179-182`）、`HeadlessHost` **没有覆写它**（`headless_host.h` 里没有这个成员名）
+  ⇒ `UINode` 构造里拿到的是空指针（`native/lfw/ui/uinode.cpp:106-109`），之后每一处调用都带判空
+  （`uinode.cpp:560-730` 那一族 `renderer != nullptr`）⇒ **UI 渲染面可以永远为空，且没有任何东西报错**；
+  唯一的变化是宿主统计行会打出 `UI render calls: N (unhandled: M)`（D4）。
 - 所以 S6 里的"看得见画面"不是锦上添花，而是这条危险唯一的解药。
+- **已经先落了"不画"的那一半**：`native/host/thin/**`（`lfw_thin`）是同一个接口的**录制实现** ——
+  保留式地记账（`add_entity` / `del_entity`），每帧把活实体的绘制字段快照成一条记录，落盘/打印。
+  它不需要任何引擎、也不选型（S2 那些格子它一格都不占），却能立刻回答"契约里的字段够不够画"：
+  缺哪个字段、哪个字段在端口里根本没有，跑一次就看得见（字段表见
+  `host/thin/recording_world_renderer.h` 文件头）。⇒ S2 的选型可以晚一步再定。
 
 ### S2. 候选与取舍
 
@@ -2001,6 +2135,9 @@ headless 的形状，再把空实现逐个换掉（S7 的切片）。
 
 ⚠ **选型不改变契约**：S2 只决定"谁来当第 4 份实现"。上面每一格都可能是错的 ⇒ 先花半天做一个
 "能不能开窗 + 能不能量一行字"的预演（**需验证**），再按 S7 排期。
+⚠ **但"要不要画"这件事可以先不等选型**：录制型薄宿主（S1 末条）已经把
+`create_world_renderer` 这条挂点接通、并且**跑在真数据上**（三条摘要与 `lfw_run` 逐位一致）
+⇒ 引擎选型决定的是"怎么把记录变成像素"，而不是"记录里有没有该有的东西"。
 
 ### S3. 要填的最小集合
 
@@ -2009,14 +2146,14 @@ headless 的形状，再把空实现逐个换掉（S7 的切片）。
 
 | 需求面 | 落在哪（端口，已读） | "够用"是什么 |
 |---|---|---|
-| **窗口 / 指针（含悬停与抓取）** | `ILfwHost::pointings_init` / `pointings_add_ui_input` / `pointings_callback_add` / `…_del`（`lfw.h:143,147,153-154`）；抓取族 `pointings_grab` / `pointings_ungrab` / `pointings_grabbing`（`lfw.h:157-170`，**都有默认体**：`false` / 空 / `nullptr`，`HeadlessHost` 一个都没覆写）；事件形状 `LfwPointingEvent`（`lfw.h:87-95`）与 `LfwPointingsCallback`（`lfw.h:98-107`，其中 `on_pointer_move` 就是悬停） | 窗口事件 → `LfwPointingEvent` → 逐个触发 `pointings.callback`；**抓取要给真语义**（组件会读 `pointings_grabbing` 的返回值）；悬停不需要额外的宿主面 |
-| **按键映射** | `LfwKeyEvent`（`lfw.h:70-76`）、`LfwKeyboardCallback`（`lfw.h:80-84`）、`keyboard_add_callback` / `keyboard_callback_add` / `…_del`（`lfw.h:145,150-151`） | 把宿主键码翻成端口认识的**字符串** `key`（核心只认字符串），按下 / 抬起各触发一次 |
-| **2D 精灵批** | `IWorldRenderer`（`world.h:61-68`：`add_entity` / `del_entity` / `render(dt)` / `dispose`），调用点 `world.cpp:391 / :454 / :1020 / :1251`；另有一层 `IEntityRenderer`（`entity.h:34-37`，只有 `render(dt, dfactor)`） | **保留式**：进世界建对象、出世界删对象、每帧在 `render(dt)` 里自己遍历活实体重读状态（G4 第一段）。⚠ `IEntityRenderer` 在**全仓没有任何实现**，`Entity::renderer` 也**没有赋值点**（只在 `entity.h:129` 初始化成 `nullptr`）⇒ 第一版**只能**靠 `IWorldRenderer` |
-| **文字与 `measure_text`** | `ILfwHost::measure_text(text, style)`（`lfw.h:242`）；调用点 `ui/cook_ui_info.cpp:607`、`ui/uinode.cpp:126`、`:191`（带 key 缓存，`uinode.cpp:176-201`） | 回一个 `{text, style, width, height}` 的 `Object`（形状照 `headless_host.cpp:211-219`）。headless 给的是**零尺寸** ⇒ 桌面宿主这里会**第一次**把真实布局撑开（见 S6 的跨宿主告警） |
+| **窗口 / 指针（含悬停与抓取）** | `ILfwHost::pointings_init` / `pointings_add_ui_input` / `pointings_callback_add` / `…_del`（`lfw.h:143,147,153-154`）；抓取族 `pointings_grab` / `pointings_ungrab` / `pointings_grabbing`（`lfw.h:157-170`，默认体 `false` / 空 / `nullptr`）；事件形状 `LfwPointingEvent`（`lfw.h:87-95`）与 `LfwPointingsCallback`（`lfw.h:98-107`，其中 `on_pointer_move` 就是悬停） | **已落定**：命中测试在 `host/common/ui_input_handle.{h,cpp}`（引擎无关，镜像 `HeadlessUIInputHandle.ts`），`HeadlessHost::pointings_add_ui_input` 注册它、`emit_pointer_*` 是平台事件的注入面，抓取族在 `HeadlessHost` 里按 `__Pointings` 的**世代 + 持有者**语义实现；宿主只负责"平台事件 → `LfwPointingEvent`"（Godot 的 `_input`）。`on_enter/leave` 这条缝仍在 `LfwPointingsCallback` 之外（只有句柄认） |
+| **按键映射** | `LfwKeyEvent`（`lfw.h:70-76`）、`LfwKeyboardCallback`（`lfw.h:80-84`）、`keyboard_add_callback` / `keyboard_callback_add` / `…_del`（`lfw.h:145,150-151`） | 把宿主键码翻成端口认识的**字符串** `key`（核心只认字符串），按下 / 抬起各触发一次。**已落定**：平台键 → 小写 `KeyboardEvent.key`（`host/common/key_code.h` 的别名表 + Godot 的 `dom_key_of_godot`）→ `HeadlessHost::key_down/key_up`（`times` 从 **0** 起算，重复按下递增）→ `LFW::on_key_down` → `KEY_EVENT`；`keyboard_add_callback` 把 `LFW` 自己登记进回调表（原先空实现 ⇒ 键盘整条链没人收）。⚠ **抬起也必须翻出同一个名字**（Godot 的抬起事件不填 `unicode`，见 §G9 那段 ⚠），否则 `times` 不回 0 ⇒ 那个键按一次之后永久失效 |
+| **2D 精灵批** | `IWorldRenderer`（`world.h:61-68`：`add_entity` / `del_entity` / `render(dt)` / `dispose`），调用点 `world.cpp:392 / :455 / :1077 / :1308`；另有一层 `IEntityRenderer`（`entity.h:34-37`，只有 `render(dt, dfactor)`） | **保留式**：进世界建对象、出世界删对象、每帧在 `render(dt)` 里自己遍历活实体重读状态（G4 第一段）。⚠ `IEntityRenderer` 在**全仓没有任何实现**，`Entity::renderer` 也**没有赋值点**（只在 `entity.h:129` 初始化成 `nullptr`）⇒ 第一版**只能**靠 `IWorldRenderer` |
+| **文字与 `measure_text`** | `ILfwHost::measure_text(text, style)`（`lfw.h:242`）；调用点 `ui/cook_ui_info.cpp:607`、`ui/uinode.cpp:128`、`:193`（带 key 缓存，`uinode.cpp:178-201`） | 回一个 `{text, style, width, height}` 的 `Object`（形状照 `headless_host.cpp:211-219`）。headless 给的是**零尺寸** ⇒ 桌面宿主这里会**第一次**把真实布局撑开（见 S6 的跨宿主告警） |
 | **音频** | `lfw.h:208-232` 的 `sounds_*`（含音量 / 静音的 getter+setter）与 `LfwSoundsCallback`（`lfw.h:111-132`，变更事件） | 播放 / 停止 + BGM 停止闭包 + 音量 clamp 0..1 + 同值早退 + 变更发事件（语义逐条写在 `lfw.h` 的注释里）；headless 只计数（`headless_host.cpp:186-209`） |
 | **定时器与虚拟时钟** | `IClock` / `ITimeout`（`clock.h:11-27`）+ 全局槽 `set_clock` / `set_timeout`（`clock.h:36,45`）；`IRenderScheduler`（`render_scheduler.h:15-20`，槽在 `:29`） | **按 S5 装**：虚拟时钟 + 固定步长；`IRenderScheduler` **故意不装**（槽空 ⇒ `render_add` 回 0，`render_scheduler.h:32-34`） |
-| **文件与 zip** | `ILfwHost::import_as_*`（`lfw.h:250-259`）、`zip_*`（`lfw.h:269-287`）、`IZip` / `IZipObject`（`i_zip.h:15-25`、`i_zip_object.h:16-30`） | 第一版直接复用 `host/fs_zip.{h,cpp}`（目录当 zip，`fs_zip.h:14-17`）；**真 zip**（DEFLATE / 中央目录）留到 S7 的 S3 —— 与 G7 第 5 行是同一件事。⚠ `file_regex` 只认 4 条固定模式（`i_zip.h:30-58`），换宿主别去动它 |
-| **MD5** | `ILfwHost::md5`（`lfw.h:193`） | **必须与 TS 逐位一致**（W11 的判据，`DESIGN.md:1529`：`ui_load_img` 用它拼图片 key）。headless 是占位哈希（`headless_host.cpp:146-163`，注释自认"不是真 MD5"）⇒ 这是薄宿主**顺手就该换掉**的一条 |
+| **文件与 zip** | `ILfwHost::import_as_*`（`lfw.h:250-259`）、`zip_*`（`lfw.h:269-287`）、`IZip` / `IZipObject`（`i_zip.h:15-25`、`i_zip_object.h:16-30`） | 两条路并存：`host/fs_zip.{h,cpp}`（目录当 zip，`fs_zip.h:14-17`）与**真 `.zip`** `host/common/zip_file.{h,cpp}`（DEFLATE / 中央目录，已落地）。⚠ `file_regex` 只认 4 条固定模式（`i_zip.h:30-58`），换宿主别去动它 |
+| **MD5** | `ILfwHost::md5`（`lfw.h:193`） | **必须与 TS 逐位一致**（W11 的判据，`DESIGN.md:1529`：`ui_load_img` 用它拼图片 key）。headless 已有**真 MD5**（`host/common/zip_file.cpp`，与 SparkMD5 同值）⇒ 薄宿主/其它宿主直接复用 |
 | **光标表** | `get_pointer_cursors(world)`（`cmds/cmd_pointer_events.h:42`，实现 `cmd_pointer_events.cpp:362`） | 核心能**读出**当前光标，但**没有画它**的路径（§7.2 依赖顺序第 12 条、G7 第 7 行）⇒ 顺序与 Godot 一致：**先有 UI 渲染面，再谈光标** |
 | **日志** | `warn` / `error` / `log` / `debug_msg`（`lfw.h:199-205`） | 打到 stdout / stderr。⚠ `warn` 的**条数**会进摘要行（`lfw_run.cpp:352-356`），别把日志变成噪声源 |
 
@@ -2047,16 +2184,17 @@ headless 的形状，再把空实现逐个换掉（S7 的切片）。
 | 该放 `native/host/common/**`（引擎中立、桌面宿主都要） | 留在各自宿主里（换引擎就换） |
 |---|---|
 | 固定步长累加器 + 注入式虚拟时钟（`ManualClock` 的形状） | 窗口 / 输入翻译、音频后端 |
-| 真 zip 的 `IZip`（`FsZip` 的真货版）+ 路径处理 | 精灵批 / 文字度量 / 光标画法 |
-| 真 MD5（与 `DittoImpl/md5.ts` 逐位一致） | 打包与部署 |
+| ~~真 zip 的 `IZip`（`FsZip` 的真货版）+ 路径处理~~ **已落地：`common/zip_file.{h,cpp}`** | 精灵批 / 文字度量 / 光标画法 |
+| ~~真 MD5（与 `DittoImpl/md5.ts` 逐位一致）~~ **已落地：`common/zip_file.cpp` 的 `md5_hex`** | 打包与部署 |
 | 装配 + 推帧 + digest 的那段"台面"入口（已落地：`common/lfw_boot.{h,cpp}`） | 引擎自己的事件循环 / 生命周期接入 |
 
 ⚠ **为什么不能放 `native/lfw/**`**：README 硬规则（`native/README.md:16-30`）与它的机检
 （`tools/check_lfw_cpp_includes.mjs:29-49` 把 `<filesystem>` / `<fstream>` / `<cstdio>` 列进禁表）
 —— 上面这几样**必然要 IO**，进了核心就直接违反"零宿主 · 零 IO"。**核心只留接口与逻辑。**
 
-⚠ **别为了这件事去重构现有文件**：`native/host/**` 现在只有 5 个源文件 + 2 个 `CMakeLists.txt`，
-够用。新增薄宿主**照抄 WASM 的做法**（在自己的 target 里列举要复用的 `host/**/*.cpp`）即可；
+⚠ **别为了这件事去重构现有文件**：`native/host/**` 现在只有 headless 与录制薄宿主两份实现，
+每份一个 `CMakeLists.txt`，够用。新增薄宿主**照抄 WASM 的做法**（在自己的 target 里列举要复用的
+`host/**/*.cpp`）即可；
 只有当累加器 / 虚拟时钟真出现"只有桌面宿主需要"的分支时，再把它们提到 `common/**`。
 （G9 有一条同款纪律：Godot 那一支**不许污染既有的 `msvc-x64` 验收**。）
 
@@ -2081,15 +2219,15 @@ headless 的形状，再把空实现逐个换掉（S7 的切片）。
 ```
 native\build\msvc-x64\bin\lfw_run.exe --root dist ^
   --zip native\build\host-data\prel --frames 300 --every 300
-  ⇒ digest=7335aa25f4e1ce86（warns=0）
+  ⇒ digest=a7edd32e19a43ea9（warns=0）
 
 … --zip native\build\host-data\prel --zip native\build\host-data\data ^
   --fighter 1 --fighter 4 --stage 1 --frames 900 --every 900
-  ⇒ digest=e4a9437292047044（warns=1）
+  ⇒ digest=13945ad1144c968d（warns=1）
 
 … --zip native\build\host-data\prel --zip native\build\host-data\data ^
   --stage 0 --fighter 1 --fighter 4 --vs --frames 600 --every 600
-  ⇒ digest=f29d3bb1ea330c32（warns=1）
+  ⇒ digest=61c42c78c9d0bcac（warns=1）
 ```
 
 （同一招 WASM 与 Godot 都用过：`native/README.md:310-312` 与 G3 的验收段。）
@@ -2098,6 +2236,8 @@ native\build\msvc-x64\bin\lfw_run.exe --root dist ^
 
 **(a) 摘要逐位复现**：上面三条命令在薄宿主里跑出同样的 digest 与 warns；`npm run native all`
 （configure → build → lint → test，`native/README.md:178-183`）不退化。
+（录制版薄宿主已实测过这一条：`lfw_thin` 与 `lfw_run` 同参数下三条摘要逐位相同；⚠ **渲染档位不算
+模拟**：把 `sync_render` 换成 `FPS_120`、一个 tick 渲染 4 次之后，三条摘要**仍然逐位相同**。）
 
 **(b) 目视 —— 这是第一次"能看见绘制契约"**：前两份宿主都没画过东西 —— headless 是只计数的
 `NullWorldRenderer`（`headless_host.h:39-50`），WASM 宿主这一刀只装了时钟 + 日志
@@ -2121,9 +2261,9 @@ native\build\msvc-x64\bin\lfw_run.exe --root dist ^
 
 | 切片 | 做什么 | 验收 |
 |---|---|---|
-| **S1 骨架 + 假渲染器** | 起 `LFW`、收一个 `ILfwHost` 实现；时钟用 `ManualClock` 的形状、世界渲染器先用计数版（`NullWorldRenderer`）；装配照 `host/common/lfw_boot.cpp:43`（`boot_scene`）、推帧照 `lfw_run.cpp:289-295` | **三条摘要逐位一致** —— 唯一能证明"宿主接对了"的硬指标 |
-| **S2 真 2D 绘制** | 先补端口 `IUINodeRenderer` 的渲染面（**引擎通用缺口，属核心侧**：`ui_node_renderer.h:8-12` 自述 `render` / `add` / `del` / `parent` / `x` / `y` / `visible` 未移植）→ 再写薄宿主的 `IWorldRenderer` / `IUINodeRenderer` | 差分台面 + lint 不退化 + **目视**一帧 UI 与世界（判据**未定**） |
-| **S3 文字度量 / 音频 / 真 zip / MD5 / 光标** | 换掉 headless 那批假货里"桌面必需"的几个：`measure_text`（`lfw.h:242`）、`sounds_*`（`lfw.h:208-232`）、真 zip、真 MD5（`lfw.h:193`）、光标（S3 表里"光标表"那一行） | MD5 与 `DittoImpl/md5.ts` **逐位一致**（可自动化）；真包能装；**三条摘要仍逐位一致** —— 换宿主最容易在这一步翻车 |
+| **S1 骨架 + 假渲染器** | 起 `LFW`、收一个 `ILfwHost` 实现；时钟用 `ManualClock` 的形状、世界渲染器先用计数版（`NullWorldRenderer`）；装配照 `host/common/lfw_boot.cpp:43`（`boot_scene`）、推帧照 `lfw_run.cpp:289-295`。**已落地**：`native/host/thin/**`（`lfw_thin`）就是这一片 —— 同一批源文件 + 覆写 `create_world_renderer`，渲染器换成**录制版**（不计数、也不画）；它已经按 D1(c) 自己算 `dfactor`、自己留 `p0/p1`，`--sync-render FPS_120 --sub-render N` 能把插值那条路跑起来 | **三条摘要逐位一致** —— 唯一能证明"宿主接对了"的硬指标（录制版已实测；换渲染档位 + 一 tick 多渲染之后仍逐位一致） |
+| **S2 真 2D 绘制** | 端口 `IUINodeRenderer` 的渲染面**已补齐**（**引擎通用缺口，属核心侧**：`ui_node_renderer.h:32-70`；每层一次的调用点在 `world.cpp` 的 `render_ui_layers`）→ 剩写薄宿主的 `IWorldRenderer` / `IUINodeRenderer` | 差分台面 + lint 不退化 + **目视**一帧 UI 与世界（判据**未定**） |
+| **S3 文字度量 / 音频 / 真 zip / MD5 / 光标** | 换掉 headless 那批假货里"桌面必需"的几个：`measure_text`（`lfw.h:242`）、`sounds_*`（`lfw.h:208-232`）、~~真 zip~~（**已落地**：`host/common/zip_file.{h,cpp}`）、~~真 MD5~~（**已落地**：同文件 `md5_hex`，与 `DittoImpl/md5.ts` 同值）、光标（S3 表里"光标表"那一行） | 剩 `measure_text` / `sounds_*` / 光标；**三条摘要仍逐位一致** —— 换宿主最容易在这一步翻车 |
 | **S4 打包** | 把薄宿主做成"双击能跑"的东西 | **需验证**：静态 / 动态链接、许可、Windows 与 Linux 的产物形态 |
 
 **风险（诚实清单）**：
@@ -2142,6 +2282,267 @@ native\build\msvc-x64\bin\lfw_run.exe --root dist ^
   之上，而一旦当产品，第一个被要求的就是"引擎特有的便利"（原生对话框、手柄、成就…），
   契约立刻会被这一份实现塑形，参照的价值就没了 ⇒ **不追发行、不加产品功能**；真要产品化，
   另起一份方案，别改契约。
+
+## ★ 绘制契约（引擎无关）
+
+**这一章回答一个问题**：把"这个游戏该画什么"从**每份宿主各自发明的形状**里抽出来 —— 核心**必须
+声明**哪些数据与语义、宿主**只许**拿这些去光栅化，边界落在哪。
+
+**一句话结论**：契约 = **每帧一份记录**（帧级上下文 + 逐实体 + 逐 UI 节点）**加上每条字段的语义**；
+宿主只做"把数据变成像素"。这份契约里**世界那一遍已经有第二份、而且是会画的实现**
+（`native/host/godot/lfw_godot_renderer.{h,cpp}`：`host/thin/**` 只证字段面，它证"画得出来"，还带一张
+794×450 的截图），**UI 那一遍也有一份会画的了**（`native/host/godot/lfw_godot_ui_renderer.{h,cpp}`，
+同一批绘制项、同一条 `_draw()`；四张 UI 截图在 `native/host/godot/shots/`）。
+
+**读法**：下文每条"端口事实"都给了 `path:line`，都是从本仓库读出来的；TS 对位同样给行号。凡
+**这个仓库读不出来**的（引擎/库自己的 API、字体度量、位图解码格式）一律标 `需验证`。
+⚠ 契约条目本身**不许出现引擎的词** —— 引擎的名字只许出现在 `native/host/**` 与本节的**依据**列里
+（判定见 D6(d)）。
+
+### D0. 契约是什么、不是什么
+
+| | 内容 |
+|---|---|
+| **是** | 核心每帧**声明**的一组数据（帧上下文 / 逐实体 / 逐 UI 节点）**+ 每条的语义与单位**（坐标系、时间、混合、可见、次序）。宿主唯一的自由是"怎么把这些变成像素" |
+| **是** | 一份**下界**：W5 的"把绘制描述成数据"与 G4 的"把绘制描述成节点树"是同一个契约的两种落法 ⇒ 两边的字段都只能来自这一节，**不许**有一边需要"只有它才懂"的字段（G4 的证伪判据） |
+| **不是** | 不是渲染架构（在 W5 / G4）、不是引擎选型（在 S2）、不是目录规范（`native/README.md:16-30`） |
+| **不是** | 不是"把 TS 渲染器抄过来"：TS 渲染器是**一份实现**；契约要的是它**读的模型语义**（例如混色强度怎么算、镜像锚点怎么算），不是它的 API 形状 |
+| **为什么必须中立** | 一份实现会自己长出形状，而且长得**静默**（S1）。要证明"契约是引擎中立的"，唯一的证人是**第二份独立实现**；要证明"契约描述的画面是对的"，唯一的证人是**一份真画画的实现**。这两半 S1 与 G4 都论证过，这里只引用、不重述 |
+| **一条纪律（可执行）** | 契约里的名词要么是**游戏模型**的名词（实体 / 帧 / 图集 / 相机 / 节点 / 层 / 指标位），要么是**通用图形**的名词（坐标、矩形、裁剪、混合、不透明度、次序）。某个引擎自己的类型名（G0 点名的那批）**不许**出现在契约的祈使句里 |
+| **谁说了算** | 模拟与布局、命中测试、焦点、时钟语义**一律在核心**；字体度量、图片解码、缩放与设备像素**在宿主**（W11 那张表已经分过账，这里不重列） |
+
+⚠ **没有实现就没有证据**：`IWorldRenderer` 只有 4 个成员（`lfw/world.h:61-68`），`IUINodeRenderer`
+的渲染面**已建形、调用点也在核心**（D4）——**世界那一遍**有一份会画的实现（Godot 宿主，
+`native/host/godot/lfw_godot_renderer.{h,cpp}`；它按下面这张表逐条落，产物是一张 794×450 的 PNG），
+**UI 那一遍**也有了一份会画的（同一个宿主，`native/host/godot/lfw_godot_ui_renderer.{h,cpp}`）；
+"契约写得对不对"今天能拿到的证据是：`host/thin/**` 的字段面 +
+Godot 那一份的画面。
+⚠ **别把它读成"字段清单"**：录制器的字段表是**探针**，不是契约的上限（D3 末尾那条）。
+
+### D1. 世界侧：每帧输入
+
+**形状**：保留式 —— 实体进世界给一次 `add_entity`、出世界给一次 `del_entity`（`lfw/world.h:64-65`），
+此后**每帧**只调一次 `render(dt)`（`:66`），宿主**自己**遍历活实体、从真对象上读当前值（G4 第一段）。
+⇒ 契约的"每帧输入"其实是**宿主必须读的那组字段**，而不是核心递过来的一份大结构。
+
+**（a）帧级上下文**（录制器实测的就是这一份，`host/thin/recording_world_renderer.h` 的 `FrameDrawRecord`）：
+
+| 字段 | 含义 / 单位 | 端口出处（已读） |
+|---|---|---|
+| `lifetime` | **世界寿命**：每 step 递增一次。这是"帧号"的权威值（不是宿主自己的渲染计数） | `world.h:176`（`lifetime()`）；TS `World.ts:162` |
+| `dt` | 本次 `render(dt)` 的实参（ms）。⚠ 它是**真实经过时间**，不是固定步长 | `world.h:66`；`world.cpp:453-458`（`render_once` 原样透传） |
+| `TU` | 一个 tick 的目标时长（ms）＝ `1000 / UPS` | `world.h:105`；TS `World.ts:378` |
+| `fps_value()` | **目标渲染率**：由 `dataset.sync_render` 推出（`Unlimited→1000 / FPS_60→60 / FPS_120→120 / Sync→UPS / Half→floor(UPS/2)`），**不是**实测帧率 | `world.cpp:607-625`；TS `World.ts:255-264` |
+| `dataset.UPS` / `screen_w` / `screen_h` | 逻辑分辨率（缺省 `794×450`、`UPS=60`） | `world_dataset.cpp:85-86`、`:133` |
+| `transform`（x,y,z + scale_x/y/z） | 世界的位移与缩放（缩放要参与"名字/血条被夹在视野内"那几条公式） | `world.h:93`；TS `WorldRenderer.ts:222-227` |
+| 相机 `position` | 相机在世界里的位置（x,y） | `world.h:112`、`camera.h:30` |
+| `bg`：`id` / `layer_data_index` / `update_times` | 背景的**当前状态**；背景自己的图层参数在 `bg.data.base`（`shadow` / `shadow_w/h` / `zoom_x` / `far` 都从那里读） | 录制器 `bg=` / `layer=` / `upd=` 三个字段；TS `EntityShadowRender.ts:38-57`、`EntityRenderer.ts:99-101` |
+| `dataset.entity_flags` / `bg_flags` | **调试指标位**（实体：frame/bdy/itr/ft/opoint/wpoint/cpoint/bpoint/ctrl；背景：terrain/layer）。缺省 `0` ⇒ 一位都不画 | `world_dataset.cpp:131-132`；TS `INDICATINGS.ts:3-17` |
+| **五遍的次序** | UI 背景 → 背景(+指标) → 实体(+覆盖层) → 前景 → UI 前景。**次序是契约的一部分**（谁压谁、遍与遍之间的纵深关系） | TS `WorldRenderer.ts:256-290`；W5 的 `BEGIN_PASS` 是同一件事 |
+| **帧内比例一族**（派生量，不是核心**递**给世界渲染器的） | `dfactor` + 它的中间量 `dtime` / `dirty`（tick 边界），输入是上面那四个（`lifetime` / `TU` / `fps_value()` / `UPS`）；录制器的帧头就把这七个数并在一起（`df=` `dtime=` `dirty=` `tu=` `fps=` `ups=`）。⚠ `IWorldRenderer::render(dt)` 不传它，所以**要它的一方自己算**：录制器一份（喂 `E` 行）、核心一份（喂 UI 渲染面，`world.cpp` 的 `ui_render_dfactor` —— D4） | `WorldRenderer.ts:187-204`；录制器 `FrameDrawRecord` |
+
+**（b）逐实体**：契约真正要定的是**坐标与语义**，不是字段名。
+
+| 语义 | 定义（以游戏自己的模型为准） | 依据 |
+|---|---|---|
+| **位置** | 实体在世界里的 `x / y / z`。**x 水平**（右为正）、**y 竖直**（站立时脚底落在地面线上：`ground_y`）、**z 纵深**（越大离镜头越近） | `entity.h:81`；录制器 `pos=` |
+| **落地与纵深投影** | 精灵的落点不是 `(x,y)` 而是 `(x, y − z/2)` —— 纵深每 **2** 个单位抬 **1** 个单位（透视近似）。⚠ 那个 `2` 写死在渲染器里、**不来自数据** ⇒ **需验证**：该进契约当常数，还是该进数据 | `EntityRenderer.ts:110` |
+| **屏幕锚点** | 锚点是 `frame.centerx/centery`，且**随朝向镜像**：`facing === 1 ? −centerx : centerx − width` ⇒ 镜像规则是契约的一部分，不是宿主的自由 | `EntityMainRender.ts:756` |
+| **朝向** | `facing = ±1`：水平镜像（含上面的锚点镜像与下面的抖动方向） | `entity.h:95` |
+| **挂载关系 = 父坐标系** | `bearer` / `catcher` 决定的是**父坐标系**，不是绘制次序：被持有者**不做自己的插值**，位置 = 持有者插值后的位置 + 偏移 ⇒ 契约必须说清"谁是谁的子"，否则两份宿主会画出不同结果 | `EntityRenderer.ts:124-134`；`entity.h:97-101` |
+| **可见** | `frame.id === Gone` 或 `frame.state === Gone` 或 `invisible > 0` ⇒ 不画；`blinking > 0` ⇒ **每 4 个单位闪一次**，`floor(blinking / 4) % 2 === 0` 才画。这是**语义**（玩家看到"在闪"），数据齐 ⇒ 宿主可自行推导 | `EntityRenderer.ts:38-44`、`EntityMainRender.ts:299`；`entity.h:232-235` |
+| **顺序 / 遮挡** | 分组后**组间按代表实体的 z 远→近**（组 = 持有者与被持有者），同组内按真实纵深 ⇒ 契约要求的是"分组 + 组间按 z"，不是某个引擎的排序开关 | `WorldRenderer.ts:21`、`:285-294` |
+
+**（c）插值：宿主必须做什么**（这一条最容易写错）
+
+- **帧内比例**（TS 的算法，逐字读自 `WorldRenderer.ts:185-204`）：
+  - `world.FPS <= dataset.UPS` ⇒ **`dfactor = 1`**（渲染不比 tick 快，不需要插值）；
+  - 否则：tick 边界那一帧 `dfactor = 0`、`dirty = true`；其后的中间帧 `dfactor = min(累计 dt / TU, 1)`。
+- **插值对象**：位置与相机都用**同一个** `dfactor` 在 `上一 tick 值 → 本 tick 值` 之间线性插
+  （`EntityRenderer.ts:95-131`、`WorldRenderer.ts:205-211`）。
+- **tick 边界怎么认**：看 `world.lifetime` 变没变（TS 的 `dirty` 就是这个），**不是**拿 `dt` 累加去猜。
+- ✅ **"上一 tick 的值"**核心不用给 —— 它在 TS 里也不是核心给的：`p0/p1` 活在 `EntityRenderer` 自己身上
+  （`EntityRenderer.ts:25-26`、`:109-110`），相机那一对活在 `WorldRenderer` 身上（`WorldRenderer.ts:69-70`、
+  `:205-211`）⇒ 宿主按 `dirty` 自留一对就够（D5 第 1 行）。**已实测**：录制器照这条落
+  （`recording_world_renderer.cpp` 的 `_dirty` 门控 + `p0/p1` + `dfactor`），`--sync-render FPS_120
+  --sub-render 4` 跑 900 tick ⇒ `dfactor` 直方图 `0 / 0.25 / 0.5 / 0.75` 各 900 帧、23420 条实体记录里
+  **17565 条 `0 < dfactor < 1`**、`p0 != p1` 的 6388 条，而三条摘要一字不变（README 验收段）。
+  ⚠ 缺省装配（`sync_render = FPS_60`，`world_dataset.cpp:90`；`UPS = 60`，`:133`）**走不到这条路**：
+  `FPS <= UPS` ⇒ `dfactor ≡ 1`，一 tick 一渲染 ⇒ 要跑插值必须换档位 + 一个 tick 渲染多次。
+- ⚠ `Entity::prev_position`（`entity.h:80`）**仍不能当插值起点**：它在**每次 tick 末尾被写成当次的
+  `position`**（`entity.cpp:2914`，`Entity::update()` 的最后一行）⇒ 渲染时刻它恒等于 `position`。
+- ⚠ **这条结论的适用边界**：录制器持 `World&`，`TU` / `fps_value()` / `lifetime` / `dataset.UPS` 四个
+  输入读得到（D5 第 3 行）。将来按 W5 那条"宿主只读帧头"的路走时，这四个字段**必须进帧头**，否则第二
+  份宿主算不出 `dfactor`。⚠ 换 `sync_render` 是**渲染档位**、不是模拟参数（摘要三条实测不变）。
+- ⚠ **"每帧一次"这个假设不成立**：`sync_render == Sync / Half` 时 `World::update_once` 自己就会渲染
+  一次（`world.cpp:1095-1107`），`start_render` 注册的回调也会渲染一次（`:627-656`）⇒ 宿主必须自带
+  "写入中的那帧不被读"的双缓冲（W5 已经为这条定了双缓冲，那里写了理由）。
+
+### D2. 图集与图片
+
+**一个实体的画面是怎么被指认的**（链路全部读自 TS；端口只持有数据）：
+
+| 环节 | 是什么 | 依据 |
+|---|---|---|
+| `data.base.files` | 素材表：**键 → 图片描述**（`tex` 用的键就在这里） | `EntityMainRender.ts:22-31`、`:183` |
+| `frame.pic.tex` | **素材 id**（一个**键**，不是路径、不是句柄） | 录制器 `tex=`；端口读法 `field_or(e.frame, u"pic")` |
+| `frame.pic.x/y/w/h` | **图集内裁剪矩形**（像素）＋该图的逻辑尺寸 | 录制器 `crop=`；`EntityMainRender.ts:747` |
+| `frame.pics[]` | **多图层**：第 i 层可用自己的 `cx/cy` 覆盖锚点，层间还有固定纵深偏置（`0.05 * i`） | `EntityMainRender.ts:345-365` |
+| `frame.centerx/centery` | 锚点（配合 D1(b) 的镜像公式） | 录制器 `c=` |
+| `variant` | **队伍/皮肤变体**：素材 id 过一次变体表 —— `files[tex].variants` 展开成 `[tex, ...variants]`，`variant` 取下标 | `EntityMainRender.ts:169-172`、`:736` |
+| 像素信息 | `IPictureInfo` → 宿主的图片表 → 位图 + `scale`（文件名里的 `@nX`） | `ImageMgr.ts:158-165`、`:296-310`；§7.2 K2 的 images 条 |
+
+**宿主必须做的**：把 `(tex, variant)` 解析成**像素源**，按 `(x,y,w,h)` 取裁剪，按 `w/h` 摆尺寸，按
+`scale` 决定像素密度。**核心不许**碰文件、字节与解码 —— 资源**只从宿主来**（硬规则 + W 章的资源表）。
+
+⚠ **今天这条边界是"核心拒绝、宿主自己解"的**：`IZipObject::image_bitmap` 拒绝（`host/fs_zip.cpp:93-99`），
+`ILfwHost::import_as_image_bitmap` 也拒绝（`host/headless_host.cpp:318-324`）⇒ **核心侧那两个入口仍然没开**；
+**Godot 宿主**改走宿主自己的解：`get_import_fallbacks` 解析条目名 + `FsZipObject::read` 取字节 +
+引擎的 PNG 解码器（`Image::load_png_from_buffer` → `ImageTexture`，缓存在
+`native/host/godot/lfw_godot_textures.{h,cpp}`）—— 这正是这一条要的落法（§G2 第二半已落定）。
+真图片解码本来在 §7.2 "省到贵"清单的**第 10 条**（排在真 zip 第 5、真世界渲染器第 8 之后）：
+Godot 这一支做到了，**headless / thin 仍然没有位图**。契约层面这件事只有一句话：
+**图集与图片的解析权在宿主，核心只给 id 与裁剪矩形**（`ui_load_img.cpp:66-90` 的 key 拼法说明连
+"同一张图"的判等都在宿主侧）。
+⚠ **图片的生命周期也属宿主，但契约要写一条不变量**：实体活着 ⇒ 它的图必须一直取得到。TS 是挂载时
+`pin`、卸载时 `unpin`（`EntityMainRender.ts:230-245`）；宿主若自由回收，画面会闪 —— 这条不变量得写
+下来，否则"两份宿主都对"这句话没有意义。
+
+### D3. 逐实体外观
+
+| 玩家必须看到的 | 数据 / 公式 | 今天有没有 | 谁来补 |
+|---|---|---|---|
+| **朝向镜像** | `facing`；锚点公式 `facing===1 ? −centerx : centerx − width` | 有（`entity.h:95`） | 宿主推导（**公式**要进契约） |
+| **可见性** | `frame.id/state == Gone` ∨ `invisible > 0` | 有（`entity.h:234-235`；录制器 `invis=`） | 宿主推导 |
+| **闪烁（无敌/出生）** | `blinking`，每 4 个单位闪一次 | 有（`entity.h:232-233`；录制器 `blink=`） | 宿主推导 |
+| **无伤（`invulnerable`）的外观** | **语义**有（数值上不掉血）；**外观**今天没有对应字段 | 语义有、外观无 | **需验证**：若 TS 就是靠闪烁表达 ⇒ 宿主推导；否则要补 |
+| **换色（受击闪白 / 毒 / 治疗）** | `mix_color` + `mix_strength`（`mix_strength === 0` ⇒ 不混色）；另有 `greyscale` | 有（`entity.h:164-169`；录制器 `mix=`/`grey=`） | 宿主推导 |
+| **描边** | `outline_color` + `outline_alpha` + `outline_width`（要乘图片 `scale`），开关 `outline_enabled`（`null` ⇒ 走缺省）；⚠ `ghosted` 时**不重算**（保留上一次的描边状态，不是"不画"） | 有（`entity.h:152-163`；`EntityMainRender.ts:764-800`） | 宿主推导；**`ghosted` 那条要写进契约**，否则两份宿主不一致 |
+| **名字** | `name` + `name_visible`；画在头顶（用 `ground_y` / `centery`），并**夹在相机视野内**（要 `screen_w` / `transform.scale_x`）；颜色按队伍 | 有（`entity.h:117`；录制器 `name=`/`name_vis=`） | 宿主推导（夹取公式进契约） |
+| **队伍/皮肤变体** | `variant` → 素材变体表下标 | 有（`entity.h:77`；录制器 `variant=`） | 宿主推导 |
+| **状态条（血/蓝）** | 只在 `stat_bar` ∧ **战士** ∧ `hp > 0` ∧ 不 invisible 时画；位置由 `centery` 定；**颜色**随治疗类 buff 闪（`lifetime % 8 < 4`）；旁边还有一条队伍色的计数文本 | 血量/蓝量数据有（录制器 `hp=`/`mp=`/`tough=`）；**buff 标记**要另读 | 宿主推导（条的图形细节属宿主）；⚠ "治疗中变色"要读 `marks` ⇒ D5-7 |
+| **受击抖动** | `shaking`：偏移量 = `shaking ? facing * (floor(shaking/2) % 2 ? 1 : −1) : 0`；⚠ `shaking` 为 0 时还可能由**电击类 buff** 顶上来（读 `duration − lifetime`） | `shaking` 有（`entity.h:108`；录制器 `shake=`）；buff 那条是渲染器私货（`EntityMainRender.ts:262-276`） | **需验证**：核心折成"抖动偏移"，还是让宿主读 buff 表 |
+| **影子** | 影子是**背景给的图**（`bg.data.base.shadow / shadow_w / shadow_h`）；位置 `(x, ground_y − z/2, min(bg.far − 1, z))`；缩放与不透明度随**离地高度**（`250` 夹取：越高越小越淡） | 端口没有这条缝 | **宿主推导**（要读 `bg`）+ ⚠ 契约要写明"影子来自背景资产" |
+| **吐血点（`bpoint`）** | `frame.bpoint` ∧ 主图可见 ∧ `hp < hp_max * 0.33` 时画一个小图形（半径 `r`，纵深缺省 `0.1`），水平方向按朝向镜像 | **数据有**（帧对象里）、**渲染语义没有** | **需验证**：是真需求 ⇒ 公式进契约（`EntityMainRender.ts:803-815` 是依据） |
+| **调试指标**（`wpoint`/`cpoint`/`bdy`/`itr`/`ft`/`opoint`/`ctrl`） | 由 `entity_flags` 位驱动的一层**可选**覆盖 | 位值有（缺省 0） | **宿主可选推导**；`wpoint` 只在这层里出现（它在 gameplay 里判持械攻击：`entity.cpp:1777-1795`），**不是**常规画面的一部分 |
+| **3D 模型帧** | `frame.model`（含 model 的变体表）；与 2D 精灵**可以共存叠加** | 端口只读到 `frame` 里的数据 | **未定**：W5 把 `MODEL` 指令列进"未定"；第一版保留字段、不画 |
+
+⚠ **没有数据的，就写"没有"**：今天**没有**逐实体不透明度（只有 `invisible` / `blinking` 两个开关量 ——
+录制器文件头自己点出了这条）、没有混合模式、没有"逐图旋转/缩放的显式传递"。
+⚠ **但"录制器没记"≠"核心里没有"**：`frame.pic` 是**整个对象**交给宿主的，`rad` / `deg` / `__cos_r` /
+`__sin_r` 在装载期就算好了（`loader/preprocess_pic.cpp:27-40`）⇒ 契约要**分开**两类缺口：
+
+- **核心已有、只是没往外说**（宿主自己从帧对象上读得到，例如逐图旋转、逐图层 `cx/cy`）⇒ 补**文档与
+  录制器字段**即可；
+- **核心真的还没有**（必须加接口/加调用点，例如 D1(c) 的上一 tick 位置；D4 的 UI 渲染面**已经加好了**）。
+
+### D4. UI 侧
+
+**模型在核心**（W10 的论证）：`UINode` 自己有 `pos` / `scale` / `size`（`w`,`h`）/ `center` /
+`visible` / `clip_children` / `global_opacity` / `color` / `background` / `foreground` / `outline*` /
+`image` / `text` / `z`；布局、命中测试、焦点、指针链全在 `lfw/ui/**`。
+
+**渲染面曾经是一个"编译器看不见的空洞"**（S1 点过一次，这里换成契约视角）——**现状：接口面、调用点与
+一份会画的实现都在了**（Godot 宿主，§G2「UI 那一遍」的验收行是 `UI render calls: N (unhandled: 0)`）：
+
+- 端口的 `IUINodeRenderer` 现在有 **17 个虚函数**：9 个生命周期/焦点转发 + 7 个渲染面
+  （`render(dt, df)` / `add` / `del` / `parent` / `x` / `y` / `visible`），外加数据成员 `ui`
+  （`lfw/ui/ui_node_renderer.h:32-70`；TS 对位 `src/LFW/ditto/render/IUINodeRenderer.ts:3-23`）。
+  **全是带默认体的非纯虚**（一行不写也能编过），但 `render` 的默认体会记一次 `unhandled`
+  ⇒ **"一个都没画"不再静默**：`ui_node_renderer.h:15-22` 的 `UINodeRenderCalls` 由核心的调用点与
+  默认体一起填，宿主的统计行打印 `UI render calls: N (unhandled: M)`。
+- **调用点已补**（这是原先缺的第二半）：核心每帧每层一次，逐字照 TS 的那三行
+  （`WorldRenderer.ts:236-239`：`layers.at(i)?.ui?.renderer.render(dt, dfactor)`）——
+  `world.cpp` 的 `render_ui_layers`（洞与没有页的层按 `?.` 跳过）；`dfactor` 由核心按
+  `WorldRenderer.ts:187-204` 算（`world.cpp` 的 `ui_render_dfactor`：输入是 `TU` / `lifetime` /
+  `fps_value()` / `UPS` 四个核心自己的值，所以每份宿主都拿得到）。
+  ⚠ **次序差一段**：TS 那一行在**世界渲染器内部**（实体那遍之后、五遍绘制之前，D1(a)），而端口的
+  世界渲染器缝（`IWorldRenderer::render(dt)`）是原子的 ⇒ 调用只能贴着它、每帧一次（`render_once` 里，
+  同一个 `dt` 与 `dfactor`，且仍在 `render_cost` 量到的那段里）。五遍次序本身不受影响。
+- 已经会画的（**Godot 宿主，本仓库唯一一份**）：`lfw_godot_ui_renderer.{h,cpp}` +
+  `LfwGodotHost::create_ui_node_renderer`（每节点一份，所有权归节点）+ 宿主侧文字度量
+  （`ThemeDB` 的默认字体，装进 `LfwGodotHost::set_measure_text`；D5-10 那条"允许宿主差异"）。
+  按下面那张语义表落的：锚点矩形 / 父子坐标系累计 / `z` 升序（同 z 保模型树序）/ 可见与递归 /
+  图片裁剪 + `@Nx` + `repeatX×repeatY` 平铺 + `offsetAnim*` 的 UV 动画 / **九宫格** / 文字
+  （含"文字块中心压在节点矩形中心上"那条摆放口径）/ `clip_children` 求交 / 位置与缩放的指数平滑 /
+  `lifetime` 一变同步一次 / `global_opacity` 的 0.5 缓动 /
+  `z<0` 落 UI 背景（`pass=-1`，`_draw()` 三趟扫 = 五遍次序）——
+  还有 `LfwGodotHost::ui_image_load` 覆写（`w`/`h`/`scale` 三个数）。
+  仍然空的：`create_ui_node_renderer` 的**默认实现**仍是 `nullptr`（`lfw.h:179-182`，`HeadlessHost`
+  也没覆写 ⇒ 另外两份宿主的 UI 依旧不画）、逐像素描边 / `clip_children` 的部分越界 /
+  文字的下划线阴影描边 —— 以及**递归/可见规则**只按 TS 那份"会画"的实现落（`HeadlessUINodeRenderer`
+  的规则不同，端口不预设）。
+- ⇒ 这一条属 G0 允许的"**引擎通用缺口**"：接口面与调用点**都在核心侧**补，与"将来挂哪一份宿主"
+  无关，**不是**宿主污染。
+
+**宿主对 UI 必须画什么**（读自 TS 的两份实现：`UINodeRenderer.ts` 与 `HeadlessUINodeRenderer.ts`）：
+
+| 语义 | 定义 |
+|---|---|
+| **矩形与锚点** | 节点矩形 `w × h`；锚点 `center(cx,cy)` 决定矩形的平移：`平移x = round(w * (0.5 − cx))`、`平移y = round(h * (cy − 0.5))`（`UINodeRenderer.ts:339-346`） |
+| **坐标约定** | UI 模型里 **y 向下**；画到世界时 **y 反号**（`(x, −y, z)`）（`UINodeRenderer.ts:356-366`）⇒ 契约必须写明，否则"UI 上下颠倒"是必然 |
+| **父子 / z 层** | 父子关系来自**模型树**（`parent = ui.parent?.renderer`）；`z < 0` 落 **UI 背景层**，否则落 **UI 前景层**（`UINodeRenderer.ts:154-172`）—— 与 D1(a) 的五遍次序对齐 |
+| **可见** | `ui.visible`；子节点只在"自己可见 **或** 与渲染器的可见态不一致"时才被递归绘制（`UINodeRenderer.ts:412-420`）⇒ 契约要的是"不可见的子树不产生绘制" |
+| **图片** | 图片 + **裁剪**（`clip_x/y/w/h`）+ **九宫格**（`NinePatchGeometry.ensure_parameters` 那套默认值 + `t_s = 1/scale` 的角块 1:1、边与中间拉伸；源窗口 `u * clip_w + clip_x`）+ **UV 动画**（`offsetAnimX/Y/R` 按 dt 积分）+ 像素密度 `scale`（`UINodeRenderer.ts:198-245`、`:369-391`、`NinePatchGeometry.ts`、`shader/outline.frag`） |
+| **文字** | 文本 + 样式；**摆放口径**：文字块（= 一块按"块尺寸"缩放的网格）的**中心压在节点矩形的中心上**（`mesh.position = round(w*(0.5−cx))` / `round(h*(cy−0.5))`，与矩形平移 `_tran_x/_tran_y` 同一个式子）⇒ 与 `text_align` 无关；`text_align` 只在**块内部**排，块内锚点 = `padding_l + l.x`，`l.x` 用"最宽一行 + 左右 padding"（`TextMesh.ts:19-32`、`:297-299`、`UITextRenderer.ts:73-79`）；尺寸与基线来自**宿主的文字度量**（`measure_text`，`lfw.h:242`；调用点 `ui/uinode.cpp:128`、`:193`，带 key 缓存 `:178-203`）⚠ 这一项**允许宿主差异**（W11 表），但"同设备同版本内必须稳定" |
+| **颜色 / 不透明度** | 有图 ⇒ `color` 当**混合色 + 强度**；无图 ⇒ `color` 当**覆盖色**；`global_opacity` 是**累计**不透明度（从根算下来）（`UINodeRenderer.ts:258-286`） |
+| **裁剪（`clip_children`）** | 祖先里每个带 `clip_children` 的节点各出一个有效矩形，**求交集**；子树超出交集的部分不画（`UINodeRenderer.ts:423-470`） |
+| **两条时钟口径** | 模型的变化（图/文本/颜色/不透明度）在 `world.lifetime` 变化时**同步一次**；**位置与缩放**每帧做**指数平滑**（系数 `1 − exp(−dt / (1000/60))`）⇒ 契约要分开写，否则 UI 会抖或会顿（`UINodeRenderer.ts:393-400`、`:532-541`） |
+| **指针态** | 悬停 / 按下 / 抓取的判定与**光标表**都在核心（W10；S3 表的"光标表"行）；宿主只把"当前该显示什么光标"落到设备上，而且这条路排在 UI 渲染面**之后**（§7.2 顺序第 12 条） |
+
+⚠ **不画的那一份实现的"已知不等价处"就是契约的下界**：`HeadlessUINodeRenderer` 刻意省掉 UV 动画 /
+九宫格 / 裁剪矩形 / 文本输入框，**并且不做位置插值**（它文件头 `:29-33` 自己写着）⇒ 它是"字段面"的
+证人，**不是**画面正确性的证人。
+
+### D5. 缺口清单
+
+| # | 今天没有的数据 | 影响什么 | 谁来补 | 需要验证什么 |
+|---|---|---|---|---|
+| 1 | **上一 tick 的位置**（插值起点） | `FPS > UPS` 时的位置插值 | **宿主自留** + 按 `lifetime` 判边界（**已实测**：`host/thin` 的 `--sync-render FPS_120 --sub-render 4` ⇒ D1(c) 的直方图）；**核心接口**只在"宿主拿不到 `World&`"那条路上才要 | 两份宿主在 `Unlimited`/`FPS_120` 下画面一致；`Entity::prev_position` 不能顶替（D1(c)） |
+| 2 | **上一 tick 的相机位置** | 镜头跟随的平滑 | 宿主推导（TS 就是渲染器自留；录制器 `camp0`/`camp1`/`caml` 三个字段就是它） | 同上；两份宿主的镜头轨迹逐帧一致 |
+| 3 | **`TU` / `fps_value()` / `lifetime` / `UPS` 进帧头** | W5 那条"宿主只读命令缓冲"的路上，宿主**拿不到 `World`** ⇒ 算不出 `dfactor` | **核心接口**（帧头字段）；持 `World&` 的宿主（录制器）自己读得到；⚠ 核心**自己已经算了一份**（`world.cpp` 的 `ui_render_dfactor`，只为 UI 渲染面，D4）⇒ "算不出"只剩 W5 那条命令流的路 | W5 的帧头草案（`DESIGN.md:1292-1296`）里**没有**这四个字段 ⇒ 要补；补了 W5 与 G4 两条路才能并存 |
+| 4 | **逐实体不透明度（alpha）** | 淡入淡出、半透明的表现力 | 待定（先确认 TS 是否也**永远**只有开关量） | 录制器字段表里没有 alpha 是真的；"TS 也不需要"这条**需验证** |
+| 5 | **逐图旋转 / 原点偏移 / 图层锚点**（`rad`/`deg`/`__cos_r`/`__sin_r`/`ox`/`oy`/`pics[].cx,cy`） | 旋转的武器、倾斜的物件、多图层对齐 | 宿主推导（**数据已在 `frame.pic` 里**，`loader/preprocess_pic.cpp:27-40`）；录制器顺手补字段 | 端口的 `frame.pic` 搬运链是否真带 `rad`；`pics[]` 是否带 `cx/cy` |
+| 6 | **`bpoint` 吐血点的画法** | 残血表现（`hp < 33%`） | 需验证：真需求 ⇒ 公式进契约 | TS 有实现（`EntityMainRender.ts:803-815`）；端口只把它当数据 |
+| 7 | **受击抖动的方向 + 电击 buff 抖动 + 治疗 buff 变色** | 受击 / 电击 / 治疗的观感 | **核心接口**（折成"抖动偏移"与"血条颜色"两个值），或宿主读 `buffs`/`marks` | 两份宿主是否都愿意读 buff 表；公式 `floor(shaking/2) % 2` 要进契约 |
+| 8 | **影子贴图 + 影子缩放/不透明度公式** | 立体感；影子是**背景**给的图 | 宿主推导（读 `bg.data.base.shadow/shadow_w/shadow_h`） | 端口 `bg` 上这几个键取得到吗；换背景时影子要不要重取 |
+| 9 | ~~**UI 渲染面（7 个成员）+ 每层调用点**~~ **已补**：接口面 17 个虚函数（9 生命周期/焦点 + 7 渲染面 + 数据成员 `ui`）与每层一次的调用点（`world.cpp` 的 `render_ui_layers`）；**绘制实现也已落地**（Godot 宿主，§G2「UI 那一遍」） | 整个 UI 画不出来（"没人调"已不再静默：统计行 `UI render calls: N (unhandled: M)`） | 剩下的是**别的宿主**要照同一张语义表画（`create_ui_node_renderer` 的默认实现仍回 `nullptr`） | `UINode::update` 不必再是虚的前提已具备（§7.2 顺序第 7 条）；两份宿主的 UI 快照一致**仍待**第二份会画的实现 |
+| 10 | **文字度量的宿主差异** | UI 布局（`auto_size_by_text`） | 宿主（**允许**差异，同设备同版本内稳定） | 差异会不会渗进三条摘要（S6 的跨宿主告警，今天未验证） |
+| 11 | **图片解码 / 图集字节** | 一切画面 | 宿主（核心那两个入口仍未开；**Godot 宿主已解**：`lfw_godot_textures.{h,cpp}`，见 §G2 第二半） | §7.2 第 10 条；真 MD5（第 2 条）是它的前提 |
+| 12 | **图片的 pin / unpin 生命周期** | 换页 / 换场景时会不会闪 | 宿主（照 TS 的挂载/卸载口径） | "实体活着 ⇒ 图一定在"这条不变量怎么验 |
+| 13 | **队伍颜色表** | 名字与血条的颜色 | **核心已有**：`base/team_color.h`（`get_team_text_color` / `get_team_outline_color`） | 端口实现与 TS 的 `TeamInfoMap` 逐项一致（可机械化） |
+| 14 | **调试指标位的画法** | 开发期排障 | 宿主**可选**（缺省 `0` ⇒ 全不画） | 位值与 `INDICATINGS` 逐位一致；指标层不许混进常规画面 |
+| 15 | **`wpoint` / `cpoint` 的常规渲染** | —— | **不进契约** | 复核：TS 渲染器里没有它们的常规绘制（只在指标层里） |
+
+### D6. 验收
+
+**(a) 契约必须能被 ≥2 份独立宿主满足。** G4 的证伪判据原样适用：只要有一份实现被迫写"只有它才
+需要"的字段，契约就已经被那一份实现了。⚠ 这条**今天只能算"过了一半"**：世界那一遍有**一份**会画的
+实现（Godot，§G2 第二半）加一份只会记录的参照实现（`host/thin/**`），UI 那一遍同样只有**一份**会画的
+（同一个 Godot 宿主，共用同一批绘制项）—— "**两份都能画**"还没达到，判据要等**第二份会画的实现**。
+⚠ 已知的第一次"被迫自己写"就在 Godot 这一份里：`dfactor` 与 `p0/p1` 那一对（D1(c)）与影子那一族
+（D5-8）都是**宿主自留**的 —— 两份独立实现能不能只靠契约把这两条对齐，是下一份实现要回答的问题。
+
+**(b) 录制器是参照生产者，不是判据。** `host/thin/**` 证明的是**字段面**（"核心确实每帧把这些交
+出来"）；**画面**的第一份证据在 Godot 那一份（`--screenshot`，§G2 第二半 / `native/README.md`「截图」），
+而"画得对不对"**仍然没有自动化判据**（目视那一条在 S6(b) 记"未定"）。⚠ 录制器今天**两条档位都跑过**
+（`dfactor ≡ 1` 与 `0 < dfactor < 1`，D1(c)），但 `dfactor` 与那一对 `p0/p1` 是**各自算/自己留的**
+（TS 也在渲染器里；核心那份只喂 UI 渲染面，D4），所以这是"契约够不够"的证据，不是"画面对不对"的证据
+—— 后者仍要**另一份**实现的目视（Godot 那一份已经给出第一张图，但"两份独立实现画出同一画面"这条
+还没验过）。
+
+**(c) 换宿主不许动模拟。** 三条摘要（`native/README.md:323-339`）逐位一致是**硬指标** —— 契约里的
+每一项都必须能在"摘要不变"的前提下落地；反过来，**任何需要改摘要才能画的字段，都是契约问错了**。
+
+**(d) 契约必须不含引擎词汇（可机械检查）。** 把这一章按词表扫一遍：引擎自己的类型名与函数名（G0
+点名的那批，加上各引擎的窗口/批次/纹理类名）出现即**失败**；`path:line` 里出现引擎的**文件路径**不算
+（那是证据列）。⚠ 这个机检**今天没有** —— `tools/check_lfw_cpp_includes.mjs` 只扫 `native/lfw/**` 的
+`#include`（G10），文档层靠人看。它是 G10 那两条规则**之外**的一条，照 G10 的做法加在既有脚本里，
+不新建脚本名。
+
+**(e) 每一条都要能回答"两份实现分别怎么落"。** 这是 G4 那句"说不清就不是通用缺口"的检查表版本：
+一张**字段 → 落法 A / 落法 B** 的表，比"字段清单"更能暴露污染。⚠ 这张表**还没写**：本节给的是
+下界，落法表要等 S2 的选型。
 
 ## 9. `Value` / 解析 / 装载层的现行要点
 
@@ -9163,7 +9564,9 @@ IS 无 RTTI 的 `isUIComponentClass`/`isUINodeClass` 替代）、`ui/instance_re
 
 ## 111. UINode renderer 缝
 
-新 `ui/ui_node_renderer.h`（`IUINodeRenderer`：`del_self` + 八个 `on_*` 虚函数，默认空实现）；
+新 `ui/ui_node_renderer.h`（`IUINodeRenderer`：`del_self` + 八个 `on_*` 虚函数 + 七个渲染面
+`render` / `add` / `del` / `parent` / `x` / `y` / `visible` + 数据成员 `ui`，全部默认空实现；
+`render` 的默认体记 `unhandled`，调用点在 `World::render_once` → `render_ui_layers`）；
 `ILfwHost` 新增缝 `create_ui_node_renderer(UINode&)`（默认 nullptr；TS 是每节点 `new Ditto.UINodeRenderer(node)`）；
 `UINode` 新增公有 `renderer` 成员（节点自持 `_owned_renderer`，CTOR 末尾向宿主要），九处转发：`on_start`/
 `on_stop`/`on_resume` 在**最后**、`on_show`/`on_hide` 在 callbacks+auto_focus 之后、`on_foucs`/`on_blur` 在组件循环后、
@@ -9174,8 +9577,9 @@ IS 无 RTTI 的 `isUIComponentClass`/`isUINodeClass` 替代）、`ui/instance_re
 照抄怪癖（编号接 157 → 158）：158. `on_pause` 的 `del_self` 只给**根节点**且排在 `invoke_all_on_hide` 之后、
 actions 之前；子节点 pause 不碰 renderer。`on_show` 的 renderer 转发在 `auto_focus` **之后**（先定焦点再 show）。
 
-偏差记录：渲染未移植 ⇒ 宿主缝返 nullptr 时全部转发跳过（TS 永远有实例）；
-`render/add/del/parent/x/y/visible` 等渲染面方法未建形。
+偏差记录：渲染实现未移植 ⇒ 宿主缝返 nullptr 时全部转发跳过（TS 永远有实例）；
+`render/add/del/parent/x/y/visible` 等渲染面方法**已建形**（默认体只记 `unhandled`，`render` 的调用点
+在 `World::render_once` → `render_ui_layers`），但**没有一份会画的实现**。
 
 **测试**：用例 `cases/lfw/uicomp.txt` **149 行**（其余 lfw 用例行数同步增长：`uilayer` 199、`uinode` 165、
 
@@ -10188,23 +10592,39 @@ work 打 `adw|<tag>`）、`lfgp` 全量探针（`lr/ox/wp/b1|b2(含 hp/hr/hm/fr/
 `datas` / `ui` 都有实现，但它们只被差分台面驱动过（`tests/differential/subjects/*`，自带假
 目标不大但真：装包 → 起世界 → 推帧 → 可复现摘要。
 
-### 140.1. 新增 `native/host/`（三件）
+### 140.1. 新增 `native/host/`（四件）
 
 * **`fs_zip.{h,cpp}`** —— 目录当 zip 用（`IZip` / `IZipObject` 的读盘实现）：条目名 = 相对
   `root` 的路径（`/` 分隔、字典序），`file(path)` 直查索引、`file_regex(pattern)` 复用
   `zip_name_matches`（与 TS 的正则口径一致）。`json()` 先 JSON5 再退回严格 JSON（包里的
   `.json5` 与 `.json` 走同一条），`text()` 走 `decode_utf8`，`array_buffer()` 给字节数组，
   `blob_url()` 给条目名（宿主没有 blob 层），`image_bitmap()` 明确拒绝（宿主没有位图解码）。
-  ⚠ M1 只支持**已解包**的包（压缩包本体的中央目录 / DEFLATE 留到后面那刀）。
+  ⚠ 只管**已解包**的包（`--zip <dir>`）；压缩包本体见下一条。
+* **`common/zip_file.{h,cpp}`** —— **真 `.zip`**（`IZip` / `IZipObject` 的内存实现，引擎无关）：
+  中央目录解析（EOCD 从尾巴往前扫 + 注释长度校验，ZIP64 明确拒绝）、`stored`（method 0）与
+  `deflate`（method 8，**自写 inflate**：RFC 1950/1951，含动态/固定 Huffman、adler32 校验）；
+  条目名 → `file()` / `file_regex()` 的**查表序与 TS 的 `files` 对象一致**（首次出现定位置、
+  最后一次出现定值）；`read()` 懒解压并缓存。同文件还给**真 MD5**（RFC 1321，`md5_hex`）——
+  `DittoImpl/md5.ts` 的 SparkMD5 逐位对位（字符串按 UTF-8）。
+* **`common/key_code.{h,cpp}`** —— 注入用键名 → 真 `KeyboardEvent.key`（小写 DOM 口径 + 别名表：
+  `space` / `esc` / `up`…）。`headless_host` 与 Godot 宿主的 `--key*` 共用。
 * **`headless_host.{h,cpp}`** —— `ILfwHost` 的最小可用实现：
-  - 读盘：按 `--root` 顺序找 `builtin_data/...` 这类 import 路径；
+  - 读盘：按 `--root` 顺序找 `builtin_data/...` 这类 import 路径（URL 上的 `?query` / `#hash`
+    先切掉 —— `no_cache_url` 给的 `data.zip.json?time=…` 就靠这一条才找得到文件）；
   - `xml_parse`：转发 `ToolXML`（`ToolXML::parse` 未搬 ⇒ 见 139.4）；
   - 时间：`ManualClock` + `NoopTimeout`（`add` 恒回 0 = 没有句柄）⇒ `Ticker` 自己不会走，
     帧由 app 显式推——**可复现**，也不依赖平台 raf / setInterval；
   - 渲染：`NullWorldRenderer`（只记 `add/del/render` 次数）；UI 图片给零尺寸占位并计数；
-  - 音频 / 指针：空实现（音量/静音按字段存着，回调列表成对增删）；
-  - 存档（`Ditto.Cache` / zip cache）：内存态；`md5()` 是**占位哈希**（FNV-1a ×2，同输入同
-    输出），与 `Ditto.MD5` 逐位一致那件事留到 zip 那刀；
+  - 音频：空实现（音量/静音按字段存着，回调列表成对增删）；**Godot 宿主**这一格已接真音频
+    （`LfwGodotHost` 放 `__Modern` 的语义与算式、`lfw_godot_node.cpp` 做解码/播放，见 README「2026-10-16」）；
+  - 指针 / 键盘注入：`emit_pointer_*`（含 `UiInputHandle` 注册）与 `key_down/key_up`
+    （镜像 `Keyboard.ts` 的 `_times_map`：**第一次按下的 `times` 是 0**，`LFW::on_key_down`
+    只在 0 时翻 `KEY_EVENT`）+ `keyboard_add_callback` 把 `LFW` 自己登记进回调表；
+  - 存档（`Ditto.Cache` / zip cache / `Zip.get_stored`）：内存态；`md5()` 是**真 MD5**
+    （`common/zip_file.cpp`，与 `Ditto.MD5` 逐位一致）；
+  - `zip_read_blob` / `zip_read_buf` / `zip_download`：真 `.zip`（`common/zip_file.*`）；
+    「blob」用宿主内的**令牌**表示（TS 是 `Blob`），`zip_download` 按 URL 找本地文件 + 真 MD5
+    校验，`zip_get_stored` 是 `get_stored_download` 的内存版；
   - `lang_apply`：只切 i18n 语言表，UI 节点文本的重写留给 UI 文本那一刀。
 * **`lfw_run.cpp`** —— CLI 入口：装包 → `change_bg` → 造 `--players` 个 bot 战士（`set_team`
   / `set_hp(_max)` / `set_mp(_max)` / `set_position`（走 `Ground::segment` + `Ground::y`）
@@ -10213,6 +10633,8 @@ work 打 `adw|<tag>`）、`lfgp` 全量探针（`lr/ox/wp/b1|b2(含 hp/hr/hm/fr/
   摘要」，结尾打实体表快照与宿主统计。摘要 = 实体表（按 id 排序）的
   `position/hp/mp/team/state` 做 FNV-1a（`core/state_hash`）；这一段装配与摘要口径两个宿主
   共享（`host/common/lfw_boot.cpp` 的 `boot_scene()` / `frame_digest()`）。
+  另有两条**不推帧**的诊断口：`--click` / `--key`（脚本化输入，与平台事件同一条链）与
+  `--zip-diff <zip>,<dir>`（真 `.zip` ↔ 解包目录逐条比对：条目名 + 大小 + 内容 MD5）。
 
 ## 141. `ToolXML::parse`（XML 文本 → `IXMLElement`）
 
@@ -10273,3 +10695,1289 @@ DOCTYPE/闭合/开标签），属性值解命名实体，`convert()` 按 `_conve
   血量不动）。下一步要么顺着 `BotController` 查「为什么不出招」，要么改走「喂键盘输入」那条
   路（`LocalController` + `Keys`）——后者还能顺手把「可复现的对打录像」立起来。
 
+
+## 142. 测试模式（`ui/component/Tests/**`）
+
+**是什么**：主页菜单那个「测试模式」按钮（`main_page` 的 `btn_test_cases` → `push_page(test_cases_page)`）
+进去的页面：`test_cases_page.ui.json5` 的 `component: ["Tests"]`，页面节点只有两个
+（`test_case_name` + 底部快捷键行），**内容全在那个组件里** —— 它把 TS `Tests.ts` 的 17 组
+`CASE_GROUPS`（105 个用例）建成一个 FSM（每个用例就是一个 `IState`），左右切用例、上下切组、
+`Attack` 重放；`on_state_changed` 把 `Case: <x>-<y> <name>` 写进 `test_case_name`。
+
+**移植形状**（TS `TestCase.ts` 的三个"JS 特有"写法在端口怎么落）：
+* `override readonly director = new ActionDirector()…`（子类**换掉**基类那一份）⇒ C++ 不能覆盖数据成员
+  ⇒ 基类 `TestCase` 给虚访问器 `director()`，子类自己持一份 `_director` 覆写它，配置写在构造函数体里。
+* `oid: string | string[]` ⇒ 端口统一 `std::vector<std::u16string>`（单个写 `{oid::kBat}`）。
+* `director` 链的可变参数 ⇒ `std::vector<ActionDirector::Work>`（`offset(500, {w1, w2})`）。
+  ⚠ `repeat/offset` 的 delay 是**每个 work 各推进一次**（TS 的 `time += delay` 在循环里）——
+  连着的两个 work 差一个 delay，别按"整块一次"读。
+* `hori_3/hori_2/verti_3` 在 TS 里是**箭头函数字段**（缺省参数绑 `this.midX/midZ`）⇒ 端口用
+  `std::optional` 表达"没给就用 midX/midZ"。
+* `Tests` 每次 `on_start` 都**重建**一遍用例（TS 的 GC 语义）：`TestCase::key_counter = -1` ⇒
+  key 从 0 重数 ⇒ `FSM::add` 按 key 覆盖上一轮那批。端口把**每一轮**的指针都留在
+  `_retired` 里（`FSM::_prev_state` 还指着上一轮的对象，提前析构会在下一次切状态时读悬垂）。
+* ⚠ 继承构造坑：`using UIComponent::UIComponent;` 会让 MSVC 实例化本类析构 ⇒ 成员里放
+  `std::vector<std::unique_ptr<TestCase>>` 时 `TestCase` 是**不完整类型**，直接
+  `C2338 can't delete an incomplete type`；端口改成裸指针 + `~Tests()` 里 delete。
+
+**`ActionDirector` 复用**：`ui/component/action_director.{h,cpp}` 是 4AH 就落下的那一份
+（`LittleFunnyAutoGame` 的自动对局在用，§138 记了语义与台面探针）—— 测试模式直接用它，
+**没有再写一份**（曾经写重了，链接期 `LNK2005` 把两个定义抓出来）。它把 TS 的 `sort()` 叫
+`sort_actions()`（台面按这个名字探），用例文件照这个名字调。
+
+**`World::clear()` 的语义**（切用例那一帧会用到）：它不是"立刻清表"，而是把所有实体设成
+`gone_frame_info`（+ 换 VOID 舞台/背景）⇒ 切完用例的那几帧里 `entities=` 会先掉到新用例自己
+那几个再涨回来，看诊断时别误判成"没清干净"。
+
+**验收**（不在差分台面上：它是"按数据摆实体 + 定时喂按键"的宿主侧演示，台面只覆盖核心）：
+Godot 宿主 `--ui-page test_cases_page` 的 `entities=/test_case_name` + Web 侧**初始态**对拍
+（`web_shots.mjs --ui-page test_cases_page`），细节与数字见 `native/README.md`「2026-10-16」。
+⚠ Web 那个抓图工具**没有注入按键的口子** ⇒ 只能比初始态（0-0 裸 `TestCase`）。
+### 142.1. 指针状态的节点寿命（端口的雷，2026-10-16 修）
+
+`cmds/cmd_pointer_events.cpp` 的 `IPointerState`（`on_uis` / `down_uis`）**跨帧持有 `UINode*`**
+（对齐 TS 的 `Set<UINode>`）。TS 那边这没问题：集合引用着对象、GC 不回收 ⇒ 页面销毁之后对它们派发
+`on_pointer_leave()` 只是给孤儿对象清个标志（无可见效果）；端口这边页面一 `delete` 就是**悬垂指针**，
+下一次指针事件里那句派发直接 `signal 11`。
+
+症状是「鼠标点任何会换页的按钮 ⇒ 崩」（键盘激活不崩 —— 键盘路径不经过 `on_uis`），所以之前几刀
+（全用 `--key` 或"点了不换页"的按钮）从没碰到。
+
+修法（端口专用，不引入新语义）：`UINode` 构造/析构维护 `live_uinodes()`（`ui/uinode.h` 的
+`is_live_uinode()`），指针状态里那三个跨帧派发循环改成先 `UiSet::live_items()` 筛一遍
+（已销毁的顺手从集合里删掉）。**没有**改 `IPointerState` 的结构或派发次序 ⇒ 活着的节点拿到的
+leave/cancel 次数与次序与以前逐条一致。
+## 143. 音效 / buff env / 逐图旋转 / 3D 模型帧（2026-10-17 那一刀）
+
+### 143.1. `frame.sound`：把空转的宿主缝接上
+
+`World::play_sound(sounds, pos)` 从 4C 起就是**空转**的（`(void)sounds; (void)pos;`，注释写着
+"音频切片未移植"）。这次把它接成 TS 的形状，但**分成两层**，因为端口在 `Entity::play_sound` 这层
+多缝了一刀（台面靠它记 `play_sound:<sounds>@<pos>`）：
+
+| 层 | 谁 | 干什么 |
+|---|---|---|
+| `Entity::play_sound(sounds, pos = position)` | 核心（`entity.cpp`） | TS 的 Message 帧 x 夹取；非 Message 帧把 `pos` **原样**转发 |
+| `World::play_sound(sounds, pos)` | 核心（`world.cpp`，`virtual`） | 数组逐条 / 单条 → `lfw().sounds_play(path, x, y, z)`；`!sounds?.length` 早退；台面覆写它 |
+
+为什么 `pos` 非 Message 帧不能重建：台面（`entity` 那一族）覆写的是 `World::play_sound`，
+TS 侧覆写的是 `Entity.play_sound`；两边日志形状都是 `(sounds, pos)`。端口若在非 Message 帧
+把 `pos` 拆成 `{x,y,z}` 再塞回去，日志里的数字格式（整/浮点）就可能变 —— 261 条差分立刻红。
+
+`entity.cpp` 原来有四处**直接**调 `world().play_sound(...)`（`dead_sounds` / `frame.sound` /
+`flags.sound` / `drop_sounds`），绕过了实体方法 ⇒ Message 帧的夹取会丢。改成 `play_sound(...)`
+后与 TS 的 `this.play_sound(...)` 一一对上，且日志（`position_value(position)` 那份）逐位不变。
+
+### 143.2. buff 的 `BuffEnv` 谁负责装
+
+TS 的 `Buff` 构造就拿 `lfw`（`new B(lfw, id, B.KIND)`），实例里的 `this.lfw.world...` 永远有效。
+端口的 `Buff` 收 `const BuffEnv*`，而 `Factory::create_buff(kind, lfw, id)` 手里只有 `LFW*`
+（拿不到 env）⇒ 工厂造出来的 buff 是 `env == nullptr` 的。`mount()` 的第一句
+`_env->world_buffs_set(...)` 于是必崩。
+
+定下来的归属：**发牌时装**（`grant_buff` 里 `buf->set_env(env)`，早于任何 `_env` 使用），
+外加 `WorldCollisionHost::create_buff` 让新 buff **出生即带** `&_buff_env`（那条只判空的
+`create_buff(...) != nullptr` 分支拿到的东西也不会是"不能碰的对象"）。
+
+⚠ 差分台面**抓不到**这一类：`buff` 台面自己造 `TestBuff(&g_env, …)`，并把 `env->create_buff`
+换成台面自己的 lambda ⇒ 真工厂 + 真 `WorldCollisionHost` 这条路在台面上一次都没跑过。
+这是"台面绿 ≠ 装配对"的又一个实例：**缝的两头都得有人验**（这里的验证手段只有"真跑游戏"）。
+
+### 143.3. `pic.rad`：角度符号是怎么定的
+
+TS `EntityMainRender.update_mesh_position` 算的是**局部**位置：pivot `P = (cx + ox, cy - oy)`，
+把 mesh 的**中心**绕 `P` 转 `±rad`（`_sin` 在 `facing < 0` 时取反），再 `mesh.rotation.z = ±rad`。
+
+端口的绘制项是**屏幕系**（y 向下）。TS 的世界 y 向上 → 屏幕是
+`screen_y = h - world_y`（`WorldRenderer.ts` 的 `camera.top = h; camera.bottom = 0`），
+这是一次**镜像** ⇒ 角度反号（`M R(θ) M⁻¹ = R(−θ)`）。于是：
+
+```
+theta_screen = facing < 0 ? +rad : -rad      // TS 面朝左时 rotation.z 与 _sin 一起翻
+中心绕 pivot：与 theta_screen 同一个角
+```
+
+宿主只做"绕矩形中心转 `theta_screen`"（`Transform2D`：平移到中心 → 旋转 → **局部**镜像），
+两次旋转叠加 = 绕 pivot 转一次，与 TS 逐位同形状。镜像必须在**局部**系里（先镜像后转）：
+那正好等价于 TS 的 UV 镜像（`material.flip_x`），而"先转后绕屏幕竖轴镜像"是另一件事
+（θ 项符号不同）。描边的四邻偏移也放进这个局部系 ⇒ 轮廓跟着图一起转（TS 的 outline 是着色器，
+本来就在局部 texel 空间）。
+
+### 143.4. `frame.model`：每个实体一份离屏 3D 画布
+
+TS 是 three.js 场景里挂 `model_node`（和 2D mesh 在同一个场景、按 z 排序，`has_model` 时逐实体
+深度隔离）。端口的宿主是 2D `CanvasItem` + `_draw()`，所以走 **`SubViewport` 离屏 3D → 当纹理 blit**：
+
+* **一份一个实体**：`_slots[tag]`（tag = 实体 id）⇒ 2D 与 3D 的**次序**天然对（模型项插在实体
+  循环里，排到哪画到哪），不需要全局深度缓冲。
+* **1 世界单位 = 1 逻辑像素**：画布 `kModelViewport = 512`，正交相机竖直 512、原点在画布中心
+  ⇒ 模型局部原点落在"实体画到的那个点"上；舞台缩放由 blit 时乘 `frame.scale_x/scale_y` 补上。
+* **光照照抄** TS `WorldRenderer`：环境光 0.7 + 平行光 1.4（-300,400,600 → 原点）。glb 的 PBR
+  材质没有光就是黑的，这一条不能省。
+* **实例化**：`GLTFDocument::append_from_buffer` → `generate_scene` → `PackedScene::pack` 存模板，
+  每个实体 `instantiate()`（Godot 的实例化会给蒙皮重绑骨架 —— 等价于 TS 的 `SkeletonUtils.clone`；
+  直接 `add_child` 共享模板会"后挂的把前一个抢走"，TS 注释里也踩过这条）。
+* **旋转**：`base.models[id].rotation × frame.model.rotation`（帧缺 `rotation` 时 `z` 回退 `rad`）
+  按 three.js 的 `Euler('XYZ')` 做四元数乘法再拆回 XYZ，面朝左时 `y/z` 取反；Godot 的
+  `Node3D` 默认次序是 **YXZ** ⇒ 不能直接塞欧拉角，得自己拼四元数。
+* **动画**：交给引擎的 `AnimationPlayer`（片段名 = `model.anim`，`loop` 改 `Animation::set_loop_mode`，
+  `reverse` 用负 `speed_scale`）。⚠ TS 是按实体 lifetime 差推进（逐帧确定），这里是真 delta ——
+  画面不需要确定性，三条摘要只覆盖模拟，所以不引入"逐帧确定"的额外机制。
+* **没做**：`model.pose` 骨骼姿态混合（TS 的 `apply_pose_blend`，数据里 0 条）、模型轮廓
+  （`build_model_hulls`）、`seek` 帧段驱动（数据里 0 条）。
+
+### 143.5. （补）模型的两个"看着像模型没做完"的坑
+
+**近裁剪面**：`Camera3D::set_orthogonal(size, near, far)` 的第二个参数是**近裁剪距离**。第一版把
+near 写成画布尺寸（512）、相机又放在 `z = +512` ⇒ 可见区间是 `z ∈ [0, -3584]`，模型里所有
+`z > 0` 的顶点全被切掉 —— 表现是"只剩一层壳 / 像 Z 向被截了"。现在 near 取 0.05、far 取 8 倍画布，
+相机留在 `z = +512` ⇒ 可见区间 `z ∈ [-3584, +511.95]`，围着原点摆的模型整个都在。
+
+**轮廓的外扩量**：`StandardMaterial3D::grow` 的偏移发生在**网格局部**空间，而 TS 的
+`uOutline = (outline_width + 1) / getWorldScale()` 折的是**世界**缩放。glb 里常见一层 0.01/100 的
+骨架缩放 ⇒ 用"模型节点缩放"去折会大出两个数量级（实测：屏幕上一片蓝色碎片）。按
+`MeshInstance3D::get_global_transform().basis.get_scale()` 折回才是 TS 的口径。
+另外材质在 `PackedScene` 里是**共享**的（同一路径的多个实体共用一份）⇒ 挂 `next_pass` 之前必须
+`duplicate()`，否则一个实体开轮廓会把同路径的其它实体一起带上。
+
+## 144. 差分台面复位 + 数据索引的 `directors`（2026-10-18）
+
+### 144.1. 台面红线：TS 挪了 `ActionDirector`
+
+TS `818f6f5c1`「数据驱动的 TestCases」把 `src/LFW/ui/component/Tests/ActionDirector.ts`
+搬成 `src/LFW/director/ActionDirector.ts`。台面 `tests/differential/subjects/lfw.ts` 的
+import 还指老路径 ⇒ **TS bundle 解析失败**（不是某条用例的问题），`lfw/lfag` 及其下游十几个
+subject 一起报 `C++ failed`，基线 `50 failed`。台面的 AD 操作块本来就已经用新 API
+（`sort()` / `lifetime` / `end_time` + 私有 `_action_idx`/`_curr`/`_times`/`_actions`），
+所以只改 import 一行就恢复，15 条 `action_director.cpp` 变异锚点全部保留。
+**口径**：台面是"TS 源码的消费者"，TS 挪文件 / 改公开面时台面必须同步；移植体
+`lfw::ui::ActionDirector` 暂时仍在 `ui/component/`（头注释标了 TS 新位置），改名
+`sort_actions() → sort()` 会牵动 `ui/component/tests/**` 里几十处调用，留到那次大搬迁一起做。
+
+### 144.2. `IDataLists` 第 6 个键：`directors`
+
+TS 把"关卡导演"也做成数据（`lf2s/origin/prel_data/directors/*.xml` 17 份 +
+`directors.index.json5`），于是 `xml_to_data_lists.ts` / `xml_from_data_lists.ts` 多出
+`directors`（**恒有**、可能空；反写时 `items?.length` 为 0 就整组跳过）。
+本次只补**索引层**（`dat_translator/xml/xml_x_director.{h,cpp}`）：
+
+| TS | C++ | 口径 |
+|---|---|---|
+| `xml_2_director_index` | `xml_2_director_index` | `id`/`file` 取属性、缺则 `""`；`name`/`skipped` **有则加键、无则无键** |
+| `xml_x_director_index` | `xml_x_director_index` | 固定写 `id/file/name/skipped`（undefined 的 `set_attr` 自然跳过） |
+
+`xml_2_data_lists` / `xml_from_data_lists` 的组表从 5 项扩到 6 项，第 6 项走 `xml_x_director_index`。
+（DSL 全量已在同一天的下一刀补齐，见 §147。）
+
+### 144.3. `IsSurvialRankMode` 对齐
+
+TS `get_val_from_entity.ts:74` 从 `survival_rank_available` 改成 `survival_rank_mode`
+⇒ 端口 `get_val_from_entity.cpp` 的 `is_survial_rank_mode` 同步；`mutations/get_val.mjs`
+那条锚点反向重写（"读 available 而非 mode"），仍被 `sran 1` 后的 `gv survial_rank_mode` 杀掉。
+## 145. `is_ray_hit` 收真 `Entity`（2026-10-18）
+
+### 145.1. 为什么要动这条缝
+
+`bot/*` 的只读工具函数在 TS 里收的是 `Entity`（`is_ray_hit(a: Entity, b: Entity, ray)`），
+端口却收 `CtrlEnv` 投影出来的 `Value` 快照（`ref_of(e)`）。读取路径变成
+`field_or(ref, "position") → field_or(pos, "x")`，任何一环不对（缺名、类型不是数、
+投影没带该字段）就静默成 `0`：`facing * dx` 恒 `0`、`abs(dz)` 恒 `0` ⇒ 射线判定恒真/恒假，
+表现就是 **Bot 行为整片不触发**（这类 bug 差分台面抓不到，因为台面自己造快照）。
+
+### 145.2. 缝的形状
+
+```cpp
+struct CtrlEnv {
+  ...
+  std::function<Entity*(const Value&)> resolve;  // ref_of() 的引用 → 真实体
+};
+```
+
+* `Entity` 只以**指针/引用**出现在 `controller/base_controller.h`（前置声明），
+  `Entity` ⇄ `controller` 的包含环不受影响。
+* 绑定在 `Entity::refresh_ctrl_env`：引用里只有 `id`（`entity_ref.h`）⇒
+  `world().find_entity(id)`；查不到给 `nullptr`。
+* 调用点（`bot_controller.cpp`）先 `resolve` 再判空，拿不到就当作"没命中"
+  （`should_defend → 0`、`handle_action → false`）——这与 DS 里"引用解不出实体"的语义一致。
+
+### 145.3. 返回值必须是 `Value`
+
+TS 的三个早退是 `return reverse;`（不是 `return !!reverse`）——`reverse` 可以是任意值。
+收成 `bool` 之后差分在 `bot_helpers/all` 第 78 行立刻分叉：TS 打 `n7`，C++ 打 `b1`。
+所以签名是 `Value is_ray_hit(const Entity&, const Entity&, const Value&)`，
+只有最后一条 `return Value(truthy(reverse) ? !hit : hit);` 是布尔。
+
+### 145.4. 台面
+
+`subjects/bot_helpers.cpp` 的 `ray` 操作改用 `fx::StubEntity`（`g_ent_real` 懒建缓存，
+`position`/`facing` 从快照灌，`put_ent`/`del_ent` 使其失效重建）。
+`mutations/bot_helpers.mjs` 里 5 条锚点（facing 读 b、dx/dz 反号、dx/dz 不 rounding）
+跟着新函数体重写 —— 语义不变，锚点必须落在真实代码行上。
+
+### 145.5. 同类待改（同一套做法）
+
+`is_enter_goto_range` / `is_leave_goto_range` / `guess_entity_pos` / `closest` /
+`nearest*` / `helper/manhattan_xz`：都是"TS 收 `Entity`、端口收 `Value` 快照"的形状，
+逐个改成 `Entity&`/`Entity*` + `env().resolve`，并同步台面。
+## 146. `utils/eval_number`（数据驱动导演的表达式求值，2026-10-18）
+
+`818f6f5c1` 的 director DSL 里所有几何量（`x="midX - 50"`、`length="width - 120"`）都是
+**数字表达式**，求值器就是 `src/LFW/utils/eval_number.ts`（73 行递归下降）。
+
+### 146.1. 语法（逐字照 TS）
+
+```
+expr   := term (('+'|'-') term)*
+term   := factor (('*'|'/') factor)*
+factor := ('+'|'-') factor | '(' expr ')' | \d+(\.\d+)? | [A-Za-z_][A-Za-z0-9_]*
+```
+
+* token 之间只吃 **空格/制表符**（不是全部 JS 空白）；首尾走 `String.prototype.trim` 的空白集
+  （端口 `is_str_white_space`）。
+* 名字查 `ctx`（TS `Record<string, number>` ⇒ 端口 `std::map<std::u16string, double>`）。
+
+### 146.2. 两处有意的口径差异
+
+| TS | 端口 | 为什么 |
+|---|---|---|
+| 出错 `throw new Error("[eval_number] invalid expression: …")` | 返回 `std::nullopt` | `native/lfw` 里**没有异常**（lint 规则 `throw - lfw has no exceptions`）|
+| `Number("12.5")` | `std::from_chars`（`<charconv>`） | `<cstdlib>` 是禁的（`strtod` 用不了）；`from_chars` 同样是正确舍入且不抛 |
+
+`nullopt` 的语义是"这行数据写错了"，**不等于 0**：调用方（将来的 `Director` 装载 / 布局）
+要自己决定报警还是跳过。`nullish` 与空串仍然是货真价实的 0（TS 同义）。
+
+### 146.3. 台面
+
+`subjects/helpers.{ts,cpp}` 的 `evctx` / `evn` 两个 op：`evn` 收 `parseValue` 的带标签值
+（`u`/`z`/`n`/`s`），出错打 `evn:err`；用例 `cases/helpers/eval.txt` 覆盖四则 + 优先级 + 括号 +
+一元 + 名字 + decimal + 五种语法错。4 条变异锚点在 `mutations/helpers.mjs`。
+## 147. `xml_x_director` 全量（数据驱动导演 DSL，2026-10-18）
+
+`src/LFW/dat_translator/xml/xml_x_director.ts`（745 行）整支搬成
+`native/lfw/dat_translator/xml/xml_x_director.{h,cpp}`，数据形状是 `Value`（`Object` 保插入序，
+与 TS 的对象字面量同序 —— 序不对 `render_value` 的 dump 就对不上）。
+
+### 147.1. 两层
+
+| 读 | 写 | 说明 |
+|---|---|---|
+| `xml_2_director_index` | `xml_x_director_index` | 索引：`id`/`file`（`?? ""`）+ 可选 `name`/`skipped` |
+| `xml_2_director` / `xml_to_directors` | `xml_x_director` / `xml_x_directors` | 整份导演数据 → 元素 / 反向 |
+
+### 147.2. 几个容易漏的口径
+
+* **`TNumberExpr`**：`expr_attr` 只在**整串**匹配 `^-?\d+(\.\d+)?$` 时给 `double`，否则原字符串
+  留给 `utils/eval_number`（§146）。`-0`/`1.`/`1.5e3` 里的 `1.` 与科学计数法都**不算**数字。
+* **`str_or_strs`**：一个值给 `string`，多个给 `string[]`（`oid="a,b"` ⇒ `[a,b]`，`oid="a"` ⇒ `a`）。
+* **`key_up="all"`**：只有 `key_up` 这一个属性有 `"all"` 这个特例（其余键按逗号切）。
+* **`velocity` 的 `"null"`**：`x/y/z` 里写字面量 `null` ⇒ JS `null`（`NullTag`），
+  不是字符串 `"null"`，也不是"缺省"。写回时再变回字符串 `"null"`。
+* **`parse_values`**：`<values json="…">` 先 `Object.assign`、再按属性逐条、最后 `<value>` 子元素；
+  键序=插入序（重复键原位覆盖）。
+* **`<value type>`**：`num` / `bool`（`"true"`/`"1"`）/ `strs` / `nums` / `json` / 其余按 `str`。
+  `strs` 缺属性时回落 `text.split(",")`；`nums` 同理逐个 `Number()`。
+
+### 147.3. 台面
+
+`subjects/xml.{ts,cpp}` 的 `wrv`/`dvp` 函数表各加 5 个名字
+（`xml_x_director` / `xml_x_directors` / `xml_x_director_index` / `xml_2_director` /
+`xml_2_director_index` / `xml_to_directors`），新用例 `cases/xml/director.txt`
+四块：全量 director（stage/actors+两种布局/groups/setup/auto/timeline）、
+每种 action 的往返、空壳+圆布局、`<directors>` 组 + 索引。差分 **263/263**。
+⚠ 真实 `prel_data/directors/*.xml`（17 份）还没进台面 —— 那是下一刀 `DatMgr` 装载时的事。
+## 148. `director/Director`（数据驱动导演的运行期，2026-10-18）
+
+`src/LFW/director/Director.ts` → `native/lfw/director/director.{h,cpp}`。同一天把
+`ActionDirector` 也从 `ui/component/` 搬进 `director/`（与 TS 同形），旧路径留一层
+`using` 转发头，这样 `ui/component/tests/**`（105 个手写用例）与 15 条变异锚点不用逐个改。
+
+### 148.1. 生命周期
+
+```
+start()  → ActionDirector.reset → camera.undest/unlock → _compile → _setup_scene
+restart()→ _compiled = false 后再 start
+stop()   → ActionDirector.reset + 清 actors/groups/spawned
+update(dt)→ world.paused 就直接返回；否则 ActionDirector.update(dt) + _update_auto
+```
+
+`_compile` 把 `timeline` 摊平：`wait` 推进时间并插一个空 work、`repeat` 以 `interval` 反复走
+子条目、其余按 `after` 推进并把 `actions` 逐个插进**同一时刻**；`times` 设轮数，最后 `sort()`。
+
+### 148.2. `resolve` 的选择器语法
+
+| 写法 | 含义 |
+|---|---|
+| `"@all"` | 本导演生成过的全部实体（`_spawned`） |
+| `"@fighters"` | 组（`groups` 里定义的、或 actor 的 `group` 带进来的） |
+| `"julian"` | 该 actor id 的全部实例 |
+| `"julian[-1]"` | 该 actor 的第 `n` 个实例（负数从尾数） |
+
+先全部展开再**去重保序**（TS 的 `ret.filter((e,i) => ret.indexOf(e) === i)`）。
+
+### 148.3. 与 TS 的三处有意偏差
+
+1. **`values` 是动态属性赋值**（`(e as any)[key] = value`），端口没有这种口子 ⇒ 按 17 份
+   `prel_data/directors/*.xml` 里**实际出现**的键做映射（`team`/`facing`/`mp`/`mp_max`/`hp`/
+   `hp_r`/`hp_max`/`name`/`name_visible`/`ctrl_visible`/`stat_bar`/`blinking`/`invulnerable`/
+   `wakeup_invuln`/`as_key_role`）。新增键要在 `apply_values` 里补一行，否则静默忽略。
+2. **`requires`**：TS 是 `ref[action.requires]` 的真值判断，端口只支持 `bearer`/`catcher`/
+   `holding` 三个（数据里只出现 `bearer`）。
+3. **`eval_number` 写错**：TS `throw`（整局崩），端口取 0（`nullopt` 留给装载期报警）。
+   另外 `_cycle` 的 `property` 只支持 `team`（数据里只用 team）。
+
+### 148.4. `Stage::assign_number`
+
+`Object.assign(this.world.stage, values)` 需要写 stage 的 16 个数值字段；`near`/`far` 在端口是
+`_near`/`_far`（宏名冲突），且是 `private` ⇒ 给 `Stage` 加了一个公开写口
+`assign_number(key, value)`，`switch` 覆盖 `left/right/near/far/width/depth/player_l/player_r/
+cam_l/cam_r/enemy_l/enemy_r/drink_l/drink_r/phase_time/dialog_time`。
+
+### 148.5. 覆盖状态（重要）
+
+这一片**没有差分台面**：`Director` 要真跑起来需要 ③ 的 `DatMgr`（读 `directors.index.json5`
++ 17 份 `prel_data/directors/*.xml`）与 ④ 的 `DirectorTestCase`。等 ④ 落地后，`Director` 的
+行为会经由测试模式的既有台面（`lfw` subject 的 `lfg`/`rlnew` 那一套）间接被差分覆盖。
+## 149. 导演数据的装载（2026-10-18）
+
+### 149.1. 链路的四段
+
+```
+zip 里的 *.index.(json5|xml)      ← LFW::load 全量收集（data/data.index.* 排最前）
+        ↓  solve_index_files
+IDataLists.directors[]            ← xml_2_data_lists 的第六个键（§144.2）/ JSON partial 同名键
+        ↓  逐个 file
+xml_to_directors(root)            ← §147（.xml）；JSON 走 import_json
+        ↓  make_director_group(index, raw)
+IDirectorGroupData { id, file, name?, directors: IDirectorData[] }   ← datas().directors()
+```
+
+`make_director_group` 的 `name` 取舍：索引的 `name` 优先，没有再用数据的 `name`，都没有就不写键。
+`to_director_list` 认三种写法（裸数组 / `{directors:[…]}` / 单个对象），只留 `name` 是字符串的对象
+——这几条都照 `normalize_directors.ts` 逐字搬。
+
+### 149.2. 失败处理
+
+TS 是 `try { … } catch { Ditto.warn('FAILED TO LOAD DIRECTOR DATA: …', e) }`：**单份**导演数据坏掉
+不影响整包装载。端口同义（`host->warn` + 清 `error` + `continue`），且 `skipped` 的索引直接跳过。
+
+### 149.3. 为什么要重解 `native/build/host-data/prel`
+
+那是从 `dist/prel.zip` 解出来的**构建产物**（`.gitignore` 里），不会自己更新。这次它比 zip 少
+17 份 director XML + `directors.index.json5` ⇒ 装载数 0 也不报错（索引都不在，循环没跑）。
+记住：**`dist/prel.zip` 更新后要重新解包**，否则「代码对了、数据没进来」。
+
+### 149.4. 实测
+
+`lfw_run --root dist --zip …/prel --zip …/data --frames 60` →
+`loaded: fighters=26 weapons=19 balls=24 entities=5 stages=28 bg=21 bots=22 moves=24 directors=17`，
+`warns=1`（那条 `id duplicated` 是数据本身的老问题，与本片无关）。
+## 150. 测试模式改成数据驱动（2026-10-18）
+
+### 150.1. 形状
+
+`Tests::on_start` 不再读静态的 `CASE_GROUPS`，而是：
+
+```
+lfw().datas().directors()            →  17 组 `IDirectorGroupData`
+  每组 `directors[]` 里每份 `IDirectorData` → `new DirectorTestCase(owner, data)`
+  （数据为空 ⇒ `[[new TestCase(owner)]]`，与 TS 的 else 分支同义）
+name = `${x}-${y} ${data.name}`      →  页面 `Case: …`
+```
+
+`DirectorTestCase` 只是 `Director` 的壳：`enter→start()`、`update→update(dt)`、
+`leave→stop()+TestCase::leave()`。⚠ `_playback` 在**成员初始化列表**里构造
+（`Director(World&, Value)`），所以 `world()` 只能从构造参数里的 `owner` 取。
+
+### 150.2. 退役的那批
+
+`ui/component/tests/{ball,bat,bg,bot,firen,firezen,freeze,jan,julian,louis,others,rudolf,weapons}/**`
+78 个文件 + 37 条 CMake 条目全删。它们在 TS 侧对应 `818f6f5c1` 删掉的用例类 ⇒ **没有 oracle**，
+留着只会让 `Cases` 分组与数据对不上。留下的只有 `test_case.{h,cpp}`（基类：`spawn` / `circle` /
+`hori` / `verti` / `bandits_*` 那套摆位工具，`Director` 也还在用同形的表达式求值）、
+`tests.{h,cpp}`、`director_test_case.{h,cpp}`。
+
+### 150.3. port-only 的坑：数组也是对象
+
+`normalize_directors.ts` 第一句是 `if (!raw || typeof raw !== "object") return []`。
+端口若直译成 `if (as_object(raw) == nullptr) return {}` 就错了 —— **JS 里数组是 object**，
+而 `lfw::as_object` 对 `Array` 给 `nullptr`。XML 那一路拿到的正是 `Array`
+（`xml_to_directors` 的返回值），于是每组都被判成「不是对象」⇒ `groups=17 cases=0`：
+页面正常、用例一个都没有。正确写法是先 `as_array` 再判对象。
+（这也是为什么 ④ 的验证必须真跑 Godot：差分台面根本不经过 `Tests`。）
+
+### 150.4. 验收口径
+
+Godot headless + `--ui-page test_cases_page`：
+`groups=17 cases=82`（临时 warn 打印，验证后已删）→ 第一组第一例 "None" `entities=0`
+→ 按 `d` 切到 0-1「All Fighters」→ `entities=26 hp=13000`。
+三条宿主摘要（300/prel、900/stage 1、600/vs stage 0）不经过测试页 ⇒ 逐位不变。
+### 151. 真实导演数据的往返钉子（2026-10-18）
+
+`dxml <name> <path>`（`subjects/xml.{ts,cpp}`）：`readFileSync` / `std::ifstream` 读仓库里的
+XML（cwd 就是仓库根，两侧同一份路径）→ 各自的 `parse`（TS `fast-xml-parser` / 端口
+`ToolXML::parse`）→ `xml_to_directors` → 逐个 `render_value` 打 `dir|<name>|<i>|<render>`。
+
+用例 `cases/xml/directors_real.txt` 把 `lf2s/origin/prel_data/directors/` 下**全部 17 份**都钉上，
+输出 99 行、82 份 `IDirectorData`。这比手写小样（`cases/xml/director.txt`，四块十六行）强的地方在于：
+真实数据里的写法（`values` 里 `team`/`mp`/`hp` 混排、`layout` 的表达式字符串、`timeline` 的
+`repeat`+`interval` 嵌套、`auto` 的 `when` 组合）都是作者写的，不是我想出来的。
+
+⚠ 依赖 cwd：两条命令都必须从仓库根启动（`native/tools/native.mjs test` 就是这么起的）。
+## 152. 背景层的 UV 循环 / UV 动画（2026-10-18）
+
+TS 的 `DittoImpl/renderer/BgLayerRender.ts` 把两件事做在**渲染层**（不在 `LFW` 核心）：
+
+```ts
+// uv_loop：目标比源图大 ⇒ 按源图尺寸循环
+const rx = tiling ? Math.max(this.width / this.src_w, 1) : 1;
+// offsetAnim：在同一条时间轴上累积
+this.offsetX += (dt / 1000) * offsetAnimX;
+tex.offset.x = pos_mod(this.offsetX, period_x) / period_x;   // period = min(src, dst)
+```
+
+端口的世界背景那一遍（`GodotWorldRenderer::build_background`）原本只算视差 ⇒ `uv_loop` 与
+`offsetAnimX/Y` 完全没画（灰烬森林的雪/雾层被拉成一张大图、足球场的草地不动）。
+
+### 152.1. 绘制项
+
+`GodotDrawItem` 加：
+
+| 字段 | 含义 |
+|---|---|
+| `uv_tile` | 这一项要按周期平铺（`uv_loop` 或 `offsetAnim` 任一存在）|
+| `uv_px/uv_py` | 平铺周期（**逻辑像素** = `min(源图, 目标)`）|
+| `uv_ox/uv_oy` | 相位（逻辑像素，已按周期取正模）|
+
+### 152.2. 宿主怎么画
+
+Godot 的 `draw_texture_rect_region` 没有"改 UV / 设 repeat"的口子（要独立材质或 shader），
+所以宿主**按周期把同一张图画多份**、整排平移 `-uv_ox/-uv_oy`：
+`for (gy = -oy; gy < h; gy += py) for (gx = -ox; gx < w; gx += px) blit(px×py)`。
+因为 `px = min(源图, 目标)`，这正好等价于 `repeat = 目标/源图` + `offset = 相位/周期`；
+多画出去的那一圈由 `canvas_item_set_clip` 的 content 矩形裁掉。
+
+### 152.3. 时间轴
+
+`GodotWorldRenderer::render(dt)` 里 `_uv_time += dt`（一个标量）：TS 是每个 `BgLayerRender`
+各自 `offsetX += dt/1000*anim`，同一条时间轴 ⇒ 各层只要乘自己的 `offsetAnimX/Y` 即可。
+⚠ 这个 `dt` 是**引擎墙钟**（窗口里 ≈ 仿真步长；headless 验收跑得比仿真快 ⇒ 相位推进更快），
+它不进任何摘要，也不影响确定性断言。
+
+### 152.4. 证据行
+
+`[godot] render: … uv=%d[px,py,ox,oy@tag]`（第一条 UV 项）。ash_forest 实测：
+40 帧 `uv=1[128.0,128.0,10.67,10.67@ash_forest]` → 280 帧 `74.67`；`bg_7`（只有世界坐标
+`loop`）`uv=0[]` 且 `bg_layers=167` ⇒ 两套机制互不影响。
+## 153. 开放模式的节拍与 UV 的时间基（2026-10-18）
+
+### 153.1. 节拍
+
+`LfwGodot::_process` 的 `pacing` 决定"这一帧往累加器里放多少秒"，固定步长永远是
+`_host->step_ms()`（`1000/UPS`）。原来的写法是 `_args.delta > 0 ? _args.delta : p_delta`：
+只要命令行给了 `--delta`（验收惯例给 0.017），**开放模式**也被钉成"每帧 17ms"，
+而窗口里 `_process` 一秒钟能跑几百次 ⇒ 模拟直接几十倍速（用户实测 8 秒 1440 帧）。
+
+```cpp
+const bool real_time = _args.frames <= 0;      // `--play` ⇒ frames = 0
+double pacing = real_time ? p_delta : (_args.delta > 0.0 ? _args.delta : p_delta);
+```
+
+* **开放模式**：真墙钟 ⇒ 1 秒现实 = 1 秒游戏（实测 10 秒 600 步）。
+* **验收模式**：`--delta` 固定节拍 ⇒ `--frames N` 恰好 N 步，与机器快慢无关（三条摘要靠这条）。
+
+### 153.2. UV 的时间基
+
+TS `BgLayerRender.render(dt)` 里 `dt` 是**毫秒**（`this.offsetX += (dt / 1000) * offsetAnimX`）。
+端口的 `IWorldRenderer::render(dt)` 收到的也是 `step_ms`（毫秒）⇒ 累加时必须除 1000：
+
+```cpp
+if (dt > 0.0) _uv_time += dt / 1000.0;   // 秒
+```
+
+写成 `+= dt` 会让 UV 动画快 1000 倍（相位每帧绕好几圈，肉眼看就是"乱跳"）。
+
+### 153.3. 怎么验 UV 速度
+
+证据行带时间：`[godot] render: … uv=1[px,py,ox,oy,t=%.2fs@tag]`。
+
+| 命令 | 期望 |
+|---|---|
+| `--frames 60 --delta 0.017`（60 ups） | `t=1.00s`、`ox = anim × 1` |
+| `--frames 300` | `t=5.00s`、`ox = anim × 5` |
+
+ash_forest 的雪/雾层 `offsetAnimX/Y = 10`、周期 128 ⇒ 10 px/s、12.8 s 走完一个周期。
+### 152.5. 两个符号（2026-10-18 修，当日更正）
+
+* **UV 的 y**：`uv_oy` 与 TS `tex.offset.y` 同号，而 TS 的 v 轴**向上**、屏幕 y **向下** ⇒
+  屏幕位移 = `+uv_oy`（x 一圈不用翻：`-uv_ox`）。tile 循环的起点取 `fmod(uv_oy,py) - py`，
+  落在 `(-py, 0]`，保证第一块盖住上边缘。
+* **Model 旋转**：照抄 TS —— `rotation.set(ex, facing < 0 ? -ey : ey, facing < 0 ? -ez : ez)`：
+  左右镜像由 `scale.x = facing` 完成，绕 **y/z 的角度**跟着取反，绕 x 不动。
+  ⚠ 这一条早先被误判过两轮（先删掉取反、再改成无条件取反），真因见 §154：
+  `euler_xyz_from_quat` 把 `m23`/`m32` 写反了 ⇒ **`rx` 的符号**一直是错的。
+
+## 154. 3D 模型的姿态与光照对齐 three.js（2026-10-18）
+
+用户给出「浏览器（图一，对）／Godot（图二，错）」的对照截图后，去掉猜测、**用数值钉死**：
+在 Node 里用仓库自带的 `three`（0.181.2）跑同一套算式，与端口逐元素比矩阵。
+
+### 154.1. 真因：`euler_xyz_from_quat` 把 m23/m32 写反
+
+`Quaternion → XYZ 欧拉角` 的那段是从 three.js `Euler.setFromRotationMatrix` 抄的，但旋转矩阵的
+两个元素抄串了行：
+
+```cpp
+- const double m23 = yz + wx;   // 应当 yz - wx
+- const double m32 = yz - wx;   // 应当 yz + wx
++ const double m23 = yz - wx;
++ const double m32 = yz + wx;
+```
+
+`ry = asin(m13)`、`rz = atan2(-m12, m11)` 用到的元素没错，只有 `rx = atan2(-m23, m33)` 错 ⇒
+**只有「绕 x 的倾角」符号反了**：红书（`book_red` 的帧数据是 `rotation="-0.5,0,…"`，只有 x 的
+倾角 + 绕 z 的自转）翻过来看的就是书的**背面**，而「mirror 之后绕 z 的自转」在被镜像的空间里
+方向也跟着反 —— 这两条症状都来自同一个符号。
+
+复算（`node`，私用脚本，不进仓库）：940 组输入——红书 56 个真实帧 × facing ±1、400 组随机
+`base×frame`、万向锁附近 16 组——端口算出的 `R·S`（含 `scale.x = facing`）与 three.js
+`Object3D` 的 `matrix` **逐元素完全相同**（最大差 0）。
+
+### 154.2. 归属：镜像只做一次
+
+TS `EntityMainRender.update_model_visual`：
+
+```ts
+this.model_node.scale.set(facing * sx, sy, sz)
+this.model_node.rotation.set(e.x, facing < 0 ? -e.y : e.y, facing < 0 ? -e.z : e.z)
+```
+
+即「`scale.x` 取负做镜像」+「`ry/rz` 取反补偿」，`rx` 不动。端口原先删掉过这两处取反（误判为
+翻两次），又改成过无条件取反 ⇒ 两次都错。**按 TS 原样**：`if (e.facing < 0) { ry=-ry; rz=-rz; }`。
+
+### 154.3. 光照：能量要除 π
+
+TS `WorldRenderer` 用 `AmbientLight(0xffffff, 0.7)` + `DirectionalLight(0xffffff, 1.4)`（后者挂在
+`(-300,400,600)` 指向原点）。Godot 侧原来照抄 0.7 / 1.4，结果红书被打成**粉色**且 R 通道顶到 255。
+
+口径差一个 `π`：three.js 的 `intensity` 是**辐照度**，Lambert 的 `1/π` 在着色器的
+`BRDF_Lambert` 里；Godot 的光照能量直接当**辐亮度**乘 albedo。两个能量都除 `π` 之后：
+
+| 采样（红书封面最亮的一片） | 值 |
+|---|---|
+| 浏览器（参考） | `163,38,66` |
+| 端口（除以 π 前） | `255,71,115`（R 已削顶） |
+| 端口（除以 π 后） | `165,39,67` |
+
+### 154.4. 证据行
+
+`[godot] render: … model=N[%s]` 的探针补上**摆位与变换后的姿态**，模型方向出问题时一眼可见：
+
+```
+model=1[weapons/book_bundle/book_red.glb|@461.0,242.0 rot=0.5000,0.5000,-0.0000 scale=15.000,15.000,15.000 face=1]
+```
+
+
+## 155. opoint 的 `__gen_*`：从空壳到两条来路（2026-10-17）
+
+用户报「opoint 产生的物体似乎没有正确的赋予速度」。真因不是速度公式（`on_spawn` 那段有差分覆盖），
+而是**整条生成器链没接**：
+
+```cpp
+// 修之前，`lfw/world.cpp`
+std::optional<Value> World::gen_field(const Value& holder, const std::u16string& kind,
+                                      Entity& emitter) {
+  (void)holder; (void)kind; (void)emitter;
+  return std::nullopt;          // ⇒ 每个 `__gen_*` 都落空，`on_spawn` 一律回落 opoint.dvx
+}
+```
+
+受影响的是**所有**带生成器的生成物：
+
+| 生成器 | 谁在用 | 症状 |
+|---|---|---|
+| `__gen_dvx` / `__gen_dvy` | `state::spawn_ice_piece` | 16 块碎冰原地重叠、初速恒 0 |
+| `__gen_x` / `__gen_y` | `spawn_ice_piece`、`make_buring_smoke` | 落点不再是帧尺寸内的随机 |
+| `gen_x` / `gen_y`（表达式） | `make_buring_smoke` | 烟雾全从同一个点冒 |
+| `gen_spread_x/y/z` | `make_fb_{bat_chase,firzen_disater,jan_chase,julian_ball}_start` | 蝙蝠/火球不扩散 |
+| `action.__gen_facing` | `make_buring_smoke` | 烟雾朝向恒定 |
+
+### 155.1. 为什么差分没拦住
+
+台面（`tests/differential/subjects/entity.cpp`）用 `TestWorld::on_gen_field` 注册**常量**发生器，
+把 `World::gen_field` 整个绕过去了 ⇒ 台面绿、真机空。这次顺手补了 `gf` op 专门打真实现
+（`cases/base/gen_field.txt`）。
+
+### 155.2. 两条来路（`lfw/entity/gen_field.{h,cpp}`）
+
+TS 把生成器当**函数对象**挂在数据对象上，`Value` 装不下函数（§4.40）⇒ 端口分两类：
+
+1. **表达式型**：`__gen_x` → 同名 `gen_x` 源字符串，用发射者当前帧与世界的 `mt` 现编译求值。
+   * Ctx 只有两面：`frame_var("width"/"height"/"centerx"/"centery")` 与 `mt()`（`ValExpression`
+     的既有 Ctx 概念）；帧缺字段 ⇒ `NaN`（TS 那边是 `undefined` 参与算术）。
+   * 编译缓存键 = (对象地址, `__gen_*` 名)，值里带**源文本**做校验：地址被重用但文本不同就重编译
+     （文本相同 ⇒ 表达式相同，缓存依旧成立）；超过 4096 条整体清空。
+   * 解析失败 ≡ 没有该字段（TS 的 `compile_gen(...) ?? undefined`）。
+2. **闭包型**：冰片四个（吃 `Randoming` / 帧尺寸）与烟雾的 `action.__gen_facing`（吃 `mt.pick`）。
+   `Value` 装不下 ⇒ 用「对象地址 → 口味」的侧表，表项**持有对象本身**（`shared_ptr`）⇒ 登记过的
+   对象不会被释放，地址也就不会被复用，查表不会串味。
+
+`World::gen_field` 缩成一行：
+
+```cpp
+return gen_field_eval(holder, kind, emitter.frame, emitter.data(), *lfw().mt());
+```
+
+⚠ `emitter.data()` 必须带：闭包开头那句 `is_object(e)`（= `is_object_data(e.data)`）是守卫，
+少了它冰片会老老实实返回 0（这个坑在写第一版时踩到了）。
+
+### 155.3. 钉子与实跑
+
+`cases/base/gen_field.txt`（40 行）钉住：帧变量与 `rand/round`、「没有 / 非字符串 / 空串 / 解析失败」
+四种落空、同一字段连抽两次的值 + 随后的 `mdraw`（**抽取顺序**也要一致）、冰片四个闭包、
+烟雾 `pick([-1,1])`。台面 op：`gf e|ice|smoke <field>`。
+
+实跑（headless 验收，测试模式）：证据行新增
+`[godot] gen_field: calls=… resolved=… closures=…`：
+
+| 场景 | 修之前 | 修之后 |
+|---|---|---|
+| 火人组（`s`×8，`--frames 3000`） | `resolved=0` | `calls=966 resolved=521 closures=515` |
+| 冰人组（`s`×9） | `resolved=0` | `calls=28 resolved=9 closures=3` |
+
+
+## 156. Julian D>J 的球：Z 轴靠「发射初速」而不是帧上的 `ctrl_z`（2026-10-18）
+
+需求：`D>J`（`julian` 帧 289 的 opoint，oid **229** `julian_ball2`）要能按上下键往上下飞，
+而"没按上下键的那几个"（测试导演里的第 1、4 条 timeline）保持直线。
+
+### 156.1. 数据侧本来就没有 Z
+
+`julian_ball2` 四张飞行帧是 `state 3006/3006/3000/3000`、`dvx: 18`、`dvz: 0`、`hit_j: 0`、
+没有 `ctrl_z`、没有 `hit_Fa`。对照 `julian_ball`（oid 228，D>A）有 `hit_Fa: 14` ⇒
+`make_fb_julian_ball` 才给它 `ctrl_z = 1` + `dvz = DEFAULT_OPOINT_SPEED_Z` + `acc_z = 0.05` +
+`chase{flag: EnemyFighter, lost: Hover, overshoot: 80}`。所以 229 不是漏抄，是本来没有。
+
+### 156.2. 为什么「帧级补 `ctrl_z`」不成立
+
+`Entity::update_velocity` 里那条 `control_z == SpeedCtrl::Control && UD != 0` 的 `UD` 来自
+**实体自己的控制器**（`this._ctrl`）。球由 `BallController` 驱动，而球没有键盘 ⇒ `UD` 恒 0。
+228 能上下，是因为它的 `chase` 让 `BallController::update_chasing` 按 `U`/`D`：
+`dir_z = calc_dir(p1.z, p2.z, overshoot.z)` ⇒ `key_down(U/D)` ⇒ 才走那条分支。
+**给一个不追敌的球挂 `ctrl_z` 是死代码**（`dvz=0` 时 `calc_v` 本来也保留 `vz`，行为零变化）。
+
+### 156.3. 真正的机制：`on_spawn` 的 `speedz * ud`
+
+```cpp
+// Entity::on_spawn
+const double ud = is_fighter(emitter) ? emitter.ctrl().UD : 0.0;   // U = -1 / D = +1
+double vz = z_disabled ? 0.0 : to_number(ovz) + o_dvz + o_speedz * ud;
+```
+
+`o_speedz` 就是 opoint 的 `speedz`。所以：**给 Julian 那两个 oid 229 的 opoint 落 `speedz`**
+（两侧都在 `make_fighter_data_julian` 的 opoint 循环里，值取 `Defines.DEFAULT_OPOINT_SPEED_Z`
+= 3.5）⇒ 扔球时按着上下键得到 `vz = ±3.5` 的斜飞；没按 `ud == 0`，还是直线。
+
+* `z_disabled`（球的帧是 `Normal`/`Burning` 才禁）在这里为假：229 的首帧是 3006。
+* 帧 318 那颗（球自己炸出来的、`action 40`）也会命中同一条规则，但它的发射者是**球**，
+  `is_fighter` 为假 ⇒ `ud` 恒 0，不受影响。
+* 球的 `dvz` 为 0、`ctrl_z` 未设 ⇒ `update_velocity` 走 `calc_v(vz, 0, undefined, …)` 的
+  `default` 分支，返回 `current`：初速不会被抹掉；`handle_velocity_decay` 只在贴地时调用，
+  飞行中的球也不会被衰减。
+
+### 156.4. 钉子
+
+* `cases/fighters_special/all.txt`：oid `"229"` 落 `speedz: 3.5`，oid `"228"` 与**数字** `229`
+  不动（TS 是 `===`：字符串与数字不相等）。
+* `cases/entity/spawn.txt` 尾段（既有）盯住 `speedz * ud`：fighter 发射者 + `keys 0 1 0`
+  ⇒ `v.z = ovz + speedz`、`keys 0 -1 0` ⇒ `ovz - speedz`（实测 `5 → 1`）。
+* 端口侧顺手把 `boost_opoints_*` 抽成 `for_each_opoint_in_frame / for_each_opoint_of_frames`，
+  两份 opoint 遍历不再各写一遍（`oid` 判定只有一处 ⇒ 变异锚点仍然唯一）。
+
+## 157. 导演时间表的 `after` 缺省：`NaN` 会把「定时」变成「每帧」（2026-10-17）
+
+TS `Director._compile` 的 `walk` 里那行是 `time += entry.after ?? 0`；端口照抄时写成了
+`time += to_number(field_or(entry, u"after"))`。差别只在**没有 `after` 的 entry** 上 ——
+而这种 entry 到处都是：`<entry repeat="N" interval="M"><entry>…</entry></entry>` 里
+**内层 entry 只有 `steps`/`actions`**。
+
+`to_number(undefined)` = NaN ⇒ `time` 从此是 NaN ⇒ 之后 `schedule()` 插进去的每个任务
+`time` 都是 NaN ⇒ `ActionDirector::update` 的
+
+```cpp
+if (action.time > t) break;      // NaN 比较恒为 false ⇒ 永不 break
+```
+
+于是**每帧把整张时间表全放一遍**。`01_julian.director.xml` 的 `Julian D>A` 因此每帧收到
+「`click d,R,a` + 1000 × `click a`」：`d`（防御）每帧都落在 `key_hit_duration`（10 帧）窗口内，
+Julian 一进帧 262（`hit_d: 276`）就被顶到 `ball_end`，D>A 的 4 个 opoint 只剩帧 261 那一个
+—— 表现就是「球一个个地发、还不追人」。
+
+### 157.1. 诊断手法（值得复用）
+
+在 Godot 宿主里给实体打一行探针（`[probe julian] f=… frame=… a=… d=…`），把
+`ctrl->is_hit/is_start/is_end` 四个位一起打出来：
+
+```
+f=301 frame=260 a=-hSE d=-hSE     ← hit + start + end 每帧都为真 = 每帧都被"按下"
+```
+
+`is_start(d)` 每帧为真就说明 `key_down(d)` 每帧都进了控制器的队列 —— 输入是被谁刷的，
+再去看导演即可。
+
+### 157.2. 覆盖缺口（下一步）
+
+`Director` 的**运行期**在差分台面上没有用例：`cases/xml/director*` 只对 DSL 读写，
+`cases/lfw/lfag.txt` 对的是另一个类（`ui::ActionDirector`，4BU 之前的旧那份）。
+`Director::action_director` 是 public、`director::ActionDirector` 又带 `actions()/end_time()`，
+所以补一个 `wdir` op（`new Director(world, data)` → `start()` → dump 每个 `action.time`）
+就能把这条钉住 —— `tests/differential/subjects/world.{ts,cpp}` 里加，用例走 `cases/world/`。
+
+## 158. opoint 生成物必须走 `create_entity_with_bot`（控制器是「球会不会追人」的前提）（2026-10-17）
+
+TS `Entity.spawn` 用的是 **`factory.create_entity_with_bot("", world, data)`**，端口抄成了
+`create_entity(world, data)`。差别只有一个：前者会再 `set_ctrl(create_ctrl(data.id, …))`。
+
+少了这一步的后果是一条**静默失效链**（没有断言、没有日志，球照飞、也照打人）：
+
+```
+opoint 生成 → 实体 ctrl == nullptr
+  → World::update 里 is_ball_ctrl(ctrl) 恒假 → 不调 ctrl.update_lookup()
+    → BallController::chasing 永远空
+      → update_chasing() 只走 `chase.lost & Hover` 那条分支（朝自己出生点按方向键）
+        → 数据里的 `chase{flag:EnemyFighter}` 形同虚设：球不追人
+```
+
+诊断用的临时计数（`World::update` 的实体循环 / `update_lookup` 的入出口）：
+
+| | 修之前 | 修之后（Julian D>A，460 帧） |
+|---|---|---|
+| 循环里见到的 ball 控制器 | 0 | 1093 |
+| `update_lookup` 调用 | 0 | 542（`lifetime % 2` 那一半） |
+| 抓到目标（`chasing` 被填） | 0 | 393（候选里 `should_chase` 命中 936 次） |
+
+### 158.1. 台面为什么没拦住
+
+`cases/entity/spawn.txt` 里的 `spawnDump` 本来就打 `ball=`（是不是 ball 控制器）与
+`chasing=`——但台面的假 `lfw` 里**没注册任何 oid 的 ctrl creator**，真 `Factory::create_ctrl`
+回 null，所以两侧都是 `ball=b0`，看不出差别。真机里数据 ctrl 是注册过的（`dat_mgr` 按
+`is_ball_data` 注册 `ball_controller_creator`），差别只在真机上显形 —— 与 §145 的
+「薄引用」、§155 的 `gen_field` 空壳是同一类：**台面的假缝把真实现整个绕过去了**。
+
+### 158.2. 台面对齐
+
+* `subjects/entity.cpp` 的假 `lfw` 新增 `create_entity_with_bot(player_id, world, data)`：
+  记 TS 那一行 `create_entity_with_bot:<data>`、复用 `g_make_entity`；**不要**转去假
+  `create_ctrl`（TS 那边工厂没注册 ⇒ 不多记一行）。
+* `subjects/collision_ball_frozen.cpp` 的 `Lfw::create_entity_with_bot` 直接转
+  `create_entity`（那个台面只关心"造出来了没"与 `A:spawn:` 那一行）。
+
+## 159. 发射初速的 Z：按生成物判定，`speedz` 显式值优先（2026-10-18）
+
+LF2 的规则是「发射瞬间按住上下键，弹道物会往上/下飞」。LFW 里这条落在
+`Entity.on_spawn` 的 `vz = ovz + o_dvz + o_speedz * ud`（`ud` 取发射者的 `ctrl.UD`），
+但 `o_speedz` 的**默认值**原来只看发射者帧的 state：
+
+```ts
+// preprocess_opoint / cook_opoint（旧）
+switch (frame.state) {          // ← frame 是**发射者**的帧
+  case Ball_Flying: case Ball_3006:
+  case Weapon_Throwing: case HeavyWeapon_InTheSky:
+    opoint.speedz ??= Defines.DEFAULT_OPOINT_SPEED_Z;
+}
+```
+
+斗士站在 `Attacking`(3) 里发波时永远进不去 ⇒ `o_speedz = 0` ⇒ 上下键对球无效
+（唯一例外是 `FirenFlame`：`cook_opoint` 里显式给了 0.5，所以"D^J 喷火能上下、D>A 火球不能"）。
+
+改成在 `on_spawn` 里按**生成物首帧**的 state 兜底（两侧同改，`entity.ts` / `entity.cpp`）：
+
+```ts
+const spawn_state = result?.frame?.state;
+const o_speedz = speedz_field ?? (弹道状态 ? Defines.DEFAULT_OPOINT_SPEED_Z : 0);
+```
+
+* 名单沿用旧的那四个（`Ball_Flying` / `Ball_3006` / `Weapon_Throwing` /
+  `HeavyWeapon_InTheSky`），与 `StateEnum` 注释里那句"弹道类可按上下键加 Z 速度、
+  `Ball_Hit`/`Rebounding`/`Disappear` 不行"一致。
+* `speedz_field ?? …`：显式值（含 `0`）优先 ⇒ 冰片、燃烧烟雾、JanChase 尾迹这些
+  "故意不给 Z 初速"的生成物不受影响。
+* `z_disabled`（`Normal`/`Burning` 的生成物 Z 恒 0）保持原样，两者共用 `spawn_state`。
+* 钉子：`cases/entity/spawn.txt` 尾段（`ud=0 → 0` / `D → +3.5` / `U → -3.5` /
+  `speedz: 0 → 0` / `state: 0 → 0`）。
+
+## 160. bot 的 `self_ref` 必须带 `id`（2026-10-18）
+
+`bot/*` 里的 `const self = this.entity` 在端口被投影成 `bot::self_ref_of_env(CtrlEnv&)`
+（`bot_env.h`）：TS 那边 `is_ray_hit(me, en, r)` / `same_entity(a,b)` / `closest(self, …)`
+拿的是**活实体**，端口这边只有 `CtrlEnv` 的字段与「实体引用」`Value`。
+
+这份投影原来只有 `{ position }`（因为第一批消费者 `closest` / `manhattan_xz` 只读位置）。
+问题是 `CtrlEnv::resolve`（`entity.cpp`，实体引用 → 真实体）靠 `ref.id` 查
+`World::entity_map`：
+
+```cpp
+env.resolve = [this](const Value& ref) -> Entity* {
+  const Value id_v = field_or(ref, u"id");
+  const std::u16string* const id_p = std::get_if<std::u16string>(&id_v);
+  return id_p != nullptr ? world().find_entity(*id_p) : nullptr;
+};
+```
+
+`self_ref_of_env` 不给 `id` ⇒ `resolve(self_ref())` **恒 nullptr**。后果集中在
+`BotController::handle_action` 的 `e_ray` 分支（`is_ray_hit(me, en, r)` 的 `me` 解不出来 ⇒
+`return false`）：`bot.actions` 里所有带 `e_ray` 的招式恒被拒 —— `d>a`（发波）、`d^a`、`dvj`
+这些全在里面，表现就是"机器人只会走位，很少发波"。
+
+### 160.1. 证据（主页自动对局 `--ui-page main_page`，2400 帧）
+
+| 探针 | 修前 | 修后 |
+| ---- | ---- | ---- |
+| `resolve` 里「引用没有字符串 `id`」 | 2327 / 4654 | 0 / 31226 |
+| `handle_action` 的 `e_ray` 拒绝：`self` 解不出 | 223 | 0 |
+| `e_ray` 拒绝：真的没打中（`ray_miss`） | 0 | 0 |
+| `d>a` 全闸门通过次数 | **0** | **7** |
+
+修前 `e_ray` 的拒绝**全部**落在「`me` 解不出来」这一条上，`ray_miss` 是 0 ——
+所以射线几何本身没问题，坏的是「谁在打」。
+
+### 160.2. 为什么台面没抓到
+
+`cases/bot/actions.txt` 早就有 `act "ray"`，但两侧都返回 `false`：端口这边的 `g_env.resolve`
+是空的（台面没有真实体/世界），TS 那边的 `me` 是假对象、`is_ray_hit` 也打不中。
+**射线分支的正路一条都没被钉住** ⇒ 这个 bug 藏了很久。
+
+新增的钉子钉的是**投影的形状**而不是射线结果：`bot` 台面新 op `selfref`
+（`subjects/bot.{ts,cpp}`，用例 `cases/bot/actions.txt` 的 `make` 之后）：
+
+```
+TS  : [ctrl.entity.id, {x,y,z}]
+端口: [self_ref_of_env(g_env).id, self_ref_of_env(g_env).position]
+```
+
+去掉 `id` 立刻 `v=[u,…]` vs `v=[s"b1",…]`（已验）。要钉射线正路得让台面有真实体
+（`Entity` + `World`），那是另一刀。
+
+### 160.3. 顺带的构建坑（`native/tools/native.mjs`）
+
+1. **中文 VS 的 `/showIncludes` 前置对不上**：`cl.exe` 打「注意: 包含文件:」，CMake 探到后写进
+   `build.ninja` 的 `msvc_deps_prefix` 是乱码（UTF-8 里套着 GBK 的 mojibake），ninja 拿它跟
+   编译器的原始字节比 ⇒ 永远不匹配 ⇒ **头文件依赖一条都记不下来**（`ninja -t deps` 空）。
+   改 `.h` 时 ninja 认为无事可做，编出来的还是旧对象。这一轮因此把「修好了」误判成「没修好」
+   （`bot_env.h` 的 `id` 加了一轮，编的却是旧对象）。
+   `VSLANG=1033` 无效（实测 `cl` 仍按安装语言输出），所以照 `guardGodotStaleObjects` 的老办法：
+   `guardStaleObjectsAt(buildDir)` —— 头文件比对象新就删掉 `lfw|host|tests` 的对象目录全量重编，
+   `build` 与 `godot` 两个构建目录都挂上。
+2. **工具链会被 PATH 换掉**：`vsTools()` 找不到 ninja 时会把 `msys64\mingw64\bin` 插到 PATH 最前，
+   于是新建构建目录时 CMake 的自动探测挑上 `c++.exe`（g++），整条工具链静默变成 MinGW
+   （`.obj` 后缀不变，肉眼看不出来）。实测 g++ 编出的 `lfw_trace_bot` 在 `bot/targets` 上
+   **栈溢出**（`0xC00000FD`），而同一份源码用 MSVC 编就正常。`configure` 现在显式
+   `-DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl`。
+
+## 161. bot 的「自己」：`CtrlEnv.self`（2026-10-18）
+
+`bot/*` 里 `this.entity` 是**活实体**。端口的结构性限制是 `Entity` ⇄ `controller` 的包含环：
+`bot/*.h` 只能前置声明 `Entity`，运行期只拿得到 `CtrlEnv` 与「实体引用」`Value`。
+于是最早的做法是 `self_ref_of_env(CtrlEnv&)` 把自身投影成 `{ id, position }` 的引用，
+需要真实体时再靠 `CtrlEnv::resolve` 解回来（`is_ray_hit` 那一族）。
+
+这条往返有两个代价：
+
+1. **正确性**：投影少了 `id` 就解不回来（README（十七）那次的 `d>a` 恒被拒）；
+2. **开销**：`look` / `sort` / `closest` / `is_*_range` 每次调用都重建两个 `Object`。
+
+### 161.1. 形状
+
+```cpp
+struct CtrlEnv {
+  std::function<Entity*(const Value&)> resolve;  // 引用 → 实体（只给 other 用）
+  Entity* self = nullptr;                        // Entity::refresh_ctrl_env: env.self = this
+};
+
+// 三条新重载：自身是实体，位置活读
+double helper::manhattan_xz(const Entity& a, const Value& b);
+Value  bot::closest(const Entity& me, const std::vector<Value>& list);
+void   NearestTargets::look(const Entity& self, const Value& other, const Value& defendable = Value());
+void   NearestTargets::sort(const Entity& self);
+```
+
+`BotController` 侧三个口子把「有没有实体」这件事收在一处：
+
+```cpp
+Entity* self_entity() const;                                   // env()->self
+void look_target(NearestTargets& nt, const Value& other_ref, const Value& defendable = Value());
+void sort_targets(NearestTargets& nt);
+```
+
+真实运行时 `env.self` 恒非空 ⇒ 走实体版；差分台面（`subjects/bot.cpp` 只有 `Value` 假实体）
+`env.self == nullptr` ⇒ 退回 `self_ref()` 的引用版，8 个 bot 用例原样跑。
+`handle_action` 的 `is_ray_hit(me, en, r)` 与 `should_defend` 里的 `resolve(self_ref())`
+一并换成 `self_entity()`。
+
+### 161.2. 为什么 `other` 不一起改
+
+`other` 要**跨帧存**（目标的引用存在 `targets_` 里，`sort()` 下一帧还要用它算距离），
+而它的来源是世界侧的 `BaseController::update_lookup(const std::vector<Value>&)`
+（`is_ball_ctrl || is_bot_ctrl` 共用，球控制器也是这套）。把它换成 `Entity*` 要同时动
+世界缝 + 球控制器 + 台面（`subjects/bot.{ts,cpp}` 的假实体层，8 个用例约 1500 行）。
+所以这一刀只动 `self`，`NearestTargets::reidentify`（把目标引用换成当帧的新快照）保留。
+
+### 161.3. 验证
+
+* 差分 265/265；
+* 主页自动对局 2400 帧摘要与改前**逐位一致**：`digest=2ea7026a9cd193b6`
+  （`renderer(+-)=182/166`）—— 说明「`CtrlEnv.px/pz` 快照」与「`Entity::position` 活读」
+  在 `refresh_ctrl_env → ctrl.update()` 这条时序里取值相同，纯搬家。
+
+### 161.4. 结构体一改就必须全量重编
+
+`CtrlEnv` 加成员的那次，`native.mjs` 的构建守卫没兜住：它按
+`lfw|host|tests/CMakeFiles` 猜目录，而实际层级是 `tests/differential/CMakeFiles`；
+判定又是「头文件比**最新** `.obj` 新」，部分重建之后必然失效。
+漏网的 `subjects/bot.cpp.obj` 用旧布局读 `CtrlEnv` ⇒ 台面 `make` 直接 `0xC0000005`。
+现在的守卫：`<buildDir>/.lfw-header-stamp` 记录上次构建时的最新头文件 mtime，
+一旦变小/变大不符就**递归删掉全部 `*.obj`**（跳过 CMake 自己的 `CompilerId`/`ShowIncludes` 产物）。
+
+### 161.5. 变异锚点
+
+几何从两处「各写一份」收成了两个函数：`helper::manhattan_xz_of(ax, az, b)`（`manhattan_xz.cpp`）
+与 `bot::distance_xz(mx, mz, it)`（`closest.cpp`）—— 引用版与实体版只差「谁给出自身坐标」。
+好处是同一个几何只剩一份，变异锚点也因此各自唯一（`bot_helpers.mjs` 里 15 条重写；
+`node native/tools/mutate.mjs temp 子集` 实测 **15 killed / 0 survived / 0 compile-error**）。
+`NearestTargets.look` 的两条委派行（引用版/实体版）文本相同，相关锚点用「多行 + 函数签名」
+定位，别只写 `insert_at(...)` 那一行。
+
+## 162. 便宜批：球控的 `self` 与类型判定的实体重载（2026-10-18）
+
+承 §161（bot 的 `self` 实体化）把剩下的「不动台面、不动世界缝」的部分做掉。
+
+### 162.1. `BallController` 的 `self`
+
+`update_lookup` 原来跟 bot 一样，用本地 `self_ref(CtrlEnv&)` 造一份 `{ position }` 投影
+（`x0` / `closer_one` / `manhattan_xz` 三处用）。`CtrlEnv::self` 对所有有控制器的实体都成立
+（`Entity::refresh_ctrl_env` 里 `env.self = this`），所以：
+
+```cpp
+const Entity* const self_e = e->self;
+const Value self = self_e != nullptr ? Value() : self_ref(*e);   // 台面才走投影
+const double x0 = self_e != nullptr ? self_e->position.x : ref_x(self);
+e2 = self_e != nullptr ? helper::closer_one(*self_e, l, r) : helper::closer_one(self, l, r);
+```
+
+`chasing` 仍是引用 + `reidentify`（那是「目标」那一层，见 §161.2 的同一理由）。
+
+### 162.2. `is_fighter` / `is_weapon` / `is_ball` 的实体重载
+
+TS：`is_fighter = (v: any) => is_fighter_data(v?.data)`。端口调用点普遍写成
+`is_fighter(ref_of(*e))` —— **为判一个类型**就造一份含 `data`/`frame`/四个关系槽的完整引用。
+加三条 `const Entity&` 重载（`is_xxx_data(e.data())`），把 36 处改直读：
+
+| 目录 | 处数 |
+| --- | --- |
+| `stage` | 14 |
+| `world` | 9 |
+| `ui` | 7 |
+| `cmds` | 4 |
+| `entity` | 1 |
+| `lfw` | 1 |
+
+`helper::closer_one` 同理加了 `const Entity&` 重载（几何收成 `closer_of` 一份），
+bot / ball 的 `update_lookup` 都改成实体版优先、台面退回引用版。
+
+### 162.3. 仍然留在引用上的（有意为之）
+
+* `chasing` / `following` / `aim_at` / `should_chase`（`BallController`）—— 是「目标」那一层，
+  要动 `LFW::ctrl_update_lookup` 与两个台面 subject（`bot.cpp:662`、`entity.cpp:1485`）；
+* `CtrlEnv.holding` / `catching`（浅引用）—— 实体侧早已直读 `Entity*`，只有 `bot/*` 走引用；
+* `collision::CollisionActor` —— 整套碰撞是扁平投影（设计如此：台面要独立建场）。
+
+### 162.4. 验证
+
+* 差分 265/265、lint 862 clean / 0 failed、anchors 9771 ok / 0 bad；
+* 摘要逐位不变：`--ui-page main_page` 2400 帧 `2ea7026a9cd193b6`、`--stage 1` 900 帧
+  `f150041396ce61b7`（说明「`CtrlEnv.px` 快照」与「`Entity::position` 活读」在这条时序里同值）；
+* 变异锚点 21 条跟着改（8 个 spec），逐 spec 跑 `mutate.mjs`：23 条**全部 killed**，
+  0 survived / 0 compile-error。
+
+## 163. 目标句柄 `TargetHandle`（2026-10-18）
+
+`BallController.chasing` / `BotController.following|watching` / `NearestTargets` 的目标，TS 里都是
+**活实体**（`Entity | null`）。端口原来一律用 `entity/entity_ref.h` 的引用快照，并靠
+`reidentify`（每趟 `update_lookup` 拿名单里的新引用去换旧快照）保持「字段基本新鲜」。
+
+中批把它们换成 `entity/target_handle.h` 的 `TargetHandle`：
+
+```cpp
+class TargetHandle {
+  const Entity* _entity = nullptr;  // 真实运行时有值；台面里为空
+  std::u16string _id;               // 身份（实体池会复用指针 ⇒ 单靠指针不算身份）
+  mutable Value _ref;               // 给仍只认 Value 的读法用的投影（真实体按需生成 + 缓存）
+  mutable bool _ref_built = true;
+};
+```
+
+### 163.1. 三条硬约束
+
+1. **池化复用**：`common_creator` 从 `Factory.acquire_entity` 拿旧实体 `reset` 后再用 ⇒ 裸指针
+   过一会儿可能指向别人。`entity()` 因此先复核 `id`；`refresh()`（每趟 `update_lookup`）发现
+   `id` 变了就把缓存置成 `null`（等价「目标已经死了」，下游 `should_chase` 之类本来也会拒）。
+2. **台面没有 `Entity`**：`subjects/bot.cpp` 的 `me` / `fx` 是脚本化 `Value`。句柄在
+   `_entity == nullptr` 时退回引用快照，`entities()` / `ref()` 都照旧，8 个 bot 用例与
+   `entity/ball_ctrl` 原样跑（只把三个 subject 的打印改成 `entity.ref()`）。
+3. **`===` 的语义**：两个都是实体比指针、两个都是引用比 `same_ref`、一实体一引用才按 `id`
+   桥接。台面用例里 `s1`/`s2` 故意共用 `id: "z"` 来钉「TS 的 `Set<Entity>` 比的是对象」，
+   纯 `id` 比较会把它们并成一个（第一版就踩了）。
+
+### 163.2. 世界缝
+
+`LFW::ctrl_update_lookup` 以前把整张 `std::vector<Entity*>` 逐项 `ref_of` 成引用再喂控制器
+（每个控制器 × 每个实体一份完整快照，含 `data`/`frame`/四个关系槽）。现在直接把实体表传下去，
+两个控制器各有三条入口，内部折成 `std::vector<TargetHandle>` 走同一份实现：
+
+```cpp
+void update_lookup(int me, const std::vector<Entity*>& entities);   // 真实运行时
+void update_lookup(int me, const std::vector<Value>& entities);     // 差分台面
+void update_lookup(int me, const std::vector<TargetHandle>& entities);  // 公共实现
+```
+
+`reidentify`（`NearestTargets` 与 `BallController` 各一份）随之删除：目标自己带着实体，
+不需要每趟从名单里认领。
+
+### 163.3. 摘要为什么变了
+
+`--ui-page main_page` 2400 帧 `2ea7026a9cd193b6` → `56bd53ab3ae75154`；`--stage 1` 900 帧
+`f150041396ce61b7` → `4c5ef7aa63c97056`；300 帧 `b936d83b3706ebfe` → `b18b9d0d7892aef5`。
+以前距离/存活判定读的是「上一趟 lookup 刷新出来的快照」，现在读活实体：距离每帧重算、
+死目标当帧掉出目标表。这是**向 TS 靠**，不是回归；差分 265/265（含 `bot/*` 8 份与
+`entity/ball_ctrl`）仍是硬门槛。
+
+### 163.4. 台面改了两处
+
+* `subjects/entity.cpp` 的 `run ball lookup` 改成喂 `std::vector<Entity*>`（这些实体在 `entity`
+  subject 里是**真的**）—— 喂引用会让 `chasing` 停在冻结字段上，与 TS 读活实体不等价；
+* `subjects/bot.cpp` / `bot_helpers.cpp` 的 `name_of(...)` 参数改成 `…entity.ref()`。
+
+顺带给两个「候选循环」加了「两侧都没推进就 break」的守卫：句柄化之后 `same()` 有可能两边都不认
+（TS 里 `e` 一定来自名单，不会出现），没有守卫会死循环（实测台面挂住过一次）。
+
+## 164. `CtrlEnv.holding` / `CtrlEnv.catching` 也用句柄（2026-10-18）
+
+`CtrlEnv` 上原来还剩两个「关系槽」是引用快照：
+
+```cpp
+env.holding  = holding  != nullptr ? ref_of(*holding)  : Value(NullTag{});
+env.catching = catching != nullptr ? ref_of(*catching) : Value(NullTag{});
+```
+
+TS 那边 `me.holding` / `me.catching` 是 `Entity | null`（`me.holding?.base_type`、
+`me.catching.hp`、`e == me.catching` …），所以这两条也换成 `TargetHandle`：
+
+```cpp
+env.holding  = holding  != nullptr ? TargetHandle::of(*holding)  : TargetHandle();
+env.catching = catching != nullptr ? TargetHandle::of(*catching) : TargetHandle();
+```
+
+### 164.1. 读点
+
+| 位置 | 改前 | 改后 |
+| --- | --- | --- |
+| `bot/bot_env.h:holding_base_type_of_env` | `!truthy(e.holding)` / `base_type_of_ref(e.holding)` | `e.holding.nullish()` / `base_type_of_ref(e.holding.ref())` |
+| `BotController::w_atk_m_x` / `w_atk_r_x` | `field_or(field_or(field_or(e->holding, …)))` | 同上但起点是 `e->holding.ref()` |
+| `BotController::should_chase` | `same_entity(e->catching, x)` | `e->catching.same(TargetHandle::of(x))` |
+| `bot/state/bot_state_chasing.cpp` | `if (truthy(e->catching))` | `if (!e->catching.nullish())` |
+
+`nullish()` 与 `truthy(Value)` 的差别只在「实体被回收复用」这一路：句柄会拿 `id` 复核，
+判成死目标（下游本来也会拒）；其余读法与旧实现同值，所以摘要逐位不变。
+
+### 164.2. 台面
+
+`subjects/bot.cpp` 的 `g_env` 是脚本化出来的，没有 `Entity`：
+
+```cpp
+g_env.holding  = lfw::TargetHandle::of(lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"),  Value(NullTag{})));
+g_env.catching = lfw::TargetHandle::of(lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{})));
+```
+
+句柄在 `_entity == nullptr` 时退回引用快照，所以 8 份 `bot` 用例的输出不受影响。
+
+### 164.3. 补的两组用例
+
+`cases/bot/targets.txt` 补了：
+
+1. `meref catching "e2"` + `should_chase "e1"` / `"e4"` —— 让「`catching` 非空 ⇒ 只比身份」
+   这一支真正被走到（以前只有 `catching === 被问目标` 一种情形，恒真/恒假两个变异都杀不掉）；
+2. `fx put "h1" … "base" o 3 "type" n 2 "w_atk_m_x" n 7 "w_atk_r_x" n 9` +
+   `meref holding "h1"` + `get w_atk_m_x` / `get w_atk_r_x` —— 钉住持握物两字段不串。
+
+`bot_controller` spec 因此重写 3 条锚点：`mutate.mjs` 26 killed / 0 survived / 0 compile-error。
+
+### 164.4. 一段沿袭下来的死代码
+
+`should_chase` 里 `if (e == me.holding) return false;` / `if (e == me.catching) return true;` /
+`if (me.catching && me.catching.hp > 0) return false;` 三行在 `catching` 非空时**不可达** ——
+函数开头 `if (this.entity.catching) return this.entity.catching == e;` 已经返回。
+TS 原样如此（`src/LFW/bot/BotController.ts:397-399`），端口照抄；别为它们写锚点（杀不掉，
+不是因为台面弱，而是分支不存在）。
+
+## 165. 碰撞层的 `ActorHandle`（2026-10-18）
+
+`Collision.attacker` / `.victim` 在 TS 里就是那两个活实体（`collision/*` 读的是
+`c.attacker.position.x`、`c.victim.hp`、`c.victim.data.base.hit_sounds` …）。端口原先是这样接的：
+
+```cpp
+// world_collision.cpp（旧）
+collision::CollisionActor WorldCollisionHost::actor_of(Entity& e) const {
+  collision::CollisionActor a;
+  a.id = e.id; a.px = e.position.x; a.py = e.position.y; a.pz = e.position.z;
+  a.data_id = ...; a.data_type = ...; a.frame = e.frame; /* 还有 13 个字段 */
+  return a;
+}
+```
+
+一份 20 字段的**快照**，在 `collision_get` 那一刻拍下，之后整个判定 + 分发都用它。
+它有两个真实代价：
+
+1. 宿主还得记住「当前判定的是哪一对」（`_cur_a` / `_cur_v`），因为缝签名里没有对方实体；
+2. `loader/get_val_from_collision` 的 86 个词要从快照回到活实体 —— 于是又有 `CollisionValEnv`
+   一条缝，按 `id` 去 `world.find_entity` 找。
+
+这一刀把这两个代价一起消掉。
+
+### 165.1. `ActorHandle`
+
+```cpp
+class ActorHandle {
+  const Entity* _entity = nullptr;   // 真实运行时
+  std::u16string _id;                // 身份（池化复用，单靠指针不算身份）
+  mutable CollisionActor _snap;      // 台面：脚本化的假实体
+  mutable bool _snap_built = false;
+ public:
+  double px() const;                 // 真实体活读，台面读 _snap
+  double data_type() const;
+  Value frame() const;
+  /* …共 19 个取值器 */
+};
+```
+
+与 `TargetHandle`（§163）同一套形状、同一个理由（池化复用 ⇒ 读之前用 `id` 复核），
+但多一条**写**的出口：`snap_mut()`。碰撞判定里有几个字段是**写**进去的（台面的 `run aid` /
+`attacker.data_type`），而真实运行时的写入都走 `HandlersEnv` 的缝，所以 `snap_mut()`
+只对台面有意义（写进去之后句柄降级成快照）。
+
+### 165.2. 缝签名统一收 `Collision`
+
+`Collision` 自己带着那两个句柄 ⇒ 宿主不需要 `_cur_a` / `_cur_v` 这对「当前判定的是谁」的
+隐式状态（它原来只靠 `collision_get` / `collision_test` / `handle` 三个入口轮换赋值，
+谁少赋值一次就静默读错实体）。改后：
+
+| Env | 旧签名 | 新签名 |
+| --- | --- | --- |
+| `HandlersEnv.attacker_itr_motionless` | `() -> Value` | `(const Collision&) -> Value` |
+| `HandlersEnv.attacker_set_motionless` | `(const Value&)` | `(const Collision&, const Value&)` |
+| `HandlersEnv.victim_set_shaking` | `(const Value&)` | `(const Collision&, const Value&)` |
+| `HandlersEnv.attacker_set_arest` | `(double)` | `(const Collision&, double)` |
+| `KeeperEnv.attacker_state` / `victim_state` | `() -> double` | `(const Collision&) -> double` |
+| `KeeperEnv.victim_data` | `() -> Value` | `(const Collision&) -> Value` |
+| `KeeperEnv.victim_play_sound` | `(const Value&)` | `(const Collision&, const Value&)` |
+| `KeeperEnv.ball_frozen` | `(CollisionActor&, CollisionActor&, const Value&)` | `(const ActorHandle&, const ActorHandle&, const Value&)` |
+| `CollisionCoreEnv.get_bounding` | `(const CollisionActor&, …)` | `(const ActorHandle&, …)` |
+| `CollisionCoreEnv.victim_get_v_rest` | `(const std::u16string& aid)` | `(const Collision&)` |
+| `CollisionCoreEnv.attacker_is_ally` | `() -> bool` | `(const Collision&) -> bool` |
+| `CollisionCoreEnv.find_entity` | `(id, CollisionActor& out)` | `(id, ActorHandle& out)` |
+| `Handlers3Env.spark_point` / `WeaponIsHitEnv.spark_point` | `(const Cube&, const Cube&, …)` | `(const Collision&, const Cube&, const Cube&, …)` |
+| `Handlers4Env.find_align_frame` | `(frame_id, throwings, sky)` | `(const Collision&, frame_id, throwings, sky)` |
+| `NbdDefendEnv.dispatch` | `(handler_type, action)` | `(const Collision&, handler_type, action)` |
+
+### 165.3. `CollisionValEnv` 删除
+
+`get_val_from_collision` 的 86 个词以前要 `g_env.find_entity(c.attacker.id)` 才能拿到活实体；
+现在：
+
+```cpp
+const Entity* attacker_of(const Ctx& c) { return c.attacker.entity(); }
+const Entity* victim_of(const Ctx& c) { return c.victim.entity(); }
+```
+
+`find_entity` 一删，整个 `CollisionValEnv` 就没有成员了 ⇒ 结构体、`set_collision_val_env`、
+`WorldCollisionHost::bind_val_env` 全部删除。
+
+### 165.4. 台面
+
+* `subjects/entity.cpp` 的 `run cv …`（`get_val_from_collision` 那一套）以前只能塞 `id`、
+  再靠 `CollisionValEnv` 找回实体；现在 `cv_bind` 直接给**真**实体，
+  「世界外」用 `cv_handle_of(nullptr)`（只有 `id` 的假句柄，`entity()` 给 `nullptr`）。
+* `collision_core` / `collision_keeper` / `collision_keeper_handle` / `collision_handlers*` /
+  `collision_n_bdy_defend` / `collision_weapon_is_hit` 六个 subject 里，Env lambda 都补上
+  `const Collision&` 参数；写入类（`run aid` / `attacker.data_type`）改用 `snap_mut()`。
+
+### 165.5. 三条工具链修复（这一刀踩出来的）
+
+1. **`mutate.mjs` 的 `execFileSync` 补 `maxBuffer`**：MSVC 的 `/showIncludes` 打印在 stdout，
+   而中文 VS 的前缀与 `rules.ninja` 里的 `msvc_deps_prefix` 对不上（§161.4）⇒ ninja 不吞它，
+   一个中等 TU 就能刷出近 1 MB。`execFileSync` 的默认 `maxBuffer` 正好也是 1 MB ⇒ 撑爆后
+   **整份 spec 被记成 compile-error**（实测 `entity.mjs` 的 936 条里 935 条全红，而且报错文本
+   全是「包括文件:」噪声，极难看出原因）。
+2. **基线先 `build` 再 `test`**：`native.mjs test` 不构建（README 有记）。变异运行器原来直接拿
+   「上一次的二进制」当基线 ⇒ 上一次若是被中断的变异构建，基线就是变异体（实测
+   `entity/main` 的 `resting_max` 报 40 vs 30 —— 那正是 `_resting_max = std::nullopt`
+   这条变异体的行为）。
+3. **从备份恢复源码后删掉对应 `*.obj`**：被打断的那一趟会停在「源码=变异体、obj=变异体」的
+   状态；恢复源码时写入的 mtime 可能**早于**那个 obj（恢复与最后一次编译前后脚），ninja 于是
+   认为它是最新的 ⇒ 下一趟整趟在测变异体。删 obj 逼它重编。
+
+### 165.6. 两条不可观察的锚点
+
+`CollisionCoreEnv.find_entity` / `find_object_data` 现在唯一的消费者是
+`collision_from_snapshot`（`collision/` 层的水合入口）。`World::step` 从不水合快照 ——
+`Entity::vrests` / `colliders` 存的是**整份** `Collision`，不是快照 —— 所以
+`world/collision.txt` 那条路径够不着它们；`collision_core` subject 里已用 `snap` / `fromsnap`
+锁住。两条锚点从 `world_collision.mjs` 删除，理由记进该 spec 的「有意不覆盖」段。
+## 166. 跟两条 TS 提交（2026-10-18）
+
+开工期间上游落了两个只改 TS 的提交，端口的差分立刻红了一条 —— 这正是「TS 是唯一真值、
+差分是硬门槛」的价值所在：
+
+```
+x lfw/char_menu <- drift
+  first divergence at line 2736
+  2736  C++: dsrd|difficulty|n2:4000000000000000
+  2736  TS : dsrd|difficulty|n3:4008000000000000
+```
+
+`dsrd` 打印的是 `world.dataset[key]`，所以方向很明确：**世界数据集的 difficulty 不一样**。
+
+### 166.1. `b25e6ff9c`：生存排行恒为苦难
+
+`GamePrepareLogic.reset_world_dataset` 原来先把 `difficulty` 存起来、重置完再写回去
+（「保留难度选择」）；TS 改成**不保留**（B 站生存排行恒为苦难）：
+
+```cpp
+// 旧
+const Value difficulty = ds.get(u"difficulty");
+/* …dump_dataset 覆盖… */
+ds.set(u"difficulty", difficulty);
+// 新（= TS）
+/* …dump_dataset 覆盖… */
+```
+
+char_menu 用例走的正是「切到生存排行 → 重置 dataset」那条路，所以 C++ 保留的 `2` 与
+TS 的默认 `3` 对不上。
+
+### 166.2. `4d209569b`：`defend_desire_step` 2500 → 1800
+
+`bot_dataset.cpp` 的默认表跟着改。这条**会动摘要**（bot 的防御欲望是每帧都在用的量）：
+
+| 摘要 | 改前 | 改后 |
+| --- | --- | --- |
+| `--ui-page main_page` 2400 帧 | `56bd53ab3ae75154` | `b3f9a34a67597b08` |
+| `--stage 1` 900 帧 | `4c5ef7aa63c97056` | 不变 |
+| 默认 300 帧 | `b18b9d0d7892aef5` | 不变 |
+
+后两条不变是因为那条路里没有 bot（`stage 1` 的对手是脚本化的假实体）。
+
+### 166.3. 补的观测面
+
+* `cases/bot/state_keys.txt`：在 `make` 之后按 `diff n 1` / `2` / `3` 各读一次
+  `get defend_desire`。新锚点「数据集默认 defend_desire_step 1800 改回 2500」加上之前是
+  **存活**的（`bot` 的 8 份用例从来没读这个 getter），补完三档立刻 killed。
+* `lfw_char_menu.mjs`：加「重置 dataset 时保留旧难度」（让 dump 循环跳过 `difficulty`）——
+  这条钉住的就是 §166.1 的行为。

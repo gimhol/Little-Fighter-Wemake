@@ -181,8 +181,8 @@ export default {
 
     // ---- summary_logic.cpp：start/stop/update ----
     { note: "SummaryLogic：start 不筛 fighter", file: "native/lfw/ui/component/summary_logic.cpp",
-      from: '    if (entity::is_fighter(ref_of(*e))) on_fighter_add(*e);',
-      to: '    if (!entity::is_fighter(ref_of(*e))) on_fighter_add(*e);' },
+      from: '    if (entity::is_fighter(*e)) on_fighter_add(*e);',
+      to: '    if (!entity::is_fighter(*e)) on_fighter_add(*e);' },
     { note: "SummaryLogic：stop 不退订世界", file: "native/lfw/ui/component/summary_logic.cpp",
       from: 'void SummaryLogic::on_stop() { world().callbacks.del(&_world_cb); }',
       to: 'void SummaryLogic::on_stop() {}' },
@@ -376,8 +376,8 @@ export default {
       from: '  if (fighter->hp() > 0) return false;',
       to: '  if (fighter->hp() >= 0) return false;' },
     { note: "PlayerScore：同伴判败", file: "native/lfw/ui/component/player_score.cpp",
-      from: '    if (o != fighter && entity::is_fighter(ref_of(*o)) && o->hp() > 0 &&\n        o->team() == fighter->team()) {',
-      to: '    if (o != fighter && entity::is_fighter(ref_of(*o)) && o->hp() > 0 &&\n        o->team() != fighter->team()) {' },
+      from: '    if (o != fighter && entity::is_fighter(*o) && o->hp() > 0 &&\n        o->team() == fighter->team()) {',
+      to: '    if (o != fighter && entity::is_fighter(*o) && o->hp() > 0 &&\n        o->team() != fighter->team()) {' },
     { note: "PlayerScore：可见性反了", file: "native/lfw/ui/component/player_score.cpp",
       from: '  node.set_visible(fighter() != nullptr);',
       to: '  node.set_visible(fighter() == nullptr);' },

@@ -385,7 +385,7 @@ std::vector<DanmuGameLogic::ViewerStat> DanmuGameLogic::viewer_stats() {
   const std::u16string mark = danmu_uid_mark();
   std::set<std::u16string> alive;
   for (Entity* const e : world().entities) {
-    if (!entity::is_fighter(ref_of(*e)) || e->hp() <= 0) continue;
+    if (!entity::is_fighter(*e) || e->hp() <= 0) continue;
     const auto it = e->marks.find(mark);
     if (it != e->marks.end() && !it->second.empty()) alive.insert(it->second);
   }
@@ -489,7 +489,7 @@ Entity* DanmuGameLogic::find_claimable_template() {
   if (!template_.has_value()) return nullptr;
   const std::u16string mark = danmu_uid_mark();
   for (Entity* const e : world().entities) {
-    if (e->mounted() == 0 || !entity::is_fighter(ref_of(*e)) || e->hp() <= 0) continue;
+    if (e->mounted() == 0 || !entity::is_fighter(*e) || e->hp() <= 0) continue;
     if (!equals(field_or(e->data(), u"id"), field_or(*template_, u"id"))) continue;
     if (e->marks.find(mark) != e->marks.end()) continue;
     return e;
@@ -605,7 +605,7 @@ void DanmuGameLogic::untrack_viewer(Entity& e) {
 Entity* DanmuGameLogic::find_viewer_fighter(const std::u16string& uid) {
   const std::u16string mark = danmu_uid_mark();
   for (Entity* const e : world().entities) {
-    if (!entity::is_fighter(ref_of(*e)) || e->hp() <= 0) continue;
+    if (!entity::is_fighter(*e) || e->hp() <= 0) continue;
     const auto it = e->marks.find(mark);
     if (it != e->marks.end() && it->second == uid) return e;
   }
@@ -647,7 +647,7 @@ std::vector<helper::Entrant> DanmuGameLogic::collect_survivors() {
   std::set<std::u16string> seen;
   const std::u16string mark = danmu_uid_mark();
   for (Entity* const e : world().entities) {
-    if (!entity::is_fighter(ref_of(*e)) || e->hp() <= 0) continue;
+    if (!entity::is_fighter(*e) || e->hp() <= 0) continue;
     const auto it = e->marks.find(mark);
     if (it == e->marks.end() || it->second.empty()) continue;
     const std::u16string& uid = it->second;

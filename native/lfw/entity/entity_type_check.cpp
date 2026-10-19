@@ -7,6 +7,7 @@
 #include "lfw/core/value.h"
 #include "lfw/defines/entity_enum.h"
 #include "lfw/defines/entity_group.h"
+#include "lfw/entity/entity.h"
 #include "lfw/utils/container_help/field_or.h"
 
 namespace lfw {
@@ -44,6 +45,12 @@ bool is_fighter(const Value& v) { return is_fighter_data(field_or(v, u"data")); 
 bool is_ball(const Value& v) { return is_ball_data(field_or(v, u"data")); }
 
 bool is_weapon(const Value& v) { return is_weapon_data(field_or(v, u"data")); }
+
+bool is_fighter(const Entity& e) { return is_fighter_data(e.data()); }
+
+bool is_ball(const Entity& e) { return is_ball_data(e.data()); }
+
+bool is_weapon(const Entity& e) { return is_weapon_data(e.data()); }
 
 bool is_entity(const Value& v) { return is_entity_data(field_or(v, u"data")); }
 

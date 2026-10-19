@@ -18,7 +18,9 @@ struct NbdDefendEnv {
   std::function<Entity*(const std::u16string& id)> find_entity;
   std::function<ItrVelocity(Collision& c)> calc_velocity;
   std::function<void(const Value& x, const Value& y, const Value& z, const Value& type)> spark;
-  std::function<void(const std::u16string& handler_type, const Value& action)> dispatch;
+  // `run_action(type, action, attacker, victim, …)`：那两个实体就是碰撞的 a/v。
+  std::function<void(const Collision& c, const std::u16string& handler_type, const Value& action)>
+      dispatch;
 };
 
 void handle_itr_normal_bdy_defend(Collision& c);

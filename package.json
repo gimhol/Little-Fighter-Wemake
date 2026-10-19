@@ -1,6 +1,6 @@
 {
   "name": "little-fighter-wemake",
-  "version": "0.1.61",
+  "version": "0.1.62",
   "type": "module",
   "private": true,
   "homepage": ".",
@@ -15,6 +15,8 @@
     "preview": "vite preview",
     "test": "jest",
     "native": "node native/tools/native.mjs",
+    "godot": "node native/tools/native.mjs godot-run",
+    "godot:headless": "node native/tools/native.mjs godot-run --headless",
     "___build___": "___build___",
     "build:tool": "cd ./tool && npm i && npm run build",
     "build:data": "node ./tool make-data-zip -c ./lf2s/origin/conf.json5 -d",

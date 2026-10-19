@@ -95,7 +95,7 @@ void cmd_f7(CMDS& ctx) {
   world.add_count(u"f7", 1.0);
   for (Entity* const e : world.entities) {
     if (e == nullptr) continue;
-    if (!entity::is_fighter(ref_of(*e))) continue;
+    if (!entity::is_fighter(*e)) continue;
     // TS `e.hp = e.hp_r = e.hp_max`：`hp_max` 只读一次，先写 `hp_r` 再写 `hp`。
     const double hp_max = e->hp_max();
     e->set_hp_r(hp_max);
@@ -152,11 +152,11 @@ void cmd_f9(CMDS& ctx) {
   // TS `Array.from(c.world.entities)`：快照后再遍历。
   const std::vector<Entity*> entities = world.entities;
   for (Entity* const e : entities) {
-    if (e != nullptr && entity::is_weapon(ref_of(*e))) e->set_hp(0.0);
+    if (e != nullptr && entity::is_weapon(*e)) e->set_hp(0.0);
   }
   const std::vector<Entity*> ghosts = world.ghosts;
   for (Entity* const e : ghosts) {
-    if (e != nullptr && entity::is_weapon(ref_of(*e))) e->set_hp(0.0);
+    if (e != nullptr && entity::is_weapon(*e)) e->set_hp(0.0);
   }
 }
 

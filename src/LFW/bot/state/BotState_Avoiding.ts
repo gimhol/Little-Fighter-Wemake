@@ -1,8 +1,11 @@
 
-import { AGK, Defines, GK, StateEnum, WeaponEnum } from "../../defines";
+import { AGK, Defines, Difficulty, GK, StateEnum, WeaponEnum } from "../../defines";
 import { BSE } from "../../defines/BotStateEnum";
 import { abs, between, clamp, round, round_float } from "../../utils/math";
 import { BotState_Base } from "./BotState";
+
+const Z_KEEP_PAD_NUM = 3;
+const Z_KEEP_PAD_DEN = 2;
 
 export class BotState_Avoiding extends BotState_Base {
   readonly key = BSE.Avoiding;
@@ -114,10 +117,12 @@ export class BotState_Avoiding extends BotState_Base {
     if (dead_zone_only && !cornered) {
       const { w_atk_min_z: z_min, w_atk_max_z: z_max } = c.dataset;
       const z_pad = abs(z_max - z_min);
-      if (between(rz, z_min, z_max)) {
+      const z_keep_pad = round((z_pad * Z_KEEP_PAD_NUM) / Z_KEEP_PAD_DEN);
+      const keep_z = this.difficulty >= Difficulty.Difficult;
+      if (keep_z && between(rz, z_min, z_max)) {
         c.key_down(z_forwrd_key)
         c.key_up(z_backward_key)
-      } else if (between(rz, z_min - z_pad, z_max + z_pad)) {
+      } else if (keep_z && between(rz, z_min - z_keep_pad, z_max + z_keep_pad)) {
         c.key_up(GK.U, GK.D)
       } else {
         this.hold_UD(rz, z_min, z_max)

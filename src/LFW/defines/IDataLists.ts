@@ -1,3 +1,4 @@
+import type { IDirectorIndex } from "./IDirectorIndex";
 import type { IDatIndex, ITempDatIndex } from "./IDatIndex";
 
 export interface IDataLists {
@@ -6,6 +7,8 @@ export interface IDataLists {
   stages: IDatIndex[];
   bots: IDatIndex[];
   moves?: IDatIndex[];
+
+  directors?: IDirectorIndex[];
 }
 
 export interface ITempDataLists {
@@ -14,4 +17,5 @@ export interface ITempDataLists {
   stages: ITempDatIndex[];
   bots: ITempDatIndex[];
   moves?: ITempDatIndex[];
+  directors?: IDirectorIndex[];
 }

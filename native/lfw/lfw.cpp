@@ -22,6 +22,7 @@
 #include "lfw/entity/entity_ref.h"
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/loader/stage_val_getters.h"
+#include "lfw/state/entity_states.h"
 #include "lfw/ui/component/component_registry.h"
 #include "lfw/ui/cook_ui_info.h"
 #include "lfw/ui/uilayer.h"
@@ -241,8 +242,8 @@ LFW::LFW(ILfwHost& host, bool dev) : host_(&host), zips_(), _mt(host.now()) {
     _players.push_back({id, std::make_unique<PlayerInfo>(this, id, Value(), Value(), Value())});
   }
 
-  _states = std::make_unique<state::States>();
-  world_ = std::make_unique<World>(*this, *host_->create_world_renderer(*this), _states.get());
+  _states = &state::entity_states();
+  world_ = std::make_unique<World>(*this, *host_->create_world_renderer(*this), _states);
   world_->start_update();
   world_->start_render();
   instances_ref().push_back(this);
@@ -609,7 +610,7 @@ void LFW::goto_next_stage() {
   }
   if (next_stage != nullptr && truthy(field_or(*next_stage, u"is_starting"))) {
     for (Entity* const e : world_->entities) {
-      if (entity::is_fighter(ref_of(*e)) && e->ctrl() != nullptr &&
+      if (entity::is_fighter(*e) && e->ctrl() != nullptr &&
           players_has(Value(e->ctrl()->player_id))) {
         continue;
       }
@@ -898,7 +899,7 @@ const std::vector<Entity*>& LFW::world_ghosts() { return world_->ghosts; }
 void LFW::del_entities(const std::vector<Entity*>& list) { world_->del_entities(list); }
 
 Entity* LFW::create_entity(const Value& data) {
-  return factory.create_entity(world_.get(), data, _states.get());
+  return factory.create_entity(world_.get(), data, _states);
 }
 
 controller::BaseController* LFW::create_ctrl(const Value& oid, const std::u16string& player_id,
@@ -974,7 +975,7 @@ std::shared_ptr<Randoming> LFW::datas_randoming_by_group(const Value& oid) {
 Entity* LFW::create_entity_with_bot(const Value& data) {
   // 切片 4CV（ck8）：`IItemEntity` 退役 ⇒ 直接给真实体（原来包一层 `EntityItem` 适配器 +
   // `entity_items_` 缓存；实体本来就由工厂/世界持有，适配器没有别的用途）。
-  return factory.create_entity_with_bot(std::u16string(), world_.get(), data, _states.get());
+  return factory.create_entity_with_bot(std::u16string(), world_.get(), data, _states);
 }
 
 Value LFW::get_random_bg(const std::vector<Value>& groups) {
@@ -1057,16 +1058,12 @@ controller::BaseController* LFW::create_ctrl(const std::u16string& data_id,
 
 void LFW::ctrl_update_lookup(controller::BaseController& ctrl, double index,
                              std::vector<Entity*>& entities) {
-  // ⚠ 这里要的是「控制器看的实体视图」= `ref_of()`（含 `data`/`position`/`team`…），**不是**
-  // `Entity::ref()` 那个薄引用（TS 的 `ref` 只有 `{id}`）。喂薄引用会让 `BotController::lookup`
-  // 的 `is_fighter/is_weapon/is_ball(other)` 全恒假 ⇒ chasings/avoidings/defends 永远空
-  // ⇒ bot 有目标也不追不打（DESIGN §145）。
-  std::vector<Value> vals;
-  for (Entity* const e : entities) vals.push_back(ref_of(*e));
+  // 直接把实体表给控制器（目标表 / `chasing` 用 `TargetHandle` 存，身份靠 `id` 复核 ——
+  // 实体是池化复用的，裸指针不能单独当身份）。以前这里每个控制器都 `ref_of` 一遍整张表。
   if (ctrl.creator() == controller::bot_controller_creator()) {
-    static_cast<bot::BotController*>(&ctrl)->update_lookup(static_cast<int>(index), vals);
+    static_cast<bot::BotController*>(&ctrl)->update_lookup(static_cast<int>(index), entities);
   } else if (ctrl.creator() == controller::ball_controller_creator()) {
-    static_cast<controller::BallController*>(&ctrl)->update_lookup(static_cast<int>(index), vals);
+    static_cast<controller::BallController*>(&ctrl)->update_lookup(static_cast<int>(index), entities);
   }
 }
 

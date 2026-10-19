@@ -20,7 +20,7 @@ bool frame_state_is(const controller::CtrlEnv& e, StateEnum s) {
 
 // `this.following?.position ?? this.goingto`
 Value follow_pos(const BotController& c) {
-  const Value pos = truthy(c.following) ? field_or(c.following, u"position") : Value();
+  const Value pos = !c.following.nullish() ? field_or(c.following.ref(), u"position") : Value();
   return nullish(pos) ? c.goingto : pos;
 }
 

@@ -14,6 +14,7 @@
 #include "lfw/defines/frame_behavior.h"
 #include "lfw/defines/frame_id.h"
 #include "lfw/defines/game_key.h"
+#include "lfw/entity/entity.h"
 #include "lfw/entity/entity_flag.h"
 #include "lfw/helper/closer_one.h"
 #include "lfw/helper/manhattan_xz.h"
@@ -57,20 +58,6 @@ Value self_ref(const CtrlEnv& e) {
   return Value(std::make_shared<Object>(o));
 }
 
-// TS 的 `this.chasing` 是**活实体**（读的时候才取字段）；端口存的是建引用那一刻的快照。
-// 名单（= 世界里的实体表）里还有同一个 `id` 时就认领名单里的新引用 —— 这样
-// `should_chase(current)` / `aim_at(current)` 读到的字段与 TS 一致。目标已不在名单里时，
-// 端口只能接着用旧快照（TS 读的是那个活对象，这是已知的偏差，见 DESIGN）。
-Value reidentify(const Value& ref, const std::vector<Value>& entities) {
-  if (!truthy(ref)) return ref;
-  const Value id = field_or(ref, u"id");
-  if (!truthy(id)) return ref;
-  for (const Value& candidate : entities) {
-    if (strict_equals(field_or(candidate, u"id"), id)) return candidate;
-  }
-  return ref;
-}
-
 // TS 的 `??` —— 只对 null/undefined 兜底（0 与 NaN 都原样保留）。
 Value or_nullish(const Value& v, const Value& fallback) {
   if (std::holds_alternative<std::monostate>(v) || std::holds_alternative<NullTag>(v)) return fallback;
@@ -81,7 +68,7 @@ Value or_nullish(const Value& v, const Value& fallback) {
 
 void BallController::reset() {
   BaseController::reset();
-  chasing = Value();
+  chasing = TargetHandle();
   gave_up = false;
   dir_x = 0;
   dir_y = 0;
@@ -133,7 +120,23 @@ bool BallController::should_chase(const Value& other) const {
   return (js_to_int32(target) & js_to_int32(flag)) == js_to_int32(target);
 }
 
+void BallController::update_lookup(int me, const std::vector<Entity*>& entities) {
+  std::vector<TargetHandle> list;
+  list.reserve(entities.size());
+  for (Entity* const e : entities) {
+    list.push_back(e != nullptr ? TargetHandle::of(*e) : TargetHandle());
+  }
+  update_lookup(me, list);
+}
+
 void BallController::update_lookup(int me, const std::vector<Value>& entities) {
+  std::vector<TargetHandle> list;
+  list.reserve(entities.size());
+  for (const Value& v : entities) list.push_back(TargetHandle::of(v));
+  update_lookup(me, list);
+}
+
+void BallController::update_lookup(int me, const std::vector<TargetHandle>& entities) {
   const CtrlEnv* e = env();
   if (e == nullptr) return;
   const Value chase_info = field_or(e->frame, u"chase");
@@ -142,55 +145,84 @@ void BallController::update_lookup(int me, const std::vector<Value>& entities) {
   if (stratedy == static_cast<double>(ChaseStrategy::StopOnLost) && gave_up) return;
 
   const int count = static_cast<int>(entities.size());
-  const Value self = self_ref(*e);
+  // TS 的 `const self = this.entity`：真实运行时 `CtrlEnv::self` 就是它（位置活读）；
+  // 差分台面没有 `Entity`，退回只带 `position` 的投影（距离的输入仍与 TS 一致）。
+  // **不能**拿 `entities[me]` 顶替：`me` 是「自己在名单里的下标」，只有调用方保证它
+  // 指向自己时两者才等价。
+  const Entity* const self_e = e->self;
+  const Value self = self_e != nullptr ? Value() : self_ref(*e);
 
-  const Value current = reidentify(chasing, entities);
-  chasing = current;
-  const bool still_valid = should_chase(current);
-  if (!still_valid) chasing = Value();
-  if (truthy(current) &&
+  chasing.refresh();
+  const TargetHandle current = chasing;
+  const bool still_valid = should_chase(current.ref());
+  if (!still_valid) chasing = TargetHandle();
+  if (!current.nullish() &&
       (stratedy == static_cast<double>(ChaseStrategy::UntilLost) ||
        (still_valid && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)))) {
-    aim_at(current);
+    aim_at(current.ref());
     return;
   }
-  if (truthy(current) && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)) {
+  if (!current.nullish() && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)) {
     gave_up = true;
     stop_chasing();
     return;
   }
-  if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = Value();
+  if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = TargetHandle();
 
-  const double x0 = ref_x(self);
+  const double x0 = self_e != nullptr ? self_e->position.x : ref_x(self);
   int i1 = me - 1;
   int i2 = me + 1;
-  Value found;
+  TargetHandle found;
   double found_d = std::numeric_limits<double>::infinity();
 
-  Value e2;
+  TargetHandle e2;
   do {
-    Value l = (i1 >= 0 && i1 < count) ? entities[static_cast<size_t>(i1)] : Value();
-    Value r = (i2 >= 0 && i2 < count) ? entities[static_cast<size_t>(i2)] : Value();
-    if (truthy(found)) {
-      if (truthy(l) && x0 - ref_x(l) >= found_d) l = Value();
-      if (truthy(r) && ref_x(r) - x0 >= found_d) r = Value();
+    TargetHandle l = (i1 >= 0 && i1 < count) ? entities[static_cast<size_t>(i1)] : TargetHandle();
+    TargetHandle r = (i2 >= 0 && i2 < count) ? entities[static_cast<size_t>(i2)] : TargetHandle();
+    if (!found.nullish()) {
+      if (!l.nullish() && x0 - l.x() >= found_d) l = TargetHandle();
+      if (!r.nullish() && r.x() - x0 >= found_d) r = TargetHandle();
     }
-    e2 = helper::closer_one(self, l, r);
-    if (!truthy(e2)) break;
-    if (!truthy(field_or(e2, u"ghosted")) && should_chase(e2)) {
-      const double d = helper::manhattan_xz(self, e2);
+    const Entity* const le = l.entity();
+    const Entity* const re = r.entity();
+    if (self_e != nullptr && le != nullptr && re != nullptr) {
+      e2 = helper::manhattan_xz(*self_e, *le) > helper::manhattan_xz(*self_e, *re) ? r : l;
+    } else if (self_e != nullptr && le != nullptr) {
+      e2 = l;
+    } else if (self_e != nullptr && re != nullptr) {
+      e2 = r;
+    } else {
+      // 两条都是台面的引用快照（没有 `Entity`）：退回 `closer_one` + 引用同一性。
+      const Value picked = helper::closer_one(self, l.ref(), r.ref());
+      if (same_ref(picked, l.ref())) {
+        e2 = l;
+      } else if (same_ref(picked, r.ref())) {
+        e2 = r;
+      }
+    }
+    if (e2.nullish()) break;
+    if (!truthy(field_or(e2.ref(), u"ghosted")) && should_chase(e2.ref())) {
+      const Entity* const live = e2.entity();
+      const double d =
+          self_e != nullptr && live != nullptr
+              ? helper::manhattan_xz(*self_e, *live)
+              : (self_e != nullptr ? helper::manhattan_xz(*self_e, e2.ref())
+                                   : helper::manhattan_xz(self, e2.ref()));
       if (d < found_d) {
         found = e2;
         found_d = d;
       }
     }
-    if (same_ref(l, e2)) --i1;
-    if (same_ref(r, e2)) ++i2;
-  } while (truthy(e2));
+    if (l.same(e2)) --i1;
+    if (r.same(e2)) ++i2;
+    // 两侧都没推进就没有下一轮可看（句柄换成实体之后才可能出现：TS 那边 `e` 一定来自
+    // 名单里，所以它不会死循环）。留一条出路，别让台面挂住。
+    if (!l.same(e2) && !r.same(e2)) break;
+  } while (!e2.nullish());
 
-  if (!truthy(found)) return;
+  if (found.nullish()) return;
   chasing = found;
-  aim_at(found);
+  aim_at(found.ref());
 }
 
 const ControllerResult& BallController::update() {
@@ -238,18 +270,18 @@ const ControllerResult& BallController::update() {
 void BallController::update_chasing(const Value& chase) {
   const CtrlEnv* e = env();
   if (e == nullptr) return;
-  const Value chasing_now = chasing;
+  const TargetHandle chasing_now = chasing;
   const double facing = e->facing;
   const double hp = e->hp;
 
-  if (truthy(chasing_now)) {
+  if (!chasing_now.nullish()) {
     // `const { oy = 0.5 } = chase`
     const Value oy_v = field_or(chase, u"oy");
     const double oy = std::holds_alternative<std::monostate>(oy_v) ||
                               std::holds_alternative<NullTag>(oy_v)
                           ? 0.5
                           : to_number(oy_v);
-    aim_at(chasing_now, oy);
+    aim_at(chasing_now.ref(), oy);
   }
 
   const Vector3& cp = chase_point();
@@ -263,7 +295,7 @@ void BallController::update_chasing(const Value& chase) {
   const double over_z = to_number(or_nullish(field_or(overshoot, u"z"), Value(0.0)));
   const double lost = to_number(field_or(chase, u"lost"));
 
-  if (hp > 0 && (truthy(chasing_now) ||
+  if (hp > 0 && (!chasing_now.nullish() ||
                  (js_to_int32(lost) & static_cast<int32_t>(ChaseLost::Hover)) != 0)) {
     dir_x = calc_dir(x - e->px, over_x, dir_x);
     if (dir_x > 0) {
@@ -336,7 +368,7 @@ void BallController::stop_chasing() {
   dir_x = 0;
   dir_y = 0;
   dir_z = 0;
-  chasing = Value();
+  chasing = TargetHandle();
 }
 
 }

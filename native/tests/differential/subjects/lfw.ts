@@ -61,7 +61,7 @@ import { FighterStatBar } from "../../../../src/LFW/ui/component/FighterStatBar"
 import { CameraCtrl } from "../../../../src/LFW/ui/component/CameraCtrl";
 import { CharMenuLogic } from "../../../../src/LFW/ui/component/CharMenu/CharMenuLogic";
 import { LaunchPage } from "../../../../src/LFW/ui/component/LaunchPageLogic";
-import { ActionDirector } from "../../../../src/LFW/ui/component/Tests/ActionDirector";
+import { ActionDirector } from "../../../../src/LFW/director/ActionDirector";
 import { DanmuGameLogic } from "../../../../src/LFW/ui/component/DanmuGameLogic";
 import { LittleFunnyAutoGame } from "../../../../src/LFW/ui/component/LittleFunnyAutoGame";
 import { SineOpacity } from "../../../../src/LFW/ui/component/SineOpacity";

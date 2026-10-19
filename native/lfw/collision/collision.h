@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "lfw/collision/actor_handle.h"
 #include "lfw/core/value.h"
 
 namespace lfw {
@@ -15,10 +16,10 @@ struct Collision;
 struct HandlersEnv {
   std::function<void(Collision& c)> victim_add_v_rest;
   std::function<void(Collision& c)> attacker_pick_victim;
-  std::function<Value()> attacker_itr_motionless;
-  std::function<void(const Value& v)> attacker_set_motionless;
-  std::function<void(const Value& v)> victim_set_shaking;
-  std::function<void(double v)> attacker_set_arest;
+  std::function<Value(const Collision& c)> attacker_itr_motionless;
+  std::function<void(const Collision& c, const Value& v)> attacker_set_motionless;
+  std::function<void(const Collision& c, const Value& v)> victim_set_shaking;
+  std::function<void(const Collision& c, double v)> attacker_set_arest;
   std::function<bool(const std::u16string& id)> buff_get;
   std::function<void(const std::u16string& id)> buff_lifetime_zero;
   std::function<bool(const std::u16string& kind, const std::u16string& id)> buff_create;
@@ -27,29 +28,6 @@ struct HandlersEnv {
   std::function<void(const std::u16string& id, const std::u16string& victim_id)>
       buff_set_victim;
   std::function<void(const std::u16string& id)> buff_mount;
-};
-
-struct CollisionActor {
-  std::u16string id;
-  double px = 0;
-  double py = 0;
-  double pz = 0;
-  std::u16string data_id;
-  double data_type = 0;
-  Value frame;
-  Value itr_prefabs;
-  Value bear_wpoint_attacking;
-  bool marks_group_attack = false;
-  bool dropping = false;
-  Value arest;
-  bool has_catcher = false;
-  Value catcher_hurtable;
-  Value invulnerable;
-  Value bot_ignore;
-  Value team;
-  Value emitter;
-  Value spawn_time;
-  bool is_bot_ctrl = false;
 };
 
 struct Cube {
@@ -62,17 +40,17 @@ struct Cube {
 };
 
 struct CollisionCoreEnv {
-  std::function<Cube(const CollisionActor& a, const Value& frame, const Value& box)> get_bounding;
+  std::function<Cube(const ActorHandle& a, const Value& frame, const Value& box)> get_bounding;
   std::function<Value()> dataset;
-  std::function<bool(const std::u16string& aid)> victim_get_v_rest;
-  std::function<bool()> attacker_is_ally;
+  std::function<bool(const Collision& c)> victim_get_v_rest;
+  std::function<bool(const Collision& c)> attacker_is_ally;
   std::function<Collision&()> acquire_collision;
   std::function<std::u16string()> new_id;
   std::function<bool()> dev;
   std::function<void(const std::u16string& msg)> log;
   std::function<Value(const Value& tester)> tester_debug;
   std::function<bool(const Value& tester, Collision& c)> tester_run;
-  std::function<bool(const std::u16string& id, CollisionActor& out)> find_entity;
+  std::function<bool(const std::u16string& id, ActorHandle& out)> find_entity;
   std::function<bool(const std::u16string& id, Value& out)> find_object_data;
   std::function<Value(double data_type)> priority_of;
   std::function<bool(Collision& c)> load_handlers;
@@ -82,8 +60,8 @@ struct Collision {
   const HandlersEnv* env = nullptr;
   const CollisionCoreEnv* core = nullptr;
   std::u16string id;
-  CollisionActor attacker;
-  CollisionActor victim;
+  ActorHandle attacker;
+  ActorHandle victim;
   Value itr;
   Value bdy;
   Value aframe;
@@ -119,8 +97,8 @@ struct Collision {
 };
 
 struct CollisionInits {
-  CollisionActor attacker;
-  CollisionActor victim;
+  ActorHandle attacker;
+  ActorHandle victim;
   Value itr;
   Value bdy;
   Value aframe;
@@ -152,8 +130,8 @@ struct CollisionSnapshot {
 };
 
 Collision& collision_new(const CollisionCoreEnv& core, const CollisionInits& o);
-Collision* collision_get(const CollisionCoreEnv& core, const CollisionActor& attacker,
-                         const CollisionActor& victim);
+Collision* collision_get(const CollisionCoreEnv& core, const ActorHandle& attacker,
+                         const ActorHandle& victim);
 bool collision_test(Collision& c);
 CollisionSnapshot collision_to_snapshot(const Collision& c);
 Collision* collision_from_snapshot(const CollisionCoreEnv& core, const CollisionSnapshot& s);

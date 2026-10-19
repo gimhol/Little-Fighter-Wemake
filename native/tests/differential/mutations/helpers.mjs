@@ -450,5 +450,29 @@ export default {
       from: `double Keys::time() const { return _lfw->lifetime(); }`,
       to: `  double time() const { return 0.0; }`,
     },
+    {
+      note: "eval_number：nullish 不返 0",
+      file: "native/lfw/utils/eval_number.cpp",
+      from: `  if (s == nullptr) return 0.0;`,
+      to: `  if (s == nullptr) return 1.0;`,
+    },
+    {
+      note: "eval_number：number 不走直通",
+      file: "native/lfw/utils/eval_number.cpp",
+      from: `  if (const double* const d = std::get_if<double>(&value)) return *d;`,
+      to: `  if (std::get_if<double>(&value) != nullptr) return 0;`,
+    },
+    {
+      note: "eval_number：减法当加法",
+      file: "native/lfw/utils/eval_number.cpp",
+      from: `      v = c == u'+' ? v + r : v - r;`,
+      to: `      v = v + r;`,
+    },
+    {
+      note: "eval_number：除法当乘法",
+      file: "native/lfw/utils/eval_number.cpp",
+      from: `      v = c == u'*' ? v * r : v / r;`,
+      to: `      v = v * r;`,
+    },
   ],
 };

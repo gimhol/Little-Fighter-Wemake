@@ -87,14 +87,14 @@ export default {
     {
       note: "debug line prints the victim type as the attacker type",
       file: "native/lfw/collision/keeper.cpp",
-      from: "    const std::u16string desc = u\"[\" + number_to_string(collision.attacker.data_type) + u\"]#\" +",
-      to: "    const std::u16string desc = u\"[\" + number_to_string(collision.victim.data_type) + u\"]#\" +",
+      from: "    const std::u16string desc = u\"[\" + number_to_string(collision.attacker.data_type()) + u\"]#\" +",
+      to: "    const std::u16string desc = u\"[\" + number_to_string(collision.victim.data_type()) + u\"]#\" +",
     },
     {
       note: "debug line prints the attacker type as the victim type",
       file: "native/lfw/collision/keeper.cpp",
-      from: "                                number_to_string(collision.victim.data_type) + u\"]#\" + bdy_name;",
-      to: "                                number_to_string(collision.attacker.data_type) + u\"]#\" + bdy_name;",
+      from: "                                number_to_string(collision.victim.data_type()) + u\"]#\" + bdy_name;",
+      to: "                                number_to_string(collision.attacker.data_type()) + u\"]#\" + bdy_name;",
     },
     {
       note: "debug line loses the arrow",
@@ -317,20 +317,20 @@ export default {
     {
       note: "hit sounds are read without the base object",
       file: "native/lfw/collision/keeper.cpp",
-      from: '    g_env.victim_play_sound(field_or(field_or(data, u"base"), u"hit_sounds"));',
-      to: '    g_env.victim_play_sound(field_or(data, u"hit_sounds"));',
+      from: '    g_env.victim_play_sound(collision, field_or(field_or(data, u"base"), u"hit_sounds"));',
+      to: '    g_env.victim_play_sound(collision, field_or(data, u"hit_sounds"));',
     },
     {
       note: "hit sounds fall back to the base object",
       file: "native/lfw/collision/keeper.cpp",
-      from: '    g_env.victim_play_sound(field_or(field_or(data, u"base"), u"hit_sounds"));',
-      to: '    g_env.victim_play_sound(field_or(data, u"base"));',
+      from: '    g_env.victim_play_sound(collision, field_or(field_or(data, u"base"), u"hit_sounds"));',
+      to: '    g_env.victim_play_sound(collision, field_or(data, u"base"));',
     },
     {
       note: "the victim hit sound is replaced by undefined",
       file: "native/lfw/collision/keeper.cpp",
-      from: '    g_env.victim_play_sound(field_or(field_or(data, u"base"), u"hit_sounds"));',
-      to: "    g_env.victim_play_sound(Value());",
+      from: '    g_env.victim_play_sound(collision, field_or(field_or(data, u"base"), u"hit_sounds"));',
+      to: "    g_env.victim_play_sound(collision, Value());",
     },
   ],
 };

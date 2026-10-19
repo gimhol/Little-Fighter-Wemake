@@ -97,9 +97,11 @@ add_library(lfw_core STATIC
   entity/face_helper.cpp
   entity/find_frame_direction.cpp
   entity/entity_dataset.cpp
+  entity/gen_field.cpp
   entity/entity.cpp
   entity/summary.cpp
   entity/entity_ref.cpp
+  entity/target_handle.cpp
   entity/summary_mgr.cpp
   entity/drink_info.cpp
   collision/is_fall.cpp
@@ -107,7 +109,8 @@ add_library(lfw_core STATIC
   collision/is_armor_work.cpp
   collision/calc_itr_velocity.cpp
   collision/handlers.cpp
-  collision/collision.cpp
+  collision/actor_handle.cpp
+collision/collision.cpp
   collision/action_handlers.cpp
   collision/handlers2.cpp
   collision/handlers3.cpp
@@ -173,6 +176,7 @@ add_library(lfw_core STATIC
   loader/preprocess_stage.cpp
   loader/preprocess_ball_frame.cpp
   loader/preprocess_frame.cpp
+  loader/normalize_directors.cpp
   loader/preprocess_bg_data.cpp
   loader/resolve_prefab.cpp
   loader/preprocess_action.cpp
@@ -194,6 +198,7 @@ add_library(lfw_core STATIC
   utils/math/probability.cpp
   utils/math/project_to_line.cpp
   utils/utf8.cpp
+  utils/eval_number.cpp
   utils/js_add.cpp
   utils/times.cpp
   utils/read_nums.cpp
@@ -280,7 +285,8 @@ add_library(lfw_core STATIC
   ui/component/move_table/move_table_logic.cpp
   ui/component/game_prepare_logic.cpp
   ui/component/launch_page_logic.cpp
-  ui/component/action_director.cpp
+  director/action_director.cpp
+  director/director.cpp
   ui/component/little_funny_auto_game.cpp
   ui/component/danmu_game_logic.cpp
   ui/component/fighter_stat_bar.cpp
@@ -288,6 +294,9 @@ add_library(lfw_core STATIC
   ui/component/player_score_cell.cpp
   ui/component/player_score_player_name.cpp
   ui/component/team_situation_text.cpp
+  ui/component/tests/director_test_case.cpp
+  ui/component/tests/test_case.cpp
+  ui/component/tests/tests.cpp
   ui/instance_ref.cpp
   helper/randoming.cpp
   state/spawn_ice_piece.cpp
@@ -329,6 +338,7 @@ add_library(lfw_core STATIC
   dat_translator/xml/xml_x_chase.cpp
   dat_translator/xml/xml_x_dat_index.cpp
   dat_translator/xml/xml_x_difficulty_map.cpp
+  dat_translator/xml/xml_x_director.cpp
   dat_translator/xml/xml_x_map.cpp
   dat_translator/xml/xml_x_hit_key_map.cpp
   dat_translator/xml/xml_x_partial_world_dataset.cpp

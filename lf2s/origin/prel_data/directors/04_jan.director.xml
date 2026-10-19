@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="jan" name="Jan">
+  <director name="Jan D^A 1">
+    <actors>
+      <actor id="jan" oid="jan" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="jan" click="d,U,a" />
+    </setup>
+  </director>
+  <director name="Jan D^A 2">
+    <actors>
+      <actor id="jan" oid="jan" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="jan" click="d,U,a" />
+    </setup>
+  </director>
+  <director name="Jan D^J 1">
+    <actors>
+      <actor id="jan" oid="jan" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="true" />
+          <value name="hp" type="num" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="true" />
+          <value name="hp" type="num" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="jan" click="d,U,j" />
+    </setup>
+  </director>
+  <director name="Jan D^J 2">
+    <actors>
+      <actor id="jan" oid="jan" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="true" />
+          <value name="hp" type="num" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="jan" click="d,U,j" />
+    </setup>
+  </director>
+</directors>

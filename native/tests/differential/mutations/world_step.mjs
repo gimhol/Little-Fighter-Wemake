@@ -234,8 +234,8 @@ export default {
       file: "native/lfw/world.cpp",
       from: `    a->update();
 
-    if (entity::is_fighter(ref_of(*a))) {`,
-      to: `    if (entity::is_fighter(ref_of(*a))) {`,
+    if (entity::is_fighter(*a)) {`,
+      to: `    if (entity::is_fighter(*a)) {`,
     },
     {
       note: "step: 存活队伍计数不再累加",
@@ -258,9 +258,9 @@ export default {
     {
       note: "step: 血空的战士照样计入存活队伍",
       file: "native/lfw/world.cpp",
-      from: `    if (entity::is_fighter(ref_of(*a))) {
+      from: `    if (entity::is_fighter(*a)) {
       if (a->hp() > 0) {`,
-      to: `    if (entity::is_fighter(ref_of(*a))) {
+      to: `    if (entity::is_fighter(*a)) {
       if (true) {`,
     },
     {
@@ -425,8 +425,8 @@ export default {
     {
       note: "step: 没落地的武器也进分带表",
       file: "native/lfw/world.cpp",
-      from: `    if (entity::is_weapon(ref_of(*a)) && a->is_on_ground) {`,
-      to: `    if (entity::is_weapon(ref_of(*a))) {`,
+      from: `    if (entity::is_weapon(*a) && a->is_on_ground) {`,
+      to: `    if (entity::is_weapon(*a)) {`,
     },
     {
       note: "step: 武器分带计数不累加",
@@ -549,7 +549,7 @@ export default {
         {
       note: "step: gone 战士不发 on_fighter_del",
       file: "native/lfw/world.cpp",
-      from: `    if (entity::is_fighter(ref_of(*entity))) {
+      from: `    if (entity::is_fighter(*entity)) {
       callbacks.call(u"on_fighter_del",`,
       to: `    if (false) {
       callbacks.call(u"on_fighter_del",`,

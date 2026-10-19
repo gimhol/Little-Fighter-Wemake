@@ -160,7 +160,7 @@ export default {
       note: "catch 抓取时长写 0",
       file: "native/lfw/collision/handlers2.cpp",
       from: "  a->set_catch_time(a->catch_time_max());",
-      to: "  a->set_catch_time(Value(0.0));",
+      to: "  a->set_catch_time(0.0);",
     },
     {
       note: "catch 自抓自己",
@@ -208,7 +208,7 @@ export default {
       note: "catch 不补满 fall_value",
       file: "native/lfw/collision/handlers2.cpp",
       from: "  v->set_fall_value(v->fall_value_max());",
-      to: "  v->set_fall_value(Value(0.0));",
+      to: "  v->set_fall_value(0.0);",
     },
     {
       note: "catch 防御值取错上限",

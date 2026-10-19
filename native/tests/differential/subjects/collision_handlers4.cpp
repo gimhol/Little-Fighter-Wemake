@@ -158,12 +158,12 @@ void sync(Fake& f) {
 }
 
 void bind() {
-  g_henv.attacker_itr_motionless = []() { return g_itr_motionless; };
-  g_henv.attacker_set_motionless = [](const Value& v) {
+  g_henv.attacker_itr_motionless = [](const Collision&) { return g_itr_motionless; };
+  g_henv.attacker_set_motionless = [](const Collision&, const Value& v) {
     g_log.push_back("A:set_motionless:" + render(v));
   };
-  g_henv.victim_set_shaking = [](const Value& v) { g_log.push_back("V:set_shaking:" + render(v)); };
-  g_henv.attacker_set_arest = [](double v) {
+  g_henv.victim_set_shaking = [](const Collision&, const Value& v) { g_log.push_back("V:set_shaking:" + render(v)); };
+  g_henv.attacker_set_arest = [](const Collision&, double v) {
     g_att._arest = Value(v);
     g_att._arest_set = true;
     g_log.push_back("A:set_arest:" + num(v));
@@ -186,7 +186,7 @@ void bind() {
     return nullptr;
   };
   g_h4.is_fighter = [](const Entity& e) { return lfw::entity::is_fighter_data(e.data()); };
-  g_h4.find_align_frame = [](const Value& fid, const Value& thr, const Value& sky) {
+  g_h4.find_align_frame = [](const Collision&, const Value& fid, const Value& thr, const Value& sky) {
     g_log.push_back("faf:" + render(fid) + ":" + render(thr) + ":" + render(sky));
     return Value(u"faf_result");
   };

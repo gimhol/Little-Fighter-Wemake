@@ -64,3 +64,7 @@ wailsjs
 package.json.md5
 
 dist-extension
+# Godot 宿主的画面存档（--screenshot 的产物：证据图，随跑随换）
+# 只留本地看，不进仓库；要重出就用 README「画面存档」里各张对应的命令。
+native/host/godot/shots/
+

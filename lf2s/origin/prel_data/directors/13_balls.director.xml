@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="balls" name="Balls">
+  <director name="Ball_3000_vs_Ball_3000">
+    <actors>
+      <actor id="fighter" oid="davis,davis" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,a" />
+      </entry>
+      <entry repeat="99999" interval="10">
+        <entry>
+          <input target="fighter[0]" click="a" />
+          <input target="fighter[1]" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3000_vs_Ball_3005">
+    <actors>
+      <actor id="fighter" oid="davis,henry" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,a" />
+      </entry>
+      <entry repeat="99999" interval="10">
+        <entry>
+          <input target="fighter[0]" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3000_vs_Ball_3006">
+    <actors>
+      <actor id="fighter" oid="davis,henry" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+      <entry repeat="99999" interval="10">
+        <entry>
+          <input target="fighter[0]" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3005_vs_Ball_3005">
+    <actors>
+      <actor id="fighter" oid="henry,henry" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,a" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3005_vs_Ball_3006">
+    <actors>
+      <actor id="fighter" oid="henry,henry" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3006_vs_Ball_3006">
+    <actors>
+      <actor id="fighter" oid="henry,henry" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,j" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3000_vs_JohnShield">
+    <actors>
+      <actor id="fighter" oid="davis,john" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3005_vs_JohnShield">
+    <actors>
+      <actor id="fighter" oid="henry,john" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3006_vs_JohnShield">
+    <actors>
+      <actor id="fighter" oid="henry,john" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,j" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3000_vs_ManyPunch">
+    <actors>
+      <actor id="fighter" oid="davis,davis" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter[1]" click="d,D,a" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3005_vs_ManyPunch">
+    <actors>
+      <actor id="fighter" oid="henry,davis" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter[1]" click="d,D,a" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3006_vs_ManyPunch">
+    <actors>
+      <actor id="fighter" oid="henry,davis" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,j" />
+      </entry>
+      <entry after="500">
+        <input target="fighter[1]" click="d,D,a" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3000_vs_BurnRun">
+    <actors>
+      <actor id="fighter" oid="davis,firen" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3005_vs_BurnRun">
+    <actors>
+      <actor id="fighter" oid="henry,firen" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,a" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Ball_3006_vs_BurnRun">
+    <actors>
+      <actor id="fighter" oid="henry,firen" count="2" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="450" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="mp" type="nums" value="99999,99999" />
+          <value name="mp_max" type="nums" value="99999,99999" />
+          <value name="facing" type="nums" value="1,-1" />
+          <value name="stat_bar" type="nums" value="0,0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter[0]" click="d,R,j" />
+        <input target="fighter[1]" click="d,L,j" />
+      </entry>
+    </timeline>
+  </director>
+</directors>

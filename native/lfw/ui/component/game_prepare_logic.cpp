@@ -546,9 +546,10 @@ void GamePrepareLogic::set_survival_rank_period(const std::u16string& p) {
   refresh_survival_rank();
 }
 
+// 生存排行：把 world dataset 重置为默认值（**包括**难度 —— 生存排行恒为苦难，
+// 见 TS `GamePrepareLogic.reset_world_dataset`）。
 void GamePrepareLogic::reset_world_dataset() {
   WorldDataset& ds = world().dataset;
-  const Value difficulty = ds.get(u"difficulty");
   const WorldDataset fresh;
   const Value dump = fresh.dump_dataset();
   const Object* const o = as_object(dump);
@@ -558,7 +559,6 @@ void GamePrepareLogic::reset_world_dataset() {
       if (v != nullptr) ds.set(k, *v);
     }
   }
-  ds.set(u"difficulty", difficulty);
   ds.set(u"playrate", Value(1.0));
 }
 

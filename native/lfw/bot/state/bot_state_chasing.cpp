@@ -43,7 +43,7 @@ std::optional<Value> BotState_Chasing::update(double dt) {
   if (c.stage_is_chapter_finish()) return next_state(bse::kIdle);
   if (c.stage_is_stage_finish()) return next_state(bse::kStageEnd);
 
-  const Value en = c.chasings.get() != nullptr ? c.chasings.get()->entity : Value();
+  const Value en = c.chasings.get() != nullptr ? c.chasings.get()->entity.ref() : Value();
   if (truthy(en) && c.is_leave_chase_range(en)) return next_state(bse::kFollowing);
   if (c.is_leave_goto_range(c.self_ref())) return next_state(bse::kFollowing);
 
@@ -106,7 +106,7 @@ std::optional<Value> BotState_Chasing::update(double dt) {
   }
   if (strict_equals(state, Value(static_cast<double>(StateEnum::Catching)))) {
     // louisEx 空中推人的帧状态也是 Catching
-    if (truthy(e->catching)) c.click({u"a"});
+    if (!e->catching.nullish()) c.click({u"a"});
   } else if (strict_equals(state, Value(static_cast<double>(StateEnum::Standing))) ||
              strict_equals(state, Value(static_cast<double>(StateEnum::Walking)))) {
     if (!c.en_out_of_range) {

@@ -463,8 +463,8 @@ export default {
     {
       note: "Item: weapon 缺省 y 不是 300",
       file: "native/lfw/stage/item.cpp",
-      from: `  const double y_default = entity::is_weapon(ref_of(*e)) ? 300.0 : 0.0;`,
-      to: `  const double y_default = entity::is_weapon(ref_of(*e)) ? 0.0 : 0.0;`,
+      from: `  const double y_default = entity::is_weapon(*e) ? 300.0 : 0.0;`,
+      to: `  const double y_default = entity::is_weapon(*e) ? 0.0 : 0.0;`,
     },
     {
       note: "Item: max_y 用 range_x",

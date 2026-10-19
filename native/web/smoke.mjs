@@ -29,9 +29,9 @@ const DATA = join(NATIVE, "build", "host-data", "data");
 
 // README 的三条 MSVC 摘要（跨宿主对拍的参照）+ 各自的命令行口径。
 const PROFILES = {
-  1: { zips: [PREL], frames: 300, every: 300, stage: "", fighters: [], players: 2, vs: false, digest: "7335aa25f4e1ce86" },
-  2: { zips: [PREL, DATA], frames: 900, every: 900, stage: "1", fighters: ["1", "4"], players: 2, vs: false, digest: "e4a9437292047044" },
-  3: { zips: [PREL, DATA], frames: 600, every: 600, stage: "0", fighters: ["1", "4"], players: 2, vs: true, digest: "f29d3bb1ea330c32" },
+  1: { zips: [PREL], frames: 300, every: 300, stage: "", fighters: [], players: 2, vs: false, digest: "a7edd32e19a43ea9" },
+  2: { zips: [PREL, DATA], frames: 900, every: 900, stage: "1", fighters: ["1", "4"], players: 2, vs: false, digest: "13945ad1144c968d" },
+  3: { zips: [PREL, DATA], frames: 600, every: 600, stage: "0", fighters: ["1", "4"], players: 2, vs: true, digest: "61c42c78c9d0bcac" },
 };
 
 function parseArgs(argv) {

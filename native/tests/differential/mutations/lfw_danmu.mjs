@@ -152,8 +152,8 @@ export default {
 
     // ============================ viewer_stats ============================
     { note: "alive 不过滤死血", file: "native/lfw/ui/component/danmu_game_logic.cpp",
-      from: `    if (!entity::is_fighter(ref_of(*e)) || e->hp() <= 0) continue;\n    const auto it = e->marks.find(mark);\n    if (it != e->marks.end() && !it->second.empty()) alive.insert(it->second);`,
-      to: `    if (!entity::is_fighter(ref_of(*e))) continue;\n    const auto it = e->marks.find(mark);\n    if (it != e->marks.end() && !it->second.empty()) alive.insert(it->second);` },
+      from: `    if (!entity::is_fighter(*e) || e->hp() <= 0) continue;\n    const auto it = e->marks.find(mark);\n    if (it != e->marks.end() && !it->second.empty()) alive.insert(it->second);`,
+      to: `    if (!entity::is_fighter(*e)) continue;\n    const auto it = e->marks.find(mark);\n    if (it != e->marks.end() && !it->second.empty()) alive.insert(it->second);` },
     { note: "alive 判定写反", file: "native/lfw/ui/component/danmu_game_logic.cpp",
       from: `    v.alive = alive.count(v.uid) != 0;`,
       to: `    v.alive = alive.count(v.uid) == 0;` },

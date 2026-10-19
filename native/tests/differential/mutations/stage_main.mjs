@@ -198,11 +198,11 @@ export default {
       from: `    std::vector<Value> teams;
     for (Entity* const f : _world->puppet_list()) set_add(teams, Value(f->team()));
     for (Entity* const f : _world->entity_list()) {
-      if (!entity::is_fighter(ref_of(*f)) || !set_has(teams, Value(f->team()))) continue;`,
+      if (!entity::is_fighter(*f) || !set_has(teams, Value(f->team()))) continue;`,
       to: `    std::vector<Value> teams;
     for (Entity* const f : _world->puppet_list()) set_add(teams, Value(f->team()));
     for (Entity* const f : _world->entity_list()) {
-      if (!entity::is_fighter(ref_of(*f))) continue;`,
+      if (!entity::is_fighter(*f)) continue;`,
     },
     {
       note: "set_phase：hp<=0 的门写成 `< 0`",
@@ -574,8 +574,8 @@ void Stage::clear_dialogs() {`,
     {
       note: "ce：不判 mounted",
       file: "native/lfw/stage/stage.cpp",
-      from: `      if (!entity::is_fighter(ref_of(*e)) || !truthy(Value(e->mounted())) || e->hp() <= 0.0) {`,
-      to: `      if (!entity::is_fighter(ref_of(*e)) || e->hp() <= 0.0) {`,
+      from: `      if (!entity::is_fighter(*e) || !truthy(Value(e->mounted())) || e->hp() <= 0.0) {`,
+      to: `      if (!entity::is_fighter(*e) || e->hp() <= 0.0) {`,
     },
     // ---------------------------------------------------------------- spawn
     {
@@ -656,13 +656,13 @@ void Stage::clear_dialogs() {`,
     {
       note: "kill_*：血量写 1（不是 0）",
       file: "native/lfw/stage/stage.cpp",
-      from: `      if (entity::is_fighter(ref_of(*e)) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
+      from: `      if (entity::is_fighter(*e) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(0.0);
     }
   }
 }
 
 void Stage::kill_soliders() {`,
-      to: `      if (entity::is_fighter(ref_of(*e)) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(1.0);
+      to: `      if (entity::is_fighter(*e) && strict_equals(Value(e->team()), Value(_team))) e->set_hp(1.0);
     }
   }
 }
@@ -679,13 +679,13 @@ void Stage::kill_soliders() {`,
     {
       note: "dispose：玩家队伍的角色也删",
       file: "native/lfw/stage/stage.cpp",
-      from: `    if (entity::is_fighter(ref_of(*e)) && set_has(player_teams, Value(e->team()))) continue;`,
+      from: `    if (entity::is_fighter(*e) && set_has(player_teams, Value(e->team()))) continue;`,
       to: `    if (false) continue;`,
     },
     {
       note: "dispose：玩家持有的武器也删",
       file: "native/lfw/stage/stage.cpp",
-      from: `    if (entity::is_weapon(ref_of(*e)) && e->bearer != nullptr &&
+      from: `    if (entity::is_weapon(*e) && e->bearer != nullptr &&
         set_has(player_teams, Value(e->bearer->team()))) {
       continue;
     }`,

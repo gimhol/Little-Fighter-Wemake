@@ -11,8 +11,11 @@
 #include "lfw/bot/is_ray_hit.h"
 #include "lfw/bot/nearest_targets.h"
 #include "lfw/core/value.h"
+#include "lfw/entity/entity.h"
 #include "lfw/helper/manhattan_xz.h"
+#include "lfw/utils/container_help/field_or.h"
 
+#include "entity_fixture.h"
 #include "trace_util.h"
 
 namespace {
@@ -23,6 +26,9 @@ using trace::split_ws;
 using trace::to_ascii;
 
 std::vector<std::pair<std::u16string, lfw::Value>> g_ent;
+// `is_ray_hit` 这一族现在收**真 `Entity`**（TS 同形）⇒ 用例里那些"实体快照"还要有对应的真实体。
+// 这里按名字懒建一份，字段从快照里那一份灌进去（`position` / `facing`）。
+std::vector<std::pair<std::u16string, std::unique_ptr<fx::StubEntity>>> g_ent_real;
 std::vector<std::pair<std::u16string, lfw::bot::NearestTargets>> g_nt;
 
 std::string render(const lfw::Value& v) { return to_ascii(render_value(v)); }
@@ -39,6 +45,17 @@ const lfw::Value* find_ent(const std::u16string& name) {
 }
 
 void put_ent(const std::u16string& name, lfw::Value v) {
+  for (auto& kv : g_ent_real) {
+    if (kv.first == name) {  // 快照变了 ⇒ 真实体要重建（下一处 `ent_real` 懒建）
+      for (std::size_t i = 0; i < g_ent_real.size(); ++i) {
+        if (g_ent_real[i].first == name) {
+          g_ent_real.erase(g_ent_real.begin() + static_cast<std::ptrdiff_t>(i));
+          break;
+        }
+      }
+      break;
+    }
+  }
   for (auto& kv : g_ent) {
     if (kv.first == name) {
       kv.second = std::move(v);
@@ -52,9 +69,36 @@ void del_ent(const std::u16string& name) {
   for (std::size_t i = 0; i < g_ent.size(); ++i) {
     if (g_ent[i].first == name) {
       g_ent.erase(g_ent.begin() + static_cast<std::ptrdiff_t>(i));
-      return;
+      break;
     }
   }
+  for (std::size_t i = 0; i < g_ent_real.size(); ++i) {
+    if (g_ent_real[i].first == name) {
+      g_ent_real.erase(g_ent_real.begin() + static_cast<std::ptrdiff_t>(i));
+      break;
+    }
+  }
+}
+
+// 名字 → 真实体（懒建；字段照快照那一份灌。`put_ent`/`del_ent` 会让它失效并重建）。
+fx::StubEntity& ent_real(const std::u16string& name, int lineno) {
+  for (auto& kv : g_ent_real) {
+    if (kv.first == name) return *kv.second;
+  }
+  const lfw::Value* const snap = find_ent(name);
+  if (snap == nullptr) {
+    std::fprintf(stderr, "unknown entity '%s' at line %d\n", to_ascii(name).c_str(), lineno);
+    std::exit(2);
+  }
+  auto e = std::make_unique<fx::StubEntity>(name);
+  const lfw::Value pos = lfw::field_or(*snap, u"position");
+  e->position.x = lfw::to_number(lfw::field_or(pos, u"x"));
+  e->position.y = lfw::to_number(lfw::field_or(pos, u"y"));
+  e->position.z = lfw::to_number(lfw::field_or(pos, u"z"));
+  e->facing = lfw::to_number(lfw::field_or(*snap, u"facing"));
+  fx::StubEntity& out = *e;
+  g_ent_real.push_back(std::make_pair(name, std::move(e)));
+  return out;
 }
 
 lfw::bot::NearestTargets* find_nt(const std::u16string& name) {
@@ -87,19 +131,19 @@ std::string snap_nt(const std::u16string& name, const lfw::bot::NearestTargets& 
   if (first == nullptr) {
     s += " get=- facing=- x=-";
   } else {
-    s += " get=" + name_of(first->entity) + " facing=" + render(first->facing()) +
+    s += " get=" + name_of(first->entity.ref()) + " facing=" + render(first->facing()) +
          " x=" + render(first->x());
   }
   s += " targets=[";
   for (std::size_t i = 0; i < nt.targets().size(); ++i) {
     if (i != 0) s += ',';
     const lfw::bot::BotTarget& t = nt.targets()[i];
-    s += name_of(t.entity) + ":" + render_num(t.distance) + ":" + render(t.defendable);
+    s += name_of(t.entity.ref()) + ":" + render_num(t.distance) + ":" + render(t.defendable);
   }
   s += "] ents=[";
   for (std::size_t i = 0; i < nt.entities().size(); ++i) {
     if (i != 0) s += ',';
-    s += name_of(nt.entities()[i]);
+    s += name_of(nt.entities()[i].ref());
   }
   s += "]";
   return s;
@@ -184,7 +228,8 @@ int main(int argc, char** argv) {
       const std::u16string b_name = trace::parse_js_string_literal(t[i++]);
       const lfw::Value ray = parse_value(t, i);
       emit("ray " + to_ascii(a_name) + " " + to_ascii(b_name) + " " +
-           render(lfw::bot::is_ray_hit(ent_arg(a_name, lineno), ent_arg(b_name, lineno), ray)));
+           render(lfw::bot::is_ray_hit(ent_real(a_name, lineno),
+                                       ent_real(b_name, lineno), ray)));
       if (i != t.size()) {
         std::fprintf(stderr, "trailing token(s) at line %d\n", lineno);
         return 2;
@@ -239,7 +284,7 @@ int main(int argc, char** argv) {
           const bool found = victim != nullptr;
           const lfw::Value held = found ? *victim : lfw::Value();
           inst->del([&held, found](const lfw::bot::BotTarget& tgt) {
-            return found && lfw::strict_equals(tgt.entity, held);
+            return found && tgt.entity.same(lfw::TargetHandle::of(held));
           });
         } else if (sub == "sort") {
           inst->sort(ent_arg(trace::parse_js_string_literal(t[i++]), lineno));

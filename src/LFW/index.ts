@@ -26,6 +26,7 @@ export * from "./collision";
 export * from "./controller";
 export * from "./dat_translator";
 export * from "./defines";
+export * from "./director";
 export * from "./ditto";
 export * from "./entity";
 export * from "./helper";

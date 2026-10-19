@@ -9,6 +9,7 @@
 #include "lfw/bot/state/bot_state_keys.h"
 #include "lfw/core/value.h"
 #include "lfw/defines/state_enum.h"
+#include "lfw/entity/entity.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/base.h"
 #include "lfw/utils/math/mersenne_twister.h"
@@ -39,6 +40,7 @@ Value BotState_Base::en() const { return ctrl_.en(); }
 Value BotState_Base::av() const { return ctrl_.av(); }
 
 Value BotState_Base::closest(const std::vector<Value>& list) const {
+  if (const Entity* const self = ctrl_.self_entity()) return bot::closest(*self, list);
   return bot::closest(ctrl_.self_ref(), list);
 }
 

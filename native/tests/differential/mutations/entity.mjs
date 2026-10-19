@@ -3006,8 +3006,8 @@ export default {
         {
       "note": "the missing opoint speedz default is not zero",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  const double o_speedz = to_number(or_nullish(speedz_field, Value(0.0)));",
-      "to": "  const double o_speedz = to_number(or_nullish(speedz_field, Value(1.0)));"
+      "from": "  const double o_speedz =\n      has_speedz ? speedz_explicit : (z_launch ? defines::num(u\"Defines.DEFAULT_OPOINT_SPEED_Z\") : 0.0);",
+      "to": "  const double o_speedz =\n      has_speedz ? speedz_explicit : (z_launch ? defines::num(u\"Defines.DEFAULT_OPOINT_SPEED_Z\") : 1.0);"
     },
         {
       "note": "set_state ignores the registry",
@@ -3573,20 +3573,20 @@ export default {
         {
       "note": "update_position stops vx for a blocker behind the entity",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px > position.x)) {",
-      "to": "    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px < position.x)) {"
+      "from": "    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() > position.x)) {",
+      "to": "    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() < position.x)) {"
     },
         {
       "note": "update_position stops vx for a receding blocker",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px > position.x)) {",
-      "to": "    if ((vx < 0 && v.attacker.px > position.x) || (vx > 0 && v.attacker.px > position.x)) {"
+      "from": "    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() > position.x)) {",
+      "to": "    if ((vx < 0 && v.attacker.px() > position.x) || (vx > 0 && v.attacker.px() > position.x)) {"
     },
         {
       "note": "update_position stops vz for a blocker behind the entity",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    if ((vz < 0 && v.attacker.pz < position.z) || (vz > 0 && v.attacker.pz > position.z)) {",
-      "to": "    if ((vz < 0 && v.attacker.pz < position.z) || (vz > 0 && v.attacker.pz < position.z)) {"
+      "from": "    if ((vz < 0 && v.attacker.pz() < position.z) || (vz > 0 && v.attacker.pz() > position.z)) {",
+      "to": "    if ((vz < 0 && v.attacker.pz() < position.z) || (vz > 0 && v.attacker.pz() < position.z)) {"
     },
         {
       "note": "update_position zeroes the blocker velocity without arming prev_velocity.x",
@@ -3873,8 +3873,8 @@ export default {
         {
       "note": "handle_next_frame_result takes the else branch with a frame",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  if (truthy(frame_v)) {\n    world().play_sound(field_or(frame_v, u\"sound\"), position_value(position));",
-      "to": "  if (!truthy(frame_v)) {\n    world().play_sound(field_or(frame_v, u\"sound\"), position_value(position));"
+      "from": "  if (truthy(frame_v)) {\n    play_sound(field_or(frame_v, u\"sound\"));",
+      "to": "  if (!truthy(frame_v)) {\n    play_sound(field_or(frame_v, u\"sound\"));"
     },
         {
       "note": "handle_next_frame_result skips the frame swap",
@@ -3921,8 +3921,8 @@ export default {
         {
       "note": "handle_next_frame_result plays any truthy sound",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  if (as_array(sound) != nullptr) world().play_sound(sound, position_value(position));",
-      "to": "  if (truthy(sound)) world().play_sound(sound, position_value(position));"
+      "from": "  if (as_array(sound) != nullptr) play_sound(sound);",
+      "to": "  if (truthy(sound)) play_sound(sound);"
     },
         {
       "note": "handle_next_frame_result drops the blink truthy gate",
@@ -4678,13 +4678,13 @@ export default {
     {
       note: "on_spawn：Ball_Rebounding 分支用发射者而不是 attacker",
       file: "native/lfw/entity/entity.cpp",
-      from: `      attacker_id = emitter.lastest_collided->attacker.id;`,
+      from: `      attacker_id = emitter.lastest_collided->attacker.id();`,
       to: `      attacker_id = emitter.id;`,
     },
     {
       note: "on_spawn：Ball_Rebounding 分支的 team 用发射者",
       file: "native/lfw/entity/entity.cpp",
-      from: `      attacker_team = emitter.lastest_collided->attacker.team;`,
+      from: `      attacker_team = emitter.lastest_collided->attacker.team();`,
       to: `      attacker_team = Value(emitter.team());`,
     },
     {
@@ -4789,8 +4789,8 @@ export default {
     {
       note: "on_spawn：speedz 直接置 0",
       file: "native/lfw/entity/entity.cpp",
-      from: `  const double o_speedz = to_number(or_nullish(speedz_field, Value(0.0)));`,
-      to: `  const double o_speedz = 0.0;`,
+      from: `      has_speedz ? speedz_explicit : (z_launch ? defines::num(u"Defines.DEFAULT_OPOINT_SPEED_Z") : 0.0);`,
+      to: `      0.0;`,
     },
     {
       note: "on_spawn：__gen_dvx 被忽略",
@@ -5219,25 +5219,25 @@ export default {
       note: "apply_opoints：敌人的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
       from: `          ctrl->chasing = enemies.empty()
-                              ? Value()
-                              : ref_of(*enemies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*enemies[static_cast<std::size_t>(
                                     std::fmod(i, enemies.size()))]);`,
-      to: `          ctrl->chasing = Value();`,
+      to: `          ctrl->chasing = TargetHandle();`,
     },
     {
       note: "apply_opoints：友军的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
       from: `          ctrl->chasing = allies.empty()
-                              ? Value()
-                              : ref_of(*allies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*allies[static_cast<std::size_t>(
                                     std::fmod(i, allies.size()))]);`,
-      to: `          ctrl->chasing = Value();`,
+      to: `          ctrl->chasing = TargetHandle();`,
     },
     {
       note: "apply_opoints：Emitter 的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
-      from: `          ctrl->chasing = allies.empty() ? Value() : ref_of(*allies[0]);`,
-      to: `          ctrl->chasing = Value();`,
+      from: `          ctrl->chasing = allies.empty() ? TargetHandle() : TargetHandle::of(*allies[0]);`,
+      to: `          ctrl->chasing = TargetHandle();`,
     },
     {
       note: "apply_opoints：inherit_speed 丢了生成后的速度项",

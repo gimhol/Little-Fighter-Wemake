@@ -32,6 +32,12 @@
 //     `px/py/pz` 与 `data_id`（只进快照与 `m_distance`，用例里不影响判定）；
 //   * `get_bounding` 的每个字段：用例的两颗判定框**完全重合**（左右上下远近各自相等）⇒ 交换
 //     左右一类的改动两侧同向，不产生差异 —— 要锁住得加一组「部分重叠」的实体；
+//   * `find_entity` / `find_object_data`（`CollisionCoreEnv` 的两条）：**唯一消费者**是
+//     `collision_from_snapshot`（`collision/` 层的水合入口），而 `World::step` 从不水合快照
+//     （`Entity::vrests` / `colliders` 存的是整份 `Collision`）⇒ 本 spec 的用例
+//     （`world/collision.txt`）够不着。要在世界这一侧试出来，得先给世界加一条「水合碰撞」的
+//     用例；那两条缝的行为已在 `collision_core` subject 里锁住（见 `cases/collision_core/main.txt`
+//     的 `snap` / `setsnap` / `fromsnap`）。
 //   * `dataset` / `victim_get_v_rest` / `attacker_is_ally` / `new_id` / `log` / `dev` /
 //     `find_entity` / `find_object_data` / `load_handlers`：这一条路径上要么不读（`rest` 为 0、
 //     `dev` 为假），要么结果与改动无关；
@@ -109,42 +115,44 @@ export default {
       from: "      collision::Collision* const c2 = collision_host().collision_get(*b, *a);",
       to: "      collision::Collision* const c2 = collision_host().collision_get(*a, *b);",
     },
-    // ─────────────────────── `CollisionActor` 投影 ───────────────────────
+    // ─────────────────────── `ActorHandle` 的活读 ───────────────────────
+    // 投影本身在 `collision/actor_handle.cpp`（TS 的 `c.attacker.xxx` 直读实体），
+    // 所以这几条锚在那边。
     {
-      note: "actor_of: data_type 恒 0（hit_flag 判定全灭）",
-      file: "native/lfw/world_collision.cpp",
-      from: "  a.data_type = to_number(field_or(e.data(), u\"type\"));",
-      to: "  a.data_type = 0;",
+      note: "data_type 恒 0（hit_flag 判定全灭）",
+      file: "native/lfw/collision/actor_handle.cpp",
+      from: "  return e != nullptr ? to_number(field_or(e->data(), u\"type\")) : snapshot().data_type;",
+      to: "  return e != nullptr ? 0.0 : snapshot().data_type;",
     },
     {
-      note: "actor_of: frame 恒 undefined（itr / bdy 都取不到）",
-      file: "native/lfw/world_collision.cpp",
-      from: "  a.frame = e.frame;",
-      to: "  a.frame = Value();",
+      note: "frame 恒 undefined（itr / bdy 都取不到）",
+      file: "native/lfw/collision/actor_handle.cpp",
+      from: "  return e != nullptr ? e->frame : snapshot().frame;",
+      to: "  return e != nullptr ? Value() : snapshot().frame;",
     },
     {
-      note: "actor_of: dropping 恒真",
-      file: "native/lfw/world_collision.cpp",
-      from: "  a.dropping = e.dropping;",
-      to: "  a.dropping = true;",
+      note: "dropping 恒真",
+      file: "native/lfw/collision/actor_handle.cpp",
+      from: "  return e != nullptr ? e->dropping : snapshot().dropping;",
+      to: "  return e != nullptr ? true : snapshot().dropping;",
     },
     {
-      note: "actor_of: arest 恒 1（无 rest 时直接拦掉）",
-      file: "native/lfw/world_collision.cpp",
-      from: "  a.arest = Value(e.arest());",
-      to: "  a.arest = Value(1.0);",
+      note: "arest 恒 1（无 rest 时直接拦掉）",
+      file: "native/lfw/collision/actor_handle.cpp",
+      from: "  return e != nullptr ? Value(e->arest()) : snapshot().arest;",
+      to: "  return e != nullptr ? Value(1.0) : snapshot().arest;",
     },
     {
-      note: "actor_of: invulnerable 恒 1",
-      file: "native/lfw/world_collision.cpp",
-      from: "  a.invulnerable = Value(e.invulnerable());",
-      to: "  a.invulnerable = Value(1.0);",
+      note: "invulnerable 恒 1",
+      file: "native/lfw/collision/actor_handle.cpp",
+      from: "  return e != nullptr ? Value(e->invulnerable()) : snapshot().invulnerable;",
+      to: "  return e != nullptr ? Value(1.0) : snapshot().invulnerable;",
     },
     {
-      note: "actor_of: has_catcher 恒真",
-      file: "native/lfw/world_collision.cpp",
-      from: "  a.has_catcher = e.catcher != nullptr;",
-      to: "  a.has_catcher = true;",
+      note: "has_catcher 恒真",
+      file: "native/lfw/collision/actor_handle.cpp",
+      from: "  return e != nullptr ? e->catcher != nullptr : snapshot().has_catcher;",
+      to: "  return e != nullptr ? true : snapshot().has_catcher;",
     },
     // ─────────────────────── handler 分发 ───────────────────────
     {
@@ -195,20 +203,20 @@ export default {
     {
       note: "handlers: attacker_itr_motionless 恒 undefined",
       file: "native/lfw/world_collision.cpp",
-      from: "    return _cur_a == nullptr ? Value() : Value(_cur_a->itr_motionless());",
-      to: "    return Value();",
+      from: "    return a == nullptr ? Value() : Value(a->itr_motionless());",
+      to: "    (void)a;\n    return Value();",
     },
     {
       note: "handlers: attacker_set_motionless 空实现（攻击方的 `motionless` 不进实体）",
       file: "native/lfw/world_collision.cpp",
-      from: "    if (_cur_a != nullptr) _cur_a->set_motionless(to_number(v));",
-      to: "    (void)v;",
+      from: "    if (a != nullptr) a->set_motionless(to_number(v));",
+      to: "    (void)a;\n    (void)v;",
     },
     {
       note: "handlers: victim_set_shaking 空实现（受害方的 `shaking` 不进实体）",
       file: "native/lfw/world_collision.cpp",
-      from: "    if (_cur_v != nullptr) _cur_v->set_shaking(to_number(v));",
-      to: "    (void)v;",
+      from: "    if (victim != nullptr) victim->set_shaking(to_number(v));",
+      to: "    (void)victim;\n    (void)v;",
     },
     // ───────────── `handle_itr_catch` 那三条视图方法（4CE 已随视图层删除） ─────────────
     // 视图层（`EntityCollisionView` / `ICollisionViewHost`）退役后 `handle_itr_catch` 直接写
@@ -236,8 +244,8 @@ export default {
     {
       note: "handlers: attacker_set_arest 空实现（`arest` 不写）",
       file: "native/lfw/world_collision.cpp",
-      from: "    if (_cur_a != nullptr) _cur_a->set_arest(v);",
-      to: "    (void)v;",
+      from: "    if (a != nullptr) a->set_arest(v);",
+      to: "    (void)a;\n    (void)v;",
     },
     // ───── `rest` 支与 `get_bounding`（用例第 11/12 组：`vrest` 与「部分重叠」的判定框） ─────
     {
@@ -263,8 +271,8 @@ export default {
     {
       note: "core: victim_get_v_rest 恒真（`rest` 碰撞一律被拦）",
       file: "native/lfw/world_collision.cpp",
-      from: "    return truthy(Value(_cur_v->get_v_rest(aid)));",
-      to: "    return true;",
+      from: "    return truthy(Value(v->get_v_rest(c.aid)));",
+      to: "    (void)v;\n    return true;",
     },
     {
       note: "core: new_id 恒 `1`（`rest` 碰撞的 id 撞车 ⇒ add_collision 去重）",
@@ -278,8 +286,8 @@ export default {
     {
       note: "core: attacker_is_ally 恒真（`ally_flag` 全变）",
       file: "native/lfw/world_collision.cpp",
-      from: "    return _cur_a->is_ally(*_cur_v);",
-      to: "    return true;",
+      from: "    return a->is_ally(*v);",
+      to: "    (void)a;\n    (void)v;\n    return true;",
     },
     // ───── 另外四条宿主缝（4P 之后补：它们的可见处是台面日志与下游行为） ─────
     {
@@ -291,18 +299,6 @@ export default {
         "    static collision::Collision reused;\n" +
         "    return reused;\n" +
         "  };",
-    },
-    {
-      note: "core: find_object_data 恒失败（`h:datasfind` 与下游都变）",
-      file: "native/lfw/world_collision.cpp",
-      from: "  _core.find_object_data = [this](const std::u16string& id, Value& out) {",
-      to: "  _core.find_object_data = [this](const std::u16string& id, Value& out) {\n    (void)id;\n    (void)out;\n    return false;",
-    },
-    {
-      note: "core: find_entity 恒失败（handler 一律早退）",
-      file: "native/lfw/world_collision.cpp",
-      from: "  _core.find_entity = [this](const std::u16string& id, collision::CollisionActor& out) {",
-      to: "  _core.find_entity = [this](const std::u16string& id, collision::CollisionActor& out) {\n    (void)id;\n    (void)out;\n    return false;",
     },
     {
       note: "core: dev 恒真（`Ditto.DEV` 调试分支全开）",

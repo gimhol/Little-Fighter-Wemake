@@ -203,30 +203,30 @@ export default {
     {
       note: "opoint 强化漏掉 max_hp",
       file: "native/lfw/dat_translator/fighters/fighters.cpp",
-      from: `    op->set(u"max_hp", n(20));
-    op->set(u"hp", n(20));
-    op->set(u"max_mp", n(150));
-    op->set(u"mp", n(150));`,
-      to: `    op->set(u"hp", n(20));
-    op->set(u"max_mp", n(150));
-    op->set(u"mp", n(150));`,
+      from: `  op->set(u"max_hp", n(20));
+  op->set(u"hp", n(20));
+  op->set(u"max_mp", n(150));
+  op->set(u"mp", n(150));`,
+      to: `  op->set(u"hp", n(20));
+  op->set(u"max_mp", n(150));
+  op->set(u"mp", n(150));`,
     },
     {
       note: "opoint 强化漏掉 mp",
       file: "native/lfw/dat_translator/fighters/fighters.cpp",
-      from: `    op->set(u"max_hp", n(20));
-    op->set(u"hp", n(20));
-    op->set(u"max_mp", n(150));
-    op->set(u"mp", n(150));`,
-      to: `    op->set(u"max_hp", n(20));
-    op->set(u"hp", n(20));
-    op->set(u"max_mp", n(150));`,
+      from: `  op->set(u"max_hp", n(20));
+  op->set(u"hp", n(20));
+  op->set(u"max_mp", n(150));
+  op->set(u"mp", n(150));`,
+      to: `  op->set(u"max_hp", n(20));
+  op->set(u"hp", n(20));
+  op->set(u"max_mp", n(150));`,
     },
     {
       note: "opoint 的 max_mp 值写错",
       file: "native/lfw/dat_translator/fighters/fighters.cpp",
-      from: `    op->set(u"max_mp", n(150));`,
-      to: `    op->set(u"max_mp", n(151));`,
+      from: `  op->set(u"max_mp", n(150));`,
+      to: `  op->set(u"max_mp", n(151));`,
     },
     {
       note: "opoint 强化取反了 oid 判定",

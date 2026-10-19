@@ -121,14 +121,14 @@ export default {
     {
       note: "attacker type read from the victim",
       file: "native/lfw/collision/keeper.cpp",
-      from: "  const double a_type = collision.attacker.data_type;",
-      to: "  const double a_type = collision.victim.data_type;",
+      from: "  const double a_type = collision.attacker.data_type();",
+      to: "  const double a_type = collision.victim.data_type();",
     },
     {
       note: "victim type read from the attacker",
       file: "native/lfw/collision/keeper.cpp",
-      from: "  const double v_type = collision.victim.data_type;",
-      to: "  const double v_type = collision.attacker.data_type;",
+      from: "  const double v_type = collision.victim.data_type();",
+      to: "  const double v_type = collision.attacker.data_type();",
     },
     {
       note: "itr kind key misspelled",

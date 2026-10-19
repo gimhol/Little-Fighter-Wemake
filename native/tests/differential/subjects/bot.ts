@@ -338,6 +338,12 @@ function main(): void {
                 ? ctrl.is_enter_avoid_zone(target)
                 : ctrl.is_leave_avoid_zone(target);
       out.push(`${line} || ${joinLog()} | v=${renderValue(v)}`);
+    } else if (op === "selfref") {
+      // `me` 是活实体（`ctrl.entity`）⇒ 直接给 `[id, position]`，与端口 `self_ref_of_env`
+      // 的投影同形（见 `subjects/bot.cpp`）。
+      const p = me.position as { x: number; y: number; z: number };
+      const v = [ctrl.entity.id, { x: p.x, y: p.y, z: p.z }];
+      out.push(`${line} || ${joinLog()} | v=${renderValue(v)}`);
     } else if (op === "act") {
       const where = parseJsStringLiteral(t[i[0]++]!);
       const action: any = parseValue(t, i);

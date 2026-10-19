@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="freeze" name="Freeze">
+  <director name="Freeze D^J">
+    <actors>
+      <actor id="freeze" oid="freeze" count="3" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="500" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="50" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="100">
+        <input target="freeze">
+          <step key_up="all" />
+          <step click="d,U,j" />
+        </input>
+      </entry>
+      <entry after="100">
+        <input target="freeze[0]">
+          <step key_up="all" />
+          <step key_down="D" />
+        </input>
+        <input target="freeze[2]">
+          <step key_up="all" />
+          <step key_down="U" />
+        </input>
+      </entry>
+      <entry wait="500" />
+    </timeline>
+  </director>
+  <director name="Freeze D&gt;A+A+A">
+    <actors>
+      <actor id="freeze" oid="freeze" count="3" group="fighters">
+        <layout type="line" axis="z" x="50" z="midZ" length="200" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="50" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="50">
+        <input target="freeze[0]">
+          <step key_up="all" />
+          <step click="d,R,a" />
+          <step key_down="D" />
+        </input>
+        <input target="freeze[1]">
+          <step key_up="all" />
+          <step click="d,R,a" />
+        </input>
+        <input target="freeze[2]">
+          <step key_up="all" />
+          <step click="d,R,a" />
+          <step key_down="U" />
+        </input>
+      </entry>
+      <entry repeat="10" interval="50">
+        <entry>
+          <input target="freeze" click="a" />
+        </entry>
+      </entry>
+      <entry wait="500" />
+    </timeline>
+  </director>
+  <director name="Freeze D&gt;J">
+    <actors>
+      <actor id="freeze" oid="freeze" count="3" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="500" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="50" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="100">
+      <entry after="500">
+        <input target="freeze[0]">
+          <step key_up="all" />
+          <step click="d,R,j" />
+          <step key_down="D" />
+        </input>
+        <input target="freeze[1]">
+          <step key_up="all" />
+          <step click="d,R,j" />
+        </input>
+        <input target="freeze[2]">
+          <step key_up="all" />
+          <step click="d,R,j" />
+          <step key_down="U" />
+        </input>
+      </entry>
+      <entry wait="500" />
+    </timeline>
+  </director>
+  <director name="Freeze DvJ">
+    <actors>
+      <actor id="freeze" oid="freeze" count="3" group="fighters">
+        <layout type="line" axis="x" x="midX" z="midZ" length="500" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="1000">
+      <entry after="500">
+        <input target="freeze">
+          <step key_up="all" />
+          <step click="d,D,j" />
+        </input>
+      </entry>
+    </timeline>
+  </director>
+</directors>

@@ -4,12 +4,22 @@
     {
       "name": "native-msvc-x64",
       // `native/` 是 include 根（源码里一律写 `lfw/xxx.h`）。
-      // 首选 compileCommands：它带上了真实构建的全部宏与 include 路径，
-      // 由 `node native/tools/native.mjs configure` 生成（native/.gitignore 忽略了 build/）。
-      "compileCommands": "${workspaceFolder}/native/build/msvc-x64/compile_commands.json",
+      // 首选 compileCommands：它带上了真实构建的全部宏与 include 路径。
+      // **两份构建的库由 `native.mjs` 合并成这一份**（C/C++ 扩展一次只认一份）：core（msvc-x64）
+      // 的条目优先，godot 那份只补 `native/host/godot/**` ⇒ `native/lfw/**` 在编辑器里也看不到
+      // godot-cpp 的 include 路径（硬规则，DESIGN §G8）。
+      // 由 `npm run native configure` / `godot` / `intellisense` 生成（`native/build/` 已忽略）。
+      "compileCommands": "${workspaceFolder}/native/build/compile_commands.json",
       // 兜底：刚克隆、还没 configure 时用（不完整，跑一次 configure 即可修复）。
+      // godot-cpp 那三个目录是给 `native/host/godot/**` 的**兜底**（条目查不到时才用 includePath）：
+      // 编辑器专用 —— 构建里 `lfw_core` 永远看不到它们（DESIGN §G8），`check_lfw_cpp_includes.mjs`
+      // 也会把 core 里的 `godot_cpp/…` 直接判 error。检出目录随机器走（当前 `%USERPROFILE%\godot-cpp-4.5`，
+      // 即 `GODOT_CPP_DIR`），换机器可能要改。
       "includePath": [
-        "${workspaceFolder}/native"
+        "${workspaceFolder}/native",
+        "${workspaceFolder}/native/build/godot/host/godot/godot-cpp/gen/include",
+        "${env:USERPROFILE}/godot-cpp-4.5/include",
+        "${env:USERPROFILE}/godot-cpp-4.5/gdextension"
       ],
       "defines": [
         "_CRT_SECURE_NO_WARNINGS",

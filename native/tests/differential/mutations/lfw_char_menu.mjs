@@ -463,6 +463,10 @@ void CharMenuHead::quit() {` },
     { note: "生存判定错绑 stage", file: "native/lfw/ui/component/game_prepare_logic.cpp",
       from: `  return mode.has_value() && *mode == kGameModeSurvival;`,
       to: `  return mode.has_value() && *mode == kGameModeStage;` },
+    { note: "生存排行重置 dataset 时保留了旧难度（TS b25e6ff9c 之后不再保留）",
+      file: "native/lfw/ui/component/game_prepare_logic.cpp",
+      from: `      if (v != nullptr) ds.set(k, *v);`,
+      to: `      if (v != nullptr && k != u"difficulty") ds.set(k, *v);` },
     { note: "start_game 广播名错", file: "native/lfw/ui/component/game_prepare_logic.cpp",
       from: `        if (message == u"start_game") {`,
       to: `        if (message == u"start_game2") {` },
@@ -631,10 +635,8 @@ void CharMenuHead::quit() {` },
       from: `  if (rank_period == p) return;`,
       to: `  if (rank_period != p) return;` },
     { note: "数据集 playrate 0.5", file: "native/lfw/ui/component/game_prepare_logic.cpp",
-      from: `  ds.set(u"difficulty", difficulty);
-  ds.set(u"playrate", Value(1.0));`,
-      to: `  ds.set(u"difficulty", difficulty);
-  ds.set(u"playrate", Value(0.5));` },
+      from: `  ds.set(u"playrate", Value(1.0));`,
+      to: `  ds.set(u"playrate", Value(0.5));` },
     // 撤出（等效，附证据）：
     //  - `on_stop` 的 `change_stage(u"")` vs `u"VOID"`：`Defines.VOID_STAGE.id` 是
     //    `"VOID_STAGE"`，`"VOID"` 既不是已加载舞台 id 也不是空串的兜底路径产物

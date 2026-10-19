@@ -39,7 +39,7 @@ std::optional<bool> PlayerScore::lose() {
   if (fighter == nullptr) return std::optional<bool>();
   if (fighter->hp() > 0) return false;
   for (Entity* const o : world().entities) {
-    if (o != fighter && entity::is_fighter(ref_of(*o)) && o->hp() > 0 &&
+    if (o != fighter && entity::is_fighter(*o) && o->hp() > 0 &&
         o->team() == fighter->team()) {
       return false;
     }

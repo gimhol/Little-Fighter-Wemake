@@ -50,6 +50,7 @@ const mp_map = {
   [Difficulty.Difficult]: 500,
   [Difficulty.Crazy]: 500
 }
+/** FIXME: 这太重了…… -Gim */
 export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
   static override readonly TAGS: string[] = ["GamePrepareLogic"];
   static override readonly PROPS: IPropsMeta<IGamePrepareLogicProps> = {
@@ -285,12 +286,10 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
     this.refresh_survival_rank()
   }
 
-  /** B站生存排行：把 world dataset 重置为默认值（保留难度选择） */
+  /** 生存排行：把 world dataset 重置为默认值（包括困难难度） */
   protected reset_world_dataset(): void {
     const ds = this.world.dataset
-    const difficulty = ds.difficulty
     Object.assign(ds, new WorldDataset().dump_dataset())
-    ds.difficulty = difficulty
     ds.playrate = 1
   }
 
@@ -425,4 +424,3 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
     this.world.camera.jump_x(cam_x);
   }
 }
-

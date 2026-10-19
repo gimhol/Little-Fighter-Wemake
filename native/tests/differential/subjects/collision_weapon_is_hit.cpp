@@ -252,16 +252,16 @@ Value g_recov = Value(0.25);
 ItrVelocity g_iv;
 
 void bind() {
-  g_henv.attacker_itr_motionless = []() { return g_itr_motionless; };
-  g_henv.attacker_set_motionless = [](const Value& v) {
+  g_henv.attacker_itr_motionless = [](const Collision&) { return g_itr_motionless; };
+  g_henv.attacker_set_motionless = [](const Collision&, const Value& v) {
     g_att._motionless = v;
     g_log.push_back("A:set_motionless:" + render(v));
   };
-  g_henv.victim_set_shaking = [](const Value& v) {
+  g_henv.victim_set_shaking = [](const Collision&, const Value& v) {
     g_vic._shaking = v;
     g_log.push_back("V:set_shaking:" + render(v));
   };
-  g_henv.attacker_set_arest = [](double v) {
+  g_henv.attacker_set_arest = [](const Collision&, double v) {
     g_att._arest = Value(v);
     g_log.push_back("A:set_arest:" + num(v));
   };
@@ -305,7 +305,7 @@ void bind() {
     if (id == g_vic.id) return &g_vic;
     return nullptr;
   };
-  g_env.spark_point = [](const Cube& a, const Cube& b) {
+  g_env.spark_point = [](const Collision&, const Cube& a, const Cube& b) {
     SparkPoint p;
     p.x = Value(a.left);
     p.y = Value(b.top);

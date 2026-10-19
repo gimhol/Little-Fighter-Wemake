@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -20,6 +20,11 @@ function run(args, timeoutMs) {
       cwd: root,
       stdio: ["ignore", "pipe", "pipe"],
       timeout: timeoutMs,
+      // MSVC 的 `/showIncludes` 打印在 stdout（中文 VS 的前缀与 CMake 写进 `rules.ninja` 的
+      // `msvc_deps_prefix` 对不上 ⇒ ninja 不吞它，见 README（十七））。一个中等大小的 TU
+      // 就能刷出近 1 MB，`execFileSync` 的默认 `maxBuffer` 正好是 1 MB ⇒ **撑爆后被误判成
+      // "build failed"**（实测：`entity.mjs` 的 936 条里 935 条被记成 compile-error）。
+      maxBuffer: 256 * 1024 * 1024,
     });
     return { ok: true, out: "" };
   } catch (e) {
@@ -46,12 +51,14 @@ const specCases = Array.isArray(spec.cases) ? spec.cases : spec.cases ? [spec.ca
 // 见下面 `touchSubjectSource()` 的注释。
 const subjectSource = resolve(root, "native", "tests", "differential", "subjects", `${subject}.cpp`);
 
-// ⚠️ 本机 `build.ninja` 里没有头文件依赖（没有 depfile，见 DESIGN §138）⇒ 改头文件
-// 不会让任何 `.obj` 过期。而台面源文件里往往**内联/实例化**了被改的类（MSVC 会把
-// vtable 与内联体以 COMDAT 放在台面的 .obj 里，链接时又排在库的前面赢得挑选），
-// 于是「头文件变异」会**假存活**。运行器本来就会在每条变异后把 spec 提到的文件
-// 写回一遍（顺带把它们的 mtime 顶新 ⇒ 下一条变异时自然会重编），台面源文件不在
-// 这个集合里，得单独顶一下。
+// ⚠️ 本机 `build.ninja` 里**记不下**头文件依赖（中文 VS 的 `/showIncludes` 前置与
+// `msvc_deps_prefix` 对不上，见 README（十七）/ DESIGN §161.4）⇒ 改头文件不会让任何
+// `.obj` 过期。`native.mjs build` 现在靠「头文件 stamp 变了就全量重编」兜底；但变异运行器
+// 里是它自己改文件、自己 build，所以这里仍旧把台面源文件顶一下，别指望别人替它擦。
+// 台面源文件里往往**内联/实例化**了被改的类（MSVC 会把 vtable 与内联体以 COMDAT 放在台面的
+// .obj 里，链接时又排在库的前面赢得挑选），于是「头文件变异」会**假存活**。运行器本来就会在
+// 每条变异后把 spec 提到的文件写回一遍（顺带把它们的 mtime 顶新 ⇒ 下一条变异时自然会重编），
+// 台面源文件不在这个集合里，得单独顶一下。
 function touchSubjectSource() {
   if (!existsSync(subjectSource)) return;
   const now = new Date();
@@ -148,6 +155,35 @@ function backupOriginals() {
   writeFileSync(resolve(dir, "manifest.json"), JSON.stringify(files), "utf8");
 }
 
+// 被杀掉的上一趟会在「源码 = 变异体、obj 也是变异体」的中间态离开：恢复源码后 mtime 可能**早于**
+// 那个 obj（恢复与最后一次编译前后脚），ninja 于是认为它是最新的 ⇒ 后面整趟都在测变异体
+// （实测过：935 条全 compile-error、以及一条假的 `entity/main` drift）。这里把恢复过的文件对应
+// 的 obj 删掉，逼下一趟重编 —— 宁可贵一点，不能拿变异体当基线。
+function dropObjectsOf(restored) {
+  const names = new Set(restored.map((f) => basename(f).toLowerCase()));
+  const stack = [resolve(root, "native", "build")];
+  while (stack.length) {
+    const dir = stack.pop();
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const p = resolve(dir, e.name);
+      if (e.isDirectory()) stack.push(p);
+      else if (e.name.toLowerCase().endsWith(".obj") && names.has(e.name.toLowerCase())) {
+        try {
+          rmSync(p, { force: true });
+        } catch {
+          // 占用中（编辑器/索引器）：下一趟 `build` 还来得及，忽略。
+        }
+      }
+    }
+  }
+}
+
 function recoverFromInterruptedRun() {
   const dir = backupDir();
   const manifest = resolve(dir, "manifest.json");
@@ -155,6 +191,7 @@ function recoverFromInterruptedRun() {
   const files = JSON.parse(readFileSync(manifest, "utf8"));
   for (const f of files) writeFileSync(f.file, readFileSync(resolve(dir, f.name), "utf8"));
   rmSync(dir, { recursive: true, force: true });
+  dropObjectsOf(files.map((f) => f.file));
   return true;
 }
 
@@ -163,6 +200,13 @@ if (recoverFromInterruptedRun()) {
     "NOTE: recovered from an interrupted run (sources restored, rebuild required)\n",
   );
   run(["build"]);
+}
+
+// 基线必须先编一遍：`test` 不构建（见 README「`test` 不 build」），拿上一次（可能是变异体的）
+// 二进制当基线就会得到一堆假 compile-error / 假 drift（实测踩过两次）。
+if (!run(["build", subject]).ok) {
+  process.stderr.write(`baseline build failed for '${subject}'\n`);
+  process.exit(1);
 }
 
 const baseline = runTest([]);

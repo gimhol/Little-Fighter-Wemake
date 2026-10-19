@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="others" name="Others">
+  <director name="Bottoms Up Drop Test (Alcohol Abuse Results in Harm to Your Health)">
+    <actors>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="100" />
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="200" rz="200" />
+      </actor>
+      <actor id="beer" oid="weapon_beer" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="100" />
+      </actor>
+      <actor id="milk" oid="weapon_milk" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="200" rz="200" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="1000">
+        <input target="bandit" click="a" />
+      </entry>
+      <entry after="1000">
+        <input target="bandit" click="a" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="MOVE(DADA) / STAY(DDDD) / COME(DJDJ) / FOLLOW(DJJJ)">
+    <actors>
+      <actor id="fighter" oid="template" count="4" ctrl="local" player_id="MoveStayCome_{i}">
+        <layout type="line" axis="x" x="midX" z="midZ" length="320" />
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="50">
+        <input target="fighter" click="d" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="d" />
+        <input target="fighter[1]" click="j" />
+        <input target="fighter[2]" click="a" />
+        <input target="fighter[3]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="d" />
+        <input target="fighter[1]" click="d" />
+        <input target="fighter[2]" click="d" />
+        <input target="fighter[3]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="d" />
+        <input target="fighter[1]" click="j" />
+        <input target="fighter[2]" click="a" />
+        <input target="fighter[3]" click="j" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Bot Response COME(DJDJ)">
+    <actors>
+      <actor id="fighter" oid="mark" count="2" ctrl="local" player_id="MoveStayCome_{i}">
+        <layout type="line" axis="x" x="midX" z="midZ" length="700" />
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8" ctrl="bot" player_id="">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="10000">
+      <entry after="50">
+        <input target="fighter[0]" click="d" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="d" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="j" />
+      </entry>
+      <entry wait="1500" />
+      <entry after="50">
+        <input target="fighter[1]" click="d" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[1]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[1]" click="d" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[1]" click="j" />
+      </entry>
+      <entry wait="1500" />
+    </timeline>
+  </director>
+  <director name="Bot Response FOLLOW(DJJJ)">
+    <actors>
+      <actor id="fighter" oid="mark" count="2" ctrl="local" player_id="MoveStayCome_{i}">
+        <layout type="line" axis="x" x="midX" z="midZ" length="700" />
+        <values>
+          <value name="team" type="strs" value="1,2" />
+          <value name="hp" type="num" value="999999" />
+          <value name="hp_r" type="num" value="999999" />
+          <value name="hp_max" type="num" value="999999" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8" ctrl="bot" player_id="">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="10000">
+      <entry after="50">
+        <input target="fighter[0]" click="d" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]" click="j" />
+      </entry>
+      <entry after="50">
+        <input target="fighter[0]">
+          <step key_down="R" />
+          <step key_up="L" />
+        </input>
+      </entry>
+      <entry wait="6000" />
+      <entry after="50">
+        <input target="fighter[0]">
+          <step key_down="L" />
+          <step key_up="R" />
+        </input>
+      </entry>
+      <entry wait="6000" />
+    </timeline>
+  </director>
+  <director name="Press A/D faster or slower to stand up">
+    <actors>
+      <actor id="hunter" oid="hunter" count="3">
+        <layout type="line" axis="x" x="midX" z="midZ" length="160" />
+        <values>
+          <value name="stat_bar" type="num" value="0" />
+          <value name="wakeup_invuln" type="num" value="1" />
+          <value name="ctrl_visible" type="num" value="1" />
+          <value name="name_visible" type="num" value="1" />
+          <value name="name" type="strs" value="Press &quot;A&quot;,Default,Press &quot;D&quot;" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="10000">
+      <entry after="10">
+        <input target="hunter" key_up="all" />
+      </entry>
+      <entry after="500">
+        <velocity target="hunter" y="5" />
+        <frame target="hunter" id="falling_forward_0" />
+      </entry>
+      <entry after="10">
+        <input target="hunter[0]" key_down="a" />
+        <input target="hunter[2]" key_down="d" />
+      </entry>
+      <entry wait="15000" />
+    </timeline>
+  </director>
+</directors>

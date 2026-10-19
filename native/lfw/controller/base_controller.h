@@ -12,6 +12,7 @@
 #include "lfw/controller/seq_keys.h"
 #include "lfw/core/value.h"
 #include "lfw/defines/bin_op.h"
+#include "lfw/entity/target_handle.h"
 #include "lfw/utils/times.h"
 
 namespace lfw {
@@ -52,6 +53,14 @@ struct CtrlEnv {
   Value data_pre_seq_map;
   Value data_post_seq_map;
   std::function<Value(const Value&)> get_next_frame;
+  // `ref_of(e)` 的实体引用 → 真实体。`bot/*` 里只读字段的函数（`is_ray_hit` 这一族）直接收
+  // `Entity&`，靠这条缝把引用解回实体（`Entity` 在控制器侧只出现指针/引用 ⇒ 前置声明就够，
+  // 不破 `Entity` ⇄ `controller` 的包含环）。
+  std::function<Entity*(const Value&)> resolve;
+  // 「自己」的真实体（`Entity::refresh_ctrl_env` 里直接给 `this`）。TS 那边 `bot/*` 读的就是
+  // 活实体（`this.entity.position`），有了这条就不用每帧重建 `Value` 投影再去解回来；
+  // 差分台面（没有 `Entity`）里它是 `nullptr`，那些地方走 `self_ref()` 的引用版重载。
+  Entity* self = nullptr;
   std::function<void(double, double, double, const std::u16string&)> world_etc;
   std::function<void(const std::u16string&, double, double, double)> team_come;
   std::function<void(const std::u16string&)> team_stay;
@@ -73,10 +82,10 @@ struct CtrlEnv {
   double vz = 0;
   Value name;
   Value data;
-  // 关系槽用**浅引用**（`ref_of` 不带关系那一层）：TS 读的是活实体
-  // （`me.holding?.base_type` / `me.catching.hp`），端口读刷新那一刻的投影。
-  Value holding;
-  Value catching;
+  // `me.holding` / `me.catching`：TS 读的是活实体（`me.holding?.base_type` / `me.catching.hp`），
+  // 端口用 `TargetHandle`（真实体活读；差分台面里退回引用快照）。
+  TargetHandle holding;
+  TargetHandle catching;
   double blockers_count = 0;
   // `lfw.mt`（`desire` 的 `mark`/`range`、`handle_bot_actions` 的 `pick`/`case`）。
   MersenneTwister* mt = nullptr;
@@ -132,9 +141,9 @@ class BaseController {
   // 收在 `Factory` 那一层；`entity == nullptr` 的 `InvalidController` 不绑，同 TS）。
   // `BallController.chasing`：TS 里这个字段在子类上，端口放在基类（`spawn` 的
   // `OpointMultiEnum` 分支要在 `is_ball_ctrl` 门后写它，而端口那边只有 `BaseController*`）。
-  // 值是一个**实体引用**（`entity/entity_ref.h` 的 `ref_of`），不是 `Entity*` ——
-  // 控制器这一侧看不见 `Entity`（同 `CtrlEnv`）。
-  Value chasing;
+  // 用 `entity/target_handle.h` 的句柄：真实运行时是活实体（位置/血活读、身份靠 `id` 复核，
+  // 实体池会复用指针），差分台面里退回引用快照。
+  TargetHandle chasing;
 
   double time() const { return _time.value(); }
 

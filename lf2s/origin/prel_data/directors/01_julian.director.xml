@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="julian" name="Julian">
+  <director name="Julian D^J">
+    <actors>
+      <actor id="julian" oid="julian" x="midX" z="midZ" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="100" rz="50" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="julian" click="d,U,j" />
+    </setup>
+  </director>
+  <director name="Julian D&gt;J">
+    <actors>
+      <actor id="julian" oid="julian" x="midX" z="midZ" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="hp" type="num" value="75" />
+          <value name="hp_r" type="num" value="75" />
+          <value name="hp_max" type="num" value="75" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="700">
+        <input target="julian">
+          <step key_up="all" />
+          <step click="d,R,j" />
+        </input>
+      </entry>
+      <entry after="700">
+        <input target="julian">
+          <step key_up="all" />
+          <step click="d,R,j" />
+          <step key_down="D" />
+        </input>
+      </entry>
+      <entry after="700">
+        <input target="julian">
+          <step key_up="all" />
+          <step click="d,R,j" />
+          <step key_down="U" />
+        </input>
+      </entry>
+      <entry after="700">
+        <input target="julian">
+          <step key_up="all" />
+          <step click="d,L,j" />
+        </input>
+      </entry>
+      <entry after="700">
+        <input target="julian">
+          <step key_up="all" />
+          <step click="d,L,j" />
+          <step key_down="D" />
+        </input>
+      </entry>
+      <entry after="700">
+        <input target="julian">
+          <step key_up="all" />
+          <step click="d,L,j" />
+          <step key_down="U" />
+        </input>
+      </entry>
+      <entry after="700">
+        <input target="julian" key_up="all" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Julian D&gt;A">
+    <actors>
+      <actor id="julian" oid="julian" x="midX" z="midZ" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="as_key_role" type="bool" value="false" />
+          <value name="mp" type="num" value="1000000" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="hp" type="num" value="75" />
+          <value name="hp_r" type="num" value="75" />
+          <value name="hp_max" type="num" value="75" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="9999">
+      <entry after="100">
+        <input target="julian" click="d,R,a" />
+      </entry>
+      <entry repeat="1000" interval="50">
+        <entry>
+          <input target="julian" click="a" />
+        </entry>
+      </entry>
+    </timeline>
+  </director>
+</directors>

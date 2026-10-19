@@ -529,7 +529,7 @@ void Entity::set_hp(double v) {
         frame_id_of(*this) != std::u16string(frame_id::kGone) &&
         array_length(brokens) > 0) {
       apply_opoints(brokens);
-      world().play_sound(field_or(base_of(_data), u"dead_sounds"), position_value(position));
+      play_sound(field_or(base_of(_data), u"dead_sounds"));
     }
     const Value nf = next_frame_of(field_or(frame, u"on_dead"), field_or(_data, u"on_dead"));
     if (truthy(nf)) enter_frame(nf);
@@ -1109,7 +1109,7 @@ void Entity::holding_set_team(const Value& v) {
 }
 
 bool Entity::holding_is_weapon() const {
-  return holding != nullptr && entity::is_weapon(ref_of(*holding));
+  return holding != nullptr && entity::is_weapon(*holding);
 }
 
 void Entity::catcher_drop_catching() {
@@ -1180,8 +1180,29 @@ void Entity::set_dismiss_time(const Value& v) {
   dismiss_time = to_number(v);
 }
 
+// TS `Entity.play_sound(sounds, pos = this.position)`：Message 帧（`StateEnum.Message` 那类
+// 飘字实体）的音效要把 x 夹进「镜头可视范围」，其余帧原样透传；数组/单值的展开与 `lfw.sounds.play`
+// 在 `World::play_sound`（宿主的记录缝）那一侧做。**非** Message 帧必须把 `pos` 原样转发
+// （不重建 Value）—— 台面靠 `world().play_sound(sounds, pos)` 记录 `play_sound:<sounds>@<pos>`。
 void Entity::play_sound(const Value& sounds, const Value& pos) {
-  world().play_sound(sounds, pos);
+  if (to_number(field_or(frame, u"state")) != static_cast<double>(StateEnum::Message)) {
+    world().play_sound(sounds, pos);
+    return;
+  }
+  const double centerx = to_number(field_or(frame, u"centerx"));
+  const double width = to_number(field_or(frame, u"width"));
+  double cam_x = world().camera().position.x;
+  const Background* const bg = world().bg();
+  const double zoom_x = bg != nullptr ? bg->zoom_x() : 1.0;
+  double cam_r = cam_x + to_number(world().dataset.get(u"screen_w")) / zoom_x;
+  const double offset_x = facing == 1 ? centerx : width - centerx;
+  cam_r -= width - offset_x;
+  cam_x += offset_x;
+  Object o;
+  o.set(u"x", Value(clamp(to_number(field_or(pos, u"x")), cam_x, cam_r)));
+  o.set(u"y", field_or(pos, u"y"));
+  o.set(u"z", field_or(pos, u"z"));
+  world().play_sound(sounds, Value(std::make_shared<Object>(o)));
 }
 
 void Entity::play_sound(const Value& sounds) {
@@ -1552,11 +1573,11 @@ void Entity::update_position() {
   const double atom_time = _atom_time;
   for (const auto& kv : blockers) {
     const collision::Collision& v = kv.second;
-    if ((vx < 0 && v.attacker.px < position.x) || (vx > 0 && v.attacker.px > position.x)) {
+    if ((vx < 0 && v.attacker.px() < position.x) || (vx > 0 && v.attacker.px() > position.x)) {
       vx = 0;
       prev_velocity.x = 0;
     }
-    if ((vz < 0 && v.attacker.pz < position.z) || (vz > 0 && v.attacker.pz > position.z)) {
+    if ((vz < 0 && v.attacker.pz() < position.z) || (vz > 0 && v.attacker.pz() > position.z)) {
       vz = 0;
       prev_velocity.z = 0;
     }
@@ -1663,7 +1684,7 @@ EnterFrameResult Entity::handle_next_frame_result(const Value& result, bool fall
     if (truthy(hp)) set_hp(_hp - to_number(hp));
   }
   if (truthy(frame_v)) {
-    world().play_sound(field_or(frame_v, u"sound"), position_value(position));
+    play_sound(field_or(frame_v, u"sound"));
     set_frame(frame_v);
   } else {
     const Value* empty_frame = defines::find(u"EMPTY_FRAME_INFO");
@@ -1675,7 +1696,7 @@ EnterFrameResult Entity::handle_next_frame_result(const Value& result, bool fall
     facing = handle_facing_flag(facing_flag);
   if (truthy(frame_v)) wait = handle_wait_flag(field_or(flags, u"wait"), frame_v);
   const Value sound = field_or(flags, u"sound");
-  if (as_array(sound) != nullptr) world().play_sound(sound, position_value(position));
+  if (as_array(sound) != nullptr) play_sound(sound);
   const Value blink_time = field_or(flags, u"blink_time");
   if (truthy(blink_time)) set_blinking(to_number(blink_time));
   // `this.ctrl.reset_key_list()` has no optional chain in TS (a missing controller
@@ -2335,7 +2356,12 @@ Entity* Entity::spawn(const Value& opoint, const Vector3& offset_velocity, doubl
   if (!truthy(oid)) return nullptr;
   const Value data = world().lfw().datas_find(Value(std::u16string(to_string(oid))));
   if (std::holds_alternative<std::monostate>(data)) return nullptr;
-  Entity* entity = world().lfw().create_entity(world(), data);
+  // TS：`this.lfw.factory.create_entity_with_bot("", this.world, data)` —— **不是**
+  // `create_entity`：`with_bot` 会按 data.id 建控制器（球 → `BallController`、斗士 → bot）。
+  // 少了这一步，opoint 生成出来的球 `ctrl == nullptr` ⇒ `World::update` 里
+  // `is_ball_ctrl(ctrl)` 恒假 ⇒ `update_lookup` 从不跑 ⇒ `chasing` 永远空
+  // ⇒ `BallController::update_chasing` 只走「Hover 自己出生点」那条分支（D>A 的球不追人）。
+  Entity* entity = world().lfw().create_entity_with_bot(u"", world(), data);
   if (entity == nullptr) return nullptr;
   entity->on_spawn(*this, opoint, offset_velocity, facing_value).attach(field_or(opoint, u"ghost"));
   if (strict_equals(field_or(entity->data(), u"id"), field_or(_data, u"id"))) {
@@ -2354,8 +2380,8 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
     std::u16string attacker_id = emitter.id;
     Value attacker_team = Value(emitter.team());
     if (emitter.lastest_collided.has_value()) {
-      attacker_id = emitter.lastest_collided->attacker.id;
-      attacker_team = emitter.lastest_collided->attacker.team;
+      attacker_id = emitter.lastest_collided->attacker.id();
+      attacker_team = emitter.lastest_collided->attacker.team();
     }
     emitters.clear();
     emitters.push_back(attacker_id);
@@ -2401,7 +2427,11 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
   }
 
   const Value speedz_field = field_or(opoint, u"speedz");
-  const double o_speedz = to_number(or_nullish(speedz_field, Value(0.0)));
+  // `opoint.speedz ?? (z_launch ? DEFAULT_OPOINT_SPEED_Z : 0)` —— `z_launch` 在下面按生成物
+  // 首帧状态算出来，这里先用占位值，真正的兜底在 `vz` 那一行。
+  const bool has_speedz = !std::holds_alternative<std::monostate>(speedz_field) &&
+                          !std::holds_alternative<NullTag>(speedz_field);
+  const double speedz_explicit = to_number(has_speedz ? speedz_field : Value(0.0));
   double o_dvx =
       num_of(or_nullish(emitter.gen_or(opoint, u"__gen_dvx", field_or(opoint, u"dvx")), Value(0.0)));
   double o_dvy =
@@ -2451,6 +2481,14 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
   const Value result_state = field_or(field_or(result, u"frame"), u"state");
   const bool z_disabled = equals(result_state, Value(static_cast<double>(StateEnum::Normal))) ||
                           equals(result_state, Value(static_cast<double>(StateEnum::Burning)));
+  // TS `on_spawn`：`opoint.speedz` 没写时按**生成物首帧**的状态补默认 Z 初速
+  // （弹道类才给）。`Entity::on_spawn` 里 `vz += o_speedz * ud` ⇒ 发射时按上下键球会斜飞；
+  // 显式写了 `speedz`（含 `0`，如冰片/烟雾/JanChase 尾迹）的不动。
+  const bool z_launch =
+      equals(result_state, Value(static_cast<double>(StateEnum::Ball_Flying))) ||
+      equals(result_state, Value(static_cast<double>(StateEnum::Ball_3006))) ||
+      equals(result_state, Value(static_cast<double>(StateEnum::Weapon_Throwing))) ||
+      equals(result_state, Value(static_cast<double>(StateEnum::HeavyWeapon_InTheSky)));
 
   const Value ovx = Value(offset_velocity.x);
   const Value ovy = Value(offset_velocity.y);
@@ -2459,6 +2497,8 @@ Entity& Entity::on_spawn(Entity& emitter, const Value& opoint, const Vector3& of
   else o_dvx = o_dvx / weight + std::abs(offset_velocity.z / 2);
   double vx = to_number(ovx) + o_dvx * facing_value;
   double vy = to_number(ovy) + o_dvy + dvy_now;
+  const double o_speedz =
+      has_speedz ? speedz_explicit : (z_launch ? defines::num(u"Defines.DEFAULT_OPOINT_SPEED_Z") : 0.0);
   double vz = z_disabled ? 0 : to_number(ovz) + o_dvz + o_speedz * ud;
   if (equals(vxm, Value(static_cast<double>(SpeedMode::Fixed)))) vx = dvx_now;
   if (equals(vym, Value(static_cast<double>(SpeedMode::Fixed)))) vy = dvy_now;
@@ -2636,19 +2676,19 @@ void Entity::apply_opoints(const Value& opoints_value) {
         if (strict_equals(multi_type,
                           Value(static_cast<double>(OpointMultiEnum::AccordingEnemies)))) {
           ctrl->chasing = enemies.empty()
-                              ? Value()
-                              : ref_of(*enemies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*enemies[static_cast<std::size_t>(
                                     std::fmod(i, enemies.size()))]);
         } else if (strict_equals(
                        multi_type,
                        Value(static_cast<double>(OpointMultiEnum::AccordingAllies)))) {
           ctrl->chasing = allies.empty()
-                              ? Value()
-                              : ref_of(*allies[static_cast<std::size_t>(
+                              ? TargetHandle()
+                              : TargetHandle::of(*allies[static_cast<std::size_t>(
                                     std::fmod(i, allies.size()))]);
         } else if (strict_equals(multi_type,
                                  Value(static_cast<double>(OpointMultiEnum::Emitter)))) {
-          ctrl->chasing = allies.empty() ? Value() : ref_of(*allies[0]);
+          ctrl->chasing = allies.empty() ? TargetHandle() : TargetHandle::of(*allies[0]);
         }
       }
 
@@ -3014,7 +3054,7 @@ void Entity::update_landable() {
     if (_state != nullptr && _state->on_landing) {
       _state->on_landing(*this, position_value(_temp_v));
     }
-    world().play_sound(field_or(base_of(_data), u"drop_sounds"), position_value(position));
+    play_sound(field_or(base_of(_data), u"drop_sounds"));
     if (truthy(Value(throwinjury))) {
       set_hp(hp() - throwinjury);
       set_hp_r(hp_r() - round(throwinjury * (1 - num_of(dataset(u"hp_recoverability")))));
@@ -3212,6 +3252,7 @@ void Entity::refresh_ctrl_env() {
   if (ctrl_ != nullptr) {
     // ---- `bot/*`（`BotController` / `BotState_*`）读 `this.entity` 的额外自身字段 ----
     env.id = id;
+    env.self = this;
     env.hp_max = hp_max();
     env.mounted = truthy(Value(mounted()));
     env.invisible = truthy(Value(invisible()));
@@ -3225,8 +3266,8 @@ void Entity::refresh_ctrl_env() {
     env.vz = velocity.z;
     env.name = name();
     env.data = _data;
-    env.holding = holding != nullptr ? ref_of(*holding) : Value(NullTag{});
-    env.catching = catching != nullptr ? ref_of(*catching) : Value(NullTag{});
+    env.holding = holding != nullptr ? TargetHandle::of(*holding) : TargetHandle();
+    env.catching = catching != nullptr ? TargetHandle::of(*catching) : TargetHandle();
     env.blockers_count = static_cast<double>(blockers.size());
     env.mt = &(*world().lfw().mt());
     // `BotController.difficulty` 是 getter：这里做成闭包，读的时刻才求值（同 TS）。
@@ -3254,6 +3295,13 @@ void Entity::refresh_ctrl_env() {
     };
     env.set_position = [this](const Value& x, const Value& y, const Value& z) {
       set_position(x, y, z);
+    };
+    // `ref_of(e)` 的引用 → 真实体：只读字段的 bot 函数（`is_ray_hit` 那一族）要真 `Entity`。
+    // 引用里只有 `id`（`entity_ref.h`），照它查世界表。
+    env.resolve = [this](const Value& ref) -> Entity* {
+      const Value id_v = field_or(ref, u"id");
+      const std::u16string* const id_p = std::get_if<std::u16string>(&id_v);
+      return id_p != nullptr ? world().find_entity(*id_p) : nullptr;
     };
     env.bg_width = to_number(world().bg_value(u"width"));
     env.bg_near = to_number(world().bg_value(u"near"));

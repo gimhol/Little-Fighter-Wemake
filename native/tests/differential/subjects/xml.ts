@@ -44,6 +44,8 @@
 //   xml_2_t_next_frame <tag> / xml_2_qube [outvar|-] / xml_to_velocity_info [outvar|-] /
 //   parse_rect_qube；写口 fn：xml_x_bdy / xml_x_itr / xml_x_armor_info / xml_x_chase /
 //   xml_x_bpoint / xml_x_wpoint / xml_x_cpoint / xml_x_next_frame / xml_x_colli_action。
+import { readFileSync } from "node:fs";
+
 import { merge_by_tag } from "../../../../src/LFW/dat_translator/xml/merge_by_tag";
 import { non_empty, one_or_arr } from "../../../../src/LFW/dat_translator/xml/one_or_arr";
 import { parse_rect_qube } from "../../../../src/LFW/dat_translator/xml/parse_rect_qube";
@@ -71,6 +73,14 @@ import {
 } from "../../../../src/LFW/dat_translator/xml/xml_x_colli_action";
 import { xml_2_cpoint, xml_x_cpoint } from "../../../../src/LFW/dat_translator/xml/xml_x_cpoint";
 import { xml_2_dat_index, xml_x_dat_index } from "../../../../src/LFW/dat_translator/xml/xml_x_dat_index";
+import {
+  xml_2_director,
+  xml_2_director_index,
+  xml_to_directors,
+  xml_x_director,
+  xml_x_director_index,
+  xml_x_directors,
+} from "../../../../src/LFW/dat_translator/xml/xml_x_director";
 import { xml_2_dialog_info, xml_x_dialog_info } from "../../../../src/LFW/dat_translator/xml/xml_x_dialog_info";
 import {
   xml_2_difficulty_map,
@@ -174,6 +184,9 @@ const readers: Record<string, ReaderFn> = {
     xml_to_velocity_info(e as never, reader_arg_data(a, 0) as never),
   parse_rect_qube: (e) => parse_rect_qube(e as never),
   xml_2_dat_index: (e) => xml_2_dat_index(e as never),
+  xml_2_director: (e) => xml_2_director(e as never),
+  xml_2_director_index: (e) => xml_2_director_index(e as never),
+  xml_to_directors: (e) => xml_to_directors(e as never),
   xml_2_difficulty_map: (e, a) => xml_2_difficulty_map(e as never, keyOf(a[0]!)),
   xml_2_map: (e, a) =>
     xml_2_map(e as never, keyOf(a[0]!), (parsers[a[1]!] ?? fail(`unknown map reader '${a[1]}'`)) as never),
@@ -226,6 +239,7 @@ const parsers: Record<string, ParserFn> = {
   xml_2_next_frame: (c) => xml_2_next_frame(c) as never,
   xml_2_colli_action: (c) => xml_2_colli_action(c) as never,
   xml_2_dat_index: (c) => xml_2_dat_index(c) as never,
+  xml_2_director: (c) => xml_2_director(c as never) as never,
   xml_2_picture_info: (c) => xml_2_picture_info(c) as never,
   xml_2_frame_pic: (c) => xml_2_frame_pic(c) as never,
   xml_2_model_info: (c) => xml_2_model_info(c) as never,
@@ -255,6 +269,9 @@ const writers: Record<string, WriterFn> = {
   xml_x_next_frame: (x, d, tag) => xml_x_next_frame(x, d as never, tag),
   xml_x_colli_action: (x, d, tag) => xml_x_colli_action(x, d as never, tag),
   xml_x_dat_index: (x, d, tag) => xml_x_dat_index(x, d as never, tag === "-" ? undefined : tag),
+  xml_x_director: (x, d, tag) => xml_x_director(x, d as never, tag === "-" ? undefined : tag),
+  xml_x_directors: (x, d) => xml_x_directors(x, d as never),
+  xml_x_director_index: (x, d, tag) => xml_x_director_index(x, d as never, tag),
   xml_x_picture_info: (x, d, tag) => xml_x_picture_info(x, d as never, tag),
   xml_x_frame_pic: (x, d, tag) => xml_x_frame_pic(x, d as never, tag),
   xml_x_model_info: (x, d, tag) => xml_x_model_info(x, d as never, tag),
@@ -385,6 +402,15 @@ function main(): void {
     } else if (op === "ddel") {
       const o = data.get(next()) as Record<string, unknown>;
       delete o[keyOf(next())];
+    } else if (op === "dxml") {
+      // 真实数据的一次性覆盖：读仓库里的 XML 文件（cwd = 仓库根）→ parse → `xml_to_directors`
+      // 逐个 dump。第 4CJ 的 17 份 `prel_data/directors/*.xml` 全靠这条钉子。
+      const name = next();
+      const file = next();
+      const root = xml.parse(readFileSync(file, "utf8"));
+      const list = xml_to_directors(root as never);
+      log.push(`dxml|${name}|n=${list.length}`);
+      for (let j = 0; j < list.length; ++j) log.push(`dir|${name}|${j}|${renderValue(list[j])}`);
     } else if (op === "ddump") {
       const name = next();
       log.push(`ddump|${name}|${renderValue(data.get(name))}`);

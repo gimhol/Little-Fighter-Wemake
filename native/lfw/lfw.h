@@ -587,7 +587,12 @@ class LFW : public IResourcesHost,
   std::unique_ptr<ui::UILayers> _layers_own;
   I18N _i18n;
   MersenneTwister _mt;
-  std::unique_ptr<state::States> _states;
+  // 状态表：TS 的 `Entity` / `common_creator` 那条缺省值是**全局**的 `ENTITY_STATES`
+  // （`src/LFW/state/ENTITY_STATES.ts` ⇒ 端口 `state::entity_states()`）。这里曾经造一个
+  // **空表**，于是每次 `set_state` 都 miss、退化成 `States::fallback` 的兜底状态 ⇒
+  // 跳/冲刺/落地/受伤这些**写在状态对象里**的逻辑全都不会跑（`CharacterState_Jump::enter`
+  // 之类），只有数据帧自己带的 `dvx` 还在生效 —— 用户看到的"角色离不开地面"。
+  state::States* _states = nullptr;
   std::unique_ptr<World> world_;
   ZipMgr zips_;
   std::unique_ptr<Resources> resources_;

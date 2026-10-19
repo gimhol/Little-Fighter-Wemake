@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <map>
@@ -7,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "host/common/ui_input_handle.h"
+#include "host/common/zip_file.h"
 #include "lfw/base/clock.h"
 #include "lfw/ditto/xml/tool_xml.h"
 #include "lfw/lfw.h"
@@ -50,11 +53,11 @@ class NullWorldRenderer : public IWorldRenderer {
 };
 
 // headless 宿主：`ILfwHost` 的最小可用实现。
-//   * 资源读盘：`--root` 下的目录树（`builtin_data/...`）与 `--zip` 给的「已解包包」目录；
+//   * 资源读盘：`--root` 下的目录树（`builtin_data/...`）与数据包 —— `--zip` 给的「已解包包」目录
+//     与**真 `.zip` 本体**（`host/common/zip_file.{h,cpp}`：中央目录 + stored/deflate）都在；
 //   * 渲染 / 音频 / 指针 / UI 图片：空实现（会计数，结束后打印一行统计）；
-//   * 存档（`Ditto.Cache`）：内存态，进程退出即丢；
-//   * `md5`：**不是真 MD5**，只保证「同输入同输出、不同输入基本不同」（给 `ui_load_img` 拼
-//     key 用；真 MD5 与 zip 那一刀一起做）。
+//   * 存档（`Ditto.Cache` / `Zip.get_stored`）：内存态，进程退出即丢；
+//   * `md5`：真 MD5（RFC 1321，与 `DittoImpl/md5.ts` 的 SparkMD5 逐位一致）。
 class HeadlessHost : public ILfwHost {
  public:
   HeadlessHost(std::vector<std::filesystem::path> roots, bool dev);
@@ -70,6 +73,7 @@ class HeadlessHost : public ILfwHost {
   const std::vector<std::u16string>& last_errors() const { return _last_errors; }
 
   // `--root` 里第一个真的存在的文件（给 import_as_* 与宿主自己的诊断用）。
+  // 按 TS `Importer.get_possible_url_list` 的口径找两档：先按原样，再补 `builtin_data/` 前缀。
   std::filesystem::path resolve(const std::u16string& path) const;
 
   // ---- ILfwHost ----
@@ -77,12 +81,21 @@ class HeadlessHost : public ILfwHost {
   void images_init(LFW&) override {}
   void keyboard_init(LFW&) override {}
   void pointings_init(LFW&) override {}
-  void keyboard_add_callback(LFW&) override {}
-  void pointings_add_ui_input(LFW&) override {}
+  // `this.keyboard.callback.add(this)`（`lfw.cpp:226`）：**LFW 自己也在这张表里** —— 键盘事件
+  // 经 `LFW::on_key_down` 才能变成 `KEY_EVENT` 命令。原先这里是空实现（键盘没接线 ⇒ 没人注册）。
+  void keyboard_add_callback(LFW& lfw) override { keyboard_callback_add(lfw, &lfw); }
+  // `this.pointings.callback.add(new I.Ditto.UIInputHandle(this))`（`lfw.cpp:249`）：注册本宿主的
+  // `UiInputHandle`（引擎无关的命中测试 + `POINTER_*` 命令），从此指针事件才真的进 UI。
+  void pointings_add_ui_input(LFW&) override;
   void keyboard_callback_add(LFW&, LfwKeyboardCallback* cb) override;
   void keyboard_callback_del(LFW&, LfwKeyboardCallback* cb) override;
   void pointings_callback_add(LFW&, LfwPointingsCallback* cb) override;
   void pointings_callback_del(LFW&, LfwPointingsCallback* cb) override;
+  // `this.pointings.grab(who)` / `.ungrab(who)` / `.grabbing`（TS `DittoImpl.__Pointings`：
+  // 世代 + 持有者语义，「指针按下」抬一代）。
+  bool pointings_grab(LFW& lfw, const void* who) override;
+  void pointings_ungrab(LFW& lfw, const void* who) override;
+  const void* pointings_grabbing(LFW& lfw) override;
   void cache_forget(const std::u16string& type, double version) override;
   void zip_forget_stored(const std::u16string& type, double version) override;
   IWorldRenderer* create_world_renderer(LFW&) override { return &_renderer; }
@@ -120,7 +133,8 @@ class HeadlessHost : public ILfwHost {
   void sounds_callback_del(LFW&, LfwSoundsCallback* cb) override;
   void sounds_dispose() override {}
   void keyboard_dispose() override {}
-  void pointings_dispose() override {}
+  // `__Pointings.dispose()`：清回调表 + 复位抓取（句柄本身留在宿主手里，只是被摘出回调表）。
+  void pointings_dispose() override;
   Value measure_text(const Value& text, const Value& style) override;
   void player_cache_get(const std::u16string& name, PlayerInfoCacheEntry& out) override;
   bool player_cache_del(const std::u16string& name, std::u16string& error) override;
@@ -153,8 +167,51 @@ class HeadlessHost : public ILfwHost {
   void emit_key_down(LfwKeyEvent& e);
   void emit_key_up(LfwKeyEvent& e);
 
+  // ---- 键盘注入（平台侧那一半：Godot 的 `_input` / `lfw_run --key*`）----
+  // 镜像 `src/DittoImpl/Keyboard.ts` 的 `__Keyboard.key_down/key_up`：
+  //   * `key` 是**小写**的 `KeyboardEvent.key`（TS 入口就 `.toLowerCase()`，LFW 再判一次）；
+  //   * `times` 是「同一个键这次按下是第几次」——**第一次是 0**（第一次之后的重复按下递增），抬起固定 0。
+  //     这个 0 是有意义的：`LFW::on_key_down` 只在 `times == 0` 时把这次按下翻成 `KEY_EVENT`。
+  // `device_type` 是 `"keyboard" | "controller" | "touch"`（走 `LFW::on_key_down` 的
+  // `keyboard_detected` / `controller_detected` 分支）。
+  void key_down(const std::u16string& key, const std::u16string& device_type = u"keyboard");
+  void key_up(const std::u16string& key, const std::u16string& device_type = u"keyboard");
+  // 当前按下的键 → 已按次数（TS 的 `__Keyboard._times_map`；诊断用）。
+  const std::map<std::u16string, int>& pressed_keys() const { return _key_times; }
+
+  // ---- 指针注入（app 侧：Godot 的 `_input` / `lfw_run --click`）----
+  // 每条都分发给已注册的 `LfwPointingsCallback`（快照迭代：回调里注销自己也不会踩迭代器）。
+  // `emit_pointer_down` 会像平台那样先抬一代抓取世代（`__Pointings._on_pointer_down`）。
+  void emit_pointer_down(LfwPointingEvent& e);
+  void emit_pointer_move(LfwPointingEvent& e);
+  void emit_pointer_up(LfwPointingEvent& e);
+  void emit_pointer_cancel(LfwPointingEvent& e);
+  void emit_click(LfwPointingEvent& e);
+  void emit_wheel(LfwPointingEvent& e);
+  // ⚠ 「指针进/出画面」这条缝（`LfwPointingsCallback` 上没有）只到 UI 句柄；别的回调收不到。
+  void emit_pointer_enter(LfwPointingEvent& e);
+  void emit_pointer_leave(LfwPointingEvent& e);
+
+  // 本宿主的 UI 输入句柄（`pointings_add_ui_input` 之前为空）。
+  UiInputHandle* ui_input() const { return _ui_input.get(); }
+
+  // 一次完整的点击：`x,y` 是 **UI 逻辑像素**（左上原点，与 `--pos` 同一套），内部反算
+  // `scene_x/scene_y`（与 `UiInputHandle` 的换算互逆）⇒ 按下 + 抬起各推一条命令。
+  void click_ui(LFW& lfw, double x, double y, double button = 0.0);
+
  private:
   bool read_file(const std::filesystem::path& path, std::string& out, std::u16string& error) const;
+
+  // 宿主侧的「blob」（TS 是 `Blob` / `Uint8Array`）：端口没有二进制 `Value` ⇒ 用**令牌**
+  // （`blob:<n>`）指向宿主持着的字节，`zip_read_blob` 再把令牌换回字节。令牌只在本宿主内流通
+  // （`load_zip_from_url` 只对它做真值判断与回传），不泄漏给核心的其它部分。
+  struct Blob {
+    std::u16string token;
+    std::u16string md5;
+    std::vector<uint8_t> bytes;
+  };
+  std::string blob_token(const Blob& blob);  // 登记一个 blob，回它的令牌（UTF-8 便于放进 Value）
+  const Blob* blob_of(const Value& blob) const;
 
   std::vector<std::filesystem::path> _roots;
   bool _dev = false;
@@ -164,9 +221,22 @@ class HeadlessHost : public ILfwHost {
   ToolXML _xml;
   std::vector<LfwKeyboardCallback*> _kb_callbacks;
   std::vector<LfwPointingsCallback*> _pt_callbacks;
+  std::unique_ptr<UiInputHandle> _ui_input;
+  // `__Keyboard._times_map`（按下的键 → 次数）。
+  std::map<std::u16string, int> _key_times;
+  // 令牌 → blob；`md5("lfw-partial:" + url)` → 已完成的下载（`get_stored_download` 的内存版）。
+  std::map<std::string, Blob> _blobs;
+  std::map<std::string, std::u16string> _stored;
+  long long _blob_seq = 0;
+  // `zip_read_blob` / `zip_read_buf` 造出来的包（指针交给 `LFW`，所有权留在这里）。
+  std::vector<std::unique_ptr<ZipFile>> _zip_objs;
+  // TS `__Pointings` 的抓取世代（`_grab_prev_epoch` / `_grab_epoch` / `_grabbing`）。
+  long long _grab_prev_epoch = -1;
+  long long _grab_epoch = 0;
+  const void* _grabbing = nullptr;
+ protected:
+  // 声音状态与回调留给子类（Godot 宿主自己接一套真实的播放后端，见 `lfw_godot_host.cpp`）。
   std::vector<LfwSoundsCallback*> _sd_callbacks;
-  std::map<std::u16string, PlayerInfoCachePut> _player_cache;
-  std::map<std::u16string, Value> _zip_cache;
   std::u16string _bgm;
   bool _bgm_random = false;
   bool _bgm_muted = false;
@@ -174,6 +244,10 @@ class HeadlessHost : public ILfwHost {
   double _volume = 1.0;
   double _bgm_volume = 1.0;
   double _sound_volume = 1.0;
+
+ private:
+  std::map<std::u16string, PlayerInfoCachePut> _player_cache;
+  std::map<std::u16string, Value> _zip_cache;
   long long _ignored_images = 0;
   int _warns = 0;
   int _errors = 0;

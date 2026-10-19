@@ -7,6 +7,7 @@
 #include "lfw/core/value.h"
 #include "lfw/dat_translator/value_builder.h"
 #include "lfw/defines/oid.h"
+#include "lfw/entity/gen_field.h"
 
 namespace lfw {
 namespace dat_translator {
@@ -26,7 +27,11 @@ Value make_buring_smoke(int foo) {
   ret.set(u"x", n(0));
   ret.set(u"y", n(0));
   ret.set(u"oid", oid_broken_weapon());
-  ret.set(u"action", Value(std::make_shared<Object>(action)));
+  // TS 的 `action.__gen_facing` 是个闭包（`mt.pick([-1, 1])`），`Value` 装不下函数 ⇒
+  // 把 action 对象登记到 `gen_field` 的侧表里（见 `lfw/entity/gen_field.h`）。
+  Value action_value(std::make_shared<Object>(std::move(action)));
+  register_gen_closure(action_value, GenClosure::BuringSmokeAction);
+  ret.set(u"action", action_value);
   ret.set(u"speedz", n(0));
   ret.set(u"ghost", n(1));
   ret.set(u"unimportant", n(1));

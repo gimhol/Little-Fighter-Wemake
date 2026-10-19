@@ -32,13 +32,11 @@ class World;
 // 真实的 `World` / `Entity` / 宿主 `lfw` 面上。
 //
 // 保真要点：
-// 1. `CollisionActor` 是**快照**（`collision/` 层看不见 `Entity` 的活体）⇒ 宿主负责
-//    `Entity` → `CollisionActor` 的投影，字段对应见 `actor_of` 上的注释（TS 是直接读活实体）。
-// 2. 两条缝（`victim_get_v_rest` / `attacker_is_ally`）签名里没有对方实体，TS 那边是
-//    `victim.get_v_rest(c.aid)` / `attacker.is_ally(victim)` ⇒ 宿主要知道「当前判定的那一对」。
-//    它由本类的 `collision_get` / `collision_test` 包装器登记（`collision/` 层的入口只有这两个）。
-// 3. 需要「活实体」的缝（`find_entity` / `get_bounding` / `victim_add_v_rest` …）一律按 id 现查
-//    `world.find_entity`，不缓存实体指针。
+// 1. `Collision.attacker` / `.victim` 是 `ActorHandle`（见 `collision/actor_handle.h`）：
+//    真实运行时字段活读实体，差分台面里退回脚本化的 `CollisionActor` 快照。
+// 2. 需要「活实体」的缝（`find_entity` / `get_bounding` / `victim_add_v_rest` …）现在都能从
+//    传进来的 `Collision`（或 `ActorHandle`）直接拿到实体，不再需要「当前判定的那一对」这种
+//    宿主级状态（原来的 `_cur_a` / `_cur_v` 已删除）。
 //
 // 切片 4CE：碰撞族的 `I*Entity` 窄接口退役 ⇒ 缝里交出去的就是 `Entity*` 本身，本类不再是
 // 什么「视图宿主」（原 `ICollisionViewHost` 与 `EntityCollisionView` 一并删除）。
@@ -63,9 +61,8 @@ class WorldCollisionHost {
   // 开头清碰撞表时整批释放。
   void reset_collisions();
 
-  // `Entity` → `CollisionActor` 快照（TS 侧是那个活实体本身）。
-  collision::CollisionActor actor_of(Entity& e) const;
-  collision::CollisionActor actor_of_id(const std::u16string& id) const;
+  // `Entity` → 碰撞里的那一方（TS 侧就是那个活实体本身）。
+  collision::ActorHandle actor_of(Entity& e) const;
 
  private:
   // 把 11 个 Env 发布到 `collision/` 的模块级槽上；`ensure_published()` 只在「当前发布者不是
@@ -90,10 +87,9 @@ class WorldCollisionHost {
   void bind_healing();
   void bind_buff_env();
 
-  // `game/` 之外那一层的两个入口：`collision/*` 的 Env 只有「id 或 `Collision&`」，
-  // 而 TS 是直接对活实体动手 ⇒ 这几个小工具做 id → `Entity`（找不到给 `nullptr`）。
-  Entity* entity_of_collision_a(const collision::Collision& c) const;
-  Entity* entity_of_collision_v(const collision::Collision& c) const;
+  // `collision.attacker` / `.victim` → `Entity`（台面里的假实体给 `nullptr`）。
+  static Entity* entity_of_collision_a(const collision::Collision& c);
+  static Entity* entity_of_collision_v(const collision::Collision& c);
   // `is_fall` / `is_armor_work` / `calc_itr_velocity` / `calc_stiffness` 在端口里收的是
   // **`Value` 形状**的碰撞（那一刀是用用例数据喂的）⇒ 宿主按 TS 的读法投影一次。
   Value entity_helpers_value(Entity& e) const;
@@ -111,9 +107,6 @@ class WorldCollisionHost {
   buff::Buff* create_buff(const std::u16string& kind, const std::u16string& id);
 
   World* _world = nullptr;
-  // 当前判定的那一对（见类注释第 2 条）。
-  Entity* _cur_a = nullptr;
-  Entity* _cur_v = nullptr;
 
   collision::CollisionCoreEnv _core;
   collision::KeeperEnv _keeper;

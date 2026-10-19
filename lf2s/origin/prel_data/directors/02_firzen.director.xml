@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="firzen" name="Firzen">
+  <director name="Firezen D^A 0">
+    <actors>
+      <actor id="firzen" oid="firzen" x="midX" z="midZ" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="firzen" click="d,U,a" />
+    </setup>
+    <auto target="firzen" state="Standing" mp_gt="100" click="d,U,a" />
+    <auto target="firzen" state_not="Standing" mp_gt="100" frame_hit="a" click="a" />
+  </director>
+  <director name="Firezen D^A 1">
+    <actors>
+      <actor id="firzen" oid="firzen" x="midX" z="midZ" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="hp" type="num" value="100" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="firzen" click="d,U,a" />
+    </setup>
+    <auto target="firzen" state="Standing" mp_gt="100" click="d,U,a" />
+    <auto target="firzen" state_not="Standing" mp_gt="100" frame_hit="a" click="a" />
+  </director>
+  <director name="Firezen D^A 2">
+    <actors>
+      <actor id="firzen" oid="firzen" x="midX" z="midZ" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="80">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="hp" type="num" value="100" />
+        </values>
+      </actor>
+    </actors>
+    <setup>
+      <input target="firzen" click="d,U,a" />
+    </setup>
+    <auto target="firzen" state="Standing" mp_gt="100" click="d,U,a" />
+    <auto target="firzen" state_not="Standing" mp_gt="100" frame_hit="a" click="a" />
+  </director>
+  <director name="Firzen = Freeze + Firen">
+    <actors>
+      <actor id="firen" oid="firen" x="midX - 300" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="100" />
+        </values>
+      </actor>
+      <actor id="freeze" oid="freeze" x="midX + 300" z="midZ">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="100" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" count="8">
+        <layout type="circle" x="midX" z="midZ" rx="width / 2" rz="depth / 2" />
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline times="1">
+      <entry after="1000">
+        <input target="firen">
+          <step db_hit="R" />
+          <step key_up="R" />
+        </input>
+        <input target="freeze">
+          <step db_hit="L" />
+          <step key_up="L" />
+        </input>
+      </entry>
+      <entry after="6000">
+        <input target="firen" click="d,j,a" />
+        <input target="freeze" click="d,j,a" />
+      </entry>
+    </timeline>
+  </director>
+</directors>

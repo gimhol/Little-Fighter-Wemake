@@ -21,6 +21,12 @@ endif()
 
 add_subdirectory(lfw)
 add_subdirectory(host)
+if(LFW_GODOT_HOST)
+  # Godot 宿主（GDExtension，DESIGN §G1）。**只有 `npm run native godot`**
+  # （`native/tools/native.mjs` 传 `-DLFW_GODOT_HOST=ON -DLFW_GODOT_CPP_DIR=…`）会打开
+  # ⇒ `msvc-x64` / `wasm` 完全不受影响，也绝不让 godot-cpp 的头文件路径进 `lfw_core`（§G8）。
+  add_subdirectory(host/godot)
+endif()
 if(EMSCRIPTEN)
   # WASM 宿主的步行骨架（DESIGN W12/W13）。守卫在这里 + 子目录里各一道：
   # `msvc-x64` 预设下 `EMSCRIPTEN` 为假 ⇒ 不配置这个 target，`all` 里也不会多出东西。

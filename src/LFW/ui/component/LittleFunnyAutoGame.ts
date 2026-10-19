@@ -1,7 +1,7 @@
 import { CMD, type IEntityData } from "../../defines";
 import { EntityGroup } from '../../defines/EntityGroup';
 import { Entity, type IEntityCallbacks } from "../../entity";
-import { ActionDirector } from './Tests/ActionDirector';
+import { ActionDirector } from '../../director/ActionDirector';
 import { UIComponent } from "./UIComponent";
 
 interface ITeamInfo {

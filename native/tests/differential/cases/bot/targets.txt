@@ -69,3 +69,14 @@ lookup "e1"
 ntsnap ch
 get en
 mtcases
+# catching 非空时 should_chase 只比身份：给一个**不是**被问目标，恒真/恒假两种变异才都看得出来
+meref catching "e2"
+should_chase "e1"
+should_chase "e4"
+lookup "e1"
+ntsnap ch
+# 持握物的 data.base.w_atk_m_x / w_atk_r_x 必须各读各的
+fx put "h1" o 3 "id" s "h1" "data" o 2 "type" n 16 "base" o 3 "type" n 2 "w_atk_m_x" n 7 "w_atk_r_x" n 9 "position" o 2 "x" n 0 "z" n 0
+meref holding "h1"
+get w_atk_m_x
+get w_atk_r_x

@@ -6,6 +6,9 @@ file(GLOB SUBJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/subject
 # `lfw_run` 保持一致（RTTI / 异常开关不一致会让两边各自实例化 `std::variant` 同名模板）。
 add_library(lfw_headless_host STATIC
   "${LFW_NATIVE_ROOT}/host/headless_host.cpp"
+  "${LFW_NATIVE_ROOT}/host/common/key_code.cpp"
+  "${LFW_NATIVE_ROOT}/host/common/ui_input_handle.cpp"
+  "${LFW_NATIVE_ROOT}/host/common/zip_file.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/world_fixture.cpp"
 )
 target_link_libraries(lfw_headless_host PUBLIC lfw_core)

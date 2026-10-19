@@ -20,6 +20,12 @@ bool is_ball_data(const Value& v);
 bool is_fighter(const Value& v);
 bool is_ball(const Value& v);
 bool is_weapon(const Value& v);
+// 实体版：TS 的 `is_fighter(v: any)` 读 `v?.data.type`，`Entity` 直接给 `data()` 就行。
+// 调用点原来写的 `is_fighter(ref_of(*e))` 会为了判一个类型白造一整份引用
+// （`data` / `frame` / 四个关系槽），这类点在 `stage` / `world` / `ui` 里共 36 处。
+bool is_fighter(const Entity& e);
+bool is_ball(const Entity& e);
+bool is_weapon(const Entity& e);
 bool is_entity(const Value& v);
 bool is_boss(const Value& v);
 bool is_object(const Value& v);

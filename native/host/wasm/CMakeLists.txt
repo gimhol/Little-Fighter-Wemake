@@ -10,7 +10,10 @@ endif()
 add_executable(lfw_wasm
   # 直接复用 headless 宿主的两份实现（与 `lfw_run` 同一批源文件）：
   # `--zip <目录>` 读包、存档、XML、import_as_* 全都不必重写。
+  "${LFW_NATIVE_ROOT}/host/common/key_code.cpp"
   "${LFW_NATIVE_ROOT}/host/common/lfw_boot.cpp"
+  "${LFW_NATIVE_ROOT}/host/common/ui_input_handle.cpp"
+  "${LFW_NATIVE_ROOT}/host/common/zip_file.cpp"
   "${LFW_NATIVE_ROOT}/host/fs_zip.cpp"
   "${LFW_NATIVE_ROOT}/host/headless_host.cpp"
   lfw_wasm.cpp

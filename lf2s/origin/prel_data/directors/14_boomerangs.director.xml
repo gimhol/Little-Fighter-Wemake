@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="boomerangs" name="Boomerangs">
+  <director name="Boomerang_1_1">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="knight" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_1_2">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="knight" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="50" z="far">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_1_3">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="knight" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="right - 50" z="far">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_1_4">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="knight" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="50" z="near">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_1_5">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="knight" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="right - 50" z="near">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_1_6">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="knight" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_2_1">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="jan" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_2_2">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="jan" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="50" z="far">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_2_3">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="jan" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="right - 50" z="far">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_2_4">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="jan" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="50" z="near">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_2_5">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="jan" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="right - 50" z="near">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_2_6">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="jan" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_3_1">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="davis" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_3_2">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="davis" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="50" z="far">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_3_3">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="davis" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="right - 50" z="far">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_3_4">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="davis" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="50" z="near">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_3_5">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="davis" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="right - 50" z="near">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Boomerang_3_6">
+    <actors>
+      <actor id="weapon" oid="weapon_boomerang" x="50" z="far + 1" ctrl="bot" player_id="" />
+      <actor id="fighter" oid="davis" x="50" z="far" group="fighters">
+        <values>
+          <value name="team" type="str" value="1" />
+        </values>
+      </actor>
+      <actor id="bandit" oid="bandit" x="midX" z="midZ">
+        <values>
+          <value name="team" type="str" value="2" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry after="500">
+        <input target="fighter" click="a" />
+      </entry>
+      <entry after="500">
+        <input target="fighter">
+          <step key_down="R" />
+          <step click="a" />
+        </input>
+      </entry>
+      <entry after="500">
+        <input target="fighter" key_up="R" />
+      </entry>
+    </timeline>
+  </director>
+</directors>

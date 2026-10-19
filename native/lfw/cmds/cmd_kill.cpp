@@ -32,7 +32,7 @@ void cmd_kill(CMDS& ctx) {
   if (team.has_value() && !team->empty()) {
     for (Entity* const e : world.entities) {
       if (e == nullptr) continue;
-      if (entity::is_fighter(ref_of(*e)) &&
+      if (entity::is_fighter(*e) &&
           strict_equals(Value(e->team()), Value(*team))) {
         e->set_hp(0.0);
       }

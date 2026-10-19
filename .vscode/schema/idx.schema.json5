@@ -25,6 +25,28 @@
       ],
       "type": "object"
     },
+    "IDirectorIndex": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "file"
+      ],
+      "type": "object"
+    },
     "IDataLists": {
       "additionalProperties": false,
       "properties": {
@@ -51,13 +73,15 @@
             "$ref": "#/definitions/IDatIndex"
           },
           "type": "array"
+        },
+        "directors": {
+          "items": {
+            "$ref": "#/definitions/IDirectorIndex"
+          },
+          "type": "array"
         }
       },
-      "required": [
-        "objects",
-        "backgrounds",
-        "stages"
-      ],
+      "required": [],
       "type": "object"
     }
   }

@@ -30,6 +30,8 @@ fd firzen o 2 id s "51" base o 1 group a 1 s "x"
 fd julian o 2 id s "52" base o 0
 fd julian o 3 id s "52" base o 1 bg_face u frames o 2 100 o 1 opoint a 2 o 2 oid s "52" hp n 5 o 2 oid s "5" mp n 5 200 o 1 opoint a 1 o 1 oid n 52
 fd julian o 3 id s "52" base o 1 bg_face s "b.png" frames o 1 0 o 1 opoint a 1 o 4 oid s "52" hp n 1 max_hp n 2 mp n 3
+# D>J 的球（229）落 `speedz`：只有字符串 oid 命中；228 与数字 229 不动
+fd julian o 3 id s "52" base o 1 bg_face s "b.png" frames o 2 289 o 1 opoint a 3 o 2 oid s "229" dvx n 15 o 2 oid s "228" dvx n 15 o 1 oid n 229 318 o 1 opoint a 1 o 2 oid s "229" action o 1 id s "40"
 
 # ---- 装甲 ----
 fd knight o 2 id s "37" base o 0

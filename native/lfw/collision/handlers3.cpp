@@ -104,7 +104,7 @@ void handle_ball_is_hit_a(Collision& c) {
   double x = 0;
   double y = 0;
   double z = 0;
-  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);
+  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);
   g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u"fall"), false));
   v->play_sound(v->data_base_hit_sounds());
 }
@@ -123,7 +123,7 @@ void handle_ball_is_hit_b(Collision& c) {
   double x = 0;
   double y = 0;
   double z = 0;
-  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);
+  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);
   g_env.spark(x, y, z, spark_type_of(field_or(c.itr, u"fall"), false));
   v->play_sound(v->data_base_hit_sounds());
 }
@@ -168,7 +168,7 @@ bool handle_armor(Collision& c) {
   double x = 0;
   double y = 0;
   double z = 0;
-  g_env.spark_point(c.a_cube, c.b_cube, x, y, z);
+  g_env.spark_point(c, c.a_cube, c.b_cube, x, y, z);
   g_env.spark(x, y, z, spark_type_of(Value(fall), true));
   const Value sounds = v->toughness() > 0 ? hit_sounds : dead_sounds;
   if (truthy(sounds)) {

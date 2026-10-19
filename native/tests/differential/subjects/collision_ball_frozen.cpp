@@ -78,6 +78,14 @@ struct Side {
     Side* side = nullptr;
     Value datas_find(const Value& oid) override;
     lfw::Entity* create_entity(lfw::World& world, const Value& data) override;
+
+  // `Entity::spawn` 走的是 `create_entity_with_bot`（真机里它额外建控制器）：本台面
+  // 只关心「造出来了没」，所以与 `create_entity` 同一条路。
+  lfw::Entity* create_entity_with_bot(const std::u16string& player_id, lfw::World& world,
+                                      const Value& data) override {
+    (void)player_id;
+    return create_entity(world, data);
+  }
   };
 
   Lfw lfw;
@@ -167,8 +175,7 @@ Value Side::Lfw::datas_find(const Value& oid) {
   return Value(std::make_shared<lfw::Object>(o));
 }
 
-lfw::Entity* Side::Lfw::create_entity(lfw::World& world, const Value& data) {
-  (void)world;
+lfw::Entity* Side::Lfw::create_entity(lfw::World& world, const Value& data) {  (void)world;
   Side& s = *side;
   if (s.owner == nullptr || !s.owner->_spawn_ok) {
     // 生成失败：真 `spawn` 在这儿就早退，之后没有别的缝可打那一行 ⇒ 当场补上。

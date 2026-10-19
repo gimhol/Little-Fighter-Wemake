@@ -2,6 +2,7 @@
 export * from "./ITimesSnapshot";
 export * from "./Times";
 export * from "./cross_bounding";
+export * from "./eval_number";
 export * from "./list_writable_properties";
 export * from "./make_private_properties";
 export * from "./utf8";

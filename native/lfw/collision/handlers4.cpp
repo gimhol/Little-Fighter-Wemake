@@ -72,7 +72,7 @@ void handle_weapon_hit_other(Collision& c) {
     (void)vz;
     a->set_velocity(Value(-0.3 * vx), Value(0.3 * vy), Value(0.0));
   }
-  const Value nf = g_env.find_align_frame(a->frame_id(), a->data_indexes_of(u"throwings"),
+  const Value nf = g_env.find_align_frame(c, a->frame_id(), a->data_indexes_of(u"throwings"),
                                           a->data_indexes_in_the_skys());
   const Value arest = Value(a->arest());
   a->enter_frame(nf);
