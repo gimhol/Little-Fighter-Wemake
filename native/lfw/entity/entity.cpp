@@ -1400,20 +1400,21 @@ void Entity::mp_recovering() {
 
 bool Entity::set_mark(const std::u16string& key, const std::u16string& value,
                       const std::optional<Value>& prev) {
-  const auto it = marks.find(key);
-  const Value cur = it != marks.end() ? Value(it->second) : Value();
+  // TS `this.marks.get(key) == prev` / `this.marks.set(...)`：`marks` 在端口是 `std::map`，
+  // 但台面把 `marks.get/set/delete` 换成了可观测的虚方法 ⇒ 这里必须走那三个（`entity.h`
+  // 的 `marks_get/marks_set/marks_delete`），别直接碰成员，否则假实体的 marks 会写丢。
+  const Value cur = marks_get(key);
   if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {
-    marks[key] = value;
+    marks_set(key, value);
     return true;
   }
   return false;
 }
 
 bool Entity::del_mark(const std::u16string& key, const std::optional<Value>& value) {
-  const auto it = marks.find(key);
-  const Value cur = it != marks.end() ? Value(it->second) : Value();
+  const Value cur = marks_get(key);
   if (!value.has_value() || nullish(*value) || equals(cur, *value)) {
-    return marks.erase(key) != 0;
+    return marks_delete(key);
   }
   return false;
 }

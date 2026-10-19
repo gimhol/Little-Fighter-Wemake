@@ -12265,3 +12265,58 @@ void Buff::rebind_lfw(LFW& lfw) {
 * `LFW::world()` 改 `virtual`，`FakeLfw::world_override` 让台面把 `lfw.world` 指到
   `TestWorld`（**只有真的会 mount buff 的 11 个 subject 才设**；不设时保持真实现，免得
   平白构造一个 `World` 多出两条 `change_bg` 日志）。
+
+## 171. `buff.h` 的两个 mark 自由函数删除（2026-10-19）
+
+```cpp
+// 删掉的（切片 4B ~ 4CP 一直留着）
+inline bool set_mark(Entity& e, const std::u16string& key, const std::u16string& value,
+                     const Value& prev);
+inline bool del_mark(Entity& e, const std::u16string& key, const Value& value);
+```
+
+TS 从第一天起就是 `Entity` 的成员（`src/LFW/entity/Entity.ts:2629-2641`）：
+
+```ts
+set_mark(key: string, value: string, prev?: string): boolean {
+  if (prev == void 0 || this.marks.get(key) == prev) { this.marks.set(key, value); return true; }
+  return false;
+}
+del_mark(key: string, value?: string): boolean {
+  if (value == void 0 || this.marks.get(key) == value) return this.marks.delete(key);
+  return false;
+}
+```
+
+端口的两个自由函数是 `Entity` 还没移植时写的替身；`Entity::set_mark/del_mark`（`entity.cpp:1401`）
+上收之后它们就退化成「只剩 4 个 buff 子类 8 处调用」的重复实现，且语义有细微差别
+（自由函数只认 `std::monostate`，成员版按 JS 的 `==` 把 `null` 也当「没给」）。现在：
+
+| 位置 | 之前 | 现在 |
+| --- | --- | --- |
+| `Buff_Electrify/GroupAttack/Healing/MpHealing::mount` | `set_mark(*victim, KIND, id(), Value())` | `victim->set_mark(std::u16string(KIND), id())` |
+| 同上的 `unmount` | `del_mark(*victim, KIND, Value(u16string(id())))` | `victim->del_mark(std::u16string(KIND), Value(std::u16string(id())))` |
+
+### 171.1. 顺带修的：成员方法原来绕过虚存取器
+
+`Entity::set_mark/del_mark` 原先写的是 `marks[key] = value` / `marks.erase(key)`——**直接碰
+成员**。而 `marks_get` / `marks_set` / `marks_delete` 是 `virtual` 的（差分台面的假实体覆写
+它们做观测、并把 marks 存在自己的容器里）⇒ 走成员方法时假实体的 marks 会**写丢**（这条差异
+是这次改完跑差分才暴露的）。现在成员方法也走那三个虚存取器，与 TS 的
+`this.marks.get/set/delete` 一一对应：
+
+```cpp
+bool Entity::set_mark(key, value, prev) {
+  const Value cur = marks_get(key);
+  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {
+    marks_set(key, value);
+    return true;
+  }
+  return false;
+}
+```
+
+变异锚点：`buff.h` 上那 4 条（`sentinel test uses and` ×2、`value match test inverted`、
+`never removes the mark`）随自由函数一起删；同等语义由 `entity.mjs` 的
+`set_mark treats a null prev as a real value` / `del_mark ignores the previous value` /
+`del_mark compares the previous value strictly` / `del_mark always reports a deletion` 覆盖。

@@ -2874,32 +2874,32 @@ export default {
         {
       "note": "set_mark stores the key as the value",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    marks[key] = value;\n    return true;",
-      "to": "    marks[key] = key;\n    return true;"
+      "from": "    marks_set(key, value);\n    return true;",
+      "to": "    marks_set(key, key);\n    return true;"
     },
         {
       "note": "set_mark forgets to store",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    marks[key] = value;\n    return true;",
+      "from": "    marks_set(key, value);\n    return true;",
       "to": "    (void)value;\n    return true;"
     },
         {
       "note": "set_mark reads a missing mark as an empty string",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  const Value cur = it != marks.end() ? Value(it->second) : Value();\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {",
-      "to": "  const Value cur = it != marks.end() ? Value(it->second) : Value(std::u16string());\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {"
+      "from": "  const Value cur = marks_get(key);\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {",
+      "to": "  const Value cur = marks_has(key) ? marks_get(key) : Value(std::u16string());\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {"
     },
         {
       "note": "set_mark looks the previous value up in the wrong place",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "  const auto it = marks.find(key);\n  const Value cur = it != marks.end() ? Value(it->second) : Value();\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {",
-      "to": "  const auto it = marks.find(value);\n  const Value cur = it != marks.end() ? Value(it->second) : Value();\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {"
+      "from": "  const Value cur = marks_get(key);\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {",
+      "to": "  const Value cur = marks_get(value);\n  if (!prev.has_value() || nullish(*prev) || equals(cur, *prev)) {"
     },
         {
       "note": "set_mark reports success on a mismatch",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    marks[key] = value;\n    return true;\n  }\n  return false;\n}",
-      "to": "    marks[key] = value;\n    return true;\n  }\n  return true;\n}"
+      "from": "    marks_set(key, value);\n    return true;\n  }\n  return false;\n}",
+      "to": "    marks_set(key, value);\n    return true;\n  }\n  return true;\n}"
     },
         {
       "note": "del_mark ignores the previous value",
@@ -2922,19 +2922,19 @@ export default {
         {
       "note": "del_mark always reports a deletion",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    return marks.erase(key) != 0;",
-      "to": "    marks.erase(key);\n    return true;"
+      "from": "    return marks_delete(key);",
+      "to": "    marks_delete(key);\n    return true;"
     },
         {
       "note": "del_mark reports an existing mark as missing",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    return marks.erase(key) != 0;",
-      "to": "    marks.erase(key);\n    return false;"
+      "from": "    return marks_delete(key);",
+      "to": "    marks_delete(key);\n    return false;"
     },
         {
       "note": "del_mark reports success without deleting",
       "file": "native/lfw/entity/entity.cpp",
-      "from": "    return marks.erase(key) != 0;",
+      "from": "    return marks_delete(key);",
       "to": "    return marks.count(key) != 0;"
     },
         {

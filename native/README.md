@@ -2638,3 +2638,20 @@ anchors 9773 ok / 0 bad。
 验证：差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9773 ok / 0 bad；
 三条运行时摘要逐位不变（`b3f9a34a67597b08` / `4c5ef7aa63c97056` / `b18b9d0d7892aef5`）；
 `collision_healing` 变异 11 killed / 0 survived。
+
+### 2026-10-19（二十九）：`buff.h` 的 `set_mark` / `del_mark` 自由函数删除
+
+用户问「`set_mark` / `del_mark` 还有用吗」。它们是**早期副本**：TS 一开始就把这两个做成
+`Entity` 的成员方法（`src/LFW/entity/Entity.ts:2629-2641`），端口 `Entity` 还没移植时先在
+`buff/buff.h` 里写了两个自由函数顶上，后来 `Entity::set_mark/del_mark` 上收了、这两个就一直
+没人删（只剩 4 个 buff 子类的 8 处调用）。
+现在 4 个 `mount()/unmount()` 改成 `victim->set_mark(std::u16string(KIND), id())` /
+`victim->del_mark(...)`（与 TS 逐字同形），自由函数删掉。
+
+顺带修了一个被它掩盖的缺陷：`Entity::set_mark/del_mark` 原先**直接写 `marks` 成员**，而
+`marks_get/marks_set/marks_delete` 是虚的（台面靠它们观测）⇒ 差分台面的假实体走成员方法时
+marks 会写丢。现在成员方法也走那三个虚存取器，与 TS 的 `this.marks.get/set/delete` 一一对应。
+
+验证：差分 265/265、lint 867 clean / 0 failed / 14 warnings、anchors 9769 ok / 0 bad
+（`buff.h` 上那 4 条锚点随自由函数一起删；`Entity::set_mark/del_mark` 的语义变异在
+`entity.mjs`）。

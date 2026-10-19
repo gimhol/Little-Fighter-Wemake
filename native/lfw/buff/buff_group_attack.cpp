@@ -26,7 +26,7 @@ void Buff_GroupAttack::mount() {
   for (size_t i = 0; i < victims.size(); ++i) {
     Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
-    set_mark(*victim, std::u16string(KIND), id(), Value());
+    victim->set_mark(std::u16string(KIND), id());
   }
 }
 
@@ -35,7 +35,7 @@ void Buff_GroupAttack::unmount() {
   for (size_t i = 0; i < victims.size(); ++i) {
     Entity* victim = world().find_entity(victims[i]);
     if (victim == nullptr) continue;
-    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));
+    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));
   }
   Buff::unmount();
 }

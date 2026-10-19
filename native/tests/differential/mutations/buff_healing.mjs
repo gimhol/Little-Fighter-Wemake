@@ -85,14 +85,14 @@ export default {
     {
       note: "healing: mount writes the mark under another key",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: '    set_mark(*victim, std::u16string(KIND), id(), Value());\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
-      to: '    set_mark(*victim, std::u16string(u"Other"), id(), Value());\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
+      from: '    victim->set_mark(std::u16string(KIND), id());\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
+      to: '    victim->set_mark(std::u16string(u"Other"), id(), Value());\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
     },
     {
       note: "healing: mount passes a defined previous value",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: '    set_mark(*victim, std::u16string(KIND), id(), Value());\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
-      to: '    set_mark(*victim, std::u16string(KIND), id(), Value(std::u16string(u"x")));\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
+      from: '    victim->set_mark(std::u16string(KIND), id());\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
+      to: '    victim->set_mark(std::u16string(KIND), id(), Value(std::u16string(u"x")));\n    set_ticks(to_number(victim->dataset(u"hp_healing_ticks")));',
     },
     {
       note: "healing: mount does not copy the tick interval",
@@ -109,8 +109,8 @@ export default {
     {
       note: "healing: mount ignores the first victim",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: '  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());',
-      to: '  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    set_mark(*victim, std::u16string(KIND), id(), Value());',
+      from: '  for (size_t i = 0; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());',
+      to: '  for (size_t i = 1; i < victims.size(); ++i) {\n    Entity* victim = world().find_entity(victims[i]);\n    if (victim == nullptr) continue;\n    victim->set_mark(std::u16string(KIND), id());',
     },
     {
       note: "healing: on_tick is never scheduled",
@@ -169,20 +169,20 @@ export default {
     {
       note: "healing: unmount writes the mark instead of deleting it",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
-      to: "    set_mark(*victim, std::u16string(KIND), id(), Value());\n  }\n  Buff::unmount();",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
+      to: "    victim->set_mark(std::u16string(KIND), id());\n  }\n  Buff::unmount();",
     },
     {
       note: "healing: unmount deletes unconditionally",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: "    del_mark(*victim, std::u16string(KIND), Value());",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: "    victim->del_mark(std::u16string(KIND), Value());",
     },
     {
       note: "healing: base unmount is skipped",
       file: "native/lfw/buff/buff_healing.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
-      to: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
+      to: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }",
     },
     {
       note: "healing: buff kind changed",
@@ -259,14 +259,14 @@ export default {
     {
       note: "mp healing: unmount deletes unconditionally",
       file: "native/lfw/buff/buff_mp_healing.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));",
-      to: "    del_mark(*victim, std::u16string(KIND), Value());",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));",
+      to: "    victim->del_mark(std::u16string(KIND), Value());",
     },
     {
       note: "mp healing: base unmount is skipped",
       file: "native/lfw/buff/buff_mp_healing.cpp",
-      from: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
-      to: "    del_mark(*victim, std::u16string(KIND), Value(std::u16string(id())));\n  }",
+      from: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }\n  Buff::unmount();",
+      to: "    victim->del_mark(std::u16string(KIND), Value(std::u16string(id())));\n  }",
     },
     {
       note: "mp healing: buff kind changed",

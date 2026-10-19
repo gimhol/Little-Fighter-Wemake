@@ -24,22 +24,8 @@ class Buff;
 // 切片 4CP：`BuffEnv` 也退役 —— TS 的 `Buff` 构造收 `lfw: LFW` 并自己记 `this.world = lfw.world`，
 // 端口照做（`_lfw` / `_world` 两个只读句柄），`find_entity` / `datas.find` / `create_entity` /
 // `world.buffs` / `factory.create_buff` 全都走 `LFW`/`World` 自己的（虚）方法。
-
-inline bool set_mark(Entity& e, const std::u16string& key, const std::u16string& value,
-                     const Value& prev) {
-  if (std::holds_alternative<std::monostate>(prev) || equals(e.marks_get(key), prev)) {
-    e.marks_set(key, value);
-    return true;
-  }
-  return false;
-}
-
-inline bool del_mark(Entity& e, const std::u16string& key, const Value& value) {
-  if (std::holds_alternative<std::monostate>(value) || equals(e.marks_get(key), value)) {
-    return e.marks_delete(key);
-  }
-  return false;
-}
+// 切片 4CQ：这里的 `set_mark` / `del_mark` 两个自由函数也删了 —— 它们是 `Entity` 还没移植时
+// 的副本，TS 里本来就是 `victim.set_mark(KIND, id)` 这个成员方法（`entity.h:645`）。
 
 class Buff {
  public:
