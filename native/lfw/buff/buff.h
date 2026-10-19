@@ -68,7 +68,12 @@ class Buff {
   size_t effects_size() const { return _effects.size(); }
   Entity* attacter();
 
-  void set_env(const BuffEnv* env) { _env = env; }
+  // 池化复用（`Factory::recycle_buff` → 下一次 `create_buff`）会把这个对象交给**下一个**
+  // 世界的实体；而 `_effects` 是裸 `Entity*`、`_victims` 是上一局的 id ⇒ 换宿主时必须丢掉。
+  void set_env(const BuffEnv* env) {
+    if (_env != nullptr && _env != env) drop_cached_refs();
+    _env = env;
+  }
   const BuffEnv* env() const { return _env; }
   virtual void init() {}
   void reset(const std::u16string& id);
@@ -109,6 +114,8 @@ class Buff {
   void show_effect(Entity* victim);
   void update_effects();
   bool del_id(const std::u16string& id);
+  /** 丢掉一切「属于某个世界的实体」的缓存（`_effects` 是裸指针、`_victims` 是 id）。 */
+  void drop_cached_refs();
 
   const BuffEnv* _env = nullptr;
   std::u16string _id;

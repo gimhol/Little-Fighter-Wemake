@@ -30,7 +30,7 @@ export default {
   mutations: [
     { note: "attacter 空 id 判定取反", file: "native/lfw/buff/buff.cpp", from: `  if (_attacker_id.empty()) {`, to: `  if (!_attacker_id.empty()) {` },
     { note: "attacter 重找判定取反", file: "native/lfw/buff/buff.cpp", from: `  if (_attacker != nullptr && _attacker->id == _attacker_id) {`, to: `  if (_attacker != nullptr && _attacker->id != _attacker_id) {` },
-    { note: "reset 身份比较取反", file: "native/lfw/buff/buff.cpp", from: `  if (prev != id) {`, to: `  if (prev == id) {` },
+    { note: "reset 身份比较取反", file: "native/lfw/buff/buff.cpp", from: `  if (prev != id && _env != nullptr) {`, to: `  if (prev == id && _env != nullptr) {` },
     { note: "reset 不清旧挂载", file: "native/lfw/buff/buff.cpp", from: `      if (v != nullptr) v->buffs_delete(prev);\n    }\n  }\n  _id = id;`, to: `      (void)v;\n    }\n  }\n  _id = id;` },
     { note: "reset 不清等级", file: "native/lfw/buff/buff.cpp", from: `  _level = 0;\n  _mounted = false;`, to: `  _level = 1;\n  _mounted = false;` },
     { note: "reset 不摘挂载位", file: "native/lfw/buff/buff.cpp", from: `  _mounted = false;\n  _victims.clear();`, to: `  _mounted = true;\n  _victims.clear();` },

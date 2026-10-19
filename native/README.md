@@ -2581,3 +2581,24 @@ anchors 9773 ok / 0 bad。
   瓶子于是 `hp=1`、按 `(vx, 6, 0)` 抛出，落地时 `weapon_drop_hurt: 35` 把它打到 0
   ⇒ `set_hp` 的 `brokens` / `on_dead` 那一段触发，碎掉。
   差分台面 `burning_drink` 的被持有物改成独立的 `FakeHeld`（TS 那边它本来就是个独立对象）。
+
+### 2026-10-19（二十七）：buff 的「跨世界缓存」与崩溃定位辅助
+
+用户报的 DvJ 崩溃给了一份只有偏移的 Godot 回溯（`lfw_godot.dll+<偏移>`，no debug info）。
+为此给 `lfw_godot` 加了链接 map（`/MAP`，产物 `native/build/godot/host/godot/lfw_godot.map`），
+按偏移就能查回函数。
+
+拿那份回溯对照 map，落点在 `World::step` → `Entity::update_catching` / `Entity::set_hp` /
+`Entity::spawn` 一带，栈顶在 `buff::Buff::show_effect`（两边构建差 1~2KB，函数边界有漂移，
+只能算近似）。顺这条栈查出一个**真实的悬垂风险**并先修掉：
+
+* `Buff` 是**池化复用**的（`Factory::recycle_buff` → 下一次 `create_buff`），而
+  `_effects` 存的是**裸 `Entity*`**、`_victims` 存的是上一局的实体 id。原样跨世界复用
+  ⇒ `show_effect` / `clear_effects` 会去解引用上一个世界的实体（World 稳定时只是「动错对象」，
+  World 重建时就是野指针）。
+  现在 `Buff::set_env(env)` 一旦发现宿主换了就 `drop_cached_refs()`（清 `_effects` /
+  `_victims` / `_attacker` / `_effect_data`），`show_effect` / `update_effects` 再补
+  `_env`、`victim` 的空判，`reset()` 的挂载位清理也补 `_env` 空判。
+
+验证：差分 265/265（含 `buff` / `buff_healing` / `burning_drink`）、lint 867 clean /
+0 failed / 14 warnings、anchors 9773 ok / 0 bad；`lfw_char_menu` 变异 170 killed / 0 survived。

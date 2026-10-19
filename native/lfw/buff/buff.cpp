@@ -52,7 +52,7 @@ Entity* Buff::attacter() {
 void Buff::reset(const std::u16string& id) {
   clear_effects();
   const std::u16string prev = _id;
-  if (prev != id) {
+  if (prev != id && _env != nullptr) {
     for (const std::u16string& vid : _victims) {
       Entity* v = _env->find_entity(vid);
       if (v != nullptr) v->buffs_delete(prev);
@@ -153,7 +153,17 @@ void Buff::clear_effects() {
   _effects.clear();
 }
 
+void Buff::drop_cached_refs() {
+  _effects.clear();
+  _victims.clear();
+  _attacker = nullptr;
+  _attacker_id.clear();
+  _effect_data = Value();
+  _effect_data_loaded = false;
+}
+
 void Buff::show_effect(Entity* victim) {
+  if (_env == nullptr || victim == nullptr) return;
   Entity* effect = nullptr;
   for (const auto& e : _effects) {
     if (e.first == victim->id) effect = e.second;
@@ -183,6 +193,7 @@ void Buff::show_effect(Entity* victim) {
 }
 
 void Buff::update_effects() {
+  if (_env == nullptr) return;
   if (_effects.empty() && effect_oid().empty()) return;
   for (size_t i = 0; i < _effects.size();) {
     const std::u16string vid = _effects[i].first;
