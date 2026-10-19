@@ -8,6 +8,7 @@ import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import { Style } from "@/LFW/ui/Style";
 import type { UINode } from "@/LFW/ui/UINode";
+import { is_editing_element } from "@/Utils/is_editing_element";
 import {
   ErrCode,
   MsgEnum,
@@ -549,6 +550,12 @@ export class NetworkLogic extends UIComponent {
     node.set_text(text);
   }
 
+  /** 把焦点从页面上的输入框收回，交还给游戏的键盘/指针处理 */
+  private blur_inputs(): void {
+    const el = document.activeElement;
+    if (el instanceof HTMLElement && is_editing_element(el)) el.blur();
+  }
+
   private input_value(node: UINode | undefined): string {
     if (!node) return '';
     const renderer = node.renderer as TInputRenderer;
@@ -1018,6 +1025,8 @@ export class NetworkLogic extends UIComponent {
   private send_chat(): void {
     const conn = this.conn;
     if (!conn) return;
+    // 回车发送（即使是空内容）后把焦点还给游戏：输入框聚焦时 Keyboard 会忽略按键，否则对局中无法操作
+    this.blur_inputs();
     const now = Date.now();
     if (now < this.chat_cooldown_until) return;
     const text = this.input_value(this.chat_input).trim();
@@ -1276,6 +1285,8 @@ export class NetworkLogic extends UIComponent {
       if (mode === 'rooms') this.start_auto_refresh();
     }
     this.update_visibility();
+    // 进入对局时把焦点从输入框收回（否则键盘事件都被输入框吃掉，游戏无法操作）
+    if (mode === 'started') this.blur_inputs();
     this.update_topbar();
     this.update_chat_target();
     if (mode === 'rooms') this.render_rooms();

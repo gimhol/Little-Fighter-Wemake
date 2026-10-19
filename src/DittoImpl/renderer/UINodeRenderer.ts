@@ -144,6 +144,12 @@ export class UINodeRenderer implements IUINodeRenderer {
       ele_input.style.boxSizing = 'border-box'
       ele_input.onchange = () => text_input.text = ele_input.value
       ele_input.onkeydown = (e) => {
+        if (e.key === 'Escape') {
+          // Esc 退出输入：把键盘交还给游戏
+          ele_input.blur();
+          e.preventDefault();
+          return;
+        }
         if (e.key !== 'Enter') return;
         text_input.text = ele_input.value;
         text_input.on_submit?.();
