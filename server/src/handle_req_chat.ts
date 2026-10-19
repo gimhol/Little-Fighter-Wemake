@@ -23,7 +23,9 @@ export function handle_req_chat(client: Client, req: IReqChat): void {
   const resp: TInfo<IRespChat> = { sender, date, text, target, seq: next_msg_seq() };
   switch (target) {
     case 'global': {
-      ctx.broadcast(type, resp, client);
+      for (const c of ctx.client_mgr.all)
+        if (c !== client && !c.room)
+          c.resp(type, '', resp).catch(() => void 0);
       client.resp(type, pid, resp);
       break;
     }
