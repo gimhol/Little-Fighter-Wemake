@@ -779,11 +779,16 @@ function App() {
               set_net_settings_open(v => !v);
               return;
             }
-            lfw.push_cmd(CMD.F2)
-            if (lfw.ui?.id == 'settings')
+            // 联机页有活连接：设置页只叠在它上面，且不暂停世界，避免影响对局
+            const has_network_page = lfw.layers.all.some(layer => layer.pages.some(p => p.id === 'network_page'));
+            if (!has_network_page) lfw.push_cmd(CMD.F2);
+            if (lfw.ui?.id == 'settings') {
               lfw.ui.layer?.pop();
-            else
+            } else if (lfw.ui?.id === 'network_page') {
+              lfw.layers.push_page({ id: "settings" }, 1);
+            } else {
               lfw.layers.set_page({ id: "settings" }, 1);
+            }
           }}
           src={[img_btn_1_1, img_btn_1_1]}
         />

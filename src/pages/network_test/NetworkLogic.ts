@@ -3,8 +3,10 @@ import { LFW } from "@/LFW";
 import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IPlayerInfoCallback } from "@/LFW";
 import type { IWorldCallbacks } from "@/LFW/IWorldCallbacks";
+import type { IStyle } from "@/LFW/defines/IStyle";
 import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
+import { Style } from "@/LFW/ui/Style";
 import type { UINode } from "@/LFW/ui/UINode";
 import {
   ErrCode,
@@ -191,7 +193,10 @@ export class NetworkLogic extends UIComponent {
       if (this.lfw.zips.zips.length < 1) return;
       this.conn.send_nowait(MsgEnum.Tick, { seq: 0 });
     },
-    on_lang_changed: () => this.apply_placeholders(),
+    on_lang_changed: () => {
+      this.refresh_texts();
+      this.apply_placeholders();
+    },
   };
   private readonly world_cb: IWorldCallbacks = {
     on_dataset_change: (key, value, prev) => this.driver?.on_dataset_change(key, value, prev),
@@ -295,7 +300,7 @@ export class NetworkLogic extends UIComponent {
     for (let i = 0; i < this.room_rows.length; i++) {
       const row = this.room_rows[i];
       row.move_to(0, i * ROOM_ROW_STEP, 0);
-      row.children[ROOM_JOIN]?.callbacks.add({ on_click: () => void this.join_room(i) });
+      this.bind(row.children[ROOM_JOIN], () => void this.join_room(i));
       const pwd_input = row.children[ROOM_PWD_BG]?.children[0];
       const text_input = pwd_input?.find_component(TextInput);
       if (text_input) text_input.on_submit = () => void this.join_room(i);
@@ -303,33 +308,33 @@ export class NetworkLogic extends UIComponent {
     for (let i = 0; i < this.player_rows.length; i++) {
       const row = this.player_rows[i];
       row.move_to(0, i * PLAYER_ROW_STEP, 0);
-      row.children[PLAYER_KICK]?.callbacks.add({ on_click: () => this.kick_row(i) });
+      this.bind(row.children[PLAYER_KICK], () => this.kick_row(i), 'cancel');
     }
     for (let i = 0; i < this.chat_rows.length; i++) {
       this.chat_rows[i].move_to(0, i * CHAT_ROW_STEP, 0);
     }
 
-    this.bind(this.connect_close, () => this.close_page());
+    this.bind(this.connect_close, () => this.close_page(), 'cancel');
     this.bind(this.btn_connect, () => this.connect());
-    this.bind(this.btn_connect_cancel, () => this.cancel_connect());
+    this.bind(this.btn_connect_cancel, () => this.cancel_connect(), 'cancel');
     this.bind(this.tab_guest, () => this.set_connect_mode('guest'));
     this.bind(this.tab_account, () => this.set_connect_mode('account'));
     this.bind(this.btn_account_login, () => this.account_login());
     this.bind(this.btn_account_mock, () => this.set_account_state('in'));
-    this.bind(this.btn_account_cancel_0, () => this.close_page());
-    this.bind(this.btn_account_cancel_1, () => this.close_page());
+    this.bind(this.btn_account_cancel_0, () => this.close_page(), 'cancel');
+    this.bind(this.btn_account_cancel_1, () => this.close_page(), 'cancel');
     this.bind(this.btn_account_enter, () => this.account_enter_lobby());
-    this.bind(this.btn_account_logout, () => this.account_logout());
-    this.bind(this.btn_logout, () => this.account_logout());
+    this.bind(this.btn_account_logout, () => this.account_logout(), 'cancel');
+    this.bind(this.btn_logout, () => this.account_logout(), 'cancel');
     this.bind(this.btn_create, () => void this.create_room());
     this.bind(this.btn_refresh, () => this.mode === 'room' ? this.render_room() : this.request_rooms());
     this.bind(this.btn_auto, () => this.toggle_auto_refresh());
-    this.bind(this.btn_disconnect, () => this.disconnect());
+    this.bind(this.btn_disconnect, () => this.disconnect(), 'cancel');
     this.bind(this.btn_room_refresh, () => this.render_room());
-    this.bind(this.btn_leave_top, () => void this.leave_room());
+    this.bind(this.btn_leave_top, () => void this.leave_room(), 'cancel');
     this.bind(this.btn_prev, () => this.goto_page(this.page - 1));
     this.bind(this.btn_next, () => this.goto_page(this.page + 1));
-    this.bind(this.btn_leave, () => void this.leave_room());
+    this.bind(this.btn_leave, () => void this.leave_room(), 'cancel');
     this.bind(this.btn_ready, () => void this.toggle_ready());
     this.bind(this.btn_set_pwd, () => void this.set_pwd());
     this.bind(this.btn_send, () => this.send_chat());
@@ -337,7 +342,7 @@ export class NetworkLogic extends UIComponent {
     this.bind(this.sync_lockstep, () => void this.set_sync('lockstep'));
     this.bind(this.sync_delay, () => void this.set_sync('delay'));
     this.bind(this.btn_continue_solo, () => this.continue_solo());
-    this.bind(this.btn_back_lobby, () => this.back_lobby());
+    this.bind(this.btn_back_lobby, () => this.back_lobby(), 'cancel');
     this.bind(this.btn_continue_game, () => this.continue_game());
 
     const address_input = this.address_input?.find_component(TextInput);
@@ -368,7 +373,25 @@ export class NetworkLogic extends UIComponent {
   }
 
   override on_resume(): void {
-    window.requestAnimationFrame(() => this.apply_placeholders());
+    window.requestAnimationFrame(() => {
+      this.refresh_texts();
+      this.apply_placeholders();
+    });
+  }
+
+  /** 语言变化或从设置页返回时，重新生成本页所有动态文字 */
+  private refresh_texts(): void {
+    this.set_connect_mode(this.connect_mode);
+    this.set_account_state(this.account_state);
+    this.update_topbar();
+    this.update_chat_target();
+    this.render_rooms();
+    this.render_room();
+    this.render_chat();
+    this.render_countdown();
+    this.update_overlay();
+    this.sync_status_visibility();
+    this.layout_centered_rows();
   }
 
   override on_stop(): void {
@@ -406,8 +429,112 @@ export class NetworkLogic extends UIComponent {
     if (this.is_owner()) this.conn?.send(MsgEnum.RoomStart, {}).catch((e) => this.set_status(this.error_text(e)));
   }
 
-  private bind(node: UINode | undefined, fn: () => void): void {
-    node?.callbacks.add({ on_click: fn });
+  /**
+   * 改文字样式
+   *
+   * 渲染层只读 `ui.text.style`（`ui.style` 只是数据副本），且按 `TextInfo` 身份判断是否重绘，
+   * 所以样式补丁必须写到 text.style 并换上一个新的 `TextInfo` 才会真正生效。
+   */
+  private paint(node: UINode | undefined, patch: Partial<IStyle>): void {
+    if (!node) return;
+    const txt = node.text;
+    if (!txt) return;
+    const src: Partial<IStyle> = txt.style ?? {};
+    let changed = false;
+    for (const key in patch) {
+      if (src[key as keyof IStyle] !== patch[key as keyof IStyle]) { changed = true; break; }
+    }
+    if (!changed) return;
+    const style = txt.style instanceof Style ? txt.style : new Style();
+    if (!(txt.style instanceof Style)) style.assign(src);
+    style.assign(patch);
+    node.set_text(txt.text, style);
+  }
+
+  /** 当前渲染实际使用的样式 */
+  private paint_style(node: UINode | undefined): IStyle | undefined {
+    return node?.text?.style;
+  }
+
+  private bind(node: UINode | undefined, fn: () => void, sound: 'ok' | 'cancel' = 'ok'): void {
+    if (!node) return;
+    const hover_fill = '#eaf1ff';
+    const hover_underline_color = '#ffffff';
+    const hover_underline_width = 2;
+    let hovered = false;
+    let pressed = false;
+    let fill: string | undefined;
+    let underline_color: string | undefined;
+    let underline_width: number | undefined;
+    let sx = 1;
+    let sy = 1;
+    let sz = 1;
+    const capture = (): void => {
+      const style = this.paint_style(node);
+      fill = style?.fill_style;
+      underline_color = style?.underline_color;
+      underline_width = style?.underline_width;
+    };
+    const restore = (): void => {
+      if (!hovered) return;
+      hovered = false;
+      pressed = false;
+      this.paint(node, {
+        fill_style: fill,
+        underline_color,
+        underline_width,
+      });
+      node.set_scale(sx, sy, sz);
+    };
+    node.callbacks.add({
+      on_pointer_enter: () => {
+        if (node.disabled || hovered) return;
+        hovered = true;
+        capture();
+        sx = node.scale.x;
+        sy = node.scale.y;
+        sz = node.scale.z;
+        this.paint(node, {
+          fill_style: hover_fill,
+          underline_color: hover_underline_color,
+          underline_width: hover_underline_width,
+        });
+        node.set_scale(sx * 1.06, sy * 1.06, sz);
+      },
+      on_pointer_leave: restore,
+      on_hide: restore,
+      on_pointer_cancel: restore,
+      on_pointer_down: () => {
+        if (node.disabled) return;
+        pressed = true;
+        node.set_scale(sx * 0.96, sy * 0.96, sz);
+      },
+      on_pointer_up: () => {
+        if (!pressed) return;
+        pressed = false;
+        node.set_scale(
+          hovered ? sx * 1.06 : sx,
+          hovered ? sy * 1.06 : sy,
+          sz
+        );
+      },
+      on_click: () => {
+        if (node.disabled) return;
+        this.lfw.sounds.play_preset(sound);
+        fn();
+        if (!hovered) return;
+        // 点击可能改变按钮的常态样式（如选中的标签页）；只把“非悬停态”的值记为待恢复状态
+        const style = this.paint_style(node);
+        if (style?.fill_style !== hover_fill) fill = style?.fill_style;
+        if (
+          style?.underline_color !== hover_underline_color ||
+          style?.underline_width !== hover_underline_width
+        ) {
+          underline_color = style?.underline_color;
+          underline_width = style?.underline_width;
+        }
+      },
+    });
   }
 
   private t(key: string, ...args: (string | number)[]): string {
@@ -473,16 +600,21 @@ export class NetworkLogic extends UIComponent {
     if (this.guest_body) this.guest_body.visible = guest;
     if (this.account_body) this.account_body.visible = !guest;
     if (this.tab_guest) {
-      this.tab_guest.style.fill_style = guest ? '#ffffff' : '#a8b9ff';
-      this.tab_guest.style.underline_color = guest ? '#ffffff' : void 0;
-      this.tab_guest.style.underline_width = guest ? 1 : 0;
+      this.paint(this.tab_guest, {
+        fill_style: guest ? '#ffffff' : '#a8b9ff',
+        underline_color: guest ? '#ffffff' : void 0,
+        underline_width: guest ? 1 : 0,
+      });
     }
     if (this.tab_account) {
-      this.tab_account.style.fill_style = guest ? '#a8b9ff' : '#ffffff';
-      this.tab_account.style.underline_color = guest ? void 0 : '#ffffff';
-      this.tab_account.style.underline_width = guest ? 0 : 1;
+      this.paint(this.tab_account, {
+        fill_style: guest ? '#a8b9ff' : '#ffffff',
+        underline_color: guest ? void 0 : '#ffffff',
+        underline_width: guest ? 0 : 1,
+      });
     }
     this.update_account_chip();
+    this.layout_centered_rows();
   }
 
   private set_account_state(state: TAccountState): void {
@@ -491,18 +623,19 @@ export class NetworkLogic extends UIComponent {
     if (this.account_out) this.account_out.visible = state === 'out';
     if (this.account_pending) this.account_pending.visible = state === 'pending';
     if (this.account_in) this.account_in.visible = state === 'in';
-    this.set_text(this.account_name_text, this.account_name);
-    this.set_text(this.account_id_text, `${this.account_id} · ${this.t('network.logged_in')}`);
+    this.set_text(this.account_name_text, this.fit(this.account_name, 250, this.account_name_text));
+    this.set_text(this.account_id_text, this.fit(`${this.account_id} · ${this.t('network.logged_in')}`, 320, this.account_id_text));
     this.set_text(this.account_avatar, [...this.account_name][0]?.toUpperCase() ?? '?');
     this.update_account_chip();
     this.update_topbar();
+    this.layout_centered_rows();
   }
 
   private update_account_chip(): void {
     const show = this.session_account && this.account_state === 'in' && !!this.conn;
     if (this.account_chip_bg) this.account_chip_bg.visible = show;
     if (this.btn_logout) this.btn_logout.visible = show;
-    this.set_text(this.account_chip, this.t('network.account_chip', this.account_name));
+    this.set_text(this.account_chip, this.fit(this.t('network.account_chip', this.account_name), 76, this.account_chip));
   }
 
   private account_login(): void {
@@ -1006,10 +1139,11 @@ export class NetworkLogic extends UIComponent {
   }
 
   private set_sync_style(node: UINode | undefined, active: boolean): void {
-    if (!node) return;
-    node.style.fill_style = active ? '#ffffff' : '#a8b9ff';
-    node.style.underline_color = active ? '#ffffff' : void 0;
-    node.style.underline_width = active ? 1 : 0;
+    this.paint(node, {
+      fill_style: active ? '#ffffff' : '#a8b9ff',
+      underline_color: active ? '#ffffff' : void 0,
+      underline_width: active ? 1 : 0,
+    });
   }
 
   private truncate(text: string, max: number): string {
@@ -1018,18 +1152,87 @@ export class NetworkLogic extends UIComponent {
     return chars.slice(0, max - 1).join('') + '…';
   }
 
+  private measure_ctx: CanvasRenderingContext2D | undefined;
+
+  /** 节点字体的文本宽度（含渲染器默认的左右各 2px padding） */
+  private measure_text_width(text: string, node?: UINode): number {
+    if (!text) return 0;
+    const ctx = this.measure_ctx ??= document.createElement('canvas').getContext('2d')!;
+    ctx.font = node?.style.font ?? 'normal 9px system-ui';
+    let w = 0;
+    for (const line of text.split('\n')) w = Math.max(w, ctx.measureText(line).width);
+    return w + 4;
+  }
+
+  /** 按像素宽度截断单行文本，避免不同语言下文字溢出并压到相邻控件 */
+  private fit(text: string, max_w: number, node?: UINode): string {
+    if (!text || this.measure_text_width(text, node) <= max_w) return text;
+    const chars = [...text];
+    const ellipsis = '…';
+    const ellipsis_w = this.measure_text_width(ellipsis, node);
+    let lo = 0;
+    let hi = chars.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      const w = this.measure_text_width(chars.slice(0, mid).join(''), node);
+      if (w + ellipsis_w <= max_w) lo = mid;
+      else hi = mid - 1;
+    }
+    return chars.slice(0, lo).join('').trimEnd() + ellipsis;
+  }
+
+  /** 多行文本：逐行按像素截断，并限制行数，避免向下压到按钮 */
+  private fit_lines(text: string, max_w: number, node: UINode | undefined, max_lines: number): string {
+    const lines = text.split('\n').map(v => this.fit(v, max_w, node));
+    if (lines.length <= max_lines) return lines.join('\n');
+    const ret = lines.slice(0, max_lines);
+    ret[max_lines - 1] = this.fit(`${ret[max_lines - 1]}…`, max_w, node);
+    return ret.join('\n');
+  }
+
+  /** 把一组按钮按实际文字宽度水平居中排列（不同语言下文字宽度不同） */
+  private center_row(nodes: (UINode | undefined)[], center_x: number, gap: number): void {
+    const items = nodes.filter((n): n is UINode => !!n && n.visible);
+    if (!items.length) return;
+    const widths = items.map(n => n.w + (n.text ? 4 : 0));
+    const total = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let x = center_x - total / 2;
+    for (let i = 0; i < items.length; i++) {
+      const n = items[i];
+      // 保持原有锚点（尤其是带子节点的输入框背景），只按“左边缘”排布
+      const pad = n.text ? 2 : 0;
+      n.move_to(x + pad + n.center.x * n.w, n.y, n.z);
+      x += widths[i] + gap;
+    }
+  }
+
+  private layout_centered_rows(): void {
+    this.center_row([this.btn_connect, this.btn_connect_cancel], 200, 24);
+    this.center_row([this.btn_account_login, this.btn_account_cancel_0], 200, 40);
+    this.center_row([this.btn_account_mock, this.btn_account_cancel_1], 200, 40);
+    this.center_row([this.btn_account_enter, this.btn_account_logout], 200, 40);
+    this.center_row([this.btn_prev, this.page_label, this.btn_next], 241, 16);
+    this.center_row([this.btn_leave, this.btn_ready], 241, 24);
+    this.center_row([this.btn_chat_target, this.chat_input?.parent, this.btn_send], 142, 12);
+    this.center_row([this.btn_continue_solo, this.btn_back_lobby], 172, 20);
+    if (this.btn_continue_game?.visible) {
+      this.btn_continue_game.cx = 0.5;
+      this.btn_continue_game.move_to(172, this.btn_continue_game.y, this.btn_continue_game.z);
+    }
+  }
+
   private set_status(text: string): void {
     this.status = text;
     if (this.mode === 'connect') {
-      this.set_text(this.connect_status, text);
+      this.set_text(this.connect_status, this.fit(text, 370, this.connect_status));
       this.set_text(this.rooms_status, '');
       this.set_text(this.room_status, '');
     } else if (this.mode === 'room' || this.mode === 'started') {
-      this.set_text(this.room_status, text);
+      this.set_text(this.room_status, this.fit(text, 440, this.room_status));
       this.set_text(this.connect_status, '');
       this.set_text(this.rooms_status, '');
     } else {
-      this.set_text(this.rooms_status, text);
+      this.set_text(this.rooms_status, this.fit(text, 440, this.rooms_status));
       this.set_text(this.connect_status, '');
       this.set_text(this.room_status, '');
     }
@@ -1062,6 +1265,7 @@ export class NetworkLogic extends UIComponent {
     if (this.btn_connect) this.btn_connect.disabled = value;
     if (this.btn_account_enter) this.btn_account_enter.disabled = value;
     if (this.btn_account_login) this.btn_account_login.disabled = value;
+    this.layout_centered_rows();
   }
 
   private set_mode(mode: TMode): void {
@@ -1077,6 +1281,7 @@ export class NetworkLogic extends UIComponent {
     if (mode === 'rooms') this.render_rooms();
     if (mode === 'room') this.render_room();
     if (mode !== 'connect') this.render_chat();
+    this.layout_centered_rows();
   }
 
   private update_visibility(): void {
@@ -1099,15 +1304,17 @@ export class NetworkLogic extends UIComponent {
     const info = this.mode === 'room' && this.room
       ? `${this.room.title || this.t('network.room')}\u3000·\u3000#${this.room.code ?? ''}\u3000·\u3000${this.session_account ? '' : `${address}\u3000·\u3000`}${conn.rtt}ms`
       : `${this.t(this.session_account ? 'network.account' : 'network.guest')}\u3000·\u3000${address}\u3000·\u3000${conn.rtt}ms`;
-    this.set_text(this.top_title, this.t(this.mode === 'room' ? 'network.room' : 'network.online'));
-    this.set_text(this.top_sub, this.truncate(info, this.session_account ? 30 : 40));
+    this.set_text(this.top_title, this.fit(this.t(this.mode === 'room' ? 'network.room' : 'network.online'), 68, this.top_title));
+    this.set_text(this.top_sub, this.fit(info, 224, this.top_sub));
     if (this.btn_create) this.btn_create.visible = this.mode === 'rooms';
     if (this.btn_refresh) this.btn_refresh.visible = this.mode === 'rooms';
     if (this.btn_auto) {
       this.btn_auto.visible = this.mode === 'rooms';
-      this.btn_auto.style.fill_style = this.auto_refresh ? '#ffffff' : '#a8b9ff';
-      this.btn_auto.style.underline_color = this.auto_refresh ? '#ffffff' : void 0;
-      this.btn_auto.style.underline_width = this.auto_refresh ? 1 : 0;
+      this.paint(this.btn_auto, {
+        fill_style: this.auto_refresh ? '#ffffff' : '#a8b9ff',
+        underline_color: this.auto_refresh ? '#ffffff' : void 0,
+        underline_width: this.auto_refresh ? 1 : 0,
+      });
     }
     if (this.btn_disconnect) this.btn_disconnect.visible = this.mode === 'rooms';
     if (this.btn_room_refresh) this.btn_room_refresh.visible = this.mode === 'room';
@@ -1118,17 +1325,18 @@ export class NetworkLogic extends UIComponent {
     const room = !!this.room;
     const text = `[${this.t(room ? 'network.room_chat' : 'network.global')}]`;
     const color = room ? '#ff7b00' : '#ffffff';
-    this.set_text(this.chat_target, text);
-    this.set_text(this.btn_chat_target, text);
-    if (this.chat_target) this.chat_target.style.fill_style = color;
-    if (this.btn_chat_target) this.btn_chat_target.style.fill_style = color;
+    this.set_text(this.chat_target, this.fit(text, 190, this.chat_target));
+    this.set_text(this.btn_chat_target, this.fit(text, 52, this.btn_chat_target));
+    if (this.chat_target) this.paint(this.chat_target, { fill_style: color });
+    if (this.btn_chat_target) this.paint(this.btn_chat_target, { fill_style: color });
+    this.layout_centered_rows();
   }
 
   private render_rooms(): void {
     const page_count = Math.max(1, Math.ceil(this.rooms.length / ROOM_PAGE_SIZE));
     if (this.page > page_count - 1) this.page = page_count - 1;
     const rooms = this.page_rooms();
-    this.set_text(this.rooms_total, this.t('network.rooms_total', this.rooms.length));
+    this.set_text(this.rooms_total, this.fit(this.t('network.rooms_total', this.rooms.length), 350, this.rooms_total));
     this.set_text(this.page_label, `${this.page + 1} / ${page_count}`);
     if (this.no_rooms) this.no_rooms.visible = this.rooms.length === 0;
     if (this.btn_prev) {
@@ -1146,28 +1354,29 @@ export class NetworkLogic extends UIComponent {
       const room = rooms[i];
       row.visible = !!room;
       if (!room) continue;
-      this.set_text(row.children[ROOM_NAME], this.truncate(room.title || `${this.t('network.room')} ${room.code ?? ''}`, 10));
+      this.set_text(row.children[ROOM_NAME], this.fit(room.title || `${this.t('network.room')} ${room.code ?? ''}`, 146, row.children[ROOM_NAME]));
       this.set_text(row.children[ROOM_CODE], room.code ? `#${room.code}` : '');
       const badge_bg = row.children[ROOM_BADGE_BG];
       const badge = badge_bg?.children[0];
-      this.set_text(badge, room.started ? this.t('network.running') : this.t('network.waiting'));
+      this.set_text(badge, this.fit(room.started ? this.t('network.running') : this.t('network.waiting'), 44, badge));
       if (badge_bg) badge_bg.color = room.started ? '#4ade8033' : '#ffffff1f';
-      if (badge) badge.style.fill_style = room.started ? '#86efac' : '#ffffffc7';
+      if (badge) this.paint(badge, { fill_style: room.started ? '#86efac' : '#ffffffc7' });
       const lock_bg = row.children[ROOM_LOCK_BG];
       if (lock_bg) lock_bg.visible = !!room.need_pwd;
       const pwd_bg = row.children[ROOM_PWD_BG];
       if (pwd_bg) pwd_bg.visible = !!room.need_pwd;
       const join = row.children[ROOM_JOIN];
       if (join) join.visible = !room.started;
-      this.set_text(row.children[ROOM_OWNER], `${this.t('network.owner')} ${this.truncate(room.owner?.name || '-', 12)}`);
+      this.set_text(row.children[ROOM_OWNER], this.fit(`${this.t('network.owner')} ${room.owner?.name || '-'}`, 144, row.children[ROOM_OWNER]));
       const meta = [
         `${this.t('network.player_count')} ${this.room_count_text(room)}`,
         this.sync_label(room.sync_mode),
         room.lfw_version ? `LFW ${this.version_short(room.lfw_version)}` : '',
         room.data_infos?.length ? `${this.t('network.data_package')}×${room.data_infos.length}` : '',
       ].filter(Boolean).join('\u3000·\u3000');
-      this.set_text(row.children[ROOM_META], this.truncate(meta, 52));
+      this.set_text(row.children[ROOM_META], this.fit(meta, 300, row.children[ROOM_META]));
     }
+    this.layout_centered_rows();
   }
 
   private render_room(): void {
@@ -1177,27 +1386,27 @@ export class NetworkLogic extends UIComponent {
     const max = room.max_players ?? 4;
     const me = clients.find(v => v.id === this.conn?.client?.id);
     const owner = this.is_owner();
-    this.set_text(this.room_title, this.truncate(room.title || `${this.t('network.room')} ${room.code ?? ''}`, 10));
+    this.set_text(this.room_title, this.fit(room.title || `${this.t('network.room')} ${room.code ?? ''}`, 220, this.room_title));
     this.set_text(this.room_code, room.code ? `#${room.code}` : '');
-    this.set_text(this.room_badge, room.started ? this.t('network.running') : this.t('network.waiting'));
+    this.set_text(this.room_badge, this.fit(room.started ? this.t('network.running') : this.t('network.waiting'), 54, this.room_badge));
     if (this.room_badge_bg) this.room_badge_bg.color = room.started ? '#4ade8033' : '#ffffff1f';
-    if (this.room_badge) this.room_badge.style.fill_style = room.started ? '#86efac' : '#ffffffc7';
-    this.set_text(this.room_count, `${this.t('network.player_count')} ${clients.length}/${max}`);
+    if (this.room_badge) this.paint(this.room_badge, { fill_style: room.started ? '#86efac' : '#ffffffc7' });
+    this.set_text(this.room_count, this.fit(`${this.t('network.player_count')} ${clients.length}/${max}`, 104, this.room_count));
     const mode = room.sync_mode ?? 'auto';
     this.set_sync_style(this.sync_auto, mode === 'auto');
     this.set_sync_style(this.sync_lockstep, mode === 'lockstep');
     this.set_sync_style(this.sync_delay, mode === 'delay');
     if (this.room_lfw) this.room_lfw.visible = !!room.lfw_version;
-    this.set_text(this.room_lfw, room.lfw_version ? `${this.t('network.lfw_version')}: ${this.version_short(room.lfw_version)}` : '');
+    this.set_text(this.room_lfw, this.fit(room.lfw_version ? `${this.t('network.lfw_version')}: ${this.version_short(room.lfw_version)}` : '', 440, this.room_lfw));
     const infos = room.data_infos ?? [];
-    this.set_text(this.room_data_0, infos[0] ? `${this.t('network.data_package')}[1] ${this.data_info_text(infos[0])}` : '');
-    this.set_text(this.room_data_1, infos[1] ? `${this.t('network.data_package')}[2] ${this.data_info_text(infos[1])}` : '');
+    this.set_text(this.room_data_0, this.fit(infos[0] ? `${this.t('network.data_package')}[1] ${this.data_info_text(infos[0])}` : '', 440, this.room_data_0));
+    this.set_text(this.room_data_1, this.fit(infos[1] ? `${this.t('network.data_package')}[2] ${this.data_info_text(infos[1])}` : '', 440, this.room_data_1));
     if (this.room_data_0) this.room_data_0.visible = !!infos[0];
     if (this.room_data_1) this.room_data_1.visible = !!infos[1];
     if (this.pwd_label) this.pwd_label.visible = owner;
     if (this.pwd_bg) this.pwd_bg.visible = owner;
     if (this.btn_set_pwd) this.btn_set_pwd.visible = owner;
-    this.set_text(this.pwd_hint, this.t('network.owner_only'));
+    this.set_text(this.pwd_hint, this.fit(this.t('network.owner_only'), 150, this.pwd_hint));
     this.render_room_players();
     if (this.empty_slot) {
       this.empty_slot.visible = clients.length < max;
@@ -1206,7 +1415,7 @@ export class NetworkLogic extends UIComponent {
     if (this.btn_leave) this.btn_leave.visible = true;
     if (this.btn_ready) {
       this.btn_ready.visible = !!me;
-      this.set_text(this.btn_ready, this.t(me?.ready ? 'network.cancel_ready' : 'network.ready'));
+      this.set_text(this.btn_ready, this.fit(this.t(me?.ready ? 'network.cancel_ready' : 'network.ready'), 100, this.btn_ready));
     }
     const all_ready = clients.length >= (room.min_players ?? 1) && clients.length > 0 && clients.every(v => !!v.ready);
     if (all_ready !== this.all_ready) {
@@ -1217,6 +1426,7 @@ export class NetworkLogic extends UIComponent {
     }
     this.render_countdown();
     this.render_recommend();
+    this.layout_centered_rows();
   }
 
   private data_info_text(info?: { type?: string; title?: string; version?: number; md5?: string }): string {
@@ -1239,16 +1449,16 @@ export class NetworkLogic extends UIComponent {
       const member = clients[i];
       row.visible = !!member;
       if (!member) continue;
-      this.set_text(row.children[PLAYER_NAME], this.truncate(member.name || member.id || '-', 9));
+      this.set_text(row.children[PLAYER_NAME], this.fit(member.name || member.id || '-', 150, row.children[PLAYER_NAME]));
       const tags: string[] = [];
       if (member.id === me?.id) tags.push(`(${this.t('network.you')})`);
       if (member.id === room.owner?.id) tags.push(`(${this.t('network.owner')})`);
-      this.set_text(row.children[PLAYER_TAGS], tags.join(' '));
+      this.set_text(row.children[PLAYER_TAGS], this.fit(tags.join(' '), 80, row.children[PLAYER_TAGS]));
       const rtt = member.id ? this.rtts[member.id] : 0;
       this.set_text(row.children[PLAYER_RTT], rtt ? `${rtt}ms` : '-');
       const state = row.children[PLAYER_STATE];
-      this.set_text(state, this.t(member.ready ? 'network.ready_done' : 'network.not_ready'));
-      if (state) state.style.fill_style = member.ready ? '#9b9bff' : '#ffffff73';
+      this.set_text(state, this.fit(this.t(member.ready ? 'network.ready_done' : 'network.not_ready'), 88, state));
+      if (state) this.paint(state, { fill_style: member.ready ? '#9b9bff' : '#ffffff73' });
       const kick = row.children[PLAYER_KICK];
       if (kick) kick.visible = owner && member.id !== me?.id;
     }
@@ -1268,16 +1478,16 @@ export class NetworkLogic extends UIComponent {
     const label = rec.sync_mode === 'delay'
       ? `${this.t('network.sync_delay')} K=${rec.input_delay}`
       : this.t('network.sync_lockstep');
-    this.set_text(this.recommend, `${this.t('network.recommend')}: ${label} (${Math.round(worst)}ms)`);
+    this.set_text(this.recommend, this.fit(`${this.t('network.recommend')}: ${label} (${Math.round(worst)}ms)`, 225, this.recommend));
   }
 
   private render_countdown(): void {
     if (!this.countdown) return;
     this.countdown.visible = this.all_ready;
     if (!this.all_ready) return;
-    this.set_text(this.countdown, this.countdown_sec > 0
+    this.set_text(this.countdown, this.fit(this.countdown_sec > 0
       ? this.t('network.countdown', this.countdown_sec)
-      : this.t('network.enter_game'));
+      : this.t('network.enter_game'), 370, this.countdown));
   }
 
   private render_chat(): void {
@@ -1291,14 +1501,14 @@ export class NetworkLogic extends UIComponent {
       row.visible = !!item;
       if (!item) continue;
       if (item.kind === 'sys') {
-        this.set_text(row, this.truncate(item.text, 40));
-        row.style.fill_style = '#9b9bff';
+        this.set_text(row, this.fit(item.text, 264, row));
+        this.paint(row, { fill_style: '#9b9bff' });
         continue;
       }
       const msg = item.msg;
       const sender = msg.sender?.name || '?';
-      this.set_text(row, this.truncate(`${sender}: ${msg.text ?? ''}`, 40));
-      row.style.fill_style = msg.target === 'private' ? '#C9A0FF' : msg.target === 'room' ? '#ff7b00' : '#ffffff';
+      this.set_text(row, this.fit(`${sender}: ${msg.text ?? ''}`, 264, row));
+      this.paint(row, { fill_style: msg.target === 'private' ? '#C9A0FF' : msg.target === 'room' ? '#ff7b00' : '#ffffff' });
     }
   }
 
@@ -1311,19 +1521,20 @@ export class NetworkLogic extends UIComponent {
     if (this.overlay_panel) this.overlay_panel.visible = show;
     if (!show) return;
     if (failed) {
-      this.set_text(this.overlay_title, this.t('network.reconnect_failed'));
-      this.set_text(this.overlay_line_0, this.t('network.reconnect_failed_hint'));
+      this.set_text(this.overlay_title, this.fit(this.t('network.reconnect_failed'), 330, this.overlay_title));
+      this.set_text(this.overlay_line_0, this.fit(this.t('network.reconnect_failed_hint'), 330, this.overlay_line_0));
     } else if (reconnecting) {
-      this.set_text(this.overlay_title, this.t('network.reconnecting'));
-      this.set_text(this.overlay_line_0, this.t('network.reconnect_attempt', this.reconnecting));
+      this.set_text(this.overlay_title, this.fit(this.t('network.reconnecting'), 330, this.overlay_title));
+      this.set_text(this.overlay_line_0, this.fit(this.t('network.reconnect_attempt', this.reconnecting), 330, this.overlay_line_0));
     } else {
-      this.set_text(this.overlay_title, this.t('network.paused'));
+      this.set_text(this.overlay_title, this.fit(this.t('network.paused'), 330, this.overlay_title));
       const lines = this.leavers.map(v => this.t(v.left ? 'network.player_left' : 'network.player_disconnected', v.name));
-      this.set_text(this.overlay_line_0, lines.join('\n'));
+      this.set_text(this.overlay_line_0, this.fit_lines(lines.join('\n'), 330, this.overlay_line_0, 3));
     }
     this.set_text(this.overlay_line_1, '');
     if (this.btn_continue_solo) this.btn_continue_solo.visible = failed || reconnecting;
     if (this.btn_back_lobby) this.btn_back_lobby.visible = failed || reconnecting;
     if (this.btn_continue_game) this.btn_continue_game.visible = paused && this.is_owner();
+    this.layout_centered_rows();
   }
 }
