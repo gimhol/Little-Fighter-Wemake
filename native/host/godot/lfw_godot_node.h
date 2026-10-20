@@ -31,9 +31,10 @@
 //   * `--titlebar <native|none|custom|frame>` + `--window-scale N` + `--icons <dir>`：窗口那一套（见「窗口」）。
 //   * `--click-window <x>,<y>[@<frame>]`：`--click` 的窗口像素版（走引擎的真实事件路径，见下）。
 //
-// **窗口**（Electron 端那一套的引擎侧等价物：`desktop/app/main.mjs` 的 `frame: false` + `src/App.tsx`
-// 自绘的那一整簇控件）：`--play`（玩）缺省 = **无边框 + 自绘标题栏 + 1.5× 窗口**（1191×675）；
-// 验收/诊断（给 `--frames`、headless）缺省 = 原样（系统边框、794×450）⇒ 三条摘要与既有截图不动。
+// **窗口**（Electron 端那一套的引擎侧等价物：`desktop/app/main.mjs` 的 `titleBarStyle: 'hidden'` +
+// `src/App.tsx` 自绘的那一整簇控件）：`--play`（玩）缺省 = **原生边框 + 无系统标题栏 + 自绘标题栏 +
+// 1.5× 窗口**（1191×675）；验收/诊断（给 `--frames`、headless）缺省 = 原样（系统边框 + 系统标题栏、
+// 794×450）⇒ 三条摘要与既有截图不动。
 // 逻辑屏幕**永远是** 794×450（= 数据里的 `dataset.screen_w × screen_h`；`project.godot` 的
 // `display/window/size/viewport_*` 只是同一个数，管开窗尺寸）。`project.godot` 的 `stretch/mode` 是
 // **disabled** ⇒ 引擎不再替宿主 contain/缩放，`contain_transform()` 是**唯一**一处 contain 几何
@@ -68,6 +69,7 @@
 #include "host/godot/lfw_godot_models.h"
 #include "host/godot/lfw_godot_renderer.h"
 #include "host/godot/lfw_godot_textures.h"
+#include "host/godot/lfw_godot_native_frame.h"
 #include "host/godot/lfw_godot_titlebar.h"
 #include "lfw/base/clock.h"
 #include "lfw/lfw.h"
@@ -107,13 +109,13 @@ class LfwGodot : public Node2D {
   // `--titlebar` 的四个取值：
   //   * `native`：系统边框 + **系统**标题栏（"验收/诊断"那一档的缺省，与切片之前逐位一致）；
   //   * `none`  ：无边框、不画栏（只剩 `--window-scale` 那一半）；
-  //   * `custom`：无边框（Windows 上 = `WS_POPUP`）+ 本节点自绘的标题栏（`--play` 的缺省）；
-  //   * `frame` ：**原生边框**（Windows 上保留 `WS_THICKFRAME` 那一套：原生缩放、Aero Snap、
-  //     原生最大化/还原、DWM 阴影）**但不要系统标题栏**（`WINDOW_FLAG_EXTEND_TO_TITLE` 把客户区
-  //     顶到标题栏位置）+ 仍由本节点自绘标题栏 —— Electron `frame:false` 在 Windows 上的等价物。
-  //     ⚠ 实测（Godot 4.7.1/Windows）：那一枚 flag 是**空操作**（只在 macOS 后端实现）⇒ 这一档
-  //     出来的是"系统标题栏 + 我们的自绘栏"两层，**不是**可用的 Electron 等价物；留着是为了
-  //     一条命令复现这个结论（`window_setup` 里那行 verdict）。
+  //   * `custom`：无边框（Windows 上 = `WS_POPUP`）+ 本节点自绘的标题栏（想要一点系统边框都不带的）；
+  //   * `frame` ：**原生边框**（`WS_OVERLAPPEDWINDOW` 那一套：原生缩放、Aero Snap、原生最大化/
+  //     还原、DWM 1 像素边框 / 阴影 / Win11 圆角）**但没有系统标题栏**（自己换窗口过程，
+  //     `WM_NCCALCSIZE` 只摘 caption、边框那圈留着，见 `lfw_godot_native_frame.h`）+ 仍由本节点自绘标题栏 —— Electron
+  //     `titleBarStyle: 'hidden'` 在 Windows 上的等价物（**`--play` 的缺省**）。
+  //     ⚠ Godot 的 `WINDOW_FLAG_EXTEND_TO_TITLE` 在这儿是空操作（只在 macOS 后端实现）⇒ 这一档
+  //     不靠它，靠 `lfw_godot_native_frame.{h,cpp}`；非 Windows 上装不上（会打出 `NOT installed`）。
   enum class TitlebarMode { native, none, custom, frame };
 
  protected:
@@ -135,9 +137,9 @@ class LfwGodot : public Node2D {
     bool vs = false;
     // `--play`：开放模式（= `--frames 0` + 不 `boot_scene`）。`npm run godot` 就是它。
     bool play = false;
-    // ---- 窗口（Electron 端那一套：无边框 + 自绘标题栏 + 缩放）----
-    // `--titlebar <native|none|custom>`：系统边框 / 无边框且**不**画 / 无边框 + 自绘（默认值按跑法
-    // 定：`--play` 缺省 `custom`，其余缺省 `native` ⇒ 验收与既有截图的口径不变）。
+    // ---- 窗口（Electron 端那一套：原生边框 + 无系统标题栏 + 自绘标题栏 + 缩放）----
+    // `--titlebar <native|none|custom|frame>`：系统边框 / 无边框且**不**画 / 无边框 + 自绘 / 原生边框但
+    // 无 caption + 自绘（默认值按跑法定：`--play` 缺省 `frame`，其余 `native` ⇒ 验收与既有截图不变）。
     TitlebarMode titlebar = TitlebarMode::native;
     bool titlebar_given = false;
     // `--window-scale N`：窗口 = 逻辑屏幕 × N（缺省：`--play` 时 1.5，其余 1.0）。
@@ -280,12 +282,13 @@ class LfwGodot : public Node2D {
   // 无边框 + 窗口尺寸（`_ready` 里、装包之前就跑：别让系统边框闪一下）。逻辑屏幕不动，见头注释。
   void apply_window_setup();
   bool titlebar_visible() const;  // `custom`/`frame` 且**不全屏**（镜像 Electron：全屏时整簇按钮消失）
-  // 自绘栏由我们画：`custom`（无边框）与 `frame`（原生边框 + `EXTEND_TO_TITLE`）两档。
+  // 自绘栏由我们画：`custom`（无边框 + 自绘缩放带）与 `frame`（原生边框 + 无 caption）两档。
   bool titlebar_drawn() const {
     return _args.titlebar == TitlebarMode::custom || _args.titlebar == TitlebarMode::frame;
   }
   // `frame` 档：窗口仍有 Windows 的原生边框（`WS_THICKFRAME` 那一套）⇒ 缩放 / Aero Snap / 最大化
   // 都归系统，宿主那条 6 像素自绘缩放带与"自己做的最大化"在这一档**不参与**（否则两套会打架）。
+  // caption 被 `WM_NCCALCSIZE` 让掉了 ⇒ 顶部那条我们照画（它是客户区的一部分）。
   bool native_frame() const { return _args.titlebar == TitlebarMode::frame; }
   // 条上/边缘的事件处理：true = 已吞掉（调用方把它标成 handled，别再喂给游戏/UI）。
   bool titlebar_consume(const godot::Ref<godot::InputEvent>& event);
@@ -404,6 +407,9 @@ class LfwGodot : public Node2D {
   bool _capture_pending = false;  // 这一帧要截图（上一帧的绘制已经落进视口）
   bool _captured = false;         // 截过图（只截一张）
   bool _windowed = false;         // 真窗口（headless 时 false：窗口 API 一概不碰、栏也不画）
+  // `--titlebar frame` 的「原生边框 + 无 caption」装上了没（`lfw_godot_native_frame.h`）。
+  // 只有装上了才做尺寸纠正（`apply_window_setup`）——那一档的客户区比引擎算的大一圈。
+  bool _native_frame = false;
   // 逻辑屏幕尺寸（`project.godot` 的 `display/window/size/viewport_*`；见 `logical_size()`）。
   int _logical_w = 794;
   int _logical_h = 450;

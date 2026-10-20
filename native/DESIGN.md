@@ -1760,8 +1760,10 @@ const m = await createLfw({ locateFile: (f) => `/wasm/${f}` })
 
 **窗口外观（已落地）**：照 Electron 桌面端（`desktop/app/main.mjs:915` `frame: false`、
 `src/App.tsx:705-813` 自绘的 **11 个控件** + `src/App.module.scss` 的 `.top_bar` / `.wails_drag`）：
-Godot 宿主也设 `WINDOW_FLAG_BORDERLESS` 并自绘顶栏（`native/host/godot/lfw_godot_titlebar.h` 只管布局/命中，
-`lfw_godot_node.cpp` 管可见性求值与动作）：`.wails_drag` 拖拽层（悬停 `#88888855`）、11 个 `btn_*.png`
+Godot 宿主同样自绘顶栏（`native/host/godot/lfw_godot_titlebar.h` 只管布局/命中，
+`lfw_godot_node.cpp` 管可见性求值与动作）。窗口形态两档：`custom` = `WINDOW_FLAG_BORDERLESS`（`WS_POPUP`，
+   一律自绘），`frame`（**`--play` 缺省**）= 原生边框 + `WM_NCCALCSIZE` 让掉 caption（§175）。顶栏那一层：
+   `.wails_drag` 拖拽层（悬停 `#88888855`）、11 个 `btn_*.png`
 控件（32×32 缩 0.6 / 悬停 0.8、右对齐、次序 = DOM 次序、按 `src/App.tsx` 那个 `Show show=` 一条条求值）、
 两个音量控件的悬停竖直滑杆（`sounds_set_bgm_volume` / `sounds_set_sound_volume`）、全屏隐藏、条上点击先被
 `titlebar_consume` 吞掉（只有控件盒 + 拖拽层 + 打开的弹层吞，条底那 3.2 像素的缝照 Electron 漏给画布；
@@ -1780,9 +1782,9 @@ Godot 宿主也设 `WINDOW_FLAG_BORDERLESS` 并自绘顶栏（`native/host/godot
 两条路；并用 `canvas_item_add_clip_ignore` 越过上面那条裁剪）⇒ 条铺满整窗宽、按钮贴**窗口**右上角；
 **条高 32 / 控件盒 32 / 图 19.2 / 拖拽层 28.8 / 边缘带 6 都是 CSS 常量**：既不随窗口尺寸、也不随 contain
 缩放变化，只随显示缩放整体放大（`[godot] titlebar:` 行的 `bar=` / `icon=` / `scale=` 是回归口）；
-`--screenshot` 抓的是**整窗**（黑边 + 条 + 画面）。开关：`--titlebar native|none|custom`
-（缺省 `custom`）、`--window-scale N`（缺省 1.5）、`--icons <dir>`（那 11 张 PNG 在仓库的 `src/assets`，
-**不在数据包里**）。
+`--screenshot` 抓的是**整窗**（黑边 + 条 + 画面）。开关：`--titlebar native|none|custom|frame`
+（缺省 `frame`；验收/headless 那一路是 `native`）、`--window-scale N`（缺省 1.5）、`--icons <dir>`
+（那 11 张 PNG 在仓库的 `src/assets`，**不在数据包里**）。
 
 **(a) GDExtension（推荐）**：Godot 拥有进程与主循环，端口编成静态库 `lfw_core`
 （`native/lfw/CMakeLists.txt:1`）链进扩展，宿主在 `_process` 里驱动。
@@ -12501,3 +12503,99 @@ Web 的 `on_pause() → release_dom()`。⚠ **不碰** `_text_input_node`：页
 全量差分 264/265（唯一失败仍是既有的 `xml/ui` `img.dw/dh` 漂移）；Godot 重编 + headless 300 帧
 `errors=0`、digest 稳定；`lfw_run --stage 1 --vs --players 2 --frames 1200` 空挥数与 §173 修复
 后持平（≈14 次），说明拆句柄没有引入新的目标陈旧。
+
+## 175. `--titlebar frame` 真正实现：原生边框 + 无系统标题栏（2026-10-20）
+
+§174 之后重看「窗口外观」那条结论（当时的 `frame` 档只是"一条命令复现 Godot 办不到"），用户问的
+是「Electron 那样无顶栏、又用原生边框，Windows 上怎么做的」——答案是**不动样式，只改
+`WM_NCCALCSIZE`**。既然引擎不管这段，就自己上手：`DisplayServer.WINDOW_FLAG_EXTEND_TO_TITLE` 那一枚
+空操作换成真正的实现。
+
+### 175.1. 机制
+
+`WS_POPUP`（`custom`/`none` 两档）连边框和阴影都没有，要自己补；Electron 的
+`titleBarStyle: 'hidden'` 走的是另一条：**保留 `WS_OVERLAPPEDWINDOW`**（`WS_CAPTION |
+WS_THICKFRAME | WS_SYSMENU | MIN/MAX`），在 `WM_NCCALCSIZE`（`wParam == TRUE` 那一段）里**只把
+caption 那一块还给客户区、边框那圈留着**。于是原生缩放、Aero Snap、原生最大化、DWM 1px 边框 / 阴影 /
+Win11 圆角全在，挂掉的只有标题栏。
+
+⚠ 第一版这里是"返回 0 ⇒ 客户区铺满整个窗口矩形"，**错的**：窗口矩形最外那 7 像素阴影带和 1 像素
+边框也一并变成客户区，DWM 就没地方画边框/圆角/阴影 —— 出来跟 `WS_POPUP` 一个样（用户原话：
+"**没看见原生边框啊**"）。像素证据：铺满那版窗口左上角 `(0,0)` 直接是内容色 `1C206A`、没有边框行；
+改成"收到边框内侧"之后，`y=0` 是 DWM 的 1 像素边框 `343434`、`y=1` 起才是内容。
+
+新文件 `host/godot/lfw_godot_native_frame.{h,cpp}`（非 Windows 上是空实现，这一支照样交叉编译）：
+
+* `install_native_frame(void* hwnd)`：`SetWindowLongPtrW(GWLP_WNDPROC, …)` 换窗口过程，然后
+  `SetWindowPos(…, SWP_FRAMECHANGED)` 让 Windows 立刻重算非客户区。
+* **不用 `SetWindowSubclass`**：它要从 comctl32 的**导出表**拿（v6 manifest 才有），拿不到就是
+  **装 DLL 时就崩**；手工串链只用 user32，零依赖。
+* `WM_NCCALCSIZE`：先看 `GWL_STYLE & WS_THICKFRAME` —— Godot 切全屏时样式变成 `WS_POPUP`，
+  那一档客户区本来就该铺满，别再插一脚。然后按 `native_frame_insets()` 收一圈：左/右/下各
+  `SM_C?SIZEFRAME + SM_CXPADDEDBORDER`（实测 8 像素），顶部普通档 **1 像素**（`IsZoomed` 时收满 8，
+  见 175.2）。
+* `native_frame_insets(hwnd, …)`：上面那一份 inset 的唯一出处（`WM_NCCALCSIZE` 与请求尺寸两侧共用，
+  免得两边各写一套数）。
+* `WM_NCHITTEST`：那 8 像素是**不可见**的外扩（命中按窗口矩形算）⇒ 边缘要自己回答
+  `HTLEFT/HTTOP…`，否则退化成 `HTCLIENT`（"点得到、拉不动"）。厚度按 `GetSystemMetricsForDpi` 问
+  —— **不能**写死 8：`GetSystemMetrics` 按调用线程的 DPI 上下文回答，而子类化过程跑在谁的上下文里
+  都不确定。最大化时不给缩放带（同系统）。
+* `native_frame_evidence(hwnd)`：`hwnd/style/nc/installed` 一行，给 `_ready()` 那行日志用。
+* `native_frame_decoration(hwnd, &dx, &dy)`：样式当下意味着的装饰尺寸（`AdjustWindowRectExForDpi`
+  对空客户区求差值，含 caption），见 175.2 的尺寸补偿。
+
+### 175.2. 两个必须处理的坑
+
+1. **顶部那 1 像素 vs 最大化时收满一圈**：普通档顶部只收 1 像素（DWM 边框本身），内容顶到最上沿；
+   若跟着左/右/下一起收满 8 像素，顶上会多出一条 7 像素的"没有 caption 的 caption 带"（实测
+   `202020` 一整条，看着像厚边框）。但**最大化**时 Windows 把窗口 rect 撑到工作区外一圈（阴影要用），
+   那一档顶部必须收满 8，客户区才正好落在工作区上（实测 `client=0,0 1920x1032`）。
+2. **引擎的尺寸补偿**：`DisplayServer::window_set_size(R)` 仍按窗口样式补偿装饰（`AdjustWindowRectEx`
+   那一套，**含 caption 一整条**：窗口矩形 = `R + 16x39`），而我们只保留了 16x9 ⇒ 请求得先减装饰、
+   再把保留的那圈加回来（`R = want - decoration + kept_insets`，实测
+   `request 1191x645 (want 1191x675, decoration 16x39, kept frame 16x9)`）。
+   装饰**按 `AdjustWindowRectExForDpi` 现算** —— 和引擎补偿用的是同一个 API，DPI 一变也对得上；
+   不要"量一次存起来"。⚠ 也不要在 `window_set_size` **之后**"读回来再补"：那一刻引擎的
+   `client_rect` 还是旧值/乐观值，实测补不上（那个版本日志里 `size=1207x714` 露了馅）。
+
+### 175.3. 顺手补的一条
+
+`frame` 档的拖拽区双击原来只走"已最大化 → 切回来"那一侧（`custom` 档的遗留：未最大化时双击 =
+两次 `window_start_drag()`）。这一档的边框本来就是系统的，双击行为不该比原生少一半 ⇒
+`dbl && (native_frame() || maxed)` 切最大化/还原，`custom` 档行为不变。
+
+### 175.4. 实测（`native/tools/win_window_modes.ps1 -Modes native,custom,frame`，缩放 1.5）
+
+| `--titlebar` | `GWL_STYLE` | window / client | 非客户区 |
+|---|---|---|---|
+| `native` | `0x16CF0000` `WS_CAPTION\|WS_THICKFRAME\|…` | 1207x714 / 1191x675 | 16x39 |
+| `custom` | `0x960B0000` `WS_POPUP\|…` | 1191x675 / 1191x675 | 0x0 |
+| `frame` | `0x16CF0000`（**`WS_CAPTION` 仍在**） | 1207x684 / 1191x675 | **16x9**（最大化 16x16） |
+
+三种组合两两不同：`frame` 的指纹是「样式还是 native、非客户区少了 caption 那 30 像素」。DWM 侧也对
+得上：`extended frame bounds = 363,171 1193x677`（比窗口矩形内缩 7 像素 = 阴影带），客户区再往内
+1 像素 = 那条边框。另外量到：
+
+* `WM_NCHITTEST` 逐点：左/右/上/下/左上/右下 → `HTLEFT`/`HTRIGHT`/`HTTOP`/`HTBOTTOM`/`HTTOPLEFT`/
+  `HTBOTTOMRIGHT`，画面中间 `HTCLIENT`；
+* 系统最大化（`SC_MAXIMIZE`）：`window=-8,-8 1936x1048`、`client=0,0 1920x1032`（= 工作区），`nc` 从
+  16x9 变 16x16；还原后回到 `window=356,171 1207x684 / client=364,172 1191x675 / nc=16x9`；
+* 点条上的最大化按钮：`maximize (native frame) (mode=2 size=1920x1032 deco=1936x1048 pos=3840,0)` →
+  `restore (native frame) (mode=0 size=1191x675 deco=1207x684 pos=4204,172)`（正好回原矩形）；
+* 全屏来回：`0x16CF0000 1207x684` → `0x96000000 1920x1082` → `0x16CF0000 1207x684 at=356,171`
+  （没有漂移）；
+* 边框像素（屏幕截图逐点）：`y=0` 是 `343434`（DWM 的 1 像素边框）、`y=1` 起是内容；左上角放大图
+  里能看到圆角 + 边框 + 四周阴影（`native/build/edge-frame-corner.png`）；
+* 启动日志多两行：`titlebar: frame -> native frame (captionless) hwnd=… style=0x16CF0000 nc=16x9
+  installed=1 (WM_NCCALCSIZE=0)` 与 `window: native frame -> request 1191x645 (want 1191x675,
+  decoration 16x39, kept frame 16x9)`；`[godot] window:` 那行的 `extend=` 字段换成 `frame=`。
+
+**缺省**：`--play` 从 `custom` 换成这一档（用户要求"游戏默认就是这个样子"）；`--frames` 验收 /
+headless / 截图那一路仍是 `native` ⇒ 三条摘要与既有像素级截图的口径**一点不动**。
+
+已知差距：Win11「悬停最大化按钮弹贴边布局」拿不到 —— 它要求那块矩形是真的非客户区按钮
+（`WM_NCHITTEST` 返回 `HTMAXBUTTON`），自绘按钮没有这个身份。
+
+回归：`--titlebar native` / `custom` 两档读数与 §174 之前逐字相同；headless 300 帧摘要仍是
+`40706a918a32f375`（headless 在 `apply_window_setup` 里就返回了，一个窗口 API 都不碰）；设置页截图
+摘要 `9eac8bbebd6256eb` 不变。

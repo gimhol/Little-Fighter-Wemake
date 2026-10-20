@@ -32,6 +32,7 @@ add_library(lfw_godot SHARED
   lfw_godot_font.cpp
   lfw_godot_host.cpp
   lfw_godot_models.cpp
+  lfw_godot_native_frame.cpp
   lfw_godot_node.cpp
   lfw_godot_renderer.cpp
   lfw_godot_textures.cpp
@@ -51,6 +52,12 @@ target_sources(lfw_godot PRIVATE
 
 target_include_directories(lfw_godot PRIVATE "${LFW_NATIVE_ROOT}")
 target_link_libraries(lfw_godot PRIVATE godot::cpp lfw_core)
+
+# `lfw_godot_native_frame.cpp`（`--titlebar frame` 那一档：`WM_NCCALCSIZE` 让掉 caption）。
+# user32 在 MSVC 的默认库里，这里显式写一遍只是让依赖看得见。
+if(WIN32)
+  target_link_libraries(lfw_godot PRIVATE user32)
+endif()
 
 get_target_property(GODOTCPP_SUFFIX godot-cpp GODOTCPP_SUFFIX)
 

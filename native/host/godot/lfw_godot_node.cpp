@@ -226,9 +226,9 @@ const char* LfwGodot::usage() {
          "  --key-tap      「按一下」的按下 → 抬起间隔（帧，缺省 2）\n"
          "  --titlebar 窗口那一套：native（系统边框 + 系统标题栏）/ none（无边框、不画栏）/ custom\n"
          "             （无边框 + 自绘栏，照 Electron 那份顶栏：11 个 `btn_*.png` 控件 + 拖拽层 +\n"
-         "             音量弹层）/ frame（**原生边框但不要系统标题栏**：`EXTEND_TO_TITLE`，照 Electron\n"
-         "             的 `frame:false`）+ 自绘栏）。\n"
-         "             缺省：`--play` 时 custom，其余 native。\n"
+         "             音量弹层）/ frame（**原生边框但不要系统标题栏**：自己换窗口过程、`WM_NCCALCSIZE`\n"
+         "             只摘 caption、边框留着，照 Electron 的 `titleBarStyle:'hidden'`）+ 自绘栏）。\n"
+         "             缺省：`--play` 时 frame，其余 native。\n"
          "  --icons    顶栏那 11 张 `btn_*.png` 的目录（缺省 = 从仓库根解析出来的 `src/assets`；\n"
          "             它们**不在数据包里**，导出/打包时得自己带上）。\n"
          "  --display-scale  覆盖顶栏那一层用的显示缩放（CSS 像素 → 窗口物理像素；缺省 = 屏幕自己的\n"
@@ -420,8 +420,8 @@ bool LfwGodot::parse_args(const std::vector<std::string>& argv, Args& out) const
   }
   if (out.roots.empty()) out.roots.emplace_back(".");
   // 窗口那一套的缺省按**跑法**定（与"玩/验收"这条岔路口一致）：`--play` = Electron 那一套
-  //（无边框 + 自绘栏 + 1.5× 窗口），其余（`--frames` 验收、headless、截图）原样不动。
-  if (!out.titlebar_given) out.titlebar = out.play ? TitlebarMode::custom : TitlebarMode::native;
+  //（**原生边框 + 无系统标题栏** + 自绘栏 + 1.5× 窗口），其余（`--frames` 验收、headless、截图）原样不动。
+  if (!out.titlebar_given) out.titlebar = out.play ? TitlebarMode::frame : TitlebarMode::native;
   if (!out.window_scale_given) out.window_scale = out.play ? 1.5 : 1.0;
   // 0 = 自动：开放模式缺省静默（不打帧摘要），验收模式缺省每 60 帧一行。
   if (out.every <= 0) out.every = out.play ? 0 : 60;
@@ -1354,33 +1354,30 @@ void LfwGodot::apply_window_setup() {
     return;
   }
   _windowed = true;
+  // `frame` 档的 HWND（装不上就是 `nullptr`）：尺寸补偿那一段要按它现算装饰。
+  void* frame_hwnd = nullptr;
   // 无边框（Windows 上是 `WS_POPUP`）只给 `none`/`custom`；`native` 与 `frame` 都保留系统边框。
   const bool borderless =
       _args.titlebar == TitlebarMode::none || _args.titlebar == TitlebarMode::custom;
   if (borderless) {
     ds->window_set_flag(DisplayServer::WINDOW_FLAG_BORDERLESS, true);
   } else if (_args.titlebar == TitlebarMode::frame) {
-    // `frame`：**留着**系统边框（`WS_THICKFRAME` 那一套 ⇒ 原生缩放 / Aero Snap / 最大化 / DWM 阴影），
-    // 只把客户区顶到标题栏位置（`EXTEND_TO_TITLE`）⇒ 看不见系统标题栏 —— 就是 Electron `frame:false`
-    // 在 Windows 上做的那件事（保留 `WS_THICKFRAME`、用 `WM_NCCALCSIZE` 让出 caption 那一块）。
-    // ⚠ **实测（Godot 4.7.1 / Windows）：这一枚是空操作** —— `platform/windows/**` 里根本没有
-    // `extend_to_title`（只在 macOS 后端实现；`doc/classes/DisplayServer.xml` 也写着 implemented only
-    // on macOS）：设完读回来还是 0，`deco` 仍比 `size` 高一条 caption，Win32 的 `WS_CAPTION` 也还在
-    //（外部 GetWindowLong 量过）。所以这一档只用来说明"Godot 现在办不到"，见下面的 verdict 行与
-    // `native/README.md`「窗口外观」那张表。
-    ds->window_set_flag(DisplayServer::WINDOW_FLAG_EXTEND_TO_TITLE, true);
-    const bool took = ds->window_get_flag(DisplayServer::WINDOW_FLAG_EXTEND_TO_TITLE);
-    const godot::Vector2i win = ds->window_get_size();
-    const godot::Vector2i decorated = ds->window_get_size_with_decorations();
-    char verdict[224];
-    std::snprintf(verdict, sizeof(verdict),
-                  "[godot] titlebar: frame -> extend_to_title read-back=%d feature=%d "
-                  "size=%dx%d deco=%dx%d %s",
-                  took ? 1 : 0, ds->has_feature(DisplayServer::FEATURE_EXTEND_TO_TITLE) ? 1 : 0,
-                  win.x, win.y, decorated.x, decorated.y,
-                  took ? "(customer area covers the caption area)"
-                       : "(NO-OP on this platform: the OS caption is still there)");
-    print_line(verdict);
+    // `frame`：**留着**系统边框（`WS_OVERLAPPEDWINDOW` 那一套 ⇒ 原生缩放 / Aero Snap / 原生
+    // 最大化 / DWM 阴影 / Win11 圆角），只把 caption 从非客户区里拿掉 —— 就是 Electron
+    // `titleBarStyle: 'hidden'` 在 Windows 上做的那件事（`WM_NCCALCSIZE` 返回 0）。
+    //
+    // ⚠ Godot 自己那枚 `WINDOW_FLAG_EXTEND_TO_TITLE` 在这儿是**空操作**（`platform/windows/**`
+    // 里根本没有它，只有 macOS 后端实现；设完读回来还是 0，`WS_CAPTION` 也还在 —— 实测见
+    // `native/README.md`「窗口外观」）⇒ 自己上手：拿 HWND、换窗口过程，见
+    // `lfw_godot_native_frame.{h,cpp}`（那一档的全部 Win32 细节都在那儿）。
+    frame_hwnd = reinterpret_cast<void*>(
+        static_cast<uintptr_t>(ds->window_get_native_handle(DisplayServer::WINDOW_HANDLE)));
+    _native_frame = install_native_frame(frame_hwnd);
+    const std::string evidence = native_frame_evidence(frame_hwnd);
+    print_line(std::string("[godot] titlebar: frame -> native frame (captionless) ") +
+               (evidence.empty() ? std::string("hwnd=-") : evidence) +
+               (_native_frame ? " (WM_NCCALCSIZE=0)"
+                              : " (NOT installed: no HWND or no WS_THICKFRAME)"));
   }
   // 窗口 = **逻辑屏幕** × `--window-scale`。逻辑屏幕在装载之前从 `project.godot` 的
   // `display/window/size/viewport_*` 读（`_logical_w/_logical_h`），**不**读
@@ -1401,8 +1398,34 @@ void LfwGodot::apply_window_setup() {
   //（再小就等于把逻辑屏幕缩没，UI 命中与文字度量都开始失真）。
   ds->window_set_flag(DisplayServer::WINDOW_FLAG_RESIZE_DISABLED, false);
   ds->window_set_min_size(logical);
+  // ⚠ 引擎的 `window_set_size(R)` 按窗口样式补偿装饰（`AdjustWindowRectExForDpi` 那一套，**含
+  // caption 那一整条**）：窗口矩形 = R + 装饰。而这一档把 caption 摘掉了、只留边框那圈 ⇒ 客户区
+  // 会比 `want` 多出 caption 的高度。所以请求时要先减掉装饰、再加回我们自己保留的那圈：
+  // 窗口矩形 = `want` + 边框，客户区（= 窗口 − 边框）正好 = `want`。两样都按同一个 API 现算，
+  // DPI 变了也对得上。
+  int deco_x = 0;
+  int deco_y = 0;
+  int in_l = 0;
+  int in_t = 0;
+  int in_r = 0;
+  int in_b = 0;
+  if (_native_frame) {
+    native_frame_decoration(frame_hwnd, &deco_x, &deco_y);
+    native_frame_insets(frame_hwnd, &in_l, &in_t, &in_r, &in_b);
+  }
+  const godot::Vector2i request =
+      _native_frame ? godot::Vector2i(want.x - deco_x + in_l + in_r, want.y - deco_y + in_t + in_b)
+                    : want;
+  if (_native_frame) {
+    char req_buf[192];
+    std::snprintf(req_buf, sizeof(req_buf),
+                  "[godot] window: native frame -> request %dx%d (want %dx%d, decoration %dx%d, "
+                  "kept frame %dx%d/%dx%d)",
+                  request.x, request.y, want.x, want.y, deco_x, deco_y, in_l + in_r, in_t + in_b);
+    print_line(req_buf);
+  }
   if (ds->window_get_size() != want) {
-    ds->window_set_size(want);
+    ds->window_set_size(request);
     if (scale != 1.0 || explicit_size) {
       // 窗口从左上角长大 ⇒ 放大后自己居中一下（不然会往右下溢出屏幕）。
       const int screen = ds->window_get_current_screen();
@@ -1412,7 +1435,7 @@ void LfwGodot::apply_window_setup() {
     }
   }
   // 证据行（`native/README.md` 的「窗口」一节引的就是它）：`borderless=1` = 无边框真的设上了、
-  // `extend=1` = 客户区顶到标题栏位置（`frame` 档那一枚）；`deco=size` = 没有非客户区
+  // `frame=1` = `frame` 档的「原生边框 + 无 caption」装上了（`WM_NCCALCSIZE=0`）；`deco=size` = 没有非客户区
   //（无边框窗口的装饰矩形与客户区矩形重合；有系统边框**和**系统标题栏时 deco > size）；
   // `logical=794x450` = 逻辑屏幕没被窗口尺寸带跑（`project.godot` 的 `viewport_*`）。
   const godot::Vector2i now = ds->window_get_size();
@@ -1426,12 +1449,12 @@ void LfwGodot::apply_window_setup() {
   const godot::Rect2 content = contain_rect(now);
   char buf[512];
   std::snprintf(buf, sizeof(buf),
-                "[godot] window: display=%s titlebar=%s scale=%.2f borderless=%d extend=%d "
+                "[godot] window: display=%s titlebar=%s scale=%.2f borderless=%d frame=%d "
                 "size=%dx%d deco=%dx%d pos=%d,%d mode=%d logical=%dx%d resizable=%d min=%dx%d "
                 "content=%.0fx%.0f+%.0f+%.0f",
                 display.c_str(), titlebar_name(_args.titlebar), scale,
                 ds->window_get_flag(DisplayServer::WINDOW_FLAG_BORDERLESS) ? 1 : 0,
-                ds->window_get_flag(DisplayServer::WINDOW_FLAG_EXTEND_TO_TITLE) ? 1 : 0, now.x,
+                _native_frame ? 1 : 0, now.x,
                 now.y, deco.x, deco.y, pos.x, pos.y, static_cast<int>(ds->window_get_mode()),
                 logical.x, logical.y,
                 ds->window_get_flag(DisplayServer::WINDOW_FLAG_RESIZE_DISABLED) ? 0 : 1,
@@ -1900,25 +1923,27 @@ bool LfwGodot::titlebar_consume(const godot::Ref<godot::InputEvent>& event) {
       //（我们这种"铺满工作区"的自绘最大化更不该被拖着跑 —— 用户实测报的 bug）。
       const bool maxed =
           _maximized || ds->window_get_mode() == godot::DisplayServer::WINDOW_MODE_MAXIMIZED;
-      if (maxed) {
-        // 但**双击**拖拽区 = 切最大化/还原（Windows 的标准行为，用户按直觉会去双击）。
-        bool dbl = false;
-        if (const godot::InputEventMouseButton* const mb =
-                godot::Object::cast_to<godot::InputEventMouseButton>(event.ptr());
-            mb != nullptr) {
-          dbl = mb->is_double_click();
-        }
-        if (dbl) {
-          const auto& list = lfw::host::titlebar_controls();
-          for (int i = 0; i < static_cast<int>(list.size()); ++i) {
-            if (list[static_cast<std::size_t>(i)].action == lfw::host::TitleAction::maximize) {
-              titlebar_activate(i);
-              break;
-            }
+      // **双击**拖拽区 = 切最大化/还原（Windows 的标准行为，用户按直觉会去双击）。
+      // 无边框档只在"已最大化"这一侧做（那一档的几何是我们自己铺的）；`frame` 档两侧都做 ——
+      // 它的边框与最大化本来就是系统的，双击行为不该比原生少一半。
+      bool dbl = false;
+      if (const godot::InputEventMouseButton* const mb =
+              godot::Object::cast_to<godot::InputEventMouseButton>(event.ptr());
+          mb != nullptr) {
+        dbl = mb->is_double_click();
+      }
+      if (dbl && (native_frame() || maxed)) {
+        const auto& list = lfw::host::titlebar_controls();
+        for (int i = 0; i < static_cast<int>(list.size()); ++i) {
+          if (list[static_cast<std::size_t>(i)].action == lfw::host::TitleAction::maximize) {
+            titlebar_activate(i);
+            break;
           }
-        } else {
-          print_line("[godot] titlebar: drag ignored (maximized)");
         }
+        return true;
+      }
+      if (maxed) {
+        print_line("[godot] titlebar: drag ignored (maximized)");
         return true;
       }
       // 拖拽区。`window_start_drag` 在 Windows 上就是
