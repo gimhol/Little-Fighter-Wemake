@@ -1,8 +1,0 @@
-# F4：弹出当前 UI（注册 + 空跑）
-# 两侧「什么都不做」：TS 假 `lfw.layers` 是空层栈（`all.length == 0`），C++ 侧真 `LFW` 的底页
-# 只有一层且 `pages().size() <= 1 && i == 0` ⇒ `continue`（见 DESIGN §149.18 的覆盖说明）。
-wnew
-h s "F4"
-h s "f4"
-cmd s "F4"
-cmd s "F4 --anything"

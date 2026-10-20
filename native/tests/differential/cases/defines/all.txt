@@ -1,3 +1,0 @@
-# 本 subject 不需要输入：它把全部枚举 dump 出来与 TS 侧对拍。
-# run.mjs 要求 cases/<subject>/ 下至少有一个 case 文件，这里放一个占位的。
-all

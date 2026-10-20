@@ -1,2 +1,0 @@
-# 本 subject 不需要输入：它把全部字段表 dump 出来与 TS 侧对拍。
-all
