@@ -125,8 +125,8 @@ double clamp01(double v) { return v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v); }
 }  // namespace
 
 void LfwGodotHost::sound_lr(const Value& x, double& l_vol, double& r_vol) const {
-  // `const scale = world_node.scale.x`（逻辑像素 → 画布那个比例，引擎侧才有）。
-  const double scale = _audio.scale ? _audio.scale() : 1.0;
+  // `const scale = world_node.scale.x`（= `World.transform` 的缩放，即背景的 `zoom_x`；不是窗口缩放）。
+  const double scale = _lfw != nullptr ? _lfw->world().transform.scale_x() : 1.0;
   const double safe_scale = scale > 0.0 ? scale : 1.0;
   const double full_w = kClassicScreenWidth / safe_scale;
   const double half_w = full_w * 0.5;

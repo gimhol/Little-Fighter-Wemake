@@ -90,10 +90,12 @@ struct GodotDrawItem {
   bool has_model = false;
   // 颜色（0..1）：`r/g/b` 是 `modulate`、`a` 是不透明度（影子用它）。
   double r = 1, g = 1, b = 1, a = 1;
-  // 换色（`mix_color` + `mix_strength`）：`mix_a > 0` ⇒ 宿主再叠一遍 `modulate`
-  //（TS 是着色器里的 `mix(color.rgb, mixColor, strength)`；两遍叠加对最常见的"受击闪白"
-  // 逐位等价，其它颜色的结果会偏暗 —— 见报告）。
+  // 换色 / 灰度（`mix_color` + `mix_strength` + `greyscale`）：TS 是着色器里
+  // `rgb = mix(rgb, gray(rgb), greyscale)` 再 `rgb = mix(rgb, mixColor, strength)` 的顺序；
+  // `modulate` 只有乘法（红的乘蓝还是红的）⇒ 宿主预先烘一张着色过的纹理（`get_tinted`）。
+  // `mix_a` = strength（UI 那边 `color` 的 alpha 就是这个用法）。
   double mix_r = 1, mix_g = 1, mix_b = 1, mix_a = 0;
+  double gray = 0;
   // 描边（`outline_*`）：宽度是**逻辑像素**的扩张量（TS 里乘图片 `scale` 只是给着色器算 texel，
   // 折回后仍是逻辑像素）；宿主用"白剪影 + 描边色 `modulate`"画上下左右四个偏移。
   double outline_r = 0, outline_g = 0, outline_b = 0, outline_a = 0, outline_w = 0;

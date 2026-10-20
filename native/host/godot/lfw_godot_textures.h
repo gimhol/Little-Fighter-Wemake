@@ -34,9 +34,18 @@ class GodotTextureCache {
   // `center < 0.5` 且四邻有 ≥ 0.5）。按 path 单独缓存；失败同样是空引用。
   godot::Ref<godot::ImageTexture> get_silhouette(const std::string& path);
 
+  // 着色纹理：TS 的 `outline.frag` 里 `apply()` 那两步 —— 先
+  // `rgb = mix(rgb, gray(rgb), greyscale)`（`GRAY_WEIGHT = 0.299/0.587/0.114`），再
+  // `rgb = mix(rgb, mixColor, strength)`。2D 的 `modulate` 只有乘法，把饱和色往蓝色乘
+  // 只会变暗、红的还是红 ⇒ 这里按 path + 参数逐像素烘一份（alpha 原样保留，只用在不透明像素上）。
+  // 参数按 3 位小数量化后当键；条目数封顶 `kMaxTinted`，超了丢最早的那条。
+  godot::Ref<godot::ImageTexture> get_tinted(const std::string& path, double r, double g, double b,
+                                             double gray, double strength);
+
   long long loaded() const { return _loaded; }
   long long failed() const { return _failed; }
   long long silhouettes() const { return _silhouettes; }
+  long long tinted() const { return _tinted; }
   const std::string& last_error() const { return _last_error; }
 
  private:
@@ -44,11 +53,20 @@ class GodotTextureCache {
   godot::Ref<godot::Image> read_image(const std::string& path, std::string& err);
 
   std::function<bool(const std::string&, std::string&)> _load;
+  static constexpr std::size_t kMaxTinted = 64;
+  struct Tinted {
+    godot::Ref<godot::ImageTexture> tex;
+    long long seq = 0;
+  };
+
   std::map<std::string, godot::Ref<godot::ImageTexture>> _cache;
   std::map<std::string, godot::Ref<godot::ImageTexture>> _sil;
+  std::map<std::string, Tinted> _tint;
+  long long _tint_seq = 0;
   long long _loaded = 0;
   long long _failed = 0;
   long long _silhouettes = 0;
+  long long _tinted = 0;
   std::string _last_error;
 };
 

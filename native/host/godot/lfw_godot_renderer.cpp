@@ -578,8 +578,9 @@ void GodotWorldRenderer::emit_sprite(GodotFrame& frame, const Entity& e, const V
     if (frame.rotated_items == 0) frame.rotated_probe = theta;
     ++frame.rotated_items;
   }
-  // 换色（`mix_color` + `mix_strength`）：宿主用第二遍 `modulate` 叠出来（见 `_draw`）。
+  // 换色 / 灰度（`mix_color` + `mix_strength` + `greyscale`）：宿主烘一张着色过的纹理再画。
   const double mix = e.mix_strength();
+  it.gray = e.greyscale();
   if (mix > 0.0) {
     double cr = 1, cg = 1, cb = 1, ca = 1;
     if (parse_color(e.mix_color(), cr, cg, cb, ca)) {

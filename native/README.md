@@ -1135,6 +1135,8 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
     送过去的是 `gain = (l+r)/2`、`pan = (r-l)/(l+r)`：在 Godot 4.7.1 的 panner 法则
     （`lvol = clamp(1-pan)` / `rvol = clamp(1+pan)`，且**单声道**输入下 `out.left = gain·(1-pan)`
     / `out.right = gain·(1+pan)`）展开后**逐值等于** `(l, r)`（算式写在 `audio_play` 的注释里）。
+    那个 `(l, r)` 里的「一屏多宽」按 `world.transform.scale_x`（= 背景的 `zoom_x`，普通关卡 1.0）算，
+    **不是**窗口的 contain 缩放 —— 拿错（`--play` 的 1.5）会把 `full_w` 缩成 529、右半边整片静音。
     音效实测全是 mono（`data/*.mp3` 的帧头 channel mode = 3）、只有 `bgm/main.wma.mp3` 是 stereo，
     而 BGM 走的是没有 pan 的那一路 ⇒ 这个等价关系覆盖了所有实际素材。
   * **音量初值照 TS**：`__Modern` / `App.tsx` 是 `volume 0.3 / bgm_volume 0.5 / sound_volume 1`
@@ -1318,6 +1320,38 @@ $R = (Get-Location).Path; $g = "$env:USERPROFILE\Desktop\Godot_v4.7.1-stable_win
   改了 `lf2s/origin/**` 之后记得 `npm run build:prel`/`build:data` + 重解压。
 * lint 基线更新：**923 clean / 0 failed / 94 warnings**（多的 84 条来自 `tests.cpp` 里那张
   裸指针用例表 —— `Tests` 的 `_owned/_retired` 为了"不完整类型"故意用裸指针，见类头注释）。
+
+### 2026-10-20：用户玩的时候报的（第三批）
+
+* **"LittleFunnyAutoGame 的缺了蓝色覆盖效果，现在显示是原色"** —— 主页那场自动对局里每个上场角色
+  都被设了 `greyscale = 0.3` / `mix_color = '#364791'`（蓝）/ `mix_strength = 0.3` /
+  `outline_color = '#131C47'`（`LittleFunnyAutoGame.ts:146-151`），也就是一身蓝灰。TS 是
+  `outline.frag` 的 `apply()`：先 `to_gray(rgb, gray)`、再 `mix(rgb, gamma_correct(mixColor), strength)`。
+  端口原来拿它当「再叠一遍 `modulate = mixColor`、alpha = strength」近似 —— 而 `modulate` 是**乘法**：
+  结果 = `0.7·tex + 0.3·tex·mixColor`，红的乘蓝还是红 ⇒ 一身原色（用户报的正是这个）。
+  改成 `GodotTextureCache::get_tinted(path, r, g, b, gray, strength)` **烘一张着色纹理**
+  （逐像素 `mix(rgb, 亮度, gray)` → `mix(rgb, tint, strength)`，都在 **sRGB 字节空间**里算，alpha 原样），
+  `draw_item` 一次 blit 画完；参数按 3 位小数当键、条目封顶 64（自动对局一帧只可见几张图，重烘也就
+  几万像素）。见 DESIGN §177。
+  ⚠ TS 着色器里那两句 `gamma_correct()` **不要**跟着抄：`mixColor` uniform 是**线性**值、纹理是
+  `texture.colorSpace = SRGBColorSpace`（采样解码成线性），那句 `pow(x, 1/2.2)` 只是把它们编回 sRGB
+  ⇒ 整条 `apply()` 实际就工作在 sRGB 空间，而端口的纹理字节本来就是 sRGB。抄了反而把混色目标抬成浅蓝
+  `(0.49, 0.56, 0.76)`，角色一身**偏白**（用户报的"现在怎么偏白色而不是蓝色"）。
+  实测：`settings_misc` / `vs_mode_prepare_page` / `score_board` 三页改前改后存图**逐像素相同**
+  （UI 一点没动 —— 数据里带 alpha 的 `color` 全是纯色节点，走 `flat` 那条）；只有 `main_page` 里世界
+  那一遍上了色的精灵变（1.5× 窗口、同帧"关掉换色"与"开着换色"对比：1375 像素，bbox 85,621–138,664），
+  方向是"暖色 → 蓝灰"：`(185,174,139) → (143,143,148)`、`(248,241,214) → (188,190,199)`，这一块的
+  均值 `(129,132,165) → (107,114,152)`（B−R 从 +36 到 +45，蓝色成分更突出）。存图
+  `shots/main-page-autogame-tint.png`（放大）。
+* **"结算的角色小图不对"** —— 结算画面每一行左边那个 40×45 的小头像（`FighterThumb`）之前**永远是**
+  缺省的 `sprite/CHARACTER_THUMB.png`：TS 的 `on_show` 是
+  `this.fighter = this.node.lookup_component(PlayerScore)?.fighter`，端口只写了个 `fighter = nullptr;`
+  （当时代码注释就写着"端口还没接线"）。现在照 TS 从祖先链上的 `PlayerScore` 取 `fighter()`。
+  实测（`--ui-page score_board --ui-dump`）：两行分别是 `img=sprite/gim/s@4x.png` /
+  `img=sprite/template1/s.png`（改前两行都是 `sprite/CHARACTER_THUMB.png`）；存图
+  `shots/score-board-thumb.png`。
+* 变异锚点跟着改：`lfw_ui_faces.mjs` 那两条（"on_show 不重置 fighter" / "on_show 不刷新图"）原来锚在
+  `fighter = nullptr;\n  handle_changed();` 上，现在锚在新的写法上（`lint` 9761 anchors 全绿）。
 
 ## 验收：宿主三条摘要（改完必跑）
 

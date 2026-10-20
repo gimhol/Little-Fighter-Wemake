@@ -1,6 +1,8 @@
 #include "host/godot/lfw_godot_textures.h"
 
+#include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <utility>
 
@@ -11,6 +13,8 @@
 namespace lfw::host {
 
 namespace {
+
+double clamp01(double v) { return v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v); }
 
 godot::PackedByteArray to_bytes(const std::string& raw) {
   godot::PackedByteArray out;
@@ -98,6 +102,77 @@ godot::Ref<godot::ImageTexture> GodotTextureCache::get_silhouette(const std::str
     else ++_silhouettes;
   }
   _sil.emplace(path, tex);
+  return tex;
+}
+
+godot::Ref<godot::ImageTexture> GodotTextureCache::get_tinted(const std::string& path, double r,
+                                                             double g, double b, double gray,
+                                                             double strength) {
+  if (path.empty()) return {};
+  char key[768];
+  std::snprintf(key, sizeof(key), "%s|%.3f,%.3f,%.3f|%.3f|%.3f", path.c_str(), r, g, b, gray,
+                strength);
+  const std::string cache_key(key);
+  const auto found = _tint.find(cache_key);
+  if (found != _tint.end()) return found->second.tex;
+
+  godot::Ref<godot::ImageTexture> tex;
+  std::string err;
+  const godot::Ref<godot::Image> image = read_image(path, err);
+  if (image.is_null()) {
+    _last_error = err;
+  } else {
+    image->convert(godot::Image::FORMAT_RGBA8);
+    const int32_t w = image->get_width();
+    const int32_t h = image->get_height();
+    godot::PackedByteArray data = image->get_data();
+    const int64_t pixels = static_cast<int64_t>(w) * static_cast<int64_t>(h);
+    if (w > 0 && h > 0 && data.size() == pixels * 4) {
+      const double gr = gray < 0.0 ? 0.0 : (gray > 1.0 ? 1.0 : gray);
+      const double ms = strength < 0.0 ? 0.0 : (strength > 1.0 ? 1.0 : strength);
+      const auto to_byte = [](double v) {
+        return static_cast<std::uint8_t>(std::lround(clamp01(v) * 255.0));
+      };
+      const double tr = clamp01(r);
+      const double tg = clamp01(g);
+      const double tb = clamp01(b);
+      std::uint8_t* const bytes = data.ptrw();
+      for (int64_t i = 0; i < pixels; ++i) {
+        std::uint8_t* const px = bytes + i * 4;
+        if (px[3] == 0) continue;
+        double cr = static_cast<double>(px[0]) / 255.0;
+        double cg = static_cast<double>(px[1]) / 255.0;
+        double cb = static_cast<double>(px[2]) / 255.0;
+        if (gr > 0.0) {
+          const double lum = 0.299 * cr + 0.587 * cg + 0.114 * cb;
+          cr += (lum - cr) * gr;
+          cg += (lum - cg) * gr;
+          cb += (lum - cb) * gr;
+        }
+        if (ms > 0.0) {
+          cr += (tr - cr) * ms;
+          cg += (tg - cg) * ms;
+          cb += (tb - cb) * ms;
+        }
+        px[0] = to_byte(cr);
+        px[1] = to_byte(cg);
+        px[2] = to_byte(cb);
+      }
+      const godot::Ref<godot::Image> baked =
+          godot::Image::create_from_data(w, h, false, godot::Image::FORMAT_RGBA8, data);
+      if (!baked.is_null()) tex = godot::ImageTexture::create_from_image(baked);
+    }
+    if (tex.is_null()) _last_error = "tint failed: " + path;
+    else ++_tinted;
+  }
+  if (_tint.size() >= kMaxTinted) {
+    auto oldest = _tint.begin();
+    for (auto it = _tint.begin(); it != _tint.end(); ++it) {
+      if (it->second.seq < oldest->second.seq) oldest = it;
+    }
+    _tint.erase(oldest);
+  }
+  _tint.emplace(cache_key, Tinted{tex, ++_tint_seq});
   return tex;
 }
 

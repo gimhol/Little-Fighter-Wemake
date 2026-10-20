@@ -2,6 +2,7 @@
 
 #include "lfw/defines/defines.h"
 #include "lfw/entity/entity.h"
+#include "lfw/ui/component/player_score.h"
 #include "lfw/ui/uinode.h"
 #include "lfw/ui/value_spread.h"
 
@@ -43,7 +44,9 @@ void FighterThumb::on_start() {
 }
 
 void FighterThumb::on_show() {
-  fighter = nullptr;
+  PlayerScore* const score =
+      static_cast<PlayerScore*>(node.lookup_component(PlayerScore::class_tag()));
+  fighter = score != nullptr ? score->fighter() : nullptr;
   handle_changed();
 }
 

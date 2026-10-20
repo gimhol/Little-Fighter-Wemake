@@ -1970,7 +1970,7 @@ WASM 宿主已经用同一招证明过自己 —— `native/README.md:310`：**�
     模拟：`a7edd32e19a43ea9` / `13945ad1144c968d` / `61c42c78c9d0bcac`，`renderer(±)` / `ignored_images`
     也逐位相同）+ **目视**：`--screenshot <png> --shot-frame N`（窗口跑，别加 `--headless`）存一张
     794×450 的图 —— 见 `native/README.md`「画面存档」。⚠ 目视仍**无自动化判据**（"画得对不对"这一条
-    记**未定**）；世界那一遍没画的：3D 模型帧、名字/血条、调试指标层、`greyscale`、逐图旋转。
+    记**未定**）。
 - **G3 音频/图片/zip/MD5/文本度量**：G7 那张表。
   **验收**：MD5 与 `md5.ts` 逐位一致（可自动化）；zip 能装真包；**三条摘要仍逐位一致** —— 换宿主最容易
   在这一步翻车。
@@ -2418,7 +2418,7 @@ Godot 这一支做到了，**headless / thin 仍然没有位图**。契约层面
 | **可见性** | `frame.id/state == Gone` ∨ `invisible > 0` | 有（`entity.h:234-235`；录制器 `invis=`） | 宿主推导 |
 | **闪烁（无敌/出生）** | `blinking`，每 4 个单位闪一次 | 有（`entity.h:232-233`；录制器 `blink=`） | 宿主推导 |
 | **无伤（`invulnerable`）的外观** | **语义**有（数值上不掉血）；**外观**今天没有对应字段 | 语义有、外观无 | **需验证**：若 TS 就是靠闪烁表达 ⇒ 宿主推导；否则要补 |
-| **换色（受击闪白 / 毒 / 治疗）** | `mix_color` + `mix_strength`（`mix_strength === 0` ⇒ 不混色）；另有 `greyscale` | 有（`entity.h:164-169`；录制器 `mix=`/`grey=`） | 宿主推导 |
+| **换色（受击闪白 / 毒 / 治疗）** | `mix_color` + `mix_strength`（`mix_strength === 0` ⇒ 不混色）；另有 `greyscale` | 有（`entity.h:164-169`；录制器 `mix=`/`grey=`） | 宿主推导（Godot 宿主：按 `mix_color`/`mix_strength`/`greyscale` 烘一张着色纹理，见 §177） |
 | **描边** | `outline_color` + `outline_alpha` + `outline_width`（要乘图片 `scale`），开关 `outline_enabled`（`null` ⇒ 走缺省）；⚠ `ghosted` 时**不重算**（保留上一次的描边状态，不是"不画"） | 有（`entity.h:152-163`；`EntityMainRender.ts:764-800`） | 宿主推导；**`ghosted` 那条要写进契约**，否则两份宿主不一致 |
 | **名字** | `name` + `name_visible`；画在头顶（用 `ground_y` / `centery`），并**夹在相机视野内**（要 `screen_w` / `transform.scale_x`）；颜色按队伍 | 有（`entity.h:117`；录制器 `name=`/`name_vis=`） | 宿主推导（夹取公式进契约） |
 | **队伍/皮肤变体** | `variant` → 素材变体表下标 | 有（`entity.h:77`；录制器 `variant=`） | 宿主推导 |
@@ -12599,3 +12599,75 @@ headless / 截图那一路仍是 `native` ⇒ 三条摘要与既有像素级截�
 回归：`--titlebar native` / `custom` 两档读数与 §174 之前逐字相同；headless 300 帧摘要仍是
 `40706a918a32f375`（headless 在 `apply_window_setup` 里就返回了，一个窗口 API 都不碰）；设置页截图
 摘要 `9eac8bbebd6256eb` 不变。
+
+## 176. 退出按钮 + 立体声衰减的两处修正
+
+**「退出」按钮点了没反应**：`main_page` 的 `btn_quit` 是 `click: ["exit()", "sound(ok)"]`。TS 把
+`UIActionEnum.Exit` 注册在**应用层**（`src/init.ts:24`），LFW 核心的 `Actor` 里**没有**这一条 —— 端口
+之前也只在核心注册了那八条 ⇒ 点下去只落一行 `[Actor::act] failed to act, handler not found by name,
+expression: exit()`，退不出去。照 TS 的位置把它注册在宿主（`LfwGodot::setup()`，`LFW` 构造之后）：
+`ui::actor().add(ui::ui_action::kExit, …)` → `print_exit_summary()` + `quit_with(0)`，与自绘栏 close
+按钮同一条收尾。headless 那一路不注册（谁退出谁注册，与 TS 的 `init.ts` 只属于 Web 端同理）。
+
+**屏幕右侧没声音**：`get_l_r_vol` 里的 `scale` 是 `world_node.scale.x`，即 `world.transform`（背景的
+`zoom_x`，普通关卡 1.0；只有放大过的背景才是别的值）。端口之前把它当成「逻辑像素 → 画布」的
+contain 缩放（`--play` 缺省的 `--window-scale 1.5`），于是 `full_w = 794/1.5 = 529`：`x − viewer`
+超过 `1.5 × full_w` 的声音整片静音，右半边还被过度 panner 到一边 —— 正是用户报的「屏幕右侧没声音」。
+`LfwGodotHost::sound_lr` 改读 `_lfw->world().transform.scale_x()`（`_lfw` 本来就在宿主手上 ⇒
+`AudioSink::scale` 那层缝连同 `LfwGodot::audio_world_scale()` 一起删掉）。实测：`--window-scale 1.5`
+与 `--window-scale 1.0` 两条命令打出的 `(l, r)` **逐值相同**（`scale=1.000 full_w=794`），也就是说
+声像不再随窗口缩放走 —— 与 TS 的 `world_node` 语义一致。
+
+顺手修掉 `[godot] window: native frame -> request …` 那行的格式串比实参多两个 `%d`（读未初始化的
+可变参数，MSVC C4473 警告）⇒ 改成 `kept frame %dx%d`。
+
+回归：headless 300 帧摘要仍是 `40706a918a32f375`；`--titlebar frame` 的
+`request 1191x645 (want 1191x675, decoration 16x39, kept frame 16x9)` 与 `nc=16x9` 不变；
+`native lint` 9761 anchors 全绿；点按钮实测 `[godot] ui action: exit` → `[godot] exit: frames=60`
+（`--frames 200` 的第 60 帧就退出了）。
+
+## 177. 换色 / 灰度（主页自动对局的蓝色）与结算角色小图
+
+**主页自动对局的角色「显示成原色」**：`LittleFunnyAutoGame::add_random_fighter` 给每个上场角色设了
+`greyscale = 0.3` / `mix_color = '#364791'` / `mix_strength = 0.3` / 深色描边 —— 主页那场自动对局
+的角色应该是一身蓝灰。TS 那边这是 `outline.frag` 的 `apply()`：
+
+```glsl
+color.rgb = gamma_correct(tex.rgb);
+if (gray > 0)        color.rgb = to_gray(color.rgb, gray);              // mix(rgb, 亮度, gray)
+if (mixStength > 0)  color.rgb = mix(color.rgb, gamma_correct(mixColor), mixStength);
+```
+
+端口原来用「同一张图再叠一遍 `modulate = mixColor`、alpha = strength」近似。`modulate` 是**乘法** ⇒
+结果 = `0.7·tex + 0.3·tex·mixColor`，对饱和色几乎没用（红色乘蓝还是红），于是一身原色 —— 用户报的
+正是这个。改成**烘焙**：`GodotTextureCache::get_tinted` 按 `path + (r,g,b) + gray + strength` 逐像素
+算 `rgb = mix(rgb, 亮度, gray)` 再 `rgb = mix(rgb, tint, strength)`（alpha 原样保留），缓存一张着色过的
+`ImageTexture`（参数按 3 位小数当键，条目封顶 64 条、超了丢最早的；自动对局一帧只可见几张图，重烘
+也就几万像素）。`draw_item` 里 `mix_a > 0 || gray > 0` 就换用这张图，一次 blit 画完（原来那第二遍
+`modulate` 连同 UV 平铺分支里的第二遍一起删掉）。
+
+⚠ `gamma_correct` 那两句**不能**在端口这边照抄 —— 它看着像"提亮"，其实是 three.js 的**空间还原**：
+`mixColor` 是 `Color.set('#364791')` / `setRGB(..., SRGBColorSpace)` 的产物（uniform 里是**线性**值），
+纹理也是 `texture.colorSpace = SRGBColorSpace`（采样时被 GPU 解码成线性）⇒ `pow(x, 1/2.2)` 正好把两者
+编回 sRGB，整条 `apply()` 实际工作在 **sRGB 字节空间**，而端口的纹理字节本来就是 sRGB。
+（踩过的坑：先在端口这边也套了一层 gamma，混色目标被抬成 `(0.49, 0.56, 0.76)` 的浅蓝 ⇒ 角色一身
+**偏白**，用户报"现在怎么偏白色而不是蓝色"。去掉 gamma 才对。）
+
+实测（`--ui-page main_page --frames 460 --shot-frame 450`，同一帧"故意关掉换色"与"开着换色"两张截图逐
+像素比）：只有世界那一遍里**上了色**的那张精灵变（1375 像素，bbox 85,621–138,664），UI 与背景**逐像素
+不动**；变化方向是"暖色 → 蓝灰"：`(185,174,139) → (143,143,148)`、`(149,142,115) → (118,120,129)`、
+`(248,241,214) → (188,190,199)`；这一块的均值从 `(129,132,165)` 变 `(107,114,152)`（B−R 从 +36 到
++45，即蓝的成分更突出）。
+`settings_misc` / `vs_mode_prepare_page` / `score_board` 三页改前改后逐像素相同（数据里带 alpha 的
+`color` 全是纯色节点，走 `flat` 那条，压根不经过纹理着色）。
+
+**结算画面的角色小图不对**：`FighterThumb`（`player_score_row` 里那个 40×45 的头像）在 TS 的
+`on_show` 里是 `this.fighter = this.node.lookup_component(PlayerScore)?.fighter`，端口只写了
+`fighter = nullptr;`（当时代码注释就写着"端口还没接线"）⇒ 每一行都落到缺省的
+`sprite/CHARACTER_THUMB.png`。现在照 TS 从祖先链上的 `PlayerScore` 取 `fighter()`：
+`--ui-page score_board --ui-dump` 里两行分别是 `img=sprite/gim/s@4x.png` 与
+`img=sprite/template1/s.png`（改前两行都是 `sprite/CHARACTER_THUMB.png`）。
+变异锚点 `lfw_ui_faces.mjs` 的两条（"on_show 不重置 fighter" / "不刷新图"）跟着改写成对新写法生效。
+
+回归：headless 300 帧摘要仍是 `40706a918a32f375`（换色只在宿主渲染那一遍）；差分 264/265（唯一那条
+`xml/ui` 的 `img.dw/dh` 漂移照旧）；`native lint` 9761 anchors 全绿。

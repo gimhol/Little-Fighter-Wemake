@@ -55,6 +55,8 @@
 #include "lfw/core/value.h"
 #include "lfw/defines/cmd.h"
 #include "lfw/entity/gen_field.h"
+#include "lfw/ui/action/actor.h"
+#include "lfw/ui/ui_action_enum.h"
 #include "lfw/ui/uilayer.h"
 #include "lfw/ui/uinode.h"
 #include "lfw/ui/value_spread.h"
@@ -419,8 +421,8 @@ bool LfwGodot::parse_args(const std::vector<std::string>& argv, Args& out) const
     }
   }
   if (out.roots.empty()) out.roots.emplace_back(".");
-  // 窗口那一套的缺省按**跑法**定（与"玩/验收"这条岔路口一致）：`--play` = Electron 那一套
-  //（**原生边框 + 无系统标题栏** + 自绘栏 + 1.5× 窗口），其余（`--frames` 验收、headless、截图）原样不动。
+  // 窗口那一套的缺省按**跑法**定（与"玩/验收"这条岔路口一致）：`--play` = Electron 那一套；
+  // 其余跑法原样不动。
   if (!out.titlebar_given) out.titlebar = out.play ? TitlebarMode::frame : TitlebarMode::native;
   if (!out.window_scale_given) out.window_scale = out.play ? 1.5 : 1.0;
   // 0 = 自动：开放模式缺省静默（不打帧摘要），验收模式缺省每 60 帧一行。
@@ -553,6 +555,15 @@ bool LfwGodot::setup() {
   print_line("[godot] version name: " + version_text);
 
   _lfw = std::make_unique<lfw::LFW>(*_host, false);
+
+  // `init.ts` 的 `actor.add(UIActionEnum.Exit, …)`：TS 把「退出」注册在应用层（LFW 核心没有这一条），
+  // 端口同样放在宿主这一侧 —— 退出 = 关窗口，与自绘栏 close 按钮同一条收尾。
+  ui::actor().add(ui::ui_action::kExit, [this](ui::UINode& node, const std::vector<Value>&) {
+    static_cast<void>(node);
+    print_line("[godot] ui action: exit");
+    print_exit_summary();
+    quit_with(0);
+  });
 
   // ---- 语言（也在 `load` **之前**）----
   // Web 版那边在 `useLFW` 的 `setup(lfw)` 里、`lfw.load(...)` 之前设：
@@ -1354,7 +1365,6 @@ void LfwGodot::apply_window_setup() {
     return;
   }
   _windowed = true;
-  // `frame` 档的 HWND（装不上就是 `nullptr`）：尺寸补偿那一段要按它现算装饰。
   void* frame_hwnd = nullptr;
   // 无边框（Windows 上是 `WS_POPUP`）只给 `none`/`custom`；`native` 与 `frame` 都保留系统边框。
   const bool borderless =
@@ -1362,14 +1372,6 @@ void LfwGodot::apply_window_setup() {
   if (borderless) {
     ds->window_set_flag(DisplayServer::WINDOW_FLAG_BORDERLESS, true);
   } else if (_args.titlebar == TitlebarMode::frame) {
-    // `frame`：**留着**系统边框（`WS_OVERLAPPEDWINDOW` 那一套 ⇒ 原生缩放 / Aero Snap / 原生
-    // 最大化 / DWM 阴影 / Win11 圆角），只把 caption 从非客户区里拿掉 —— 就是 Electron
-    // `titleBarStyle: 'hidden'` 在 Windows 上做的那件事（`WM_NCCALCSIZE` 返回 0）。
-    //
-    // ⚠ Godot 自己那枚 `WINDOW_FLAG_EXTEND_TO_TITLE` 在这儿是**空操作**（`platform/windows/**`
-    // 里根本没有它，只有 macOS 后端实现；设完读回来还是 0，`WS_CAPTION` 也还在 —— 实测见
-    // `native/README.md`「窗口外观」）⇒ 自己上手：拿 HWND、换窗口过程，见
-    // `lfw_godot_native_frame.{h,cpp}`（那一档的全部 Win32 细节都在那儿）。
     frame_hwnd = reinterpret_cast<void*>(
         static_cast<uintptr_t>(ds->window_get_native_handle(DisplayServer::WINDOW_HANDLE)));
     _native_frame = install_native_frame(frame_hwnd);
@@ -1398,11 +1400,8 @@ void LfwGodot::apply_window_setup() {
   //（再小就等于把逻辑屏幕缩没，UI 命中与文字度量都开始失真）。
   ds->window_set_flag(DisplayServer::WINDOW_FLAG_RESIZE_DISABLED, false);
   ds->window_set_min_size(logical);
-  // ⚠ 引擎的 `window_set_size(R)` 按窗口样式补偿装饰（`AdjustWindowRectExForDpi` 那一套，**含
-  // caption 那一整条**）：窗口矩形 = R + 装饰。而这一档把 caption 摘掉了、只留边框那圈 ⇒ 客户区
-  // 会比 `want` 多出 caption 的高度。所以请求时要先减掉装饰、再加回我们自己保留的那圈：
-  // 窗口矩形 = `want` + 边框，客户区（= 窗口 − 边框）正好 = `want`。两样都按同一个 API 现算，
-  // DPI 变了也对得上。
+  // 引擎按窗口样式补偿装饰（含 caption）：请求时先减掉装饰、再加回我们自己保留的那圈，
+  // 否则客户区比 `want` 多出 caption 的高度。
   int deco_x = 0;
   int deco_y = 0;
   int in_l = 0;
@@ -1420,7 +1419,7 @@ void LfwGodot::apply_window_setup() {
     char req_buf[192];
     std::snprintf(req_buf, sizeof(req_buf),
                   "[godot] window: native frame -> request %dx%d (want %dx%d, decoration %dx%d, "
-                  "kept frame %dx%d/%dx%d)",
+                  "kept frame %dx%d)",
                   request.x, request.y, want.x, want.y, deco_x, deco_y, in_l + in_r, in_t + in_b);
     print_line(req_buf);
   }
@@ -1435,7 +1434,7 @@ void LfwGodot::apply_window_setup() {
     }
   }
   // 证据行（`native/README.md` 的「窗口」一节引的就是它）：`borderless=1` = 无边框真的设上了、
-  // `frame=1` = `frame` 档的「原生边框 + 无 caption」装上了（`WM_NCCALCSIZE=0`）；`deco=size` = 没有非客户区
+  // `deco=size` = 没有非客户区
   //（无边框窗口的装饰矩形与客户区矩形重合；有系统边框**和**系统标题栏时 deco > size）；
   // `logical=794x450` = 逻辑屏幕没被窗口尺寸带跑（`project.godot` 的 `viewport_*`）。
   const godot::Vector2i now = ds->window_get_size();
@@ -1923,9 +1922,7 @@ bool LfwGodot::titlebar_consume(const godot::Ref<godot::InputEvent>& event) {
       //（我们这种"铺满工作区"的自绘最大化更不该被拖着跑 —— 用户实测报的 bug）。
       const bool maxed =
           _maximized || ds->window_get_mode() == godot::DisplayServer::WINDOW_MODE_MAXIMIZED;
-      // **双击**拖拽区 = 切最大化/还原（Windows 的标准行为，用户按直觉会去双击）。
-      // 无边框档只在"已最大化"这一侧做（那一档的几何是我们自己铺的）；`frame` 档两侧都做 ——
-      // 它的边框与最大化本来就是系统的，双击行为不该比原生少一半。
+      // 双击拖拽区 = 切最大化/还原；无边框档只在"已最大化"这一侧做，`frame` 档两侧都做。
       bool dbl = false;
       if (const godot::InputEventMouseButton* const mb =
               godot::Object::cast_to<godot::InputEventMouseButton>(event.ptr());
@@ -2812,7 +2809,6 @@ void LfwGodot::install_audio() {
   };
   sink.set_bgm_gain = [this](double gain) { audio_set_bgm_gain(gain); };
   sink.stop_bgm = [this]() { audio_stop_bgm(); };
-  sink.scale = [this]() { return audio_world_scale(); };
   _host->set_audio_sink(std::move(sink));
 
   const std::string driver = server != nullptr
@@ -2971,13 +2967,6 @@ void LfwGodot::audio_poll() {
   }
 }
 
-double LfwGodot::audio_world_scale() const {
-  // TS `get_l_r_vol` 里的 `world_node.scale.x`：逻辑像素 → 画布的那个比例。
-  const godot::Transform2D contain = contain_transform(window_size_px());
-  const double sx = static_cast<double>(contain.get_scale().x);
-  return sx > 0.0 ? sx : 1.0;
-}
-
 std::string LfwGodot::audio_report() const {
   if (_host == nullptr) return std::string();
   char buf[512];
@@ -3030,6 +3019,12 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
     draw_rect(Rect2(x, y, w, h), Color(0.1f, 0.1f, 0.15f, alpha), false, 1.0f);
     return;
   }
+  // 换色 / 灰度：`modulate` 只有乘法 ⇒ 换用预先烘好的着色纹理（见 `GodotTextureCache::get_tinted`）。
+  if (item.mix_a > 0.0 || item.gray > 0.0) {
+    const godot::Ref<godot::ImageTexture> baked = _textures->get_tinted(
+        item.path, item.mix_r, item.mix_g, item.mix_b, item.gray, item.mix_a);
+    if (baked.is_valid()) tex = baked;
+  }
   const Rect2 src(static_cast<float>(item.sx * item.tex_scale),
                   static_cast<float>(item.sy * item.tex_scale),
                   static_cast<float>(item.sw * item.tex_scale),
@@ -3080,10 +3075,6 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
         }
       };
       tile_pass(color);
-      if (item.mix_a > 0.0) {
-        tile_pass(Color(static_cast<float>(item.mix_r), static_cast<float>(item.mix_g),
-                        static_cast<float>(item.mix_b), static_cast<float>(item.mix_a)));
-      }
       return;
     }
   }
@@ -3130,11 +3121,6 @@ void LfwGodot::draw_item(const GodotDrawItem& item) {
     blit(ot, d, 0.0f, oc);
   }
   blit(tex, 0.0f, 0.0f, color);
-  if (item.mix_a > 0.0) {
-    blit(tex, 0.0f, 0.0f,
-         Color(static_cast<float>(item.mix_r), static_cast<float>(item.mix_g),
-               static_cast<float>(item.mix_b), static_cast<float>(item.mix_a)));
-  }
 }
 
 // 视口 → PNG（`--screenshot`）。⚠ 只有**真渲染**（不加 `--headless`）才有像素可存。

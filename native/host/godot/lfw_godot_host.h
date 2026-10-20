@@ -111,8 +111,6 @@ class LfwGodotHost : public HeadlessHost {
     // 只改 BGM 的音量（`__Modern.apply_bgm_volume`：静音时 `ele.muted = true`，**不**停播）。
     std::function<void(double gain)> set_bgm_gain;
     std::function<void()> stop_bgm;
-    // 引擎侧的「世界节点缩放」（TS `get_l_r_vol` 里的 `world_node.scale.x` —— 逻辑像素 → 画布）。
-    std::function<double()> scale;
   };
   void set_audio_sink(AudioSink sink) { _audio = std::move(sink); }
 
