@@ -9,8 +9,9 @@
           cls: "Flex",
           properties: {
             direction: "column",
-            gap: 9,
+            gap: 3,
             fit: true,
+            align: "end",
           },
         },
         {
@@ -21,47 +22,124 @@
         },
       ],
       items: [
+        // 行高与 `player_set` 逐行对齐（玩家名 26 / 控制方式 106 / 七个键位 26，gap 3）；
+        // 容器宽度取 0、文字 `center: "1,0.5"` ⇒ 右边缘与「上下左右攻跳防」齐平。
         {
-          i18n: "ctrl_settings.key_up",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.player",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
         {
-          i18n: "ctrl_settings.key_down",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,106",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.ctrl_type",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
         {
-          i18n: "ctrl_settings.key_left",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_up",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
         {
-          i18n: "ctrl_settings.key_right",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_down",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
         {
-          i18n: "ctrl_settings.key_attack",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_left",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
         {
-          i18n: "ctrl_settings.key_jump",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_right",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
         {
-          i18n: "ctrl_settings.key_defend",
-          style: {
-            font: "bold 16px Arial",
-          },
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_attack",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
+        },
+        {
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_jump",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
+        },
+        {
+          size: "0,26",
+          items: [
+            {
+              pos: "0,13",
+              center: "1,0.5",
+              i18n: "ctrl_settings.key_defend",
+              style: {
+                font: "bold 16px Arial",
+              },
+            },
+          ],
         },
       ],
     },

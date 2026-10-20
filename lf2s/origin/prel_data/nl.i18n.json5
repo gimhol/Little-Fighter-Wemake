@@ -79,6 +79,8 @@
     "main_page.test_cases": "Testmodus",
     "main_page.quit": "Afsluiten",
     "cmc.how_many_coms": "Hoeveel computertegenstanders?",
+    "ctrl_settings.player": "Speler",
+    "ctrl_settings.ctrl_type": "Besturing",
     "ctrl_settings.key_up": "omhoog",
     "ctrl_settings.key_down": "omlaag",
     "ctrl_settings.key_left": "links",

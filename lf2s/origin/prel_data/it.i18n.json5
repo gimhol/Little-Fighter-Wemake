@@ -79,6 +79,8 @@
     "main_page.test_cases": "Modalità test",
     "main_page.quit": "Esci",
     "cmc.how_many_coms": "Quanti giocatori controllati dal computer?",
+    "ctrl_settings.player": "Giocatore",
+    "ctrl_settings.ctrl_type": "Controlli",
     "ctrl_settings.key_up": "su",
     "ctrl_settings.key_down": "giù",
     "ctrl_settings.key_left": "sinistra",

@@ -79,6 +79,8 @@
     "main_page.test_cases": "테스트 모드",
     "main_page.quit": "종료",
     "cmc.how_many_coms": "컴퓨터 플레이어는 몇 명?",
+    "ctrl_settings.player": "플레이어",
+    "ctrl_settings.ctrl_type": "조작 방식",
     "ctrl_settings.key_up": "위",
     "ctrl_settings.key_down": "아래",
     "ctrl_settings.key_left": "왼쪽",

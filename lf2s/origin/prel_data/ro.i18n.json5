@@ -79,6 +79,8 @@
     "main_page.test_cases": "Modul de test",
     "main_page.quit": "Ieșire",
     "cmc.how_many_coms": "Câți jucători controlați de computer?",
+    "ctrl_settings.player": "Jucător",
+    "ctrl_settings.ctrl_type": "Control",
     "ctrl_settings.key_up": "sus",
     "ctrl_settings.key_down": "jos",
     "ctrl_settings.key_left": "stânga",

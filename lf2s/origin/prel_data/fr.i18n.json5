@@ -79,6 +79,8 @@
     "main_page.test_cases": "Mode de test",
     "main_page.quit": "Quitter",
     "cmc.how_many_coms": "Combien de joueurs contrôlés par l'ordinateur ?",
+    "ctrl_settings.player": "Joueur",
+    "ctrl_settings.ctrl_type": "Contrôle",
     "ctrl_settings.key_up": "haut",
     "ctrl_settings.key_down": "bas",
     "ctrl_settings.key_left": "gauche",

@@ -79,6 +79,8 @@
     "main_page.test_cases": "Tryb testowy",
     "main_page.quit": "Wyjdź",
     "cmc.how_many_coms": "Ilu graczy komputerowych?",
+    "ctrl_settings.player": "Gracz",
+    "ctrl_settings.ctrl_type": "Sterowanie",
     "ctrl_settings.key_up": "góra",
     "ctrl_settings.key_down": "dół",
     "ctrl_settings.key_left": "lewo",

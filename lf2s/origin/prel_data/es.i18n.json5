@@ -79,6 +79,8 @@
     "main_page.test_cases": "Modo de pruebas",
     "main_page.quit": "Salir",
     "cmc.how_many_coms": "¿Cuántos jugadores de computadora?",
+    "ctrl_settings.player": "Jugador",
+    "ctrl_settings.ctrl_type": "Control",
     "ctrl_settings.key_up": "arriba",
     "ctrl_settings.key_down": "abajo",
     "ctrl_settings.key_left": "izquierda",

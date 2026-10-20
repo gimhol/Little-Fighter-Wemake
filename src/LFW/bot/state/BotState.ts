@@ -19,8 +19,8 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
   get s(): Stage { return this.stage }
   get c(): BotController { return this.ctrl }
   get me(): Entity { return this.ctrl.entity }
-  get en(): Entity | undefined { return this.ctrl.chasings.get()?.entity }
-  get av(): Entity | undefined { return this.ctrl.avoidings.get()?.entity }
+  get en(): Entity | undefined { return this.ctrl.chasings.get() }
+  get av(): Entity | undefined { return this.ctrl.avoidings.get() }
   constructor(ctrl: BotController) {
     this.ctrl = ctrl;
   }

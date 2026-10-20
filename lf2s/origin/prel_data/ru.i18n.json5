@@ -79,6 +79,8 @@
     "main_page.test_cases": "Тестовый режим",
     "main_page.quit": "Выход",
     "cmc.how_many_coms": "Сколько компьютерных игроков?",
+    "ctrl_settings.player": "Игрок",
+    "ctrl_settings.ctrl_type": "Управление",
     "ctrl_settings.key_up": "вверх",
     "ctrl_settings.key_down": "вниз",
     "ctrl_settings.key_left": "влево",

@@ -18,7 +18,7 @@ import {
 } from "../defines";
 import { Ditto } from "../ditto";
 import { Entity, is_ball, is_fighter, is_human_ctrl, is_weapon } from "../entity";
-import { closer_one } from "../helper";
+import { closer_one, manhattan_xz } from "../helper";
 import { abs, between, max, round } from '../utils/math/base';
 import { clamp } from '../utils/math/clamp';
 import { round_float } from '../utils/math/round_float';
@@ -94,8 +94,8 @@ export class BotController extends BaseController {
   get facing() { return this.entity.facing }
   get team(): string { return this.entity.team }
   get me(): Entity { return this.entity }
-  get en(): Entity | undefined { return this.chasings.get()?.entity }
-  get av(): Entity | undefined { return this.avoidings.get()?.entity }
+  get en(): Entity | undefined { return this.chasings.get() }
+  get av(): Entity | undefined { return this.avoidings.get() }
   get bot_state(): BSE { return this.fsm.state?.key || BSE.Idle }
   get dataset() { return this._dataset }
 
@@ -118,7 +118,7 @@ export class BotController extends BaseController {
 
   /** 地面攻击触发范围X */
   get w_atk_f_x() {
-    const en = this.chasings.get()?.entity;
+    const en = this.chasings.get();
     if (!en) return 0;
     if (is_weapon(en)) return this.dataset.pick_weapon_f_x;
 
@@ -138,7 +138,7 @@ export class BotController extends BaseController {
   }
 
   get w_atk_b_x() {
-    const en = this.chasings.get()?.entity;
+    const en = this.chasings.get();
     if (!en) return 0;
     if (is_weapon(en)) return this.dataset.pick_weapon_b_x;
     return -8; // TODO?
@@ -146,7 +146,7 @@ export class BotController extends BaseController {
 
   /** 跑攻触发范围X */
   get r_atk_x() {
-    const en = this.chasings.get()?.entity;
+    const en = this.chasings.get();
     if (!en) return 0;
     const wt = this.entity.holding?.base_type
     if (
@@ -166,7 +166,7 @@ export class BotController extends BaseController {
 
   /** 冲跳攻触发范围X */
   get d_atk_max_x() {
-    const chasing = this.chasings.get()?.entity;
+    const chasing = this.chasings.get();
     if (!chasing) return 0;
     const wt = this.entity.holding?.base_type;
     const sp = this.entity.facing * this.entity.velocity.x * 8
@@ -181,7 +181,7 @@ export class BotController extends BaseController {
     return sp + this.dataset.d_atk_max_x;
   }
   get d_atk_min_x() {
-    const chasing = this.chasings.get()?.entity;
+    const chasing = this.chasings.get();
     if (!chasing) return 0;
     const wt = this.entity.holding?.base_type;
     if (wt) return 0;
@@ -191,7 +191,7 @@ export class BotController extends BaseController {
 
   /** 跳攻触发范围X */
   get j_atk_x() {
-    const chasing = this.chasings.get()?.entity;
+    const chasing = this.chasings.get();
     if (!chasing) return 0;
     const wt = this.entity.holding?.base_type;
     if (
@@ -633,7 +633,7 @@ export class BotController extends BaseController {
       }
       const dd = this.should_defend(other)
       if (dd) {
-        this.defends.look(this.entity, other, dd)
+        this.defends.look(this.entity, other)
         return;
       }
       if (this.should_chase(other)) {
@@ -650,7 +650,7 @@ export class BotController extends BaseController {
       }
       const dd = this.should_defend(other)
       if (dd) {
-        this.defends.look(this.entity, other, dd)
+        this.defends.look(this.entity, other)
         return;
       }
     } else if (is_ball(other)) {
@@ -659,7 +659,7 @@ export class BotController extends BaseController {
       }
       const dd = this.should_defend(other)
       if (dd) {
-        this.defends.look(this.entity, other, dd)
+        this.defends.look(this.entity, other)
         return;
       }
     } else if (
@@ -669,9 +669,9 @@ export class BotController extends BaseController {
     ) {
       this.chasings.look(this.entity, other);
     } else {
-      this.avoidings.del(t => t.entity === other);
-      this.chasings.del(t => t.entity === other);
-      this.defends.del(t => t.entity === other)
+      this.avoidings.del(t => t === other);
+      this.chasings.del(t => t === other);
+      this.defends.del(t => t === other)
     }
   }
 
@@ -765,11 +765,11 @@ export class BotController extends BaseController {
       if (this.entity.hp > 0) {
         if (!this.following?.mounted || this.following.hp <= 0)
           this.following = null;
-        this.chasings.del(({ entity }) => !this.should_chase(entity))
+        this.chasings.del(entity => !this.should_chase(entity))
         this.chasings.sort(this.entity)
-        this.avoidings.del(({ entity }) => !this.should_avoid(entity))
+        this.avoidings.del(entity => !this.should_avoid(entity))
         this.avoidings.sort(this.entity)
-        this.defends.del(({ entity }) => 1 != this.should_defend(entity))
+        this.defends.del(entity => 1 != this.should_defend(entity))
         this.defends.sort(this.entity)
       } else {
         this.following = null;
@@ -788,9 +788,9 @@ export class BotController extends BaseController {
       const c = this.chasings.targets;
       const d = this.defends.targets;
       const msg = '' +
-        + `${a.length ? `a=[${a.map(v => v.entity.id).join()}] ` : ''}`
-        + `${c.length ? `c=[${c.map(v => v.entity.id).join()}] ` : ''}`
-        + `${d.length ? `d=[${d.map(v => v.entity.id).join()}] ` : ''}`
+        + `${a.length ? `a=[${a.map(v => v.id).join()}] ` : ''}`
+        + `${c.length ? `c=[${c.map(v => v.id).join()}] ` : ''}`
+        + `${d.length ? `d=[${d.map(v => v.id).join()}] ` : ''}`
       if (msg) this._case(`bot_target`, msg.trim())
       if (ret.result?.frame) this._case(`bot_nf`, ret.result?.frame.id)
       this._case(`bot_update_end_${this.me.id}_${this.me.name}`)
@@ -922,9 +922,18 @@ export class BotController extends BaseController {
       defends.targets.length < defends.max
     ) return Infinity;
     let m = -1;
-    for (const t of chasings.targets) if (t.distance > m) m = t.distance;
-    for (const t of avoidings.targets) if (t.distance > m) m = t.distance;
-    for (const t of defends.targets) if (t.distance > m) m = t.distance;
+    for (const t of chasings.targets) {
+      const d = manhattan_xz(this.entity, t);
+      if (d > m) m = d;
+    }
+    for (const t of avoidings.targets) {
+      const d = manhattan_xz(this.entity, t);
+      if (d > m) m = d;
+    }
+    for (const t of defends.targets) {
+      const d = manhattan_xz(this.entity, t);
+      if (d > m) m = d;
+    }
     return m;
   }
 }

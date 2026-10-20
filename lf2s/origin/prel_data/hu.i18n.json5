@@ -79,6 +79,8 @@
     "main_page.test_cases": "Teszt mód",
     "main_page.quit": "Kilépés",
     "cmc.how_many_coms": "Hány számítógépes játékos?",
+    "ctrl_settings.player": "Játékos",
+    "ctrl_settings.ctrl_type": "Irányítás",
     "ctrl_settings.key_up": "fel",
     "ctrl_settings.key_down": "le",
     "ctrl_settings.key_left": "balra",

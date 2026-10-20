@@ -79,6 +79,8 @@
     "main_page.test_cases": "テストモード",
     "main_page.quit": "終了",
     "cmc.how_many_coms": "CPUプレイヤーは何人にしますか？",
+    "ctrl_settings.player": "プレイヤー",
+    "ctrl_settings.ctrl_type": "操作方法",
     "ctrl_settings.key_up": "上",
     "ctrl_settings.key_down": "下",
     "ctrl_settings.key_left": "左",

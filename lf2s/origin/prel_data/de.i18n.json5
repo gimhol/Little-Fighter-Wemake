@@ -79,6 +79,8 @@
     "main_page.test_cases": "Testmodus",
     "main_page.quit": "Beenden",
     "cmc.how_many_coms": "Wie viele Computergegner?",
+    "ctrl_settings.player": "Spieler",
+    "ctrl_settings.ctrl_type": "Steuerung",
     "ctrl_settings.key_up": "hoch",
     "ctrl_settings.key_down": "runter",
     "ctrl_settings.key_left": "links",
