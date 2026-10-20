@@ -84,10 +84,10 @@ bool BotState_Base::handle_defends(const std::u16string& mark) {
   if (e->invisible) return c._false(mark, {Value(3.0)});
   if (e->invulnerable) return c._false(mark, {Value(4.0)});
 
-  const BotTarget* target = c.defends.get();
+  const Entity* const target = c.defends.get();
   if (target == nullptr) return c._false(mark, {Value(5.0)});
 
-  const double en_facing = to_number(target->facing());
+  const double en_facing = target->facing;
   if (c.desire(mark) < c.defend_desire()) {
     if (en_facing < 0 && e->facing < 0) c.click({u"R"});
     if (en_facing > 0 && e->facing > 0) c.click({u"L"});

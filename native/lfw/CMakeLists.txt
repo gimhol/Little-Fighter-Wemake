@@ -101,8 +101,7 @@ add_library(lfw_core STATIC
   entity/entity.cpp
   entity/summary.cpp
   entity/entity_ref.cpp
-  entity/target_handle.cpp
-  entity/summary_mgr.cpp
+    entity/summary_mgr.cpp
   entity/drink_info.cpp
   collision/is_fall.cpp
   collision/stiffness.cpp

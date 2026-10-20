@@ -101,8 +101,8 @@ export default {
     {
       note: "reidentify 不认领名单里的新引用",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  const TargetHandle current = chasing;`,
-      to: `  const TargetHandle current;`,
+      from: `  const Entity* const current = chasing;`,
+      to: `  const Entity* const current = nullptr;`,
     },
     {
       note: "update_lookup 的 StopOnLost 早退门写反",
@@ -119,8 +119,8 @@ export default {
     {
       note: "update_lookup 的失效清理判反",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  if (!still_valid) chasing = TargetHandle();`,
-      to: `  if (still_valid) chasing = TargetHandle();`,
+      from: `  if (!still_valid) chasing = nullptr;`,
+      to: `  if (still_valid) chasing = nullptr;`,
     },
     {
       note: "update_lookup 的 UntilLost 判成 Default",
@@ -131,20 +131,20 @@ export default {
     {
       note: "update_lookup 的停追分支判成 UntilLost",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  if (!current.nullish() && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)) {`,
-      to: `  if (!current.nullish() && stratedy == static_cast<double>(ChaseStrategy::UntilLost)) {`,
+      from: `  if (current != nullptr && stratedy == static_cast<double>(ChaseStrategy::StopOnLost)) {`,
+      to: `  if (current != nullptr && stratedy == static_cast<double>(ChaseStrategy::UntilLost)) {`,
     },
     {
       note: "update_lookup 的 Default 清空判成 UntilLost",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `  if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = TargetHandle();`,
-      to: `  if (stratedy == static_cast<double>(ChaseStrategy::UntilLost)) chasing = TargetHandle();`,
+      from: `  if (stratedy == static_cast<double>(ChaseStrategy::Default)) chasing = nullptr;`,
+      to: `  if (stratedy == static_cast<double>(ChaseStrategy::UntilLost)) chasing = nullptr;`,
     },
     {
       note: "update_lookup 忘了跳过 ghosted 的候选",
       file: "native/lfw/controller/ball_controller.cpp",
-      from: `    if (!truthy(field_or(e2.ref(), u"ghosted")) && should_chase(e2.ref())) {`,
-      to: `    if (should_chase(e2.ref())) {`,
+      from: `    if (!truthy(field_or(e2_ref, u"ghosted")) && should_chase(e2_ref)) {`,
+      to: `    if (should_chase(e2_ref)) {`,
     },
     {
       note: "update_lookup 的最近距离比较写反",
@@ -156,8 +156,8 @@ export default {
       note: "update_lookup 找到目标后不记 chasing",
       file: "native/lfw/controller/ball_controller.cpp",
       from: `  chasing = found;
-  aim_at(found.ref());`,
-      to: `  aim_at(found.ref());`,
+  aim_at(ref_of(*found));`,
+      to: `  aim_at(ref_of(*found));`,
     },
     {
       note: "update 的「帧变了」判反",
@@ -266,7 +266,7 @@ export default {
       note: "stop_chasing 不清 chasing",
       file: "native/lfw/controller/ball_controller.cpp",
       from: `  dir_z = 0;
-  chasing = TargetHandle();`,
+  chasing = nullptr;`,
       to: `  dir_z = 0;`,
     },
     {

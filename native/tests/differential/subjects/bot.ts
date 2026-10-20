@@ -10,6 +10,7 @@ import { Ditto } from "../../../../src/LFW/ditto";
 import { Expression } from "../../../../src/LFW/base/Expression";
 import { get_val_from_bot_ctrl } from "../../../../src/LFW/loader/get_val_from_bot_ctrl";
 import { MersenneTwister } from "../../../../src/LFW/utils/math/MersenneTwister";
+import { manhattan_xz } from "../../../../src/LFW/helper/manhattan_xz";
 import { mt_cases } from "../../../../src/LFW/cases_instances";
 
 import { parseJsStringLiteral, parseValue, readCaseLines, renderValue, splitWs } from "./trace_util";
@@ -81,7 +82,7 @@ function fxArg(name: string): any {
 function targetsText(nt: any): string {
   const parts: string[] = [];
   for (const t of nt.targets as any[]) {
-    parts.push(`${nameOf(t.entity)}:${renderValue(t.distance)}:${renderValue(t.defendable)}`);
+    parts.push(`${nameOf(t)}:${renderValue(manhattan_xz(ctrl.entity as never, t))}`);
   }
   return "[" + parts.join(",") + "]";
 }
@@ -263,20 +264,19 @@ function main(): void {
       const nt = which === "ch" ? ctrl.chasings : which === "av" ? ctrl.avoidings : ctrl.defends;
       const name = parseJsStringLiteral(t[i[0]++]!);
       const other = fxArg(name);
-      const defendable = i[0] < t.length ? parseValue(t, i) : undefined;
-      nt.look(me as never, other, defendable as never);
+      nt.look(me as never, other);
       out.push(`${line} ||  | ${setsText()}`);
     } else if (op === "ntdel") {
       const which = t[i[0]++]!;
       const nt = which === "ch" ? ctrl.chasings : which === "av" ? ctrl.avoidings : ctrl.defends;
       const name = parseJsStringLiteral(t[i[0]++]!);
       const target = fxArg(name);
-      nt.del((b: any) => b.entity === target);
+      nt.del((b: any) => b === target);
       out.push(`${line} ||  | ${setsText()}`);
     } else if (op === "ntsnap") {
       const which = t[i[0]++]!;
       const nt = which === "ch" ? ctrl.chasings : which === "av" ? ctrl.avoidings : ctrl.defends;
-      const ents = [...nt.entities].map(nameOf).join(",");
+      const ents = nt.targets.map(nameOf).join(",");
       out.push(`${line} ||  | ${setsText()} ents=[${ents}]`);
     } else if (op === "lookup") {
       const name = parseJsStringLiteral(t[i[0]++]!);

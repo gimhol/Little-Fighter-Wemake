@@ -29,7 +29,7 @@ bound n -400 n 400 n -100 n 100
 hpa b 1
 make
 selfref
-fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 80 "z" n 0 "velocity" o 2 "x" n 9 "z" n 0 "state" n 2 "is_on_ground" b 1
+fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 80 "y" n 0 "z" n 0 "velocity" o 3 "x" n 9 "y" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
 lookup "e1"
 get en
 val s "enemy_x"
@@ -56,5 +56,5 @@ act "judge" o 3 "keys" a 1 s "F" "desire" n 200 "expression" s "hp > 0"
 act "judge-bad" o 3 "keys" a 1 s "F" "desire" n 200 "expression" s "hp < 0"
 act "judge-enn" o 3 "keys" a 1 s "F" "desire" n 200 "expression" s "enemy_x > 0"
 act "frameonly" o 2 "frame" s "nf_y" "desire" n 100000
-act "ray" o 3 "keys" a 1 s "F" "desire" n 200 "e_ray" a 1 o 4 "x" n 9 "z" n 0 "min_x" n -20 "max_x" n 60
+act "ray" o 3 "keys" a 1 s "F" "desire" n 200 "e_ray" a 1 o 4 "x" n 9 "y" n 0 "z" n 0 "min_x" n -20 "max_x" n 60
 mtcases

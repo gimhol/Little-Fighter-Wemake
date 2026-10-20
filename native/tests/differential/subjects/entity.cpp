@@ -185,7 +185,11 @@ Value id_probe(const Value& ref) {
 }
 
 Value chasing_probe(const lfw::controller::BaseController* c) {
-  return c == nullptr ? Value(lfw::NullTag{}) : id_probe(c->chasing.ref());
+  // `chasing` 是实体指针（TS 同形）⇒ 形状照 `id_probe` 给 `{ id }`。
+  if (c == nullptr || c->chasing == nullptr) return Value(lfw::NullTag{});
+  lfw::Object o;
+  o.set(u"id", Value(c->chasing->id));
+  return Value(std::make_shared<lfw::Object>(o));
 }
 
 // --- `loader/get_val_from_collision` 的驱动器 -----------------------------------

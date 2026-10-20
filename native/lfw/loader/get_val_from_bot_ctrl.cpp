@@ -78,7 +78,7 @@ bool attacking_state(const Value& state) {
 }
 
 Value val_safe(const bot::BotController& c, const std::u16string&, BinOp) {
-  if (!c.defends.entities().empty()) return Value(0.0);
+  if (!c.defends.empty()) return Value(0.0);
   const Value chasing = c.en();
   const Value avoiding = c.av();
   if (truthy(chasing) && abs(to_number(field_or(field_or(chasing, u"position"), u"x")) - env_px(c)) < 200 &&

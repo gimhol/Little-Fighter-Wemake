@@ -1058,8 +1058,7 @@ controller::BaseController* LFW::create_ctrl(const std::u16string& data_id,
 
 void LFW::ctrl_update_lookup(controller::BaseController& ctrl, double index,
                              std::vector<Entity*>& entities) {
-  // 直接把实体表给控制器（目标表 / `chasing` 用 `TargetHandle` 存，身份靠 `id` 复核 ——
-  // 实体是池化复用的，裸指针不能单独当身份）。以前这里每个控制器都 `ref_of` 一遍整张表。
+  // 直接把实体表给控制器（目标表 / `chasing` 都存实体指针，TS 同形）。
   if (ctrl.creator() == controller::bot_controller_creator()) {
     static_cast<bot::BotController*>(&ctrl)->update_lookup(static_cast<int>(index), entities);
   } else if (ctrl.creator() == controller::ball_controller_creator()) {
@@ -1095,7 +1094,7 @@ void LFW::ctrl_stay(controller::BaseController& ctrl) {
 
 void LFW::ctrl_follow(controller::BaseController& ctrl, Entity& target) {
   if (ctrl.creator() == controller::bot_controller_creator()) {
-    static_cast<bot::BotController*>(&ctrl)->follow(ref_of(target));
+    static_cast<bot::BotController*>(&ctrl)->follow(target);
   }
 }
 

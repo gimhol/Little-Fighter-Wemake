@@ -29,7 +29,7 @@ bound n -400 n 400 n -100 n 100
 hpa b 1
 make
 get bot_state
-fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 80 "z" n 0 "velocity" o 2 "x" n 9 "z" n 0 "state" n 2 "is_on_ground" b 1
+fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 80 "y" n 0 "z" n 0 "velocity" o 3 "x" n 9 "y" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
 lookup "e1"
 fsmupdate 0.016
 get bot_state

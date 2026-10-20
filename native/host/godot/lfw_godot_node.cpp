@@ -902,7 +902,7 @@ void LfwGodot::_process(double p_delta) {
     const Args::KeyAt* const keyed = inject_keys(frame);
     _host->push_frame(_lfw->world());
     render_world_frame(before);
-    sync_text_input();       // UI 树里有没有 `TextInput` 决定这个 `LineEdit` 在不在（每步一次）
+    sync_text_input();       // UI 树里每个 `TextInput` 节点各摆一个 `LineEdit`（每步一次）
     probe_text_input(frame);  // `--text-input`：脚本化打字
     stepped = true;
     ++_frames;
@@ -961,13 +961,14 @@ void LfwGodot::render_world_frame(long long renders_before) {
 //
 // Web 那边 `UINodeRenderer.on_resume()` 给每个带 `TextInput` 组件的节点 `document.createElement('input')`
 // 并挂进 CSS2D 那棵树（`.ui_node_style input`：透明底、无边框、`text-align:center`、字体/颜色继承）；
-// 本宿主没有 DOM ⇒ 摆一个**真的** `LineEdit`（引擎自带 IME/剪贴板/光标），口径逐条对齐：
+// 本宿主没有 DOM ⇒ 每个这样的节点摆一个**真的** `LineEdit`（引擎自带 IME/剪贴板/光标），口径逐条对齐：
 //   * 位置/尺寸 = 那一帧 UI 树里该节点的方框（`GodotTextInputBox`，逻辑像素 → 画布像素）；
 //   * 字体/字号/颜色/对齐 = 该节点的文字样式；`maxLength` 交给 `LineEdit::set_max_length`；
 //   * 文本两个方向都**轮询**同步（不开信号）：`LineEdit` 改了 ⇒ 写组件 `text`（Web 的 `onchange`）；
 //     组件改了（`on_resume` / `on_name_changed`）⇒ 写 `LineEdit`（Web 靠 DOM 值本来就是一份）；
 //   * 引擎焦点 ⇄ 节点焦点：`has_focus()` 由无到有 ⇒ `set_focused(true)`；由有到无 ⇒
 //     `set_focused(false)`（⇒ `PlayerNameInput::on_blur()` 存盘，与 Web 的 `onblur` 同一条）。
+// 一页上有几个 `TextInput` 节点就摆几个（设置页 4 个玩家名就是 4 个框），按节点指针复用/回收，
 // 页面一走（这一帧的 UI 树里没有它了）就整个拆掉，等价 Web 的 `on_pause()` → `release_dom()`。
 void LfwGodot::sync_text_input() {
   GodotWorldRenderer* const renderer = _host != nullptr ? _host->world_renderer() : nullptr;
@@ -980,104 +981,134 @@ void LfwGodot::sync_text_input() {
     destroy_text_input();
     return;
   }
-  const GodotTextInputBox& box = boxes.back();  // 收集序靠后的压在**上面**（同绘制次序）
-  if (_text_input != nullptr && _text_input_node != box.node) destroy_text_input();
 
-  if (_text_input == nullptr) {
-    _text_input = memnew(godot::LineEdit);
-    _text_input->set_name("lfw_text_input");
-    _text_input->set_mouse_filter(godot::Control::MOUSE_FILTER_STOP);
-    // `.ui_node_style input`：透明底 + 无边框（三态都给空的 `StyleBoxEmpty`）
-    godot::Ref<godot::StyleBoxEmpty> flat;
-    flat.instantiate();
-    for (const char* const state : {"normal", "focus", "read_only"}) {
-      _text_input->add_theme_stylebox_override(state, flat);
-    }
-    add_child(_text_input);
-    _text_input_node = box.node;
-    _text_input_shown = box.input->text();
-    _text_input->set_text(String::utf8(to_utf8(_text_input_shown).c_str()));
-  }
-
-  // ---- 样式（字体/字号/颜色/对齐/长度上限）：值没变就不碰（`add_theme_*_override` 会刷缓存）----
-  const std::optional<double> max_len = box.input->max_length();
-  // 逻辑字号 → 画布像素（`contain` 那一层的缩放；`LineEdit` 的字号是像素口径、不跟缩放走，
-  // 所以窗口缩放也进指纹 —— 拉窗口时得重设一次）。
-  const double scale_y = std::fabs(static_cast<double>(
-      (final_transform().affine_inverse() * contain_transform(window_size_px())).get_scale().y));
-  const int font_px = std::max(
-      1, static_cast<int>(std::lround(box.font_size * (scale_y > 0.0 ? scale_y : 1.0))));
-  char sig[320];
-  std::snprintf(sig, sizeof(sig), "%s|%.3f|%.3f,%.3f,%.3f,%.3f|%d|%d|%d", box.font_css.c_str(),
-                box.font_size, box.r, box.g, box.b, box.a, box.text_align, font_px,
-                max_len.has_value() ? static_cast<int>(*max_len) : -1);
-  if (std::string(sig) != _text_input_style_sig) {
-    _text_input_style_sig = sig;
-    godot::Ref<godot::Font> font = font_for_css(box.font_css);
-    if (!font.is_null()) _text_input->add_theme_font_override("font", font);
-    _text_input->add_theme_font_size_override("font_size", font_px);
-    const godot::Color tint(static_cast<float>(box.r), static_cast<float>(box.g),
-                            static_cast<float>(box.b), static_cast<float>(box.a));
-    _text_input->add_theme_color_override("font_color", tint);
-    _text_input->add_theme_color_override("font_uneditable_color", tint);
-    _text_input->add_theme_color_override("font_placeholder_color", tint);
-    _text_input->add_theme_color_override("caret_color", tint);
-    _text_input->set_horizontal_alignment(
-        box.text_align == 1
-            ? godot::HORIZONTAL_ALIGNMENT_CENTER
-            : (box.text_align == 2 ? godot::HORIZONTAL_ALIGNMENT_RIGHT
-                                   : godot::HORIZONTAL_ALIGNMENT_LEFT));
-    _text_input->set_max_length(max_len.has_value() ? static_cast<int>(*max_len) : 0);
-  }
-
-  // ---- 摆位：逻辑像素 → 画布像素（与 `apply_game_clip` 同一条复合变换）----
+  // 逻辑像素 → 画布像素（与 `apply_game_clip` 同一条复合变换）；整帧只算一次。
   const godot::Transform2D to_canvas =
       final_transform().affine_inverse() * contain_transform(window_size_px());
-  const godot::Vector2 p0 = to_canvas.xform(godot::Vector2(static_cast<float>(box.x0),
-                                                           static_cast<float>(box.y0)));
-  const godot::Vector2 p1 = to_canvas.xform(godot::Vector2(static_cast<float>(box.x1),
-                                                           static_cast<float>(box.y1)));
-  _text_input->set_position(p0);
-  _text_input->set_size(p1 - p0);
+  const double scale_y = std::fabs(static_cast<double>(to_canvas.get_scale().y));
 
-  // ---- 文本：谁改的就写另一边 ----
-  const std::u16string shown = from_utf8(std::string(_text_input->get_text().utf8().get_data()));
-  const bool edited = shown != _text_input_shown;
-  _text_input_shown = shown;
-  const std::u16string source = box.input->text();
-  if (shown != source) {
-    if (edited) {
-      box.input->set_text(shown);
-    } else {
-      _text_input->set_text(String::utf8(to_utf8(source).c_str()));
-      _text_input_shown = source;
+  std::vector<TextInputOverlay> next;
+  next.reserve(boxes.size());
+  for (const GodotTextInputBox& box : boxes) {
+    TextInputOverlay* overlay = nullptr;
+    for (TextInputOverlay& old : _text_inputs) {
+      if (old.edit == nullptr || old.node != box.node) continue;
+      next.push_back(std::move(old));
+      // `std::move` 不会把裸指针清空 ⇒ 自己标成"已接管"，否则下面清理旧条目时会把它拆掉。
+      old.edit = nullptr;
+      old.node = nullptr;
+      overlay = &next.back();
+      break;
     }
-  }
-  _text_input_synced = box.input->text();
+    if (overlay == nullptr) {
+      TextInputOverlay created;
+      created.edit = memnew(godot::LineEdit);
+      char name_buf[48];
+      std::snprintf(name_buf, sizeof(name_buf), "lfw_text_input_%d",
+                    static_cast<int>(next.size() + 1));
+      created.edit->set_name(name_buf);
+      created.edit->set_mouse_filter(godot::Control::MOUSE_FILTER_STOP);
+      // `.ui_node_style input`：透明底 + 无边框（三态都给空的 `StyleBoxEmpty`）
+      godot::Ref<godot::StyleBoxEmpty> flat;
+      flat.instantiate();
+      for (const char* const state : {"normal", "focus", "read_only"}) {
+        created.edit->add_theme_stylebox_override(state, flat);
+      }
+      add_child(created.edit);
+      created.node = box.node;
+      created.shown = box.input->text();
+      created.edit->set_text(String::utf8(to_utf8(created.shown).c_str()));
+      next.push_back(std::move(created));
+      overlay = &next.back();
+    }
 
-  // ---- 焦点：引擎 ⇄ 节点 ----
-  const bool has_focus = _text_input->has_focus();
-  if (has_focus && !box.node->focused()) {
-    box.node->set_focused(true);
-  } else if (!has_focus && _text_input_had_focus && box.node->focused()) {
-    box.node->set_focused(false);  // ⇒ `on_blur()`（`PlayerNameInput` 在这里存盘）
+    // ---- 样式（字体/字号/颜色/对齐/长度上限）：值没变就不碰（`add_theme_*_override` 会刷缓存）----
+    const std::optional<double> max_len = box.input->max_length();
+    // 逻辑字号 → 画布像素（`contain` 那一层的缩放；`LineEdit` 的字号是像素口径、不跟缩放走，
+    // 所以窗口缩放也进指纹 —— 拉窗口时得重设一次）。
+    const int font_px = std::max(
+        1, static_cast<int>(std::lround(box.font_size * (scale_y > 0.0 ? scale_y : 1.0))));
+    char sig[320];
+    std::snprintf(sig, sizeof(sig), "%s|%.3f|%.3f,%.3f,%.3f,%.3f|%d|%d|%d", box.font_css.c_str(),
+                  box.font_size, box.r, box.g, box.b, box.a, box.text_align, font_px,
+                  max_len.has_value() ? static_cast<int>(*max_len) : -1);
+    if (std::string(sig) != overlay->style_sig) {
+      overlay->style_sig = sig;
+      godot::Ref<godot::Font> font = font_for_css(box.font_css);
+      if (!font.is_null()) overlay->edit->add_theme_font_override("font", font);
+      overlay->edit->add_theme_font_size_override("font_size", font_px);
+      const godot::Color tint(static_cast<float>(box.r), static_cast<float>(box.g),
+                              static_cast<float>(box.b), static_cast<float>(box.a));
+      overlay->edit->add_theme_color_override("font_color", tint);
+      overlay->edit->add_theme_color_override("font_uneditable_color", tint);
+      overlay->edit->add_theme_color_override("font_placeholder_color", tint);
+      overlay->edit->add_theme_color_override("caret_color", tint);
+      overlay->edit->set_horizontal_alignment(
+          box.text_align == 1
+              ? godot::HORIZONTAL_ALIGNMENT_CENTER
+              : (box.text_align == 2 ? godot::HORIZONTAL_ALIGNMENT_RIGHT
+                                     : godot::HORIZONTAL_ALIGNMENT_LEFT));
+      overlay->edit->set_max_length(max_len.has_value() ? static_cast<int>(*max_len) : 0);
+    }
+
+    // ---- 摆位：逻辑像素 → 画布像素（与 `apply_game_clip` 同一条复合变换）----
+    const godot::Vector2 p0 = to_canvas.xform(godot::Vector2(static_cast<float>(box.x0),
+                                                             static_cast<float>(box.y0)));
+    const godot::Vector2 p1 = to_canvas.xform(godot::Vector2(static_cast<float>(box.x1),
+                                                             static_cast<float>(box.y1)));
+    overlay->edit->set_position(p0);
+    overlay->edit->set_size(p1 - p0);
+
+    // ---- 文本：谁改的就写另一边 ----
+    const std::u16string shown =
+        from_utf8(std::string(overlay->edit->get_text().utf8().get_data()));
+    const bool edited = shown != overlay->shown;
+    overlay->shown = shown;
+    const std::u16string source = box.input->text();
+    if (shown != source) {
+      if (edited) {
+        box.input->set_text(shown);
+      } else {
+        overlay->edit->set_text(String::utf8(to_utf8(source).c_str()));
+        overlay->shown = source;
+      }
+    }
+    overlay->synced = box.input->text();
+
+    // ---- 焦点：引擎 ⇄ 节点 ----
+    const bool has_focus = overlay->edit->has_focus();
+    if (has_focus && !box.node->focused()) {
+      box.node->set_focused(true);
+    } else if (!has_focus && overlay->had_focus && box.node->focused()) {
+      box.node->set_focused(false);  // ⇒ `on_blur()`（`PlayerNameInput` 在这里存盘）
+    }
+    overlay->had_focus = has_focus;
   }
-  _text_input_had_focus = has_focus;
+
+  // 这一帧没有对应方框的旧覆盖层（页面弹出 / 节点不可见 / 换页）：释放焦点并拆掉。
+  for (TextInputOverlay& stale : _text_inputs) {
+    if (stale.edit == nullptr) continue;
+    stale.edit->release_focus();
+    remove_child(stale.edit);
+    stale.edit->queue_free();
+  }
+  _text_inputs = std::move(next);
+}
+
+LfwGodot::TextInputOverlay* LfwGodot::last_text_input() {
+  return _text_inputs.empty() ? nullptr : &_text_inputs.back();
 }
 
 void LfwGodot::destroy_text_input() {
-  _text_input_had_focus = false;
-  _text_input_node = nullptr;
-  _text_input_shown.clear();
-  _text_input_synced.clear();
-  _text_input_style_sig.clear();
-  if (_text_input == nullptr) return;
-  // ⚠ 不碰 `_text_input_node`：页面弹出后节点可能已经被 `UILayer::_trash` 回收。组件那边
-  // 每一帧都同步过（`set_text`），页面自己的 `on_stop()` 会存盘，所以这里只管拆控件。
-  _text_input->release_focus();
-  remove_child(_text_input);
-  _text_input->queue_free();
-  _text_input = nullptr;
+  for (TextInputOverlay& overlay : _text_inputs) {
+    if (overlay.edit == nullptr) continue;
+    // ⚠ 不碰 `overlay.node`：页面弹出后节点可能已经被 `UILayer::_trash` 回收。组件那边
+    // 每一帧都同步过（`set_text`），页面自己的 `on_stop()` 会存盘，所以这里只管拆控件。
+    overlay.edit->release_focus();
+    remove_child(overlay.edit);
+    overlay.edit->queue_free();
+  }
+  _text_inputs.clear();
 }
 
 // `--text-input <text>[@<frame>]`：脚本化打字（`--key` 到不了引擎控件）。在这里走的是
@@ -1086,30 +1117,32 @@ void LfwGodot::destroy_text_input() {
 void LfwGodot::probe_text_input(int frame) {
   if (!_args.text_input_given) return;
   const int at = _args.text_input_frame;
+  TextInputOverlay* const overlay = last_text_input();
   if (frame == at) {
-    if (_text_input == nullptr) {
+    if (overlay == nullptr) {
       print_error("[godot] text-input: no TextInput overlay on this page");
       return;
     }
-    const bool had_focus = _text_input->has_focus();
-    _text_input->grab_focus();
-    _text_input->set_text(String());
-    _text_input->set_caret_column(0);
+    const bool had_focus = overlay->edit->has_focus();
+    overlay->edit->grab_focus();
+    overlay->edit->set_text(String());
+    overlay->edit->set_caret_column(0);
     // 走插入而不是 `set_text`：`maxLength` 生效（Web 那边也是 DOM 自己截的）。
-    _text_input->insert_text_at_caret(String::utf8(to_utf8(_args.text_input).c_str()));
+    overlay->edit->insert_text_at_caret(String::utf8(to_utf8(_args.text_input).c_str()));
     print_line("[godot] text-input @frame " + std::to_string(frame) + " type='" +
-               to_utf8(_args.text_input) + "' focus=" + (had_focus ? "1" : "0"));
+               to_utf8(_args.text_input) + "' focus=" + (had_focus ? "1" : "0") +
+               " overlays=" + std::to_string(_text_inputs.size()));
     return;
   }
   if (frame == at + 2) {
-    if (_text_input != nullptr) _text_input->release_focus();
+    if (overlay != nullptr) overlay->edit->release_focus();
     return;
   }
   if (frame != at + 4) return;
   std::string players;
   const godot::Rect2 rect =
-      _text_input != nullptr
-          ? godot::Rect2(_text_input->get_global_position(), _text_input->get_size())
+      overlay != nullptr
+          ? godot::Rect2(overlay->edit->get_global_position(), overlay->edit->get_size())
           : godot::Rect2();
   if (_lfw != nullptr) {
     for (const std::pair<std::u16string, std::unique_ptr<PlayerInfo>>& kv : _lfw->players()) {
@@ -1120,15 +1153,16 @@ void LfwGodot::probe_text_input(int frame) {
     }
   }
   print_line("[godot] text-input done: overlay=" +
-             std::string(_text_input != nullptr ? "1" : "0") + " rect=" +
+             std::string(overlay != nullptr ? "1" : "0") + " rect=" +
              (rect.size.x <= 0.0f
                   ? std::string("-")
                   : (std::to_string(static_cast<int>(rect.position.x)) + "," +
                      std::to_string(static_cast<int>(rect.position.y)) + " " +
                      std::to_string(static_cast<int>(rect.size.x)) + "x" +
                      std::to_string(static_cast<int>(rect.size.y))))
-                  + " shown='" + to_utf8(_text_input_shown) + "' comp='" +
-             to_utf8(_text_input_synced) + "' players=" +
+                  + " shown='" +
+             to_utf8(overlay != nullptr ? overlay->shown : std::u16string()) + "' comp='" +
+             to_utf8(overlay != nullptr ? overlay->synced : std::u16string()) + "' players=" +
              (players.empty() ? std::string("-") : players));
 }
 
@@ -2290,10 +2324,14 @@ void LfwGodot::_input(const godot::Ref<godot::InputEvent>& p_event) {
   if (kind == PointerKind::none) return;
   // 文本输入覆盖层：点到框**外** = Web 里点到 canvas 上（DOM 焦点离开 `<input>` ⇒ `onblur`）。
   // 这里是**画布像素**（下面才换成逻辑像素），而控件的位置正好也是画布像素。
-  if (_text_input != nullptr && kind == PointerKind::down && _text_input->has_focus()) {
-    const godot::Rect2 rect(_text_input->get_global_position(), _text_input->get_size());
-    if (!rect.has_point(godot::Vector2(static_cast<float>(e.x), static_cast<float>(e.y)))) {
-      _text_input->release_focus();
+  // 一页可能有多个输入框（设置页 4 个玩家名）：只有拿到焦点的那个需要判；点进别的框时引擎会
+  // 自己转焦点（那个框的矩形命中 ⇒ 这里不动它）。
+  if (kind == PointerKind::down) {
+    const godot::Vector2 point(static_cast<float>(e.x), static_cast<float>(e.y));
+    for (TextInputOverlay& overlay : _text_inputs) {
+      if (overlay.edit == nullptr || !overlay.edit->has_focus()) continue;
+      const godot::Rect2 rect(overlay.edit->get_global_position(), overlay.edit->get_size());
+      if (!rect.has_point(point)) overlay.edit->release_focus();
     }
   }
   // 换算：事件进来时是**画布像素**（OS 事件与 `push_input(ev, false)` 都按 `final_transform()` 的逆

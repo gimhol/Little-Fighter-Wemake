@@ -432,19 +432,19 @@ export default {
     {
       note: "NearestTargets.get 返回最后一个而不是第一个",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  return targets_.empty() ? nullptr : &targets_[0];`,
-      to: `  return targets_.empty() ? nullptr : &targets_[targets_.size() - 1];`,
+      from: `const Entity* NearestTargets::get() const { return targets_.empty() ? nullptr : targets_[0]; }`,
+      to: `const Entity* NearestTargets::get() const { return targets_.empty() ? nullptr : targets_[targets_.size() - 1]; }`,
     },
     {
-      note: "NearestTargets.has_entity 恒为假",
+      note: "NearestTargets.has_target 恒为假",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `bool NearestTargets::has_entity(const TargetHandle& v) const {
-  for (const TargetHandle& e : entities_) {
-    if (e.same(v)) return true;
+      from: `bool NearestTargets::has_target(const Entity* v) const {
+  for (const Entity* t : targets_) {
+    if (t == v) return true;
   }
   return false;
 }`,
-      to: `bool NearestTargets::has_entity(const TargetHandle& v) const {
+      to: `bool NearestTargets::has_target(const Entity* v) const {
   (void)v;
   return false;
 }`,
@@ -452,25 +452,22 @@ export default {
     {
       note: "NearestTargets.look 漏掉 self 假值检查",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  if (!truthy(self)) return;
-  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);`,
-      to: `  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);`,
-    },
-    {
-      note: "NearestTargets.look 收录的是 self 而不是 other",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `void NearestTargets::look(const Value& self, const TargetHandle& other, const Value& defendable) {
-  if (!truthy(self)) return;
-  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);`,
-      to: `void NearestTargets::look(const Value& self, const TargetHandle& other, const Value& defendable) {
-  if (!truthy(self)) return;
-  insert_at(TargetHandle::of(self), helper::manhattan_xz(self, other.ref()), defendable);`,
+      from: `  if (has_target(other)) return;
+  const double distance = distance_of(other);`,
+      to: `  if (!has_target(other)) return;
+  const double distance = distance_of(other);`,
     },
     {
       note: "NearestTargets.look 的假值判定查了 other",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  if (!truthy(self)) return;`,
-      to: `  if (!truthy(other)) return;`,
+      from: `  if (other == nullptr) return;`,
+      to: `  if (other != nullptr) return;`,
+    },
+    {
+      note: "NearestTargets.look 收录的是 self 而不是 other",
+      file: "native/lfw/bot/nearest_targets.cpp",
+      from: `  look_impl([&self](const Entity* t) { return helper::manhattan_xz(self, *t); }, &other);`,
+      to: `  look_impl([&self](const Entity* t) { return helper::manhattan_xz(self, *t); }, &self);`,
     },
     {
       note: "NearestTargets.look 的容量判定用 <=",
@@ -479,73 +476,29 @@ export default {
       to: `  if (static_cast<double>(len) <= max_) {`,
     },
     {
-      note: "NearestTargets.look 满员分支不加实体",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    targets_.push_back(BotTarget(other, distance, defendable_of(defendable)));
-    add_entity(other);
-    return;`,
-      to: `    targets_.push_back(BotTarget(other, distance, defendable_of(defendable)));
-    return;`,
-    },
-    {
-      note: "NearestTargets.look 满员分支忽略 defendable",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    targets_.push_back(BotTarget(other, distance, defendable_of(defendable)));
-    add_entity(other);
-    return;`,
-      to: `    targets_.push_back(BotTarget(other, distance, Value(0.0)));
-    add_entity(other);
-    return;`,
-    },
-    {
       note: "NearestTargets.look 的比距离用 >=",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    if (distance > targets_[i].distance) continue;`,
-      to: `    if (distance >= targets_[i].distance) continue;`,
+      from: `    if (distance > distance_of(targets_[i])) continue;`,
+      to: `    if (distance >= distance_of(targets_[i])) continue;`,
     },
     {
       note: "NearestTargets.look 的 continue 写成 break",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    if (distance > targets_[i].distance) continue;`,
-      to: `    if (distance > targets_[i].distance) break;`,
+      from: `    if (distance > distance_of(targets_[i])) continue;`,
+      to: `    if (distance > distance_of(targets_[i])) break;`,
     },
     {
       note: "NearestTargets.look 插入位置写死为末尾",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    targets_.insert(targets_.begin() + static_cast<std::ptrdiff_t>(i),
-                    BotTarget(other, distance, defendable_of(defendable)));`,
-      to: `    targets_.push_back(BotTarget(other, distance, defendable_of(defendable)));`,
-    },
-    {
-      note: "NearestTargets.look 满员插入分支不加实体",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    add_entity(other);
-    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;`,
-      to: `    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;`,
-    },
-    {
-      note: "NearestTargets.look 删错被挤出的实体",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;`,
-      to: `    const TargetHandle entity = targets_[0].entity;`,
-    },
-    {
-      note: "NearestTargets.look 不把挤出的实体移出集合",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    del_entity(entity);
-    targets_.erase(targets_.begin() + static_cast<std::ptrdiff_t>(max_), targets_.end());
-    break;`,
-      to: `    targets_.erase(targets_.begin() + static_cast<std::ptrdiff_t>(max_), targets_.end());
-    break;`,
+      from: `    targets_.insert(targets_.begin() + static_cast<std::ptrdiff_t>(i), other);`,
+      to: `    targets_.push_back(other);`,
     },
     {
       note: "NearestTargets.look 不截断到 max",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    del_entity(entity);
-    targets_.erase(targets_.begin() + static_cast<std::ptrdiff_t>(max_), targets_.end());
+      from: `    targets_.erase(targets_.begin() + static_cast<std::ptrdiff_t>(max_), targets_.end());
     break;`,
-      to: `    del_entity(entity);
-    break;`,
+      to: `    break;`,
     },
     {
       note: "NearestTargets.look 的截断清空整表",
@@ -563,27 +516,14 @@ export default {
     {
       note: "NearestTargets.del 的条件取反",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    const bool ret = !condition(t);`,
-      to: `    const bool ret = condition(t);`,
-    },
-    {
-      note: "NearestTargets.del 删错实体",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    if (!ret) del_entity(t.entity);`,
-      to: `    if (ret) del_entity(t.entity);`,
+      from: `    if (!condition(*t)) kept.push_back(t);`,
+      to: `    if (condition(*t)) kept.push_back(t);`,
     },
     {
       note: "NearestTargets.del 不保留被保留的目标",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    if (ret) kept.push_back(t);`,
-      to: `    kept.push_back(t);`,
-    },
-    {
-      note: "NearestTargets.del 不把被删实体移出集合",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `    const bool ret = !condition(t);
-    if (!ret) del_entity(t.entity);`,
-      to: `    const bool ret = !condition(t);`,
+      from: `    if (!condition(*t)) kept.push_back(t);`,
+      to: `    kept.push_back(*t);`,
     },
     {
       note: "NearestTargets.del 不清空表",
@@ -594,22 +534,21 @@ export default {
     {
       note: "NearestTargets.sort 不重算距离",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const BotTarget& t) { return helper::manhattan_xz(self, t.entity.ref()); });
+      from: `void NearestTargets::sort(const Entity& self) {
+  sort_by([&self](const Entity* t) { return helper::manhattan_xz(self, *t); });
 }`,
-      to: `void NearestTargets::sort(const Value& self) {
-  (void)self;
-  std::stable_sort(targets_.begin(), targets_.end(), target_less);
+      to: `void NearestTargets::sort(const Entity& self) {
+  sort_by([&self](const Entity* t) { (void)self; (void)t; return 0.0; });
 }`,
     },
     {
       note: "NearestTargets.sort 用 self 与自己算距离",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const BotTarget& t) { return helper::manhattan_xz(self, t.entity.ref()); });
+      from: `void NearestTargets::sort(const Entity& self) {
+  sort_by([&self](const Entity* t) { return helper::manhattan_xz(self, *t); });
 }`,
-      to: `void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const BotTarget& t) { (void)t; return helper::manhattan_xz(self, self); });
+      to: `void NearestTargets::sort(const Entity& self) {
+  sort_by([&self](const Entity* t) { (void)t; return helper::manhattan_xz(self, self); });
 }`,
     },
     {
@@ -635,22 +574,14 @@ export default {
     {
       note: "NearestTargets.sort 的 id 取了 a 的两次",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  const Value ib = Value(b.entity.id());`,
-      to: `  const Value ib = Value(a.entity.id());`,
-    },
-    {
-      note: "NearestTargets.clear 不清实体集合",
-      file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  targets_.clear();
-  entities_.clear();`,
-      to: `  targets_.clear();`,
+      from: `  const Value ib = Value(b.second->id);`,
+      to: `  const Value ib = Value(a.second->id);`,
     },
     {
       note: "NearestTargets.clear 不清目标表",
       file: "native/lfw/bot/nearest_targets.cpp",
-      from: `  targets_.clear();
-  entities_.clear();`,
-      to: `  entities_.clear();`,
+      from: `void NearestTargets::clear() { targets_.clear(); }`,
+      to: `void NearestTargets::clear() {}`,
     },
   ],
 };

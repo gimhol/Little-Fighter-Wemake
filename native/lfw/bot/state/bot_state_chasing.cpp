@@ -10,6 +10,7 @@
 #include "lfw/defines/entity_enum.h"
 #include "lfw/defines/state_enum.h"
 #include "lfw/defines/weapon_type.h"
+#include "lfw/entity/entity_ref.h"
 #include "lfw/entity/entity_type_check.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/base.h"
@@ -43,7 +44,8 @@ std::optional<Value> BotState_Chasing::update(double dt) {
   if (c.stage_is_chapter_finish()) return next_state(bse::kIdle);
   if (c.stage_is_stage_finish()) return next_state(bse::kStageEnd);
 
-  const Value en = c.chasings.get() != nullptr ? c.chasings.get()->entity.ref() : Value();
+  const Entity* const en_e = c.chasings.get();
+  const Value en = en_e != nullptr ? ref_of(*en_e) : Value();
   if (truthy(en) && c.is_leave_chase_range(en)) return next_state(bse::kFollowing);
   if (c.is_leave_goto_range(c.self_ref())) return next_state(bse::kFollowing);
 
@@ -106,7 +108,7 @@ std::optional<Value> BotState_Chasing::update(double dt) {
   }
   if (strict_equals(state, Value(static_cast<double>(StateEnum::Catching)))) {
     // louisEx 空中推人的帧状态也是 Catching
-    if (!e->catching.nullish()) c.click({u"a"});
+    if (e->catching != nullptr) c.click({u"a"});
   } else if (strict_equals(state, Value(static_cast<double>(StateEnum::Standing))) ||
              strict_equals(state, Value(static_cast<double>(StateEnum::Walking)))) {
     if (!c.en_out_of_range) {

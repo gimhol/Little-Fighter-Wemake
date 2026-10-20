@@ -31,10 +31,12 @@
 #include "lfw/defines/bin_op.h"
 #include "lfw/defines/defines_data.h"
 #include "lfw/defines/difficulty.h"
+#include "lfw/helper/manhattan_xz.h"
 #include "lfw/loader/get_val_from_bot_ctrl.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/mersenne_twister.h"
 
+#include "scripted_entity.h"
 #include "trace_util.h"
 
 namespace {
@@ -49,6 +51,16 @@ using trace::to_ascii;
 
 std::unique_ptr<lfw::MersenneTwister> g_mt;
 Value g_me;
+// `me` / `fx …` 的快照是「真身」，各自有一份**真实体**（`ref_of()` 从它们现读）：
+// `NearestTargets` / `following` / `watching` / `CtrlEnv::holding` 现在都收实体指针。
+std::unique_ptr<fx::ScriptedEntity> g_me_ent;
+std::vector<std::pair<std::u16string, std::unique_ptr<fx::ScriptedEntity>>> g_fx_ent;
+// `fx put` / `fx del` 换下来的旧实体（目标表里可能还留着指针）——不发释放，别让指针悬空。
+std::vector<std::unique_ptr<fx::ScriptedEntity>> g_fx_grave;
+// `meref holding|catching "x"`：`CtrlEnv` 的那两个槽位现在存实体指针（TS 是对象引用，
+// 所以这里也钉住那一刻的实体，后面 `fx put` 重建不影响它）。
+const lfw::Entity* g_holding = nullptr;
+const lfw::Entity* g_catching = nullptr;
 std::vector<std::pair<std::u16string, Value>> g_fx;
 std::vector<std::pair<std::u16string, Value>> g_stage;
 std::vector<std::pair<std::u16string, Value>> g_bg;
@@ -126,6 +138,37 @@ const Value* find_fx(const std::u16string& name) {
   return nullptr;
 }
 
+std::string name_of_ent(const lfw::Entity* const e) {
+  if (e == nullptr) return "z";  // TS 的 `null`
+  for (const auto& kv : g_fx_ent) {
+    if (kv.second.get() == e) return to_ascii(kv.first);
+  }
+  return "?";
+}
+
+// 名字 → 真实体（懒建，字段照快照那一份灌）。
+fx::ScriptedEntity* fx_ent(const std::u16string& name, int lineno) {
+  for (auto& kv : g_fx_ent) {
+    if (kv.first == name) return kv.second.get();
+  }
+  const Value* const snap = find_fx(name);
+  if (snap == nullptr) {
+    std::fprintf(stderr, "unknown fx '%s' at line %d\n", to_ascii(name).c_str(), lineno);
+    std::exit(2);
+  }
+  auto e = std::make_unique<fx::ScriptedEntity>(name, *snap);
+  fx::ScriptedEntity* const out = e.get();
+  g_fx_ent.push_back(std::make_pair(name, std::move(e)));
+  return out;
+}
+
+const lfw::Entity* find_ent_by_name(const std::u16string& name) {
+  for (const auto& kv : g_fx_ent) {
+    if (kv.first == name) return kv.second.get();
+  }
+  return nullptr;
+}
+
 std::string name_of(const Value& v) {
   if (std::holds_alternative<std::monostate>(v)) return "u";
   if (std::holds_alternative<NullTag>(v)) return "z";
@@ -148,8 +191,8 @@ std::string targets_text(const lfw::bot::NearestTargets& nt) {
   std::string s = "[";
   for (std::size_t i = 0; i < nt.targets().size(); ++i) {
     if (i != 0) s += ",";
-    const lfw::bot::BotTarget& t = nt.targets()[i];
-    s += name_of(t.entity.ref()) + ":" + num(t.distance) + ":" + render(t.defendable);
+    const lfw::Entity* const t = nt.targets()[i];
+    s += name_of_ent(t) + ":" + num(lfw::helper::manhattan_xz(*g_me_ent, *t));
   }
   s += "]";
   return s;
@@ -216,6 +259,8 @@ double bot_difficulty() {
 
 // 台面每一次「调用控制器」之前把场景刷进 env（端口里 `Entity::refresh_ctrl_env` 的 bot 段）。
 void sync_env() {
+  if (g_me_ent) g_me_ent->resync();
+  g_env.self = g_me_ent.get();
   const Value pos = lfw::field_or(g_me, u"position");
   const Value vel = lfw::field_or(g_me, u"velocity");
   g_env.id = lfw::to_string(lfw::field_or(g_me, u"id"));
@@ -238,10 +283,8 @@ void sync_env() {
   g_env.is_on_ground = lfw::truthy(lfw::field_or(g_me, u"is_on_ground"));
   g_env.name = lfw::field_or(g_me, u"name");
   g_env.data = lfw::field_or(g_me, u"data");
-  g_env.holding = lfw::TargetHandle::of(
-      lfw::bot::or_nullish(lfw::field_or(g_me, u"holding"), Value(NullTag{})));
-  g_env.catching = lfw::TargetHandle::of(
-      lfw::bot::or_nullish(lfw::field_or(g_me, u"catching"), Value(NullTag{})));
+  g_env.holding = g_holding;
+  g_env.catching = g_catching;
   const Value blockers = lfw::field_or(g_me, u"blockers");
   const lfw::Array* const bl = lfw::as_array(blockers);
   g_env.blockers_count = bl != nullptr ? static_cast<double>(bl->size()) : 0;
@@ -324,6 +367,7 @@ int main(int argc, char** argv) {
     root.set(u"velocity", Value(std::make_shared<lfw::Object>(vel)));
     g_me = Value(std::make_shared<lfw::Object>(root));
   }
+  g_me_ent = std::make_unique<fx::ScriptedEntity>(u"me", g_me);
   bind_env();
 
   std::ifstream in(argv[1]);
@@ -375,6 +419,7 @@ int main(int argc, char** argv) {
       const Value v = parse_value(t, i);
       set_path(g_me, segs, 0, v);
       norm_ref(g_me);
+      if (g_me_ent) g_me_ent->resync();
       emit(line + " ||  | v=" + render(v));
     } else if (op == "meref") {
       const std::string& sub = t[i++];
@@ -394,6 +439,10 @@ int main(int argc, char** argv) {
         return out;
       }();
       set_path(g_me, segs, 0, fx_arg(name, lineno));
+      // `holding` / `catching` 在端口是**实体指针**（`CtrlEnv` 的槽位），记下名字到 `sync_env` 里解。
+      if (segs.size() == 1 && segs[0] == "holding") g_holding = fx_ent(name, lineno);
+      if (segs.size() == 1 && segs[0] == "catching") g_catching = fx_ent(name, lineno);
+      if (g_me_ent) g_me_ent->resync();
       emit(line + " ||  | v=" + name_of(fx_arg(name, lineno)));
     } else if (op == "fx") {
       const std::string& sub = t[i++];
@@ -410,11 +459,26 @@ int main(int argc, char** argv) {
           }
         }
         if (!replaced) g_fx.push_back(std::make_pair(name, v));
+        // 快照换了 ⇒ 真实体重建（旧的不释放，目标表里可能还留着它的指针）。
+        for (std::size_t k = 0; k < g_fx_ent.size(); ++k) {
+          if (g_fx_ent[k].first == name) {
+            g_fx_grave.push_back(std::move(g_fx_ent[k].second));
+            g_fx_ent.erase(g_fx_ent.begin() + static_cast<std::ptrdiff_t>(k));
+            break;
+          }
+        }
         emit(line + " ||  | v=" + render(v));
       } else {
         for (std::size_t k = 0; k < g_fx.size(); ++k) {
           if (g_fx[k].first == name) {
             g_fx.erase(g_fx.begin() + static_cast<std::ptrdiff_t>(k));
+            break;
+          }
+        }
+        for (std::size_t k = 0; k < g_fx_ent.size(); ++k) {
+          if (g_fx_ent[k].first == name) {
+            g_fx_grave.push_back(std::move(g_fx_ent[k].second));
+            g_fx_ent.erase(g_fx_ent.begin() + static_cast<std::ptrdiff_t>(k));
             break;
           }
         }
@@ -522,10 +586,8 @@ int main(int argc, char** argv) {
                                       : which == "av" ? &g_ctrl->avoidings
                                                       : &g_ctrl->defends;
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
-      const Value other = fx_arg(name, lineno);
-      const Value defendable = i < t.size() ? parse_value(t, i) : Value();
       sync_env();
-      nt->look(lfw::bot::self_ref_of_env(g_env), other, defendable);
+      nt->look(*g_me_ent, *fx_ent(name, lineno));
       emit(line + " ||  | " + sets_text());
     } else if (op == "ntdel") {
       const std::string& which = t[i++];
@@ -533,10 +595,8 @@ int main(int argc, char** argv) {
                                       : which == "av" ? &g_ctrl->avoidings
                                                       : &g_ctrl->defends;
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
-      const Value target = fx_arg(name, lineno);
-      nt->del([&target](const lfw::bot::BotTarget& b) {
-        return b.entity.same(lfw::TargetHandle::of(target));
-      });
+      const lfw::Entity* const target = find_ent_by_name(name);
+      nt->del([target](const lfw::Entity& b) { return &b == target; });
       emit(line + " ||  | " + sets_text());
     } else if (op == "ntsnap") {
       const std::string& which = t[i++];
@@ -545,30 +605,32 @@ int main(int argc, char** argv) {
                                                           : &g_ctrl->defends;
       emit(line + " ||  | " + sets_text() + " ents=" + [&] {
         std::string s = "[";
-        for (std::size_t k = 0; k < nt->entities().size(); ++k) {
+        for (std::size_t k = 0; k < nt->targets().size(); ++k) {
           if (k != 0) s += ",";
-          s += name_of(nt->entities()[k].ref());
+          s += name_of_ent(nt->targets()[k]);
         }
         return s + "]";
       }());
     } else if (op == "lookup") {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
       sync_env();
-      g_ctrl->lookup(fx_arg(name, lineno));
+      g_ctrl->lookup(*fx_ent(name, lineno));
       emit(line + " || " + join_log() + " | " + sets_text());
     } else if (op == "should_chase") {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
       sync_env();
-      emit(line + " || " + join_log() + " | v=" + render(Value(g_ctrl->should_chase(fx_arg(name, lineno)))));
+      emit(line + " || " + join_log() + " | v=" +
+           render(Value(g_ctrl->should_chase(*fx_ent(name, lineno)))));
     } else if (op == "should_avoid") {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
       sync_env();
-      emit(line + " || " + join_log() + " | v=" + render(Value(g_ctrl->should_avoid(fx_arg(name, lineno)))));
+      emit(line + " || " + join_log() + " | v=" +
+           render(Value(g_ctrl->should_avoid(*fx_ent(name, lineno)))));
     } else if (op == "should_defend") {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
       sync_env();
       emit(line + " || " + join_log() + " | v=" +
-                      render(Value(static_cast<double>(g_ctrl->should_defend(fx_arg(name, lineno))))));
+                      render(Value(static_cast<double>(g_ctrl->should_defend(*fx_ent(name, lineno))))));
     } else if (op == "desire" || op == "adesire") {
       const std::u16string mark = trace::parse_js_string_literal(t[i++]);
       const double v = op == "desire" ? g_ctrl->desire(mark) : g_ctrl->action_desire(mark);
@@ -603,9 +665,8 @@ int main(int argc, char** argv) {
                                           : g_ctrl->is_leave_avoid_zone(target);
       emit(line + " || " + join_log() + " | v=" + render(Value(v)));
     } else if (op == "selfref") {
-      // `self_ref_of_env` 的**形状**钉子：TS 的 `me` 是活实体（`ctrl.entity`），端口的替身
-      // 只有 `{ id, position }` —— 少了 `id`，`CtrlEnv::resolve`（`is_ray_hit(me, …)` 的
-      // 那一半）就解不回实体，带 `e_ray` 的 bot 招式恒被拒（见 `bot_env.h`）。
+      // `self_ref_of_env` 的**形状**钉子：拿不到真实体（`CtrlEnv::self == nullptr`）时它是
+      // `bot/*` 引用读法的兜底，`{ id, position }` 两样缺一不可（见 `bot_env.h`）。
       sync_env();
       const Value ref = lfw::bot::self_ref_of_env(g_env);
       std::vector<Value> v;
@@ -658,8 +719,10 @@ int main(int argc, char** argv) {
                       render(g_ctrl->result.result()));
     } else if (op == "updlookup") {
       const int me_idx = static_cast<int>(trace::to_long(t[i++]));
-      std::vector<Value> entities;
-      while (i < t.size()) entities.push_back(fx_arg(trace::parse_js_string_literal(t[i++]), lineno));
+      std::vector<lfw::Entity*> entities;
+      while (i < t.size()) {
+        entities.push_back(fx_ent(trace::parse_js_string_literal(t[i++]), lineno));
+      }
       sync_env();
       g_ctrl->update_lookup(me_idx, entities);
       emit(line + " || " + join_log() + " | " + sets_text());
@@ -675,24 +738,25 @@ int main(int argc, char** argv) {
       emit(line + " || " + join_log() + " | v=" + render(Value(v)));
     } else if (op == "follow") {
       const std::u16string name = trace::parse_js_string_literal(t[i++]);
-      g_ctrl->follow(fx_arg(name, lineno));
-      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
+      sync_env();
+      g_ctrl->follow(*fx_ent(name, lineno));
+      emit(line + " ||  | following=" + name_of_ent(g_ctrl->following) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "move") {
       g_ctrl->move();
-      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
+      emit(line + " ||  | following=" + name_of_ent(g_ctrl->following) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "stay") {
       sync_env();
       g_ctrl->stay();
-      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
+      emit(line + " ||  | following=" + name_of_ent(g_ctrl->following) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "come") {
       const double x = trace::to_double(t[i++]);
       const double y = trace::to_double(t[i++]);
       const double z = trace::to_double(t[i++]);
       g_ctrl->come(x, y, z);
-      emit(line + " ||  | following=" + name_of(g_ctrl->following.ref()) + " goingto=" +
+      emit(line + " ||  | following=" + name_of_ent(g_ctrl->following) + " goingto=" +
                       render(g_ctrl->goingto) + " behavior=" + behavior_text(g_ctrl->behavior));
     } else if (op == "get") {
       const std::string& field = t[i++];
@@ -705,9 +769,9 @@ int main(int argc, char** argv) {
       } else if (field == "team") {
         payload = render(Value(g_ctrl->team()));
       } else if (field == "en") {
-        payload = name_of(g_ctrl->en());
+        payload = name_of_ent(g_ctrl->chasings.get());
       } else if (field == "av") {
-        payload = name_of(g_ctrl->av());
+        payload = name_of_ent(g_ctrl->avoidings.get());
       } else if (field == "bot_state") {
         payload = render(g_ctrl->bot_state());
       } else if (field == "atk_f_x") {
@@ -749,9 +813,9 @@ int main(int argc, char** argv) {
       } else if (field == "goingto") {
         payload = render(g_ctrl->goingto);
       } else if (field == "following") {
-        payload = name_of(g_ctrl->following.ref());
+        payload = name_of_ent(g_ctrl->following);
       } else if (field == "watching") {
-        payload = name_of(g_ctrl->watching.ref());
+        payload = name_of_ent(g_ctrl->watching);
       } else if (field == "bot_frame") {
         payload = render(g_ctrl->bot_frame);
       } else if (field == "bot_id") {

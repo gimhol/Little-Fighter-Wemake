@@ -585,14 +585,14 @@ Value v_falling`,
     {
       note: "victim_is_chasing 拿 attacker 的 id 比",
       file: "native/lfw/loader/get_val_from_collision.cpp",
-      from: `  return num_of(c.victim.id() == ctrl->chasing.id());`,
-      to: `  return num_of(c.attacker.id() == ctrl->chasing.id());`,
+      from: `  return num_of(c.victim.id() == ctrl->chasing->id);`,
+      to: `  return num_of(c.attacker.id() == ctrl->chasing->id);`,
     },
     {
       note: "victim_is_chasing 的相等判反",
       file: "native/lfw/loader/get_val_from_collision.cpp",
-      from: `  return num_of(c.victim.id() == ctrl->chasing.id());`,
-      to: `  return num_of(!(c.victim.id() == ctrl->chasing.id()));`,
+      from: `  return num_of(c.victim.id() == ctrl->chasing->id);`,
+      to: `  return num_of(!(c.victim.id() == ctrl->chasing->id));`,
     },
     {
       note: "armor_work 的结果判反",

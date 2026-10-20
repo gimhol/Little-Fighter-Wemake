@@ -12364,8 +12364,9 @@ on_pause(): void { ...; if (text_input) this.release_dom() }        // 页面一
   ⚠ 这里用 `static_cast`（`find_component` 已经筛过类）而不是 `dynamic_cast`：核心库是
   `/GR-`（见 `host/godot/CMakeLists.txt`），对核心类型做 `dynamic_cast` 会抛
   `__non_rtti_object`（实测退出码 `0xE06D7363`）。
-* `LfwGodot::sync_text_input()`（每步一次，`render_world_frame` 之后）：拿最后一个方框
-  （收集序靠后的压在上面），按需 `memnew(godot::LineEdit)` / 摆位 / 拆掉。
+* `LfwGodot::sync_text_input()`（每步一次，`render_world_frame` 之后）：**每个方框一个**
+  `LineEdit`（按节点指针复用；这一帧没了的释放焦点并拆掉），逐个摆位 / 刷样式 / 同步文本。
+  一页上有几个 `TextInput`（设置页 4 个玩家名）就有几个框 —— 见 §172.4。
 
 三个细节：
 
@@ -12410,3 +12411,93 @@ Web 的 `on_pause() → release_dom()`。⚠ **不碰** `_text_input_node`：页
 截图 `temp/shot_settings_real.png`：名字框在第四列键盘上方、白字居中（12px），其余画面不变。
 三条运行时摘要与 `lfw_run` 逐位一致（`b12e08c00a6e087f` / `9f6ac38ad7b78427` /
 `c16f58977ff42360`）—— 这一刀只动宿主（`native/host/godot/**`），核心一行未改。
+
+### 172.4. 一页多个输入框（2026-10-20）
+
+§172.2 的端口只摆了**一个** `LineEdit`（`boxes.back()`，收集序压在最上面的那个）：设置页有
+4 个 `PlayerNameInput`，于是屏幕上只有第 4 列玩家名（默认值 `4`）看得见，前 3 列是空框
+（Web 版是 4 个 DOM `<input>`，所以没这个症状）。
+
+现在 `_text_inputs` 是一组 `TextInputOverlay { edit, node, shown, synced, style_sig, had_focus }`：
+每帧按 `GodotTextInputBox.node` 找旧条目复用（找不到就 `memnew`），逐条摆位/刷样式/双向同步文本/
+同步焦点；这一帧没出现的条目释放焦点 + `remove_child` + `queue_free`。`--text-input` 仍取
+**最后**一个（与 Web 的绘制次序一致，压在最上面），诊断行多一个 `overlays=N`。点框外的失焦
+判据也对每个拿到焦点的框各判一次（引擎同一时刻只有一个 `LineEdit` 有焦点）。
+
+## 173. Bot 对着没人的地方攻击：目标句柄被降级成快照（2026-10-20）
+
+用户报「Bot 还是会对没人的地方攻击」，怀疑「追踪坐标 / 躲避 / 防御 / 跟踪目标没更新」。实测
+（`lfw_run --stage 1 --vs --players 2 --frames 1200 --every 1`）确认：Bot 的 `chasings` 里
+躺着**已经死亡的目标**，距离字段停在死亡前的位置，于是它一直对着旧坐标走/攻击（stage 1
+1200 帧里 state=3 的 4507 次“攻击”中有 403 次最近敌人 >100px，且死目标 105 在 `n_chase=1`
+里挂了一百多帧）。
+
+根因是 §163 的句柄化只做了一半：
+
+* `BotController::look_target` 有 **Entity 版**，却在 `lookup()` 里传的是 `other_ref`
+  （`Value`）⇒ 走 `NearestTargets::look(Value, Value)`，`TargetHandle::of(Value)` 把活实体
+  重新包成了**一次性快照**（`_entity == nullptr`）。`refresh()` 对快照是空操作 ⇒
+  距离/血量/位置全部冻结在入表那一刻；死目标也不会被 `should_chase` 判掉。
+* `LFW::ctrl_follow` 直接 `follow(ref_of(target))` ⇒ `following` 从一开始就是冻结快照
+  （§163 的 `reidentify` 已删，没人再刷它）；`watching` 的失效判断在真实实体上又因为每帧
+  新建 `Value` 对象而永远 `same_ref=false`，于是 Idle 会一直朝旧坐标转身。
+* `update()` 里 `chasings.del` 用的是上一帧的快照，`sort` 才刷新 ⇒ 至少差一帧。
+
+修复（仍然只用 `TargetHandle` 的活实体通道）：
+
+1. `lookup()` 全部改传 `TargetHandle`（`look_target(nearest, other)`），`NearestTargets`
+   里存的就是活实体句柄：距离每帧由 `sort` 活读，死/消失由 `should_chase` 当帧拒掉；
+2. `should_chase` 增加 `TargetHandle` 重载（原 `Value` 版保留给差分台面），`watching`
+   存活句柄 ⇒ `same()` 走指针/`id`，失效判断恢复；
+3. `LFW::ctrl_follow` 传 `Entity&`（`follow(target)`），并在 `BotController::update()`
+   开头对 `following` / `watching` 各 `refresh()` 一次。
+
+实测（同一场 stage 1/1200 帧）：state=3 次数 4507 → 1383，最近敌人 >150px 的“空挥”
+403 → 9（剩下的是跳跃攻击/攻击动作里对手绕背，属正常），死目标最多残留 1~2 帧；
+`bot/*` 8 份差分、`bot_helpers` 1 份全绿，全量差分 264/265（`xml/ui` 的 `img.dw/dh` 漂移
+与本刀无关）。`lfw_run` 的 `[state]` 诊断行顺带补了 `f=`（facing）与 `h=<id>/<base_type>`
+（手持物），下回查“打空”直接看得见朝向与武器。
+
+## 174. `TargetHandle` / `BotTarget` 整体退役：目标一律是实体指针（2026-10-20）
+
+§163 那层「实体句柄」本来是给**差分台面没有 `Entity`** 留的后门：句柄里 `_entity != nullptr`
+就活读、否则退回建句柄那一刻的引用快照。可这条双通道正是 §173 那个 bug 的温床（一个 `Value`
+悄悄被包成快照，距离/血量就冻结），而且两套语义要一直并行维护。用户明确要求「该类没必要存在」，
+于是整层拆掉：
+
+* `native/lfw/entity/target_handle.{h,cpp}` 删除；`NearestTargets` 存
+  `std::vector<const Entity*>`（`get/look/del/sort` 全收 `const Entity&`），
+  `BotController::following|watching` 是 `const Entity*`，`BaseController::chasing` 是
+  `Entity*`（`BallController` 的 `update_lookup` 只剩实体表那一个重载），
+  `CtrlEnv::holding|catching` 也改成 `const Entity*`。
+* 「`Value` 引用」的读法一律 `ref_of(*e)` 现算（`bot/*` 的 `state_of_ref` / `base_type_of_ref` /
+  `ref_*` 那些 helper 原样不动）—— 每个函数入口算一次，跟原来 `TargetHandle::ref()` 的缓存同量级。
+* `CtrlEnv::resolve`（引用 → 实体，`§162` 的补丁）随之删除：`is_ray_hit` 那一族现在直接收
+  到手的实体，不再需要从 `Value` 反查世界表。
+* 实体**只入池复用、从不 `delete`**（`Factory::recycle_entity` 只是 `reset` 后再发），所以
+  裸指针不会悬空；池化复用后的「指针换主人」由每帧 `should_chase` / `should_avoid` 的
+  存活判定兜住（TS 那边对象一直活着，口径一致）。
+
+差分台面同步改造：
+
+* `subjects/scripted_entity.h`：`fx::ScriptedEntity`（派生 `fx::StubEntity`）把一份脚本化快照
+  当真实体用 —— `position` / `velocity` / `facing` / `frame` / `is_on_ground` 灌进成员，
+  `hp` / `team` / `mounted` / `toughness` / `arest` / `resting` / `ground_y` 覆写成从快照现取，
+  于是 `ref_of(*e)` 吐出来的字段与「直接读那份 `Value`」逐字一致。
+* `subjects/bot.cpp`：`me` / `fx` 各有一份实体（`me` 快照被用例原地改 ⇒ `resync()` 重灌成员）；
+  `meref holding|catching` 钉住那一刻的实体指针；`fx put|del` 换下来的旧实体挪进
+  `g_fx_grave` 不发释放（目标表里可能还留着它的指针，TS 那边对象也还活着）。
+* `subjects/bot_helpers.cpp`：`ent_real` 改用 `ScriptedEntity`（`id` 取快照里的那份，`sort` 的
+  `a.id < b.id` 才对得上），`name_of_ent` 按**指针身份**认名字（TS 的 `===`）；
+  `nt del` 直接比指针。
+* 💡 用例侧补了 `y`：`cases/bot/*.txt` 里 13 处 `fx put` 的 `position` / `velocity` 原本只有
+  `x` / `z`（那时读的是 `Value`，缺字段就给 `undefined`）。真实体一定有完整三元组，
+  `ref_of` 也必然吐 `position.y`，于是缺字段在端口变成 `NaN`、TS 侧是 `undefined`（`val enemy_y`
+  差了一行）。把它们补成 `o 3 "x" … "y" n 0 "z" …`（`velocity` 同）后两侧一致 —— 顺带把
+  「台面实体要有完整位置」这条前提钉进用例。
+
+验证：`tsc -b` 通过；`npm run native lint` 9761/9761 锚点（`ball_controller` / `bot_controller` /
+`bot_helpers` / `collision_val` / `entity` 五份变异档按新源码重写，抽 10 条实跑全部 killed）；
+全量差分 264/265（唯一失败仍是既有的 `xml/ui` `img.dw/dh` 漂移）；Godot 重编 + headless 300 帧
+`errors=0`、digest 稳定；`lfw_run --stage 1 --vs --players 2 --frames 1200` 空挥数与 §173 修复
+后持平（≈14 次），说明拆句柄没有引入新的目标陈旧。

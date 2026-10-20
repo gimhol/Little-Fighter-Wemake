@@ -6,6 +6,7 @@
 #include "lfw/bot/bot_controller.h"
 #include "lfw/bot/state/bot_state_keys.h"
 #include "lfw/defines/state_enum.h"
+#include "lfw/entity/entity_ref.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/base.h"
 
@@ -20,7 +21,8 @@ bool frame_state_is(const controller::CtrlEnv& e, StateEnum s) {
 
 // `this.following?.position ?? this.goingto`
 Value follow_pos(const BotController& c) {
-  const Value pos = !c.following.nullish() ? field_or(c.following.ref(), u"position") : Value();
+  const Value pos =
+      c.following != nullptr ? field_or(ref_of(*c.following), u"position") : Value();
   return nullish(pos) ? c.goingto : pos;
 }
 

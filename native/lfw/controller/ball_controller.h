@@ -13,12 +13,9 @@ namespace controller {
 // `controller/BallController.ts`：球的追人控制器（帧上带 `chase` 的那种实体）。
 //
 // 端口的两条约定：
-//   * 控制器看不见 `Entity`（同 `CtrlEnv`、`bot/*`）：自己的数据全从 `env()` 读，
-//     别人（候选实体、`chasing`）用 `Value` 引用表示 —— 引用里至少有 `id` /
-//     `position.x|y|z` / `team` / `ghosted` / `frame.id|height`，与 `manhattan_xz`
-//     的既有约定一致；
-//   * `update_lookup(me, entities)` 里 `entities[me]` 就是自己（TS 那边也是这么传的），
-//     所以「自己」的引用不用单独给。
+//   * 控制器看不见 `Entity`（同 `CtrlEnv`、`bot/*`）：自己的数据全从 `env()` 读；
+//   * `chasing` 与 `update_lookup(me, entities)` 的候选都是**实体指针**（TS 同形）。
+//     `entities[me]` 就是自己（TS 那边也是这么传的），所以「自己」的引用不用单独给。
 class BallController : public BaseController {
  public:
   static constexpr const char* TAG = "BallController";
@@ -43,11 +40,8 @@ class BallController : public BaseController {
   void set_chase_point(double x, double y, double z);
   void aim_at(const Value& e, double oy = 0);
 
-  // 世界侧给实体（`LFW::ctrl_update_lookup`），台面给引用快照 —— 两条入口都折成
-  // `TargetHandle` 再走同一份实现。
+  // 世界侧给实体表（`LFW::ctrl_update_lookup`）；台面（`subjects/entity.cpp`）同样给实体。
   void update_lookup(int me, const std::vector<Entity*>& entities);
-  void update_lookup(int me, const std::vector<Value>& entities);
-  void update_lookup(int me, const std::vector<TargetHandle>& entities);
   bool should_chase(const Value& other) const;
 
   const ControllerResult& update() override;

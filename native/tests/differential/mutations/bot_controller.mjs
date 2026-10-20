@@ -42,20 +42,20 @@ export default {
     {
       note: "should_chase 的 catching 直通变成恒 false",
       file: "native/lfw/bot/bot_controller.cpp",
-      from: `  if (!e->catching.nullish()) return e->catching.same(TargetHandle::of(e_ref));`,
-      to: `  if (!e->catching.nullish()) return false;`,
+      from: `  if (e->catching != nullptr) return e->catching == &e_handle;`,
+      to: `  if (e->catching != nullptr) return false;`,
     },
     {
       note: "w_atk_m_x 误读 w_atk_r_x（持握物数据字段串了）",
       file: "native/lfw/bot/bot_controller.cpp",
-      from: `    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_m_x");`,
-      to: `    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_r_x");`,
+      from: `    v = field_or(field_or(field_or(ref_of(*e->holding), u"data"), u"base"), u"w_atk_m_x");`,
+      to: `    v = field_or(field_or(field_or(ref_of(*e->holding), u"data"), u"base"), u"w_atk_r_x");`,
     },
     {
       note: "should_chase 的 catching 直通变成恒 true",
       file: "native/lfw/bot/bot_controller.cpp",
-      from: `  if (!e->catching.nullish()) return e->catching.same(TargetHandle::of(e_ref));`,
-      to: `  if (!e->catching.nullish()) return true;`,
+      from: `  if (e->catching != nullptr) return e->catching == &e_handle;`,
+      to: `  if (e->catching != nullptr) return true;`,
     },
     {
       note: "handle_action 的 desire 比较方向反了",
@@ -90,8 +90,8 @@ export default {
     {
       note: "update 里 chasings.del 的条件丢掉了取反",
       file: "native/lfw/bot/bot_controller.cpp",
-      from: `      chasings.del([this](const BotTarget& t) { return !should_chase(t.entity.ref()); });`,
-      to: `      chasings.del([this](const BotTarget& t) { return should_chase(t.entity.ref()); });`,
+      from: `      chasings.del([this](const Entity& t) { return !should_chase(t); });`,
+      to: `      chasings.del([this](const Entity& t) { return should_chase(t); });`,
     },
     {
       note: "update 的 bot_keys 队列判定反了",

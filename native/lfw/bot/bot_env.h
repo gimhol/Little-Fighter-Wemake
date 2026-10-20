@@ -7,6 +7,8 @@
 #include "lfw/controller/base_controller.h"
 #include "lfw/core/same_ref.h"
 #include "lfw/core/value.h"
+#include "lfw/entity/entity.h"
+#include "lfw/entity/entity_ref.h"
 #include "lfw/utils/container_help/field_or.h"
 
 namespace lfw {
@@ -53,12 +55,6 @@ inline Value bot_ignore_of_ref(const Value& ref) {
       field_or(field_or(field_or(ref, u"data"), u"base"), u"bot_ignore"));
 }
 
-// `me.holding?.base_type`（没有持握物时给 `undefined`，不是 0）。
-inline Value holding_base_type_of_env(const controller::CtrlEnv& e) {
-  if (e.holding.nullish()) return Value();
-  return base_type_of_ref(e.holding.ref());
-}
-
 // `a == b` / `a === b`（实体身份）：TS 比的是对象同一性；端口的两份引用是各自建出来的
 // 投影 ⇒ 有 `id` 就按 `id` 比（`id` 在实体生命周期内唯一），否则退回引用同一性。
 inline bool same_entity(const Value& a, const Value& b) {
@@ -69,10 +65,14 @@ inline bool same_entity(const Value& a, const Value& b) {
   return same_ref(a, b);
 }
 
-// `const self = this.entity` 在端口里的替身：`{ id, position }`（`ref_of` 的最小投影）。
-// `id` 不能省 —— `CtrlEnv::resolve`（实体引用 → 真实体，见 `entity.cpp`）靠它把 `me` 解回
-// 实体；少了它 `is_ray_hit(me, en, r)` 的 `me` 恒为空 ⇒ **带 `e_ray` 的 bot 招式恒被拒**
-// （实测：`d>a` 这类发波招式在演示局里命中 0 次，机器人只会走位不会发波）。
+// `me.holding?.base_type`（没有持握物时给 `undefined`，不是 0）。
+inline Value holding_base_type_of_env(const controller::CtrlEnv& e) {
+  if (e.holding == nullptr) return Value();
+  return base_type_of_ref(ref_of(*e.holding));
+}
+
+// `const self = this.entity` 在端口里的替身：`{ id, position }` —— 只在拿不到真实体
+// （`CtrlEnv::self == nullptr`，差分台面）时给 `bot/*` 的引用读法兜底。
 inline Value self_ref_of_env(const controller::CtrlEnv& e) {
   Object pos;
   pos.set(u"x", Value(e.px));

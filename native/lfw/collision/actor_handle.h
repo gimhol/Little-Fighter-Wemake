@@ -13,8 +13,7 @@ namespace collision {
 // `collision.attacker` / `.victim` 需要读的实体字段（TS 侧是直接 `c.attacker.xxx`）。
 //
 // 端口**不**拿它当"碰撞里存的副本"：真实运行时字段一律从 `Entity` 活读（见 `ActorHandle`），
-// 这个结构只在差分台面（脚本化出来的假实体）里当真身用，另外也是 `entity/target_handle.h`
-// 那套「快照兜底」的载体。
+// 这个结构只在差分台面（脚本化出来的假实体）里当真身用 —— 它自己带一份「快照兜底」。
 struct CollisionActor {
   std::u16string id;
   double px = 0;

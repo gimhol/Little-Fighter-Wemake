@@ -5,30 +5,26 @@
 #include <cstddef>
 #include <functional>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "lfw/core/value.h"
 #include "lfw/entity/entity.h"
 #include "lfw/helper/manhattan_xz.h"
-#include "lfw/utils/container_help/field_or.h"
 
 namespace lfw {
 namespace bot {
 namespace {
 
-Value defendable_of(const Value& v) {
-  return std::holds_alternative<std::monostate>(v) ? Value(0.0) : v;
-}
-
-bool target_less(const BotTarget& a, const BotTarget& b) {
-  const double d = a.distance - b.distance;
+// `sort` 的比较器：距离优先，距离相等再比 `id`（TS 的 `a.id < b.id` 口径）。
+bool target_less(const std::pair<double, const Entity*>& a,
+                 const std::pair<double, const Entity*>& b) {
+  const double d = a.first - b.first;
   if (d != 0.0) {
     if (std::isnan(d)) return false;
     return d < 0.0;
   }
-  const Value ia = Value(a.entity.id());
-  const Value ib = Value(b.entity.id());
+  const Value ia = Value(a.second->id);
+  const Value ib = Value(b.second->id);
   if (lt(ia, ib)) return true;
   if (gt(ia, ib)) return false;
   return false;
@@ -36,109 +32,59 @@ bool target_less(const BotTarget& a, const BotTarget& b) {
 
 }  // namespace
 
-Value BotTarget::facing() const { return field_or(entity.ref(), u"facing"); }
+const Entity* NearestTargets::get() const { return targets_.empty() ? nullptr : targets_[0]; }
 
-Value BotTarget::x() const { return field_or(field_or(entity.ref(), u"position"), u"x"); }
-
-const BotTarget* NearestTargets::get() const {
-  return targets_.empty() ? nullptr : &targets_[0];
-}
-
-bool NearestTargets::has_entity(const TargetHandle& v) const {
-  for (const TargetHandle& e : entities_) {
-    if (e.same(v)) return true;
+bool NearestTargets::has_target(const Entity* v) const {
+  for (const Entity* t : targets_) {
+    if (t == v) return true;
   }
   return false;
 }
 
-void NearestTargets::add_entity(const TargetHandle& v) { entities_.push_back(v); }
-
-void NearestTargets::del_entity(const TargetHandle& v) {
-  for (std::size_t i = 0; i < entities_.size(); ++i) {
-    if (entities_[i].same(v)) {
-      entities_.erase(entities_.begin() + static_cast<std::ptrdiff_t>(i));
-      return;
-    }
-  }
+void NearestTargets::look(const Entity& self, const Entity& other) {
+  look_impl([&self](const Entity* t) { return helper::manhattan_xz(self, *t); }, &other);
 }
 
-void NearestTargets::look(const Value& self, const TargetHandle& other, const Value& defendable) {
-  if (!truthy(self)) return;
-  insert_at(other, helper::manhattan_xz(self, other.ref()), defendable);
-}
-
-void NearestTargets::look(const Entity& self, const TargetHandle& other, const Value& defendable) {
-  const Entity* const live = other.entity();
-  insert_at(other, live != nullptr ? helper::manhattan_xz(self, *live)
-                                  : helper::manhattan_xz(self, other.ref()),
-            defendable);
-}
-
-void NearestTargets::look(const Value& self, const Value& other, const Value& defendable) {
-  look(self, TargetHandle::of(other), defendable);
-}
-
-void NearestTargets::look(const Entity& self, const Value& other, const Value& defendable) {
-  look(self, TargetHandle::of(other), defendable);
-}
-
-void NearestTargets::insert_at(const TargetHandle& other, double distance,
-                               const Value& defendable) {
-  if (has_entity(other)) return;
-
+void NearestTargets::look_impl(const std::function<double(const Entity*)>& distance_of,
+                               const Entity* other) {
+  if (other == nullptr) return;
+  if (has_target(other)) return;
+  const double distance = distance_of(other);
   const std::size_t len = targets_.size();
   if (static_cast<double>(len) < max_) {
-    targets_.push_back(BotTarget(other, distance, defendable_of(defendable)));
-    add_entity(other);
+    targets_.push_back(other);
     return;
   }
   for (std::size_t i = 0; i < len; ++i) {
-    if (distance > targets_[i].distance) continue;
-    targets_.insert(targets_.begin() + static_cast<std::ptrdiff_t>(i),
-                    BotTarget(other, distance, defendable_of(defendable)));
-    add_entity(other);
-    const TargetHandle entity = targets_[static_cast<std::size_t>(max_)].entity;
-    del_entity(entity);
+    if (distance > distance_of(targets_[i])) continue;
+    targets_.insert(targets_.begin() + static_cast<std::ptrdiff_t>(i), other);
     targets_.erase(targets_.begin() + static_cast<std::ptrdiff_t>(max_), targets_.end());
     break;
   }
 }
 
-void NearestTargets::del(const std::function<bool(const BotTarget&)>& condition) {
-  std::vector<BotTarget> kept;
-  for (const BotTarget& t : targets_) {
-    const bool ret = !condition(t);
-    if (!ret) del_entity(t.entity);
-    if (ret) kept.push_back(t);
+void NearestTargets::del(const std::function<bool(const Entity&)>& condition) {
+  std::vector<const Entity*> kept;
+  kept.reserve(targets_.size());
+  for (const Entity* t : targets_) {
+    if (!condition(*t)) kept.push_back(t);
   }
   targets_ = std::move(kept);
 }
 
-void NearestTargets::sort(const Value& self) {
-  sort_by([&self](const BotTarget& t) { return helper::manhattan_xz(self, t.entity.ref()); });
-}
-
 void NearestTargets::sort(const Entity& self) {
-  sort_by([&self](const BotTarget& t) {
-    // 目标还是那个实体就活读位置（TS 语义）；否则退回引用快照（台面 / 已被回收）。
-    const Entity* const live = t.entity.entity();
-    if (live != nullptr) return helper::manhattan_xz(self, *live);
-    return helper::manhattan_xz(self, t.entity.ref());
-  });
+  sort_by([&self](const Entity* t) { return helper::manhattan_xz(self, *t); });
 }
 
-void NearestTargets::sort_by(const std::function<double(const BotTarget&)>& distance_of) {
-  for (BotTarget& t : targets_) {
-    t.distance = distance_of(t);
-    t.entity.refresh();
-  }
-  std::stable_sort(targets_.begin(), targets_.end(), target_less);
+void NearestTargets::sort_by(const std::function<double(const Entity*)>& distance_of) {
+  std::vector<std::pair<double, const Entity*>> tmp;
+  tmp.reserve(targets_.size());
+  for (const Entity* t : targets_) tmp.emplace_back(distance_of(t), t);
+  std::stable_sort(tmp.begin(), tmp.end(), target_less);
+  for (std::size_t i = 0; i < tmp.size(); ++i) targets_[i] = tmp[i].second;
 }
 
-void NearestTargets::clear() {
-  targets_.clear();
-  entities_.clear();
-}
+void NearestTargets::clear() { targets_.clear(); }
 
-}
-}
+}  // namespace bot
+}  // namespace lfw

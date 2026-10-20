@@ -48,9 +48,9 @@ me data.base.bot o 1 "dataset" o 1 "r_x_min" n 12
 checkbot
 ds "r_stop_desire" "r_x_min"
 get bot_id
-fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 80 "z" n 0 "velocity" o 2 "x" n 9 "z" n 0 "state" n 2 "is_on_ground" b 1
-fx put "e2" o 9 "id" s "e2" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 120 "z" n 0 "velocity" o 2 "x" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1 "ghosted" b 1
-fx put "e3" o 9 "id" s "e3" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 160 "z" n 0 "velocity" o 2 "x" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
+fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 80 "y" n 0 "z" n 0 "velocity" o 3 "x" n 9 "y" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
+fx put "e2" o 9 "id" s "e2" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 120 "y" n 0 "z" n 0 "velocity" o 3 "x" n 0 "y" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1 "ghosted" b 1
+fx put "e3" o 9 "id" s "e3" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 160 "y" n 0 "z" n 0 "velocity" o 3 "x" n 0 "y" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
 updlookup 1 "e1" "e2" "e3"
 ntsnap ch
 follow "e1"

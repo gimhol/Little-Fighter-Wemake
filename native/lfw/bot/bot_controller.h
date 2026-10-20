@@ -27,9 +27,9 @@ const char16_t* bot_behavior_name(BotBehavior v);
 
 // `bot/BotController.ts` 的 `class BotController extends BaseController`。
 //
-// 端口约定（同 `BallController`）：控制器看不见 `Entity` —— 自己的一切走 `env()`
-// （`CtrlEnv` 的 bot 段，见 `controller/base_controller.h`），对家是 `Value` 引用
-// （`entity/entity_ref.h` 的 `ref_of`），world / lfw 走 `env()` 上的几条缝。
+// 端口约定（同 `BallController`）：自己的一切走 `env()`（`CtrlEnv` 的 bot 段，见
+// `controller/base_controller.h`）；对家是**实体指针**（`Entity*`，与 TS 同形），需要
+// 「`Value` 引用」的读法现走 `entity/entity_ref.h` 的 `ref_of`；world / lfw 走 `env()` 上的几条缝。
 //
 // ⚠️ 构造 / `reset()` 时还没有 env（TS 的构造函数直接拿着 entity，`fsm.reset(BSE.Idle)`
 // 当场读 `stage.*` 并向 `mt` 抽四次签）⇒ 端口把这一步**推迟**到 env 第一次绑定时
@@ -45,12 +45,8 @@ class BotController : public controller::BaseController {
   void set_env(const controller::CtrlEnv* env) override;
   void reset() override;
   const controller::ControllerResult& update() override;
-  // `update_lookup(me, entities)`（`World.step` 每两帧一次；实体表是引用表）。
-  // 真实运行时世界侧直接给实体（`LFW::ctrl_update_lookup`）；台面给引用快照 —— 两条入口
-  // 都折成 `TargetHandle` 再走同一份实现。
+  // `update_lookup(me, entities)`（`World.step` 每两帧一次）：候选就是实体表（TS 同形）。
   void update_lookup(int me, const std::vector<Entity*>& entities);
-  void update_lookup(int me, const std::vector<Value>& entities);
-  void update_lookup(int me, const std::vector<TargetHandle>& entities);
 
   // ---- TS 的公开字段（`readonly` 的照抄）----
   FSM fsm;
@@ -60,8 +56,8 @@ class BotController : public controller::BaseController {
   Value dummy{dummy_default()};
   BotBehavior behavior = BotBehavior::Move;
   Value goingto;    // `IVector3 | null`
-  TargetHandle following;  // 实体句柄 | null
-  TargetHandle watching;   // 实体句柄 | null
+  const Entity* following = nullptr;  // `Entity | null`
+  const Entity* watching = nullptr;   // `Entity | null`
   bool en_out_of_range = false;
   double idle_min_x = -9007199254740991.0;
   double idle_max_x = 9007199254740991.0;
@@ -113,12 +109,11 @@ class BotController : public controller::BaseController {
   bool is_enter_goto_range(const Value& entity_ref) const;
   bool is_leave_goto_range(const Value& entity_ref) const;
   bool is_leave_chase_range(const Value& target_ref) const;
-  bool should_chase(const Value& e_ref);
-  bool should_avoid(const Value& av_ref);
+  bool should_chase(const Entity& e_ref);
+  bool should_avoid(const Entity& av_ref);
   // 返回 `0 | 1 | 2`。
-  int should_defend(const Value& e_ref);
-  void lookup(const TargetHandle& other);
-  void lookup(const Value& other_ref) { lookup(TargetHandle::of(other_ref)); }
+  int should_defend(const Entity& e_ref);
+  void lookup(const Entity& other);
   // `guess_entity_pos` 的返回：`{x, z, next_x, next_z, next_y}`。
   Value guess_entity_pos(const Value& entity_ref) const;
   double desire(const std::u16string& mark) const;
@@ -127,9 +122,7 @@ class BotController : public controller::BaseController {
   bool lock_when_stand_and_rest();
   // `LGK[] | false | string`。
   Value handle_action(const std::u16string& where, const Value& action);
-  void follow(const TargetHandle& e_ref);
   void follow(const Entity& e_ref);
-  void follow(const Value& e_ref) { follow(TargetHandle::of(e_ref)); }
   void move();
   void stay();
   void come(double x, double y, double z);
@@ -148,7 +141,7 @@ class BotController : public controller::BaseController {
   }
   // `chasings/avoidings/defends` 的 `look` / `sort`：有真实体就走实体版（位置活读），
   // 否则走 `self_ref()` 的引用版（台面）。
-  void look_target(NearestTargets& nt, const Value& other_ref, const Value& defendable = Value());
+  void look_target(NearestTargets& nt, const Entity& other);
   void sort_targets(NearestTargets& nt);
 
   // `dummy` 的 getter / setter（setter 会松掉全部按键）。

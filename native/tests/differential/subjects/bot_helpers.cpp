@@ -15,7 +15,7 @@
 #include "lfw/helper/manhattan_xz.h"
 #include "lfw/utils/container_help/field_or.h"
 
-#include "entity_fixture.h"
+#include "scripted_entity.h"
 #include "trace_util.h"
 
 namespace {
@@ -26,9 +26,12 @@ using trace::split_ws;
 using trace::to_ascii;
 
 std::vector<std::pair<std::u16string, lfw::Value>> g_ent;
-// `is_ray_hit` 这一族现在收**真 `Entity`**（TS 同形）⇒ 用例里那些"实体快照"还要有对应的真实体。
-// 这里按名字懒建一份，字段从快照里那一份灌进去（`position` / `facing`）。
-std::vector<std::pair<std::u16string, std::unique_ptr<fx::StubEntity>>> g_ent_real;
+// `is_ray_hit` / `NearestTargets` 现在收**真 `Entity`**（TS 同形）⇒ 用例里那些"实体快照"
+// 还要有对应的真实体。这里按名字懒建一份，字段从快照里那一份灌进去。
+std::vector<std::pair<std::u16string, std::unique_ptr<fx::ScriptedEntity>>> g_ent_real;
+// 被 `put` / `del` 换掉或摘掉的实体：目标表里可能还留着指针（TS 那边对象也还活着），
+// 挪到这里只为不发释放，别让指针悬空。
+std::vector<std::unique_ptr<fx::ScriptedEntity>> g_ent_grave;
 std::vector<std::pair<std::u16string, lfw::bot::NearestTargets>> g_nt;
 
 std::string render(const lfw::Value& v) { return to_ascii(render_value(v)); }
@@ -45,14 +48,10 @@ const lfw::Value* find_ent(const std::u16string& name) {
 }
 
 void put_ent(const std::u16string& name, lfw::Value v) {
-  for (auto& kv : g_ent_real) {
-    if (kv.first == name) {  // 快照变了 ⇒ 真实体要重建（下一处 `ent_real` 懒建）
-      for (std::size_t i = 0; i < g_ent_real.size(); ++i) {
-        if (g_ent_real[i].first == name) {
-          g_ent_real.erase(g_ent_real.begin() + static_cast<std::ptrdiff_t>(i));
-          break;
-        }
-      }
+  for (std::size_t i = 0; i < g_ent_real.size(); ++i) {
+    if (g_ent_real[i].first == name) {  // 快照变了 ⇒ 真实体要重建（下一处 `ent_real` 懒建）
+      g_ent_grave.push_back(std::move(g_ent_real[i].second));
+      g_ent_real.erase(g_ent_real.begin() + static_cast<std::ptrdiff_t>(i));
       break;
     }
   }
@@ -74,6 +73,7 @@ void del_ent(const std::u16string& name) {
   }
   for (std::size_t i = 0; i < g_ent_real.size(); ++i) {
     if (g_ent_real[i].first == name) {
+      g_ent_grave.push_back(std::move(g_ent_real[i].second));
       g_ent_real.erase(g_ent_real.begin() + static_cast<std::ptrdiff_t>(i));
       break;
     }
@@ -81,7 +81,8 @@ void del_ent(const std::u16string& name) {
 }
 
 // 名字 → 真实体（懒建；字段照快照那一份灌。`put_ent`/`del_ent` 会让它失效并重建）。
-fx::StubEntity& ent_real(const std::u16string& name, int lineno) {
+// `id` 取快照里的那一份（`sort` 的 `a.id < b.id` 口径），没有就用名字。
+fx::ScriptedEntity& ent_real(const std::u16string& name, int lineno) {
   for (auto& kv : g_ent_real) {
     if (kv.first == name) return *kv.second;
   }
@@ -90,13 +91,10 @@ fx::StubEntity& ent_real(const std::u16string& name, int lineno) {
     std::fprintf(stderr, "unknown entity '%s' at line %d\n", to_ascii(name).c_str(), lineno);
     std::exit(2);
   }
-  auto e = std::make_unique<fx::StubEntity>(name);
-  const lfw::Value pos = lfw::field_or(*snap, u"position");
-  e->position.x = lfw::to_number(lfw::field_or(pos, u"x"));
-  e->position.y = lfw::to_number(lfw::field_or(pos, u"y"));
-  e->position.z = lfw::to_number(lfw::field_or(pos, u"z"));
-  e->facing = lfw::to_number(lfw::field_or(*snap, u"facing"));
-  fx::StubEntity& out = *e;
+  const lfw::Value id_v = lfw::field_or(*snap, u"id");
+  const std::u16string* const id_p = std::get_if<std::u16string>(&id_v);
+  auto e = std::make_unique<fx::ScriptedEntity>(id_p != nullptr ? *id_p : name, *snap);
+  fx::ScriptedEntity& out = *e;
   g_ent_real.push_back(std::make_pair(name, std::move(e)));
   return out;
 }
@@ -125,25 +123,31 @@ std::string name_of(const lfw::Value& v) {
   return "?";
 }
 
+// 名字按**实体身份**（指针）认；`facing` / `x` 照 TS 的读法从快照那一份取
+// （`ref_of()` 会把缺省的 `facing` 变成 NaN，打印就和 TS 的 `undefined` 不一致了）。
+std::string name_of_ent(const lfw::Entity* e) {
+  for (const auto& kv : g_ent_real) {
+    if (kv.second.get() == e) return to_ascii(kv.first);
+  }
+  return "?";
+}
+
 std::string snap_nt(const std::u16string& name, const lfw::bot::NearestTargets& nt) {
   std::string s = "nt snap " + to_ascii(name) + " max=" + render_num(nt.max());
-  const lfw::bot::BotTarget* first = nt.get();
+  const fx::ScriptedEntity* const first =
+      static_cast<const fx::ScriptedEntity*>(nt.get());
   if (first == nullptr) {
     s += " get=- facing=- x=-";
   } else {
-    s += " get=" + name_of(first->entity.ref()) + " facing=" + render(first->facing()) +
-         " x=" + render(first->x());
+    const lfw::Value& snap = first->snapshot();
+    s += " get=" + name_of_ent(first) +
+         " facing=" + render(lfw::field_or(snap, u"facing")) +
+         " x=" + render(lfw::field_or(lfw::field_or(snap, u"position"), u"x"));
   }
   s += " targets=[";
   for (std::size_t i = 0; i < nt.targets().size(); ++i) {
     if (i != 0) s += ',';
-    const lfw::bot::BotTarget& t = nt.targets()[i];
-    s += name_of(t.entity.ref()) + ":" + render_num(t.distance) + ":" + render(t.defendable);
-  }
-  s += "] ents=[";
-  for (std::size_t i = 0; i < nt.entities().size(); ++i) {
-    if (i != 0) s += ',';
-    s += name_of(nt.entities()[i].ref());
+    s += name_of_ent(nt.targets()[i]);
   }
   s += "]";
   return s;
@@ -276,18 +280,17 @@ int main(int argc, char** argv) {
         if (sub == "look") {
           const std::u16string self_name = trace::parse_js_string_literal(t[i++]);
           const std::u16string other_name = trace::parse_js_string_literal(t[i++]);
-          const lfw::Value defendable = i < t.size() ? parse_value(t, i) : lfw::Value();
-          inst->look(ent_arg(self_name, lineno), ent_arg(other_name, lineno), defendable);
+          // TS 的 `look(self, other)` 头一句是 `if (!self …) return`：`zero` 那种快照是假值。
+          if (lfw::truthy(ent_arg(self_name, lineno))) {
+            inst->look(ent_real(self_name, lineno), ent_real(other_name, lineno));
+          }
         } else if (sub == "del") {
           const std::u16string target = trace::parse_js_string_literal(t[i++]);
-          const lfw::Value* victim = find_ent(target);
-          const bool found = victim != nullptr;
-          const lfw::Value held = found ? *victim : lfw::Value();
-          inst->del([&held, found](const lfw::bot::BotTarget& tgt) {
-            return found && tgt.entity.same(lfw::TargetHandle::of(held));
-          });
+          const lfw::Entity* const victim =
+              find_ent(target) != nullptr ? &ent_real(target, lineno) : nullptr;
+          inst->del([victim](const lfw::Entity& tgt) { return &tgt == victim; });
         } else if (sub == "sort") {
-          inst->sort(ent_arg(trace::parse_js_string_literal(t[i++]), lineno));
+          inst->sort(ent_real(trace::parse_js_string_literal(t[i++]), lineno));
         } else if (sub == "clear") {
           inst->clear();
         } else if (sub != "snap") {

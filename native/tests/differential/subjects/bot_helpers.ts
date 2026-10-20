@@ -127,13 +127,12 @@ function main(): void {
         if (sub === "look") {
           const self = entOf(parseJsStringLiteral(t[idx[0]!++]!));
           const other = entOf(parseJsStringLiteral(t[idx[0]!++]!));
-          const defendable = idx[0]! < t.length ? (parseValue(t, idx) as Any) : undefined;
-          inst.look(self as Any, other as Any, defendable);
+          inst.look(self as Any, other as Any);
         } else if (sub === "del") {
           const target = parseJsStringLiteral(t[idx[0]!++]!);
           const found = ents.has(target);
           const held = found ? ents.get(target) : undefined;
-          inst.del((tgt) => found && tgt.entity === held);
+          inst.del((tgt) => found && tgt === held);
         } else if (sub === "sort") {
           inst.sort(entOf(parseJsStringLiteral(t[idx[0]!++]!)) as Any);
         } else if (sub === "clear") {
@@ -148,14 +147,10 @@ function main(): void {
       const first = inst.get();
       let line = `nt snap ${name} max=${renderValue(inst.max)}`;
       line += first
-        ? ` get=${nameOf(first.entity)} facing=${renderValue(first.facing)} x=${renderValue(first.x)}`
+        ? ` get=${nameOf(first)} facing=${renderValue(first.facing)} x=${renderValue(first.position.x)}`
         : ` get=- facing=- x=-`;
       line += " targets=[";
-      line += inst.targets
-        .map((tg) => `${nameOf(tg.entity)}:${renderValue(tg.distance)}:${renderValue(tg.defendable)}`)
-        .join(",");
-      line += "] ents=[";
-      line += [...inst.entities].map(nameOf).join(",");
+      line += inst.targets.map((tg) => nameOf(tg)).join(",");
       line += "]";
       out.push(line);
     } else {

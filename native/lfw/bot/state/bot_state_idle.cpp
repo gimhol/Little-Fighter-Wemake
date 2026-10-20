@@ -9,6 +9,7 @@
 #include "lfw/defines/defines_data.h"
 #include "lfw/defines/state_enum.h"
 #include "lfw/defines/weapon_type.h"
+#include "lfw/entity/entity_ref.h"
 #include "lfw/utils/container_help/field_or.h"
 #include "lfw/utils/math/base.h"
 #include "lfw/utils/math/mersenne_twister.h"
@@ -96,7 +97,7 @@ std::optional<Value> BotState_Idle::update(double dt) {
     c.key_up({u"U", u"D"});
   }
 
-  const Value watching = c.watching.ref();
+  const Value watching = c.watching != nullptr ? ref_of(*c.watching) : Value();
   if (truthy(watching) && truthy(field_or(watching, u"mounted")) &&
       frame_state_is(*e, StateEnum::Standing) && my_x >= c.idle_min_x &&
       my_x <= c.idle_max_x && my_z >= c.idle_min_z && my_z <= c.idle_max_z) {

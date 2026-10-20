@@ -5219,25 +5219,23 @@ export default {
       note: "apply_opoints：敌人的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
       from: `          ctrl->chasing = enemies.empty()
-                              ? TargetHandle()
-                              : TargetHandle::of(*enemies[static_cast<std::size_t>(
-                                    std::fmod(i, enemies.size()))]);`,
-      to: `          ctrl->chasing = TargetHandle();`,
+                              ? nullptr
+                              : enemies[static_cast<std::size_t>(std::fmod(i, enemies.size()))];`,
+      to: `          ctrl->chasing = nullptr;`,
     },
     {
       note: "apply_opoints：友军的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
       from: `          ctrl->chasing = allies.empty()
-                              ? TargetHandle()
-                              : TargetHandle::of(*allies[static_cast<std::size_t>(
-                                    std::fmod(i, allies.size()))]);`,
-      to: `          ctrl->chasing = TargetHandle();`,
+                              ? nullptr
+                              : allies[static_cast<std::size_t>(std::fmod(i, allies.size()))];`,
+      to: `          ctrl->chasing = nullptr;`,
     },
     {
       note: "apply_opoints：Emitter 的 chasing 不写目标",
       file: "native/lfw/entity/entity.cpp",
-      from: `          ctrl->chasing = allies.empty() ? TargetHandle() : TargetHandle::of(*allies[0]);`,
-      to: `          ctrl->chasing = TargetHandle();`,
+      from: `          ctrl->chasing = allies.empty() ? nullptr : allies[0];`,
+      to: `          ctrl->chasing = nullptr;`,
     },
     {
       note: "apply_opoints：inherit_speed 丢了生成后的速度项",

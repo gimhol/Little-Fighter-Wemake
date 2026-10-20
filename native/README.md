@@ -2696,3 +2696,77 @@ marks 会写丢。现在成员方法也走那三个虚存取器，与 TS 的 `th
   再点框外 `focus=0`（`onblur` 存盘）；真流程 `--ui-page settings --click 505,42@20`
   （设置页 → 控制设置 tab）覆盖层落在 `(550,70 106x16)`，打字/存盘同上。
 * 截图 `temp/shot_settings_real.png`：名字框在第四列键盘上方、白字居中，其余画面不变。
+
+### 2026-10-20（三十一）：设置页 4 个玩家名只显示第 4 个 + 控制设置左侧补「玩家 / 控制方式」
+
+用户报「Godot 里的设置页玩家名只显示了 4，其他都没有」。真因在上一刀的端口口径：
+`sync_text_input()` 只取 `ui_text_inputs().back()`（收集序最后 = 第 4 个玩家名），其余 3 个
+`PlayerNameInput` 没有对应的 `LineEdit` ⇒ 空框。Web 版每个节点一个 DOM `<input>`，所以没这个
+症状。
+
+改动（仍只动 `native/host/godot/**` 与共享 UI 数据）：
+
+* `_text_inputs` 改成一组 `TextInputOverlay { edit, node, shown, synced, style_sig, had_focus }`：
+  每帧按节点指针复用旧条目、没有就 `memnew`；逐条摆位 / 刷样式 / 双向同步文本 / 同步焦点；
+  这一帧没出现的条目 `release_focus` + `remove_child` + `queue_free`。
+  ⚠ `std::move` 不会把裸指针清空 ⇒ 接管后要把旧条目的 `edit/node` 置空，否则同一次调用里的
+  "清理旧条目"会把刚接管的控件拆掉（实测第 2 帧崩溃）。
+* 点框外失焦对每个拿到焦点的框各判一次；`--text-input` 仍打**最后**一个（与绘制次序一致），
+  诊断行多一个 `overlays=N`。
+* 控制设置页数据（`lf2s/origin/prel_data/ui/settings_ctrl.ui.json5`）：左侧标签列每行改成固定
+  高度（26 / 106 / 26，`gap: 3`）与各列逐行对齐，文字用 `center: "1,0.5"` 右对齐到
+  「上下左右攻跳防」的右边缘；新增 `ctrl_settings.player` / `ctrl_settings.ctrl_type`
+  （14 种语言）⇒ 玩家名列前显示「玩家」、控制方式列前显示「控制方式」。TS 与 Godot 共用这份
+  数据。
+
+验证：差分 264/265（`xml/ui` 那条 `img.dw/dh` 漂移与本刀无关，改动前就在）、lint 867 clean；
+`--ui-page settings_ctrl --text-input X@6` 打出 `overlays=4` 且 `players=4:X`；真流程截图
+`native/build/shot_settings_real.png`：四个名字 1/2/3/4 都在，左上「玩家」「控制方式」与
+「上下左右攻跳防」右边缘齐平（`--ui-dump` 里三者的 `box` 右边界同为 `0`）；切回「其它设置」
+后 `--text-input` 报 `no TextInput overlay`（旧控件已拆、无崩溃）。
+
+### 2026-10-20（三十二）：Bot 对着没人的地方攻击 —— 目标句柄被降级成快照
+
+用户报「Bot 还是会对没人的地方攻击」，怀疑追踪坐标/目标表没更新。`lfw_run --stage 1 --vs
+--players 2 --frames 1200 --every 1` 实测：`chasings` 里挂着**已死**的目标，距离停在死亡前的
+位置，Bot 一直朝旧坐标走/攻击（4507 次攻击里 403 次最近敌人 >100px；死目标 105 挂了一百多帧）。
+
+根因是 §163 句柄化只做了一半：`BotController::look_target` 有 Entity 版，但 `lookup()` 传的是
+`Value` ⇒ 走 `TargetHandle::of(Value)` 的一次性快照（`_entity=nullptr`，`refresh()` 空操作），
+距离/血量/位置全部冻结、死目标也判不掉；`LFW::ctrl_follow` 又直接 `follow(ref_of(target))`，
+`following` 一开始就是冻结快照，`watching` 的失效判断在真实实体上也永远不成立。
+
+修复：
+
+* `lookup()` 全改传 `TargetHandle`（`look_target(nt, other)`），目标表存活实体句柄；
+* `should_chase` 加 `TargetHandle` 重载（`Value` 版留给差分台面），`watching` 存活句柄；
+* `ctrl_follow` 传 `Entity&`；`BotController::update()` 开头对 `following`/`watching` 各
+  `refresh()` 一次。
+
+实测同一场：state=3 4507 → 1383，>150px 空挥 403 → 9（剩下是跳跃攻击/对手绕背，属正常），
+死目标最多残留 1~2 帧；`bot/*` 8 份 + `bot_helpers` 差分全绿，全量 264/265（仍是既有的
+`xml/ui` 漂移）。`lfw_run` 的 `[state]` 诊断行补了 `f=`（朝向）与 `h=<id>/<type>`（手持物）。
+### 2026-10-20（三十三）：`TargetHandle` / `BotTarget` 退役 —— 目标一律实体指针
+
+用户要求「那个包装类没必要存在，直接用 entity 就好」，追认到「句柄也一起删」。它们本来是给
+**差分台面没有 `Entity`** 留的后门（`_entity` 为真就活读、否则退回引用快照），而这条双通道正是
+（三十二）那个「对着空气攻击」的温床，于是整层拆掉：
+
+* 删 `native/lfw/entity/target_handle.{h,cpp}`；`NearestTargets` 存 `std::vector<const Entity*>`，
+  `BotController::following|watching` 是 `const Entity*`，`BaseController::chasing` 是 `Entity*`，
+  `CtrlEnv::holding|catching` 也是 `const Entity*`；`BallController` 的 `update_lookup` 只留实体表
+  那一个重载。
+* 「`Value` 引用」的读法一律 `ref_of(*e)` 现算（`bot/*` 的 helper 不动）；`CtrlEnv::resolve`
+  （引用→实体）随之删除，`is_ray_hit` 那一族直接收实体。
+* 实体只入池复用、从不 `delete` ⇒ 裸指针不悬空；「指针换主人」由每帧 `should_chase` /
+  `should_avoid` 的存活判定兜住（与 TS 的对象一直活着同口径）。
+* 台面新增 `subjects/scripted_entity.h`：`fx::ScriptedEntity` 把脚本化快照当真实体用（
+  `ref_of` 吐的字段与原 `Value` 逐字一致）；`fx put`/`del` 换下来的旧实体留在墓地不发释放；
+  名字按指针身份认（TS 的 `===`）。
+* 用例补 `y`：`cases/bot/*.txt` 里 13 处 `fx put` 的 `position`/`velocity` 只有 `x`/`z`，
+  真实体一定有完整三元组 ⇒ 缺字段在端口成了 `NaN`、TS 是 `undefined`（`val enemy_y` 差一行）。
+  补成 `o 3 "x" … "y" n 0 "z" …` 后两侧一致。
+
+验证：`tsc -b` 通过；lint 9761/9761 锚点（五份变异档按新源码重写，抽 10 条实跑全 killed）；
+全量差分 264/265（唯一失败仍是既有 `xml/ui`）；Godot 重编 + headless 300 帧 `errors=0`；
+`lfw_run --stage 1 --vs --players 2 --frames 1200` 空挥数与（三十二）修复后持平（≈14 次）。

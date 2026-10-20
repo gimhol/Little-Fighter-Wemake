@@ -375,15 +375,20 @@ class LfwGodot : public Node2D {
   // 文字**度量**与 `_draw()` 都走它 ⇒ 量出来的尺寸与画出来的字是同一个字体、同一个字号。
   lfw::host::FontCache _fonts;
 
-  // 文本输入覆盖层（Web 的 `<input>` 的等价物）：只有 UI 树里出现 `TextInput` 节点时存在。
-  // ⚠ `_text_input_node` 只是**这一帧**的弱引用（页弹出后 `UILayer::_trash` 会把它析构/回收），
+  // 文本输入覆盖层（Web 的 `<input>` 的等价物）：UI 树里有几个可见的 `TextInput` 节点就摆几个。
+  // ⚠ `node` 只是**这一帧**的弱引用（页弹出后 `UILayer::_trash` 会把它析构/回收），
   // 只在"这一帧的 `GodotTextInputBox` 指向它"时用。
-  godot::LineEdit* _text_input = nullptr;
-  lfw::ui::UINode* _text_input_node = nullptr;
-  std::u16string _text_input_shown;   // 上一次看到的 `LineEdit` 文本（判断谁改了值）
-  std::u16string _text_input_synced;  // 上一次写回组件的文本（`--text-input` 验收用）
-  std::string _text_input_style_sig;  // 字体/字号/颜色/对齐/长度上限的指纹（变了才刷主题）
-  bool _text_input_had_focus = false;  // 引擎焦点由有变无 ⇒ 组件 `set_focused(false)`
+  struct TextInputOverlay {
+    godot::LineEdit* edit = nullptr;
+    lfw::ui::UINode* node = nullptr;
+    std::u16string shown;    // 上一次看到的 `LineEdit` 文本（判断谁改了值）
+    std::u16string synced;   // 上一次写回组件的文本（`--text-input` 验收用）
+    std::string style_sig;   // 字体/字号/颜色/对齐/长度上限的指纹（变了才刷主题）
+    bool had_focus = false;  // 引擎焦点由有变无 ⇒ 组件 `set_focused(false)`
+  };
+  std::vector<TextInputOverlay> _text_inputs;
+  // 收集序最后的那个（`--text-input` 与诊断行仍按它取事实：同 Web 的绘制次序，压在最上面）。
+  TextInputOverlay* last_text_input();
 
   // `style.font` 原文 → 字体（解析不到字族时返回引擎的 fallback 字体）。
   godot::Ref<godot::Font> font_for_css(const std::string& css);

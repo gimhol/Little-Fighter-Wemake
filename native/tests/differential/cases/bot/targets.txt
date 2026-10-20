@@ -28,11 +28,11 @@ diff n 1
 bound n -400 n 400 n -100 n 100
 hpa b 1
 make
-fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 80 "z" n 0 "velocity" o 2 "x" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
-fx put "e2" o 10 "id" s "e2" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 80 "z" n 0 "velocity" o 2 "x" n 10 "z" n 0 "state" n 3 "is_on_ground" b 1 "itr" a 1 o 3 "kind" n 0 "vrest" n 0 "bdefend" n 5
-fx put "e3" o 10 "id" s "e3" "data" o 2 "type" n 16 "base" o 1 "type" n 2 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 70 "z" n 0 "velocity" o 2 "x" n 5 "z" n 0 "state" n 2000 "is_on_ground" b 1 "itr" a 1 o 3 "kind" n 0 "vrest" n 0 "bdefend" n 200
-fx put "e4" o 9 "id" s "e4" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 60 "z" n 0 "velocity" o 2 "x" n 0 "z" n 0 "state" n 14 "is_on_ground" b 1
-fx put "e5" o 9 "id" s "e5" "data" o 2 "type" n 16 "base" o 1 "type" n 5 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 2 "x" n 40 "z" n 0 "velocity" o 2 "x" n 0 "z" n 0 "state" n 1004 "is_on_ground" b 1
+fx put "e1" o 9 "id" s "e1" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 80 "y" n 0 "z" n 0 "velocity" o 3 "x" n 0 "y" n 0 "z" n 0 "state" n 2 "is_on_ground" b 1
+fx put "e2" o 10 "id" s "e2" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 80 "y" n 0 "z" n 0 "velocity" o 3 "x" n 10 "y" n 0 "z" n 0 "state" n 3 "is_on_ground" b 1 "itr" a 1 o 3 "kind" n 0 "vrest" n 0 "bdefend" n 5
+fx put "e3" o 10 "id" s "e3" "data" o 2 "type" n 16 "base" o 1 "type" n 2 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 70 "y" n 0 "z" n 0 "velocity" o 3 "x" n 5 "y" n 0 "z" n 0 "state" n 2000 "is_on_ground" b 1 "itr" a 1 o 3 "kind" n 0 "vrest" n 0 "bdefend" n 200
+fx put "e4" o 9 "id" s "e4" "data" o 1 "type" n 8 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 60 "y" n 0 "z" n 0 "velocity" o 3 "x" n 0 "y" n 0 "z" n 0 "state" n 14 "is_on_ground" b 1
+fx put "e5" o 9 "id" s "e5" "data" o 2 "type" n 16 "base" o 1 "type" n 5 "mounted" b 1 "hp" n 50 "team" s "t2" "position" o 3 "x" n 40 "y" n 0 "z" n 0 "velocity" o 3 "x" n 0 "y" n 0 "z" n 0 "state" n 1004 "is_on_ground" b 1
 should_chase "e1"
 should_avoid "e1"
 should_defend "e1"
@@ -76,7 +76,7 @@ should_chase "e4"
 lookup "e1"
 ntsnap ch
 # 持握物的 data.base.w_atk_m_x / w_atk_r_x 必须各读各的
-fx put "h1" o 3 "id" s "h1" "data" o 2 "type" n 16 "base" o 3 "type" n 2 "w_atk_m_x" n 7 "w_atk_r_x" n 9 "position" o 2 "x" n 0 "z" n 0
+fx put "h1" o 3 "id" s "h1" "data" o 2 "type" n 16 "base" o 3 "type" n 2 "w_atk_m_x" n 7 "w_atk_r_x" n 9 "position" o 3 "x" n 0 "y" n 0 "z" n 0
 meref holding "h1"
 get w_atk_m_x
 get w_atk_r_x

@@ -10,9 +10,11 @@
 #include "lfw/base/expression.h"
 #include "lfw/bot/bot_env.h"
 #include "lfw/bot/is_ray_hit.h"
-#include "lfw/entity/entity.h"
 #include "lfw/bot/state/bot_state_keys.h"
 #include "lfw/core/js_string.h"
+#include "lfw/core/same_ref.h"
+#include "lfw/entity/entity.h"
+#include "lfw/entity/entity_ref.h"
 #include "lfw/defines/defines_data.h"
 #include "lfw/defines/difficulty.h"
 #include "lfw/defines/entity_enum.h"
@@ -22,7 +24,6 @@
 #include "lfw/defines/state_enum.h"
 #include "lfw/defines/weapon_type.h"
 #include "lfw/entity/entity_type_check.h"
-#include "lfw/helper/closer_one.h"
 #include "lfw/helper/manhattan_xz.h"
 #include "lfw/loader/get_val_from_bot_ctrl.h"
 #include "lfw/utils/container_help/field_or.h"
@@ -107,11 +108,11 @@ bool has_length(const Value& v) {
   return false;
 }
 
-std::u16string join_ids(const std::vector<BotTarget>& targets) {
+std::u16string join_ids(const std::vector<const Entity*>& targets) {
   std::u16string out;
   for (size_t i = 0; i < targets.size(); ++i) {
     if (i != 0) out += u",";
-    out += to_string(Value(targets[i].entity.id()));
+    out += to_string(Value(targets[i]->id));
   }
   return out;
 }
@@ -125,23 +126,12 @@ std::u16string trim_js(const std::u16string& s) {
   return s.substr(b, e - b);
 }
 
-// `closer_one(self, l, r)` 的句柄版：自身是真实体时距离活读，否则退回引用投影。
-TargetHandle closer_of(const Entity* const self_e, const Value& self, const TargetHandle& t1,
-                       const TargetHandle& t2) {
-  auto dist = [&](const TargetHandle& t) {
-    const Entity* const live = t.entity();
-    if (self_e != nullptr) {
-      return live != nullptr ? helper::manhattan_xz(*self_e, *live)
-                             : helper::manhattan_xz(*self_e, t.ref());
-    }
-    return helper::manhattan_xz(self, t.ref());
-  };
-  const bool has1 = !t1.nullish();
-  const bool has2 = !t2.nullish();
-  if (has1 && has2) return dist(t1) > dist(t2) ? t2 : t1;
-  if (has1) return t1;
-  if (has2) return t2;
-  return TargetHandle();
+// `closer_one(self, l, r)`：三个都是实体，距离活读。
+const Entity* closer_of(const Entity& self, const Entity* t1, const Entity* t2) {
+  if (t1 != nullptr && t2 != nullptr) {
+    return helper::manhattan_xz(self, *t1) > helper::manhattan_xz(self, *t2) ? t2 : t1;
+  }
+  return t1 != nullptr ? t1 : t2;
 }
 
 }  // namespace
@@ -169,8 +159,8 @@ BotController::BotController()
       dead_(*this) {
   // TS 的字段初值：`goingto` / `following` / `watching` 都是 `null`（不是 `undefined`）。
   goingto = Value(NullTag{});
-  following = TargetHandle();
-  watching = TargetHandle();
+  following = nullptr;
+  watching = nullptr;
   idle_init_pending_ = true;
   fsm.add(&idle_, &chasing_, &avoiding_, &following_state_, &stage_end_, &dead_);
   // `this.fsm.reset(BSE.Idle)` 推迟到 env 就绪（见头文件注释）。
@@ -191,8 +181,8 @@ void BotController::reset() {
   avoidings.clear();
   defends.clear();
   goingto = Value(NullTag{});
-  following = TargetHandle();
-  watching = TargetHandle();
+  following = nullptr;
+  watching = nullptr;
   behavior = BotBehavior::Move;
   en_out_of_range = false;
   idle_min_x = -kMaxSafeInteger;
@@ -219,21 +209,12 @@ Value BotController::self_ref() const {
   return e != nullptr ? self_ref_of_env(*e) : Value();
 }
 
-void BotController::look_target(NearestTargets& nt, const Value& other_ref,
-                                const Value& defendable) {
-  if (const Entity* const self = self_entity()) {
-    nt.look(*self, other_ref, defendable);
-    return;
-  }
-  nt.look(self_ref(), other_ref, defendable);
+void BotController::look_target(NearestTargets& nt, const Entity& other) {
+  if (const Entity* const self = self_entity()) nt.look(*self, other);
 }
 
 void BotController::sort_targets(NearestTargets& nt) {
-  if (const Entity* const self = self_entity()) {
-    nt.sort(*self);
-    return;
-  }
-  nt.sort(self_ref());
+  if (const Entity* const self = self_entity()) nt.sort(*self);
 }
 
 double BotController::difficulty() const {
@@ -253,13 +234,13 @@ const std::u16string& BotController::team() const {
 }
 
 Value BotController::en() const {
-  const BotTarget* t = chasings.get();
-  return t != nullptr ? t->entity.ref() : Value();
+  const Entity* const t = chasings.get();
+  return t != nullptr ? ref_of(*t) : Value();
 }
 
 Value BotController::av() const {
-  const BotTarget* t = avoidings.get();
-  return t != nullptr ? t->entity.ref() : Value();
+  const Entity* const t = avoidings.get();
+  return t != nullptr ? ref_of(*t) : Value();
 }
 
 Value BotController::bot_state() const {
@@ -377,8 +358,8 @@ double BotController::j_atk_x() const {
 double BotController::w_atk_m_x() const {
   const controller::CtrlEnv* e = env();
   Value v;
-  if (e != nullptr && !e->holding.nullish()) {
-    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_m_x");
+  if (e != nullptr && e->holding != nullptr) {
+    v = field_or(field_or(field_or(ref_of(*e->holding), u"data"), u"base"), u"w_atk_m_x");
   }
   return to_number(or_nullish(v, Value(dataset.num(u"w_atk_m_x"))));
 }
@@ -386,8 +367,8 @@ double BotController::w_atk_m_x() const {
 double BotController::w_atk_r_x() const {
   const controller::CtrlEnv* e = env();
   Value v;
-  if (e != nullptr && !e->holding.nullish()) {
-    v = field_or(field_or(field_or(e->holding.ref(), u"data"), u"base"), u"w_atk_r_x");
+  if (e != nullptr && e->holding != nullptr) {
+    v = field_or(field_or(field_or(ref_of(*e->holding), u"data"), u"base"), u"w_atk_r_x");
   }
   return to_number(or_nullish(v, Value(dataset.num(u"w_atk_r_x"))));
 }
@@ -505,7 +486,8 @@ double BotController::should_run(const std::u16string& where, const Value& targe
 
 // `this.following?.position ?? this.goingto`
 Value follow_position(const BotController& c) {
-  const Value pos = !c.following.nullish() ? field_or(c.following.ref(), u"position") : Value();
+  const Value pos =
+      c.following != nullptr ? field_or(ref_of(*c.following), u"position") : Value();
   return nullish(pos) ? c.goingto : pos;
 }
 
@@ -580,16 +562,17 @@ bool BotController::is_leave_chase_range(const Value& target_ref) const {
   return !(between(x, bound_l, bound_r) && between(z, bound_t, bound_b));
 }
 
-bool BotController::should_chase(const Value& e_ref) {
+bool BotController::should_chase(const Entity& e_handle) {
   const controller::CtrlEnv* e = env();
   if (e == nullptr) return false;
-  if (!e->catching.nullish()) return e->catching.same(TargetHandle::of(e_ref));
+  const Value e_ref = ref_of(e_handle);
+  if (e->catching != nullptr) return e->catching == &e_handle;
 
   // 正在注视的对象已失效（死亡/消失/回到可追击范围）时置空
-  if (watching.same(TargetHandle::of(e_ref)) && truthy(e_ref)) {
+  if (watching == &e_handle && truthy(e_ref)) {
     if (!truthy(field_or(e_ref, u"mounted")) || ref_hp(e_ref) <= 0 ||
         !is_leave_chase_range(e_ref)) {
-      watching = TargetHandle();
+      watching = nullptr;
     }
   }
 
@@ -598,9 +581,9 @@ bool BotController::should_chase(const Value& e_ref) {
   if (e->hp <= 0) return false;
   if (ref_hp(e_ref) <= 0) return false;
   if (equals(bot_ignore_of_ref(e_ref), Value(1.0))) return false;
-  if (!e->holding.nullish() && e->holding.same(TargetHandle::of(e_ref))) return false;
-  if (!e->catching.nullish() && e->catching.same(TargetHandle::of(e_ref))) return true;
-  if (!e->catching.nullish() && ref_hp(e->catching.ref()) > 0) return false;
+  if (e->holding == &e_handle) return false;
+  if (e->catching == &e_handle) return true;
+  if (e->catching != nullptr && ref_hp(ref_of(*e->catching)) > 0) return false;
 
   const double en_x = ref_x(e_ref);
   const double player_l = stage_player_l();
@@ -629,7 +612,7 @@ bool BotController::should_chase(const Value& e_ref) {
         strict_equals(base_type_of_ref(e_ref), Value(static_cast<double>(WeaponEnum::Drink)))) {
       return false;
     }
-    if (!e->holding.nullish()) return false;
+    if (e->holding != nullptr) return false;
     if (is_leave_goto_range(e_ref)) return false;
     do {
       // 队友Bot尽量不喝
@@ -659,7 +642,7 @@ bool BotController::should_chase(const Value& e_ref) {
   if (!e->is_on_ground) return true;
 
   if (is_leave_chase_range(e_ref)) {
-    watching = TargetHandle::of(e_ref);
+    watching = &e_handle;
     return false;
   }
   if (strict_equals(bot_state(), Value(std::u16string(bse::kAvoiding)))) {
@@ -669,15 +652,16 @@ bool BotController::should_chase(const Value& e_ref) {
   return !w_atk_too_close(e_ref) || !can_back_off(e_ref);
 }
 
-bool BotController::should_avoid(const Value& av_ref) {
+bool BotController::should_avoid(const Entity& av_handle) {
   const controller::CtrlEnv* e = env();
   if (e == nullptr) return false;
   if (!e->mounted) return false;
+  const Value av_ref = ref_of(av_handle);
   if (!truthy(field_or(av_ref, u"mounted"))) return false;
   if (e->hp <= 0) return false;
   if (ref_hp(av_ref) <= 0) return false;
-  if (!e->holding.nullish() && e->holding.same(TargetHandle::of(av_ref))) return false;
-  if (!e->catching.nullish() && e->catching.same(TargetHandle::of(av_ref))) return false;
+  if (e->holding == &av_handle) return false;
+  if (e->catching == &av_handle) return false;
   const bool avoiding = strict_equals(bot_state(), Value(std::u16string(bse::kAvoiding)));
   const bool ret = avoiding ? !is_leave_avoid_zone(av_ref) : is_enter_avoid_zone(av_ref);
 
@@ -718,10 +702,11 @@ bool BotController::is_enter_avoid_zone(const Value& target_ref) const {
   return abs_x < avoid_in_x && abs_z < avoid_in_z;
 }
 
-int BotController::should_defend(const Value& e_ref) {
+int BotController::should_defend(const Entity& e_handle) {
   const controller::CtrlEnv* e = env();
   if (e == nullptr) return 0;
   if (!e->mounted) return 0;
+  const Value e_ref = ref_of(e_handle);
   if (!truthy(field_or(e_ref, u"mounted"))) return 0;
   if (truthy(field_or(e_ref, u"invisible")) || e->toughness != 0 || e->invulnerable) return 0;
 
@@ -767,10 +752,9 @@ int BotController::should_defend(const Value& e_ref) {
     o.set(u"max_z", Value(max(abs(10 * vz), 2 * q)));
     return Value(std::make_shared<Object>(o));
   }();
-  Entity* const target = env() != nullptr && env()->resolve ? env()->resolve(e_ref) : nullptr;
   Entity* const self = self_entity();
-  if (target == nullptr || self == nullptr) return 0;
-  const Value hit = is_ray_hit(*target, *self, ray);
+  if (self == nullptr) return 0;
+  const Value hit = is_ray_hit(e_handle, *self, ray);
   if (!truthy(hit)) return 0;
 
   const Value itrs = field_or(field_or(e_ref, u"frame"), u"itr");
@@ -800,58 +784,58 @@ int BotController::should_defend(const Value& e_ref) {
   return 1;
 }
 
-void BotController::lookup(const TargetHandle& other) {
+void BotController::lookup(const Entity& other) {
   const controller::CtrlEnv* e = env();
   if (e == nullptr) return;
-  const Value& other_ref = other.ref();
+  const Value other_ref = ref_of(other);
   if (!e->mounted || !truthy(field_or(other_ref, u"mounted"))) {
     avoidings.clear();
     chasings.clear();
     defends.clear();
-    if (other.same(watching)) watching = TargetHandle();
+    if (watching == &other) watching = nullptr;
     return;
   }
   if (entity::is_fighter(other_ref)) {
     if (equals(Value(e->team), field_or(other_ref, u"team"))) return;
-    if (should_avoid(other_ref)) {
-      look_target(avoidings, other_ref);
+    if (should_avoid(other)) {
+      look_target(avoidings, other);
       return;
     }
-    const int dd = should_defend(other_ref);
+    const int dd = should_defend(other);
     if (dd != 0) {
-      look_target(defends, other_ref, Value(static_cast<double>(dd)));
+      look_target(defends, other);
       return;
     }
-    if (should_chase(other_ref)) {
-      look_target(chasings, other_ref);
+    if (should_chase(other)) {
+      look_target(chasings, other);
       return;
     }
   } else if (entity::is_weapon(other_ref)) {
-    if (should_chase(other_ref)) {
-      look_target(chasings, other_ref);
+    if (should_chase(other)) {
+      look_target(chasings, other);
       return;
     }
     if (equals(Value(e->team), field_or(other_ref, u"team"))) return;
-    const int dd = should_defend(other_ref);
+    const int dd = should_defend(other);
     if (dd != 0) {
-      look_target(defends, other_ref, Value(static_cast<double>(dd)));
+      look_target(defends, other);
       return;
     }
   } else if (entity::is_ball(other_ref)) {
     if (equals(Value(e->team), field_or(other_ref, u"team"))) return;
-    const int dd = should_defend(other_ref);
+    const int dd = should_defend(other);
     if (dd != 0) {
-      look_target(defends, other_ref, Value(static_cast<double>(dd)));
+      look_target(defends, other);
       return;
     }
   } else if (strict_equals(field_or(field_or(other_ref, u"data"), u"id"),
                            Value(std::u16string(oid::kCriminal))) &&
              !equals(Value(e->team), stage_value(u"team")) && !has_players_alive()) {
-    look_target(chasings, other_ref);
+    look_target(chasings, other);
   } else {
-    avoidings.del([&](const BotTarget& t) { return t.entity.same(other); });
-    chasings.del([&](const BotTarget& t) { return t.entity.same(other); });
-    defends.del([&](const BotTarget& t) { return t.entity.same(other); });
+    avoidings.del([&](const Entity& t) { return &t == &other; });
+    chasings.del([&](const Entity& t) { return &t == &other; });
+    defends.del([&](const Entity& t) { return &t == &other; });
   }
 }
 
@@ -985,11 +969,10 @@ Value BotController::handle_action(const std::u16string& where, const Value& act
 
   const Value e_ray = field_or(action, u"e_ray");
   if (truthy(e_ray)) {
-    const Value en_ref = en();
-    if (!truthy(en_ref) || !entity::is_fighter(en_ref)) return Value(false);
+    const Entity* const en_e = chasings.get();
+    if (en_e == nullptr || !entity::is_fighter(ref_of(*en_e))) return Value(false);
     Entity* const self_e = self_entity();
-    Entity* const en_e = env() != nullptr && env()->resolve ? env()->resolve(en_ref) : nullptr;
-    if (self_e == nullptr || en_e == nullptr) return Value(false);
+    if (self_e == nullptr) return Value(false);
     bool ray_hit = false;
     if (const Array* rays = as_array(e_ray)) {
       for (const Value& r : rays->items()) {
@@ -1023,18 +1006,16 @@ Value BotController::handle_action(const std::u16string& where, const Value& act
   return Value(false);
 }
 
-void BotController::follow(const TargetHandle& e_ref) {
-  following = e_ref;
+void BotController::follow(const Entity& e_ref) {
+  following = &e_ref;
   goingto = Value(NullTag{});
   behavior = BotBehavior::Move;
 }
 
-void BotController::follow(const Entity& e_ref) { follow(TargetHandle::of(e_ref)); }
-
 void BotController::move() {
   behavior = BotBehavior::Move;
   goingto = Value(NullTag{});
-  following = TargetHandle();
+  following = nullptr;
 }
 
 void BotController::stay() {
@@ -1047,7 +1028,7 @@ void BotController::stay() {
     o.set(u"z", Value(e != nullptr ? e->pz : 0.0));
     goingto = Value(std::make_shared<Object>(o));
   }
-  following = TargetHandle();
+  following = nullptr;
 }
 
 void BotController::come(double x, double y, double z) {
@@ -1056,7 +1037,7 @@ void BotController::come(double x, double y, double z) {
   o.set(u"y", Value(y));
   o.set(u"z", Value(z));
   goingto = Value(std::make_shared<Object>(o));
-  following = TargetHandle();
+  following = nullptr;
 }
 
 void BotController::_case(const std::u16string& mark, const std::vector<Value>& args) {
@@ -1097,25 +1078,27 @@ const controller::ControllerResult& BotController::update() {
     _case(u"bot_update_" + e->id + u"_" + to_string(e->name));
   }
   check_bot();
-  if (!watching.nullish() && to_number(field_or(watching.ref(), u"mounted")) == 0) {
-    watching = TargetHandle();
+  // `following` / `watching` 都是实体指针：每帧现读，不会是「第一次看到的坐标」。
+  if (watching != nullptr && to_number(field_or(ref_of(*watching), u"mounted")) == 0) {
+    watching = nullptr;
   }
   if (truthy(dummy)) {
     dummy_update(dummy, *this);
   } else {
     if (e != nullptr && e->hp > 0) {
       const bool fol_mounted =
-          !following.nullish() && truthy(field_or(following.ref(), u"mounted"));
-      const double fol_hp = to_number(field_or(following.ref(), u"hp"));
-      if (!fol_mounted || fol_hp <= 0) following = TargetHandle();
-      chasings.del([this](const BotTarget& t) { return !should_chase(t.entity.ref()); });
+          following != nullptr && truthy(field_or(ref_of(*following), u"mounted"));
+      const double fol_hp =
+          following != nullptr ? to_number(field_or(ref_of(*following), u"hp")) : 0.0;
+      if (!fol_mounted || fol_hp <= 0) following = nullptr;
+      chasings.del([this](const Entity& t) { return !should_chase(t); });
       sort_targets(chasings);
-      avoidings.del([this](const BotTarget& t) { return !should_avoid(t.entity.ref()); });
+      avoidings.del([this](const Entity& t) { return !should_avoid(t); });
       sort_targets(avoidings);
-      defends.del([this](const BotTarget& t) { return 1 != should_defend(t.entity.ref()); });
+      defends.del([this](const Entity& t) { return 1 != should_defend(t); });
       sort_targets(defends);
     } else {
-      following = TargetHandle();
+      following = nullptr;
       chasings.clear();
       avoidings.clear();
       defends.clear();
@@ -1128,9 +1111,9 @@ const controller::ControllerResult& BotController::update() {
   }
   const controller::ControllerResult& ret = BaseController::update();
   if (m != nullptr && m->debugging) {
-    const std::vector<BotTarget>& a = avoidings.targets();
-    const std::vector<BotTarget>& c = chasings.targets();
-    const std::vector<BotTarget>& d = defends.targets();
+    const std::vector<const Entity*>& a = avoidings.targets();
+    const std::vector<const Entity*>& c = chasings.targets();
+    const std::vector<const Entity*>& d = defends.targets();
     // TS 的 `'' + + `${a…}` + `${c…}` + `${d…}``：一元的 `+` 把**第一段**化了数
     // （空串 → `0`、否则 `NaN`）⇒ 前缀是 `"0"` / `"NaN"`，这里照抄。
     const std::u16string a_str = !a.empty() ? u"a=[" + join_ids(a) + u"] " : std::u16string();
@@ -1161,38 +1144,32 @@ double BotController::target_dist_bound() const {
       defends.targets().size() < static_cast<size_t>(defends.max())) {
     return std::numeric_limits<double>::infinity();
   }
+  const Entity* const self_e = self_entity();
+  if (self_e == nullptr) return std::numeric_limits<double>::infinity();
+  const auto distance_of = [self_e](const Entity* t) {
+    return helper::manhattan_xz(*self_e, *t);
+  };
   double m = -1;
-  for (const BotTarget& t : chasings.targets()) {
-    if (t.distance > m) m = t.distance;
+  for (const Entity* t : chasings.targets()) {
+    const double d = distance_of(t);
+    if (d > m) m = d;
   }
-  for (const BotTarget& t : avoidings.targets()) {
-    if (t.distance > m) m = t.distance;
+  for (const Entity* t : avoidings.targets()) {
+    const double d = distance_of(t);
+    if (d > m) m = d;
   }
-  for (const BotTarget& t : defends.targets()) {
-    if (t.distance > m) m = t.distance;
+  for (const Entity* t : defends.targets()) {
+    const double d = distance_of(t);
+    if (d > m) m = d;
   }
   return m;
 }
 
 void BotController::update_lookup(int me, const std::vector<Entity*>& entities) {
-  std::vector<TargetHandle> list;
-  list.reserve(entities.size());
-  for (Entity* const e : entities) {
-    list.push_back(e != nullptr ? TargetHandle::of(*e) : TargetHandle());
-  }
-  update_lookup(me, list);
-}
-
-void BotController::update_lookup(int me, const std::vector<Value>& entities) {
-  std::vector<TargetHandle> list;
-  list.reserve(entities.size());
-  for (const Value& v : entities) list.push_back(TargetHandle::of(v));
-  update_lookup(me, list);
-}
-
-void BotController::update_lookup(int me, const std::vector<TargetHandle>& entities) {
   const controller::CtrlEnv* e = env();
   if (e == nullptr) return;
+  const Entity* const self_e = self_entity();
+  if (self_e == nullptr) return;
   const double x0 = e->px;
   int i1 = me - 1;
   int i2 = me + 1;
@@ -1200,20 +1177,18 @@ void BotController::update_lookup(int me, const std::vector<TargetHandle>& entit
   const double bound = target_dist_bound();
   const bool prune = bound != std::numeric_limits<double>::infinity();
 
-  const Entity* const self_e = self_entity();
-  const Value self = self_e != nullptr ? Value() : self_ref();
   while (i1 >= 0 || i2 < len) {
-    TargetHandle l = (i1 >= 0 && i1 < len) ? entities[static_cast<size_t>(i1)] : TargetHandle();
-    TargetHandle r = (i2 >= 0 && i2 < len) ? entities[static_cast<size_t>(i2)] : TargetHandle();
+    const Entity* l = (i1 >= 0 && i1 < len) ? entities[static_cast<size_t>(i1)] : nullptr;
+    const Entity* r = (i2 >= 0 && i2 < len) ? entities[static_cast<size_t>(i2)] : nullptr;
     if (prune) {
-      if (!l.nullish() && x0 - l.x() > bound) l = TargetHandle();
-      if (!r.nullish() && r.x() - x0 > bound) r = TargetHandle();
+      if (l != nullptr && x0 - l->position.x > bound) l = nullptr;
+      if (r != nullptr && r->position.x - x0 > bound) r = nullptr;
     }
-    const TargetHandle picked = closer_of(self_e, self, l, r);
-    if (picked.nullish()) break;
-    if (!truthy(field_or(picked.ref(), u"ghosted"))) lookup(picked);
-    const bool adv_l = l.same(picked);
-    const bool adv_r = r.same(picked);
+    const Entity* const picked = closer_of(*self_e, l, r);
+    if (picked == nullptr) break;
+    if (!truthy(field_or(ref_of(*picked), u"ghosted"))) lookup(*picked);
+    const bool adv_l = l == picked;
+    const bool adv_r = r == picked;
     if (adv_l) --i1;
     if (adv_r) ++i2;
     // 两侧都没推进就没有下一轮可看（见 `BallController::update_lookup` 的同款守卫）。

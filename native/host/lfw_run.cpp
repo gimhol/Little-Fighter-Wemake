@@ -32,6 +32,7 @@
 #include "lfw/defines/defines_data.h"
 #include "lfw/defines/facing_flag.h"
 #include "lfw/entity/entity_ref.h"
+#include "lfw/helper/manhattan_xz.h"
 #include "lfw/lfw.h"
 #include "lfw/stage/stage.h"
 #include "lfw/ui/uilayer.h"
@@ -586,12 +587,14 @@ int main(int argc, char** argv) {
       std::printf("[  state]");
       for (Entity* const e : world.entities) {
         if (e == nullptr) continue;
-        std::printf(" %s{state=%s frame=%s x=%.1f y=%.1f hp=%.0f bot=%d m=%d g=%d}",
-                    to_utf8(e->id).c_str(),
-                    to_utf8(lfw::to_string(e->state())).c_str(),
-                    to_utf8(lfw::to_string(e->frame_id())).c_str(), e->position.x, e->position.y,
-                    e->hp(), e->ctrl_is_bot() ? 1 : 0, lfw::truthy(Value(e->mounted())) ? 1 : 0,
-                    lfw::truthy(Value(e->ghosted())) ? 1 : 0);
+        std::printf(
+            " %s{state=%s frame=%s x=%.1f y=%.1f f=%.0f hp=%.0f bot=%d m=%d g=%d h=%s/%s}",
+            to_utf8(e->id).c_str(), to_utf8(lfw::to_string(e->state())).c_str(),
+            to_utf8(lfw::to_string(e->frame_id())).c_str(), e->position.x, e->position.y, e->facing,
+            e->hp(), e->ctrl_is_bot() ? 1 : 0, lfw::truthy(Value(e->mounted())) ? 1 : 0,
+            lfw::truthy(Value(e->ghosted())) ? 1 : 0,
+            e->holding != nullptr ? to_utf8(e->holding->id).c_str() : "-",
+            to_utf8(lfw::to_string(e->holding_base_type())).c_str());
       }
       if (const lfw::Background* const bg = world.bg()) {
         std::printf(" | bg{update_times=%.1f layer_data_index=%.1f left=%.1f right=%.1f}",
@@ -604,8 +607,8 @@ int main(int argc, char** argv) {
         if (e == nullptr || !e->ctrl_is_bot()) continue;
         lfw::bot::BotController* const bc = static_cast<lfw::bot::BotController*>(e->ctrl());
         if (bc == nullptr) continue;
-        const lfw::bot::BotTarget* const ch = bc->chasings.get();
-        const lfw::bot::BotTarget* const av = bc->avoidings.get();
+        const lfw::Entity* const ch = bc->chasings.get();
+        const lfw::Entity* const av = bc->avoidings.get();
         std::printf(" %s{behavior=%s dummy=%s has_bot=%d n_chase=%zu n_avoid=%zu n_defend=%zu",
                     to_utf8(e->id).c_str(),
                     to_utf8(lfw::bot::bot_behavior_name(bc->behavior)).c_str(),
@@ -613,18 +616,18 @@ int main(int argc, char** argv) {
                     lfw::truthy(bc->bot) ? 1 : 0, bc->chasings.targets().size(),
                     bc->avoidings.targets().size(), bc->defends.targets().size());
         if (ch != nullptr) {
-          std::printf(" chase=%s@%.1f", to_utf8(lfw::to_string(lfw::Value(ch->entity.id()))).c_str(),
-                      ch->distance);
+          std::printf(" chase=%s@%.1f", to_utf8(ch->id).c_str(),
+                      lfw::helper::manhattan_xz(*e, *ch));
         }
         if (av != nullptr) {
-          std::printf(" avoid=%s@%.1f", to_utf8(lfw::to_string(lfw::Value(av->entity.id()))).c_str(),
-                      av->distance);
+          std::printf(" avoid=%s@%.1f", to_utf8(av->id).c_str(),
+                      lfw::helper::manhattan_xz(*e, *av));
         }
         for (Entity* const o : world.entities) {
           if (o == nullptr || o == e) continue;
           const Value o_ref = lfw::ref_of(*o);
           std::printf(" |chase?(%s)=%d,leave=%d,back_off=%d,cornered=%d", to_utf8(o->id).c_str(),
-                      bc->should_chase(o_ref) ? 1 : 0, bc->is_leave_chase_range(o_ref) ? 1 : 0,
+                      bc->should_chase(*o) ? 1 : 0, bc->is_leave_chase_range(o_ref) ? 1 : 0,
                       bc->can_back_off(o_ref) ? 1 : 0, bc->cornered(o_ref) ? 1 : 0);
         }
         std::printf("}");

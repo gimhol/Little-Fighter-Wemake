@@ -110,9 +110,9 @@ nt look nself zero p1
 nt look nself me p1
 nt look nself me p1
 nt new nd n 3
-nt look nd me p1 n 5
-nt look nd me p2 u
-nt look nd me p3 n -1.5
+nt look nd me p1
+nt look nd me p2
+nt look nd me p3
 nt new n3 n 3
 nt look n3 me t1
 nt look n3 me t2
