@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<directors id="football" name="Football">
+  <director name="Football Field 100 Fighters (50 v 50)" bg="football_field">
+    <actors>
+      <actor id="t1_r1" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2" z="far + depth / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t1_r2" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2" z="far + depth * 3 / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t1_r3" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2" z="far + depth / 2" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t1_r4" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2" z="far + depth * 7 / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t1_r5" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2" z="far + depth * 9 / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t2_r1" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t2_r2" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth * 3 / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t2_r3" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth / 2" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t2_r4" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth * 7 / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+      <actor id="t2_r5" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth * 9 / 10" length="midX - 320" />
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </actor>
+    </actors>
+    <timeline>
+      <entry repeat="99999" interval="1500">
+        <input target="@team1" click="a" />
+        <input target="@team2" click="a" />
+      </entry>
+    </timeline>
+  </director>
+</directors>

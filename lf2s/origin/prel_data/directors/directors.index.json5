@@ -84,6 +84,11 @@
       "id": "books",
       "name": "Books",
       "file": "directors/16_books.director.xml"
+    },
+    {
+      "id": "football",
+      "name": "Football",
+      "file": "directors/17_football.director.xml"
     }
   ]
 }
