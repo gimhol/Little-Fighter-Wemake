@@ -2,127 +2,209 @@
 <directors id="football" name="Football">
   <director name="Football Field 100 Fighters (50 v 50)" platform="godot" bg="football_field">
     <actors>
-      <actor id="t1_r1" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
-        <layout type="line" axis="x" x="midX / 2" z="far + depth / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="1" />
-          <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_1" oid="bandit,davis,jack,dennis" count="4" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 - 660" z="far + depth * 60 / 1000" length="520" />
       </actor>
-      <actor id="t1_r2" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
-        <layout type="line" axis="x" x="midX / 2" z="far + depth * 3 / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="1" />
-          <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_2" oid="bandit,deep,john,henry,bandit,rudolf" count="6" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 + 200" z="far + depth * 120 / 1000" rx="270" rz="113" />
       </actor>
-      <actor id="t1_r3" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
-        <layout type="line" axis="x" x="midX / 2" z="far + depth / 2" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="1" />
-          <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_3" oid="jack,mark,bandit,bat" count="4" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 430" z="far + depth * 225 / 1000" rx="210" rz="88" />
       </actor>
-      <actor id="t1_r4" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
-        <layout type="line" axis="x" x="midX / 2" z="far + depth * 7 / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="1" />
-          <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_4" oid="bandit,davis,jack,dennis" count="4" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 + 560" z="far + depth * 310 / 1000" length="460" />
       </actor>
-      <actor id="t1_r5" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
-        <layout type="line" axis="x" x="midX / 2" z="far + depth * 9 / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="1" />
-          <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_5" oid="bandit,deep,john,henry,bandit,rudolf,jack,mark" count="8" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 + 20" z="far + depth * 420 / 1000" rx="320" rz="134" />
       </actor>
-      <actor id="t2_r1" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
-        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="2" />
-          <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_6" oid="bandit,bat,bandit,davis,jack" count="5" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 610" z="far + depth * 530 / 1000" rx="240" rz="101" />
       </actor>
-      <actor id="t2_r2" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
-        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth * 3 / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="2" />
-          <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_7" oid="dennis,bandit,deep" count="3" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 + 700" z="far + depth * 605 / 1000" length="400" />
       </actor>
-      <actor id="t2_r3" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
-        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth / 2" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="2" />
-          <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_8" oid="john,henry,bandit,rudolf,jack,mark" count="6" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 150" z="far + depth * 700 / 1000" rx="300" rz="126" />
       </actor>
-      <actor id="t2_r4" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
-        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth * 7 / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="2" />
-          <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_9" oid="bandit,bat,bandit,davis" count="4" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 540" z="far + depth * 800 / 1000" rx="230" rz="97" />
       </actor>
-      <actor id="t2_r5" oid="firen,freeze,firzen,julian,jan,louis,hunter,justin,knight,template" count="10" ctrl="bot" group="team2" player_id="$new_id">
-        <layout type="line" axis="x" x="midX + midX / 2" z="far + depth * 9 / 10" length="midX - 320" />
-        <values>
-          <value name="team" type="str" value="2" />
-          <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
-          <value name="stat_bar" type="num" value="0" />
-        </values>
+      <actor id="t1_10" oid="jack" count="1" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="point" x="midX / 2 + 340" z="far + depth * 880 / 1000" />
+      </actor>
+      <actor id="t1_11" oid="dennis,bandit,deep,john" count="4" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 + 340" z="far + depth * 470 / 1000" length="380" />
+      </actor>
+      <actor id="t1_12" oid="henry" count="1" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="point" x="midX / 2 - 260" z="far + depth * 960 / 1000" />
+      </actor>
+      <actor id="t2_1" oid="freeze,hunter,louis,firzen" count="4" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 610" z="far + depth * 530 / 1000" rx="240" rz="101" />
+      </actor>
+      <actor id="t2_2" oid="julian,hunter,justin,template,knight,hunter" count="6" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 - 700" z="far + depth * 605 / 1000" length="400" />
+      </actor>
+      <actor id="t2_3" oid="jan,hunter,firen,template" count="4" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 150" z="far + depth * 700 / 1000" rx="300" rz="126" />
+      </actor>
+      <actor id="t2_4" oid="freeze,hunter,louis,firzen" count="4" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 540" z="far + depth * 800 / 1000" rx="230" rz="97" />
+      </actor>
+      <actor id="t2_5" oid="julian,hunter,justin,template,knight,hunter,jan,hunter" count="8" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="point" x="midX + midX / 2 - 340" z="far + depth * 880 / 1000" />
+      </actor>
+      <actor id="t2_6" oid="firen,template,freeze,hunter,louis" count="5" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 - 340" z="far + depth * 470 / 1000" length="380" />
+      </actor>
+      <actor id="t2_7" oid="firzen,julian,hunter" count="3" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="point" x="midX + midX / 2 + 260" z="far + depth * 960 / 1000" />
+      </actor>
+      <actor id="t2_8" oid="justin,template,knight,hunter,jan,hunter" count="6" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 + 660" z="far + depth * 60 / 1000" length="520" />
+      </actor>
+      <actor id="t2_9" oid="firen,template,freeze,hunter" count="4" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 - 200" z="far + depth * 120 / 1000" rx="270" rz="113" />
+      </actor>
+      <actor id="t2_10" oid="louis" count="1" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 430" z="far + depth * 225 / 1000" rx="210" rz="88" />
+      </actor>
+      <actor id="t2_11" oid="firzen,julian,hunter,justin" count="4" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 - 560" z="far + depth * 310 / 1000" length="460" />
+      </actor>
+      <actor id="t2_12" oid="template" count="1" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 - 20" z="far + depth * 420 / 1000" rx="320" rz="134" />
       </actor>
     </actors>
+    <setup>
+      <set target="@team1">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </set>
+      <set target="@team2">
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </set>
+    </setup>
+    <timeline>
+      <entry repeat="99999" interval="1500">
+        <input target="@team1" click="a" />
+        <input target="@team2" click="a" />
+      </entry>
+    </timeline>
+  </director>
+  <director name="Football Field 200 Fighters (100 v 100)" platform="godot" bg="football_field">
+    <actors>
+      <actor id="t1_1" oid="bandit,davis,jack,dennis,bandit,deep,john" count="7" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 - 660" z="far + depth * 60 / 1000" length="520" />
+      </actor>
+      <actor id="t1_2" oid="henry,bandit,rudolf,jack,mark,bandit,bat,bandit,davis,jack,dennis,bandit,deep" count="13" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 + 200" z="far + depth * 120 / 1000" rx="270" rz="113" />
+      </actor>
+      <actor id="t1_3" oid="john,henry,bandit,rudolf,jack,mark,bandit,bat,bandit" count="9" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 430" z="far + depth * 225 / 1000" rx="210" rz="88" />
+      </actor>
+      <actor id="t1_4" oid="davis,jack,dennis,bandit,deep,john,henry" count="7" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 + 560" z="far + depth * 310 / 1000" length="460" />
+      </actor>
+      <actor id="t1_5" oid="bandit,rudolf,jack,mark,bandit,bat,bandit,davis,jack,dennis,bandit,deep,john,henry,bandit,rudolf" count="16" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 + 20" z="far + depth * 420 / 1000" rx="320" rz="134" />
+      </actor>
+      <actor id="t1_6" oid="jack,mark,bandit,bat,bandit,davis,jack,dennis,bandit,deep,john" count="11" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 610" z="far + depth * 530 / 1000" rx="240" rz="101" />
+      </actor>
+      <actor id="t1_7" oid="henry,bandit,rudolf,jack,mark" count="5" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 + 700" z="far + depth * 605 / 1000" length="400" />
+      </actor>
+      <actor id="t1_8" oid="bandit,bat,bandit,davis,jack,dennis,bandit,deep,john,henry,bandit,rudolf" count="12" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 150" z="far + depth * 700 / 1000" rx="300" rz="126" />
+      </actor>
+      <actor id="t1_9" oid="jack,mark,bandit,bat,bandit,davis,jack,dennis,bandit" count="9" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="circle" x="midX / 2 - 540" z="far + depth * 800 / 1000" rx="230" rz="97" />
+      </actor>
+      <actor id="t1_10" oid="deep,john" count="2" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="point" x="midX / 2 + 340" z="far + depth * 880 / 1000" />
+      </actor>
+      <actor id="t1_11" oid="henry,bandit,rudolf,jack,mark,bandit,bat" count="7" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="line" axis="x" x="midX / 2 + 340" z="far + depth * 470 / 1000" length="380" />
+      </actor>
+      <actor id="t1_12" oid="bandit,davis" count="2" ctrl="bot" group="team1" player_id="$new_id">
+        <layout type="point" x="midX / 2 - 260" z="far + depth * 960 / 1000" />
+      </actor>
+      <actor id="t2_1" oid="freeze,hunter,louis,firzen,julian,hunter,justin" count="7" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 610" z="far + depth * 530 / 1000" rx="240" rz="101" />
+      </actor>
+      <actor id="t2_2" oid="template,knight,hunter,jan,hunter,firen,template,freeze,hunter,louis,firzen,julian,hunter" count="13" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 - 700" z="far + depth * 605 / 1000" length="400" />
+      </actor>
+      <actor id="t2_3" oid="justin,template,knight,hunter,jan,hunter,firen,template,freeze" count="9" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 150" z="far + depth * 700 / 1000" rx="300" rz="126" />
+      </actor>
+      <actor id="t2_4" oid="hunter,louis,firzen,julian,hunter,justin,template" count="7" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 540" z="far + depth * 800 / 1000" rx="230" rz="97" />
+      </actor>
+      <actor id="t2_5" oid="knight,hunter,jan,hunter,firen,template,freeze,hunter,louis,firzen,julian,hunter,justin,template,knight,hunter" count="16" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="point" x="midX + midX / 2 - 340" z="far + depth * 880 / 1000" />
+      </actor>
+      <actor id="t2_6" oid="jan,hunter,firen,template,freeze,hunter,louis,firzen,julian,hunter,justin" count="11" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 - 340" z="far + depth * 470 / 1000" length="380" />
+      </actor>
+      <actor id="t2_7" oid="template,knight,hunter,jan,hunter" count="5" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="point" x="midX + midX / 2 + 260" z="far + depth * 960 / 1000" />
+      </actor>
+      <actor id="t2_8" oid="firen,template,freeze,hunter,louis,firzen,julian,hunter,justin,template,knight,hunter" count="12" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 + 660" z="far + depth * 60 / 1000" length="520" />
+      </actor>
+      <actor id="t2_9" oid="jan,hunter,firen,template,freeze,hunter,louis,firzen,julian" count="9" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 - 200" z="far + depth * 120 / 1000" rx="270" rz="113" />
+      </actor>
+      <actor id="t2_10" oid="hunter,justin" count="2" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 + 430" z="far + depth * 225 / 1000" rx="210" rz="88" />
+      </actor>
+      <actor id="t2_11" oid="template,knight,hunter,jan,hunter,firen,template" count="7" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="line" axis="x" x="midX + midX / 2 - 560" z="far + depth * 310 / 1000" length="460" />
+      </actor>
+      <actor id="t2_12" oid="freeze,hunter" count="2" ctrl="bot" group="team2" player_id="$new_id">
+        <layout type="circle" x="midX + midX / 2 - 20" z="far + depth * 420 / 1000" rx="320" rz="134" />
+      </actor>
+    </actors>
+    <setup>
+      <set target="@team1">
+        <values>
+          <value name="team" type="str" value="1" />
+          <value name="facing" type="num" value="1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </set>
+      <set target="@team2">
+        <values>
+          <value name="team" type="str" value="2" />
+          <value name="facing" type="num" value="-1" />
+          <value name="hp" type="num" value="5000" />
+          <value name="hp_max" type="num" value="5000" />
+          <value name="mp" type="num" value="5000" />
+          <value name="mp_max" type="num" value="5000" />
+          <value name="stat_bar" type="num" value="0" />
+        </values>
+      </set>
+    </setup>
     <timeline>
       <entry repeat="99999" interval="1500">
         <input target="@team1" click="a" />
