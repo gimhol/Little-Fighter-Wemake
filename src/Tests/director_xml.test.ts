@@ -1,6 +1,7 @@
 import { eval_number } from "../LFW/utils/eval_number";
 import type { IDirectorData } from "../LFW/defines/IDirectorData";
 import type { IXMLElement } from "../LFW/ditto/xml/IXMLElement";
+import { supports_platform } from "../LFW/defines/Platform";
 import { make_director_group, to_director_list } from "../LFW/loader/normalize_directors";
 import {
   xml_2_director,
@@ -67,6 +68,7 @@ const xml = {
 
 const DIRECTOR: IDirectorData = {
   name: "Sample",
+  platform: ["godot", "web"],
   bg: "bg_4",
   stage: { player_r: 10 },
   actors: [
@@ -149,6 +151,15 @@ describe("director xml", () => {
     expect(xml_2_director(el.to_element())).toEqual({ name: "Only", bg: "pixel_ruler" });
   });
 
+  it("parses the optional platform attribute", () => {
+    const el = new FakeElement("director");
+    el.set_attr("name", "Only");
+    el.set_attr("platform", "godot");
+    expect(xml_2_director(el.to_element())).toEqual({ name: "Only", platform: "godot" });
+    el.set_attr("platform", "godot,web");
+    expect(xml_2_director(el.to_element())).toEqual({ name: "Only", platform: ["godot", "web"] });
+  });
+
   it("parses and serializes director index entries", () => {
     const el = xml_x_director_index(xml as never, { id: "misc", name: "Misc", file: "directors/00_misc.director.xml" }) as unknown as FakeElement;
     expect(xml_2_director_index(el.to_element())).toEqual({
@@ -159,6 +170,23 @@ describe("director xml", () => {
   });
 });
 
+describe("supports_platform", () => {
+  it("treats a missing platform as all platforms", () => {
+    expect(supports_platform(undefined, "web")).toBe(true);
+    expect(supports_platform(undefined, "godot")).toBe(true);
+    expect(supports_platform(null, "godot")).toBe(true);
+    expect(supports_platform("", "godot")).toBe(true);
+  });
+
+  it("accepts strings, arrays, commas and whitespace", () => {
+    expect(supports_platform("web", "web")).toBe(true);
+    expect(supports_platform("web", "godot")).toBe(false);
+    expect(supports_platform("godot,web", "web")).toBe(true);
+    expect(supports_platform("godot web", "web")).toBe(true);
+    expect(supports_platform(["godot", "web"], "godot")).toBe(true);
+    expect(supports_platform(["godot"], "web")).toBe(false);
+  });
+});
 describe("director data normalization", () => {
   it("accepts {directors}, arrays and single objects", () => {
     expect(to_director_list({ directors: [{ name: "A" }] })).toEqual([{ name: "A" }]);

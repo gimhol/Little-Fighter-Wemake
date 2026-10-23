@@ -1,6 +1,6 @@
 import { FSM } from "../../../base/FSM";
 import { GK } from "../../../defines";
-import { supports_platform } from "../../defines/Platform";
+import { supports_platform } from "../../../defines/Platform";
 import type { IUIKeyEvent } from "../../IUIKeyEvent";
 import { UIComponent } from "../UIComponent";
 import { DirectorTestCase } from "./DirectorTestCase";

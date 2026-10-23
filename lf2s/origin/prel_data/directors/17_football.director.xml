@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <directors id="football" name="Football">
-  <director name="Football Field 100 Fighters (50 v 50)" bg="football_field">
+  <director name="Football Field 100 Fighters (50 v 50)" platform="godot" bg="football_field">
     <actors>
       <actor id="t1_r1" oid="davis,dennis,deep,john,henry,rudolf,mark,bat,jack,bandit" count="10" ctrl="bot" group="team1" player_id="$new_id">
         <layout type="line" axis="x" x="midX / 2" z="far + depth / 10" length="midX - 320" />
