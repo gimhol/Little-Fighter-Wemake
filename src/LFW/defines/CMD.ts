@@ -68,7 +68,10 @@ export const enum CMD {
   POINTER_ENTER  /**/ = "POINTER_ENTER",
   POINTER_CLICK  /**/ = "POINTER_CLICK",
 
-  KEY_EVENT  /**/ = "KEY_EVENT"
+  KEY_EVENT  /**/ = "KEY_EVENT",
+
+  /** 列出所有命令 */
+  HELP /**/ = "HELP"
 }
 
 export const CMD_NAMES: Record<CMD, string> = {
@@ -108,5 +111,6 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.POINTER_LEAVE]: "POINTER_LEAVE",
   [CMD.POINTER_ENTER]: "POINTER_ENTER",
   [CMD.POINTER_CLICK]: "POINTER_CLICK",
-  [CMD.KEY_EVENT]: "KEY_DOWN"
+  [CMD.KEY_EVENT]: "KEY_DOWN",
+  [CMD.HELP]: "HELP"
 }

@@ -7,6 +7,12 @@ export class CMDS {
   private static readonly handlers = new Map<string, ICMDHandler>();
   private static readonly helps = new Map<string, string>();
   private static inst: CMDS;
+  /** 已注册命令：名字（已小写）+ 帮助文本，按名字排序 */
+  static list(): readonly { key: string; help: string }[] {
+    return [...this.handlers.keys()]
+      .sort()
+      .map((key) => ({ key, help: this.helps.get(key) ?? '' }));
+  }
   static handler(key: string) {
     key = key.toLowerCase();
     return this.handlers.get(key)

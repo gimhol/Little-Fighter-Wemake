@@ -17,6 +17,7 @@ export * from "./CMD_F7";
 export * from "./CMD_F8";
 export * from "./CMD_F9";
 export * from "./CMD_GIM_INK";
+export * from "./CMD_HELP";
 export * from "./CMD_HERO_FT";
 export * from "./CMD_KEY_EVENTS";
 export * from "./CMD_KILL";
