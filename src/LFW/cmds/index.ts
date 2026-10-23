@@ -30,6 +30,7 @@ export * from "./CMD_LOCK_CAM";
 export * from "./CMD_POINTER_EVENTS";
 export * from "./CMD_QUERY";
 export * from "./CMD_SET_DIFFICULTY";
+export * from "./CMD_SET_LANG";
 export * from "./CMD_SET_PUPPET";
 export * from "./CMD_SPAWN";
 export * from "./cheat_code_handler";

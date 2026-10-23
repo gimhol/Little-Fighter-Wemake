@@ -80,7 +80,10 @@ export const enum CMD {
   /** 当前世界概要 */
   INFO /**/ = "INFO",
   /** 列出 UI 层 / 节点树 */
-  UI /**/ = "UI"
+  UI /**/ = "UI",
+
+  /** 运行时切换 UI 语言 */
+  SET_LANG /**/ = "SET_LANG"
 }
 
 export const CMD_NAMES: Record<CMD, string> = {
@@ -125,5 +128,6 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.LIST]: "LIST",
   [CMD.ENTITIES]: "ENTITIES",
   [CMD.INFO]: "INFO",
-  [CMD.UI]: "UI"
+  [CMD.UI]: "UI",
+  [CMD.SET_LANG]: "SET_LANG"
 }
