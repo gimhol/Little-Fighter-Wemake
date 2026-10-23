@@ -12,7 +12,7 @@ Replay a pointer-down hit list on the local UI, near to far / 按近到远在本
 Options:
   --paths   <layer>,<页面栈下标>,<子节点索引>...，多项以 | 分隔 / node paths, '|' separated
   --pages   页面 id，各项须相同；用于校验下标处页面未变 / page id, same for every entry, checked against the page at that index
-  --points  每项命中点 x,y,z，与 --paths 一一对应 / hit point of each entry
+  --points  每项命中点 x,y,z，与 --paths 一一对应（只给指针位置用 --pos）/ hit point of each entry, pairs with '--paths' (use '--pos' for the pointer position)
   --pos     指针位置 x,y（UI 坐标，无命中时也存在） / pointer position x,y (UI coordinates, present even without hits)
   --b       0 left / 1 middle / 2 right
   --from    发起方 client id，联机时由网络层附加，本地省略 / initiator client id, attached by the net layer for netplay, omitted locally`;
@@ -24,7 +24,7 @@ Replay a pointer-move on the local UI, enter/leave are derived by diff; omit '--
 Options:
   --paths   <layer>,<页面栈下标>,<子节点索引>...，多项以 | 分隔 / node paths, '|' separated
   --pages   页面 id，各项须相同 / page id, same for every entry
-  --points  每项命中点 x,y,z，与 --paths 一一对应 / hit point of each entry
+  --points  每项命中点 x,y,z，与 --paths 一一对应（只给指针位置用 --pos）/ hit point of each entry, pairs with '--paths' (use '--pos' for the pointer position)
   --pos     指针位置 x,y（UI 坐标，无命中时也存在） / pointer position x,y (UI coordinates, present even without hits)
   --b       0 left / 1 middle / 2 right
   --from    发起方 client id，联机时由网络层附加，本地省略 / initiator client id, attached by the net layer for netplay, omitted locally`;
@@ -36,7 +36,7 @@ Replay a pointer-up on the local UI, then click and cancel leftovers; omit '--pa
 Options:
   --paths   <layer>,<页面栈下标>,<子节点索引>...，多项以 | 分隔 / node paths, '|' separated
   --pages   页面 id，各项须相同 / page id, same for every entry
-  --points  每项命中点 x,y,z，与 --paths 一一对应 / hit point of each entry
+  --points  每项命中点 x,y,z，与 --paths 一一对应（只给指针位置用 --pos）/ hit point of each entry, pairs with '--paths' (use '--pos' for the pointer position)
   --pos     指针位置 x,y（UI 坐标，无命中时也存在） / pointer position x,y (UI coordinates, present even without hits)
   --b       0 left / 1 middle / 2 right
   --from    发起方 client id，联机时由网络层附加，本地省略 / initiator client id, attached by the net layer for netplay, omitted locally`;
@@ -48,7 +48,7 @@ Replay one atomic click on the local UI, dispatch 'on_click' only, near to far /
 Options:
   --paths   <layer>,<页面栈下标>,<子节点索引>...，多项以 | 分隔 / node paths, '|' separated
   --pages   页面 id，各项须相同 / page id, same for every entry
-  --points  每项命中点 x,y,z，与 --paths 一一对应 / hit point of each entry
+  --points  每项命中点 x,y,z，与 --paths 一一对应（只给指针位置用 --pos）/ hit point of each entry, pairs with '--paths' (use '--pos' for the pointer position)
   --pos     指针位置 x,y（UI 坐标，无命中时也存在） / pointer position x,y (UI coordinates, present even without hits)
   --b       0 left / 1 middle / 2 right
   --from    发起方 client id，联机时由网络层附加，本地省略 / initiator client id, attached by the net layer for netplay, omitted locally`;
@@ -166,11 +166,27 @@ function read_targets(tag: string, c: CMDS, need_points: boolean): IPointerTarge
   const page_parts = pages_raw ? pages_raw.split('|') : [];
   const point_parts = points_raw ? points_raw.split('|') : [];
   if (path_parts.length !== page_parts.length) {
-    Ditto.warn(`[${tag}] failed, '--paths' and '--pages' count mismatch, got: ${c.cmd}`);
+    Ditto.warn(
+      `[${tag}] failed, '--paths' and '--pages' count mismatch: ` +
+        `${path_parts.length} paths vs ${page_parts.length} pages, got: ${c.cmd}`,
+    );
     return;
   }
   if (point_parts.length !== path_parts.length && (need_points || point_parts.length)) {
-    Ditto.warn(`[${tag}] failed, '--points' count mismatch, got: ${c.cmd}`);
+    // `--points` 是「每个命中目标各自的命中点」，必须和 `--paths` 一一对应；
+    // 只给一个点没有意义（那是 `--pos`，指针位置，无命中时也有）
+    if (path_parts.length === 0) {
+      Ditto.warn(
+        `[${tag}] failed, '--points' needs '--paths'/'--pages': got ` +
+          `${point_parts.length} points, 0 paths; use '--pos=<x>,<y>' for the pointer position, ` +
+          `got: ${c.cmd}`,
+      );
+    } else {
+      Ditto.warn(
+        `[${tag}] failed, '--points' count mismatch: ` +
+          `${point_parts.length} points vs ${path_parts.length} paths, got: ${c.cmd}`,
+      );
+    }
     return;
   }
   const paths: number[][] = [];

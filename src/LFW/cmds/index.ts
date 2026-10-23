@@ -1,5 +1,5 @@
 /*** AUTO EXPORT START ***/
-export * from "./cheat_code_handler";
+export * from "./CMDS";
 export * from "./CMD_BGM";
 export * from "./CMD_CHANGE_BG";
 export * from "./CMD_CHANGE_STAGE";
@@ -28,8 +28,9 @@ export * from "./CMD_KILL_SOLDIERS";
 export * from "./CMD_LF2_NET";
 export * from "./CMD_LOCK_CAM";
 export * from "./CMD_POINTER_EVENTS";
+export * from "./CMD_QUERY";
 export * from "./CMD_SET_DIFFICULTY";
 export * from "./CMD_SET_PUPPET";
 export * from "./CMD_SPAWN";
-export * from "./CMDS";
+export * from "./cheat_code_handler";
 /*** AUTO EXPORT END ***/

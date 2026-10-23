@@ -71,7 +71,16 @@ export const enum CMD {
   KEY_EVENT  /**/ = "KEY_EVENT",
 
   /** 列出所有命令 */
-  HELP /**/ = "HELP"
+  HELP /**/ = "HELP",
+
+  /** 列出某一类数据的 id */
+  LIST /**/ = "LIST",
+  /** 列出场上实体 */
+  ENTITIES /**/ = "ENTITIES",
+  /** 当前世界概要 */
+  INFO /**/ = "INFO",
+  /** 列出 UI 层 / 节点树 */
+  UI /**/ = "UI"
 }
 
 export const CMD_NAMES: Record<CMD, string> = {
@@ -112,5 +121,9 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.POINTER_ENTER]: "POINTER_ENTER",
   [CMD.POINTER_CLICK]: "POINTER_CLICK",
   [CMD.KEY_EVENT]: "KEY_DOWN",
-  [CMD.HELP]: "HELP"
+  [CMD.HELP]: "HELP",
+  [CMD.LIST]: "LIST",
+  [CMD.ENTITIES]: "ENTITIES",
+  [CMD.INFO]: "INFO",
+  [CMD.UI]: "UI"
 }
