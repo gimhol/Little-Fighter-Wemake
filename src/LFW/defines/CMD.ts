@@ -32,7 +32,7 @@ export const enum CMD {
   /** 杀死 Boss */
   KILL_BOSS = 'KILL_BOSS',
   /** 杀死小兵 */
-  KILL_SOLIDERS = 'KILL_SOLIDERS',
+  KILL_SOLDIERS = 'KILL_SOLDIERS',
   /** 杀死其他实体 */
   KILL_OTHERS = 'KILL_OTHERS',
   /** 创建或更新指定玩家的傀儡 */
@@ -87,7 +87,7 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.GIM_INK]: "GIM_INK",
   [CMD.KILL_ENEMIES]: "KILL_ENEMIES",
   [CMD.KILL_BOSS]: "KILL_BOSS",
-  [CMD.KILL_SOLIDERS]: "KILL_SOLIDERS",
+  [CMD.KILL_SOLDIERS]: "KILL_SOLDIERS",
   [CMD.KILL_OTHERS]: "KILL_OTHERS",
   [CMD.SET_PUPPET]: "SET_PUPPET",
   [CMD.DEL_PUPPET]: "DEL_PUPPET",

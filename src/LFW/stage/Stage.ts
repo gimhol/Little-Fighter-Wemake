@@ -359,7 +359,7 @@ export class Stage {
       }
     }
   }
-  kill_soliders() {
+  kill_soldiers() {
     for (const o of this.items) {
       if (!o.info.is_soldier) continue;
       for (const e of o.objects) {

@@ -23,7 +23,7 @@ export * from "./CMD_KILL";
 export * from "./CMD_KILL_BOSS";
 export * from "./CMD_KILL_ENEMIES";
 export * from "./CMD_KILL_OTHERS";
-export * from "./CMD_KILL_SOLIDERS";
+export * from "./CMD_KILL_SOLDIERS";
 export * from "./CMD_LF2_NET";
 export * from "./CMD_LOCK_CAM";
 export * from "./CMD_POINTER_EVENTS";

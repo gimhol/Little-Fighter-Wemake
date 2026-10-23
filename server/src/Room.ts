@@ -47,7 +47,7 @@ const NOTIFY_CMDS = new Map<string, string>([
   ['f6', 'F6'], ['f7', 'F7'], ['f8', 'F8'], ['f9', 'F9'], ['f10', 'F10'],
   ['lf2_net', 'LF2_NET'], ['hero_ft', 'HERO_FT'], ['gim_ink', 'GIM_INK'],
   ['kill_enemies', 'KILL_ENEMIES'], ['kill_boss', 'KILL_BOSS'],
-  ['kill_soliders', 'KILL_SOLIDERS'], ['kill_others', 'KILL_OTHERS'],
+  ['kill_soldiers', 'KILL_SOLDIERS'], ['kill_others', 'KILL_OTHERS'],
 ]);
 export class Room {
   static TAG = 'Room';

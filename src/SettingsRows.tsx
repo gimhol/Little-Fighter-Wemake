@@ -189,7 +189,7 @@ export default function SettingsRows(props: ISettingsRowsProps) {
           <Button onClick={() => lfw?.push_cmd(CMD.HERO_FT, '1').push_cmd(CMD.KILL_BOSS)}>
             杀死Boss
           </Button>
-          <Button onClick={() => lfw?.push_cmd(CMD.HERO_FT, '1').push_cmd(CMD.KILL_SOLIDERS)}>
+          <Button onClick={() => lfw?.push_cmd(CMD.HERO_FT, '1').push_cmd(CMD.KILL_SOLDIERS)}>
             杀死士兵
           </Button>
           <Button onClick={() => lfw?.push_cmd(CMD.HERO_FT, '1').push_cmd(CMD.KILL_OTHERS)}>
