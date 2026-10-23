@@ -40,7 +40,5 @@
       ],
       "url": "/.vscode/schema/obj.schema.json5"
     }
-  ],
-  "cmake.sourceDirectory": "${workspaceFolder}/native",
-  "cmake.buildDirectory": "${sourceDirectory}/build/vscode"
+  ]
 }
