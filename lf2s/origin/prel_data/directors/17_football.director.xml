@@ -80,10 +80,10 @@
         <values>
           <value name="team" type="str" value="1" />
           <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
+          <value name="hp" type="num" value="500" />
+          <value name="hp_max" type="num" value="500" />
+          <value name="mp" type="num" value="500" />
+          <value name="mp_max" type="num" value="500" />
           <value name="stat_bar" type="num" value="0" />
         </values>
       </set>
@@ -91,20 +91,14 @@
         <values>
           <value name="team" type="str" value="2" />
           <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
+          <value name="hp" type="num" value="500" />
+          <value name="hp_max" type="num" value="500" />
+          <value name="mp" type="num" value="500" />
+          <value name="mp_max" type="num" value="500" />
           <value name="stat_bar" type="num" value="0" />
         </values>
       </set>
     </setup>
-    <timeline>
-      <entry repeat="99999" interval="1500">
-        <input target="@team1" click="a" />
-        <input target="@team2" click="a" />
-      </entry>
-    </timeline>
   </director>
   <director name="Football Field 200 Fighters (100 v 100)" platform="godot" bg="football_field">
     <actors>
@@ -186,10 +180,10 @@
         <values>
           <value name="team" type="str" value="1" />
           <value name="facing" type="num" value="1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
+          <value name="hp" type="num" value="500" />
+          <value name="hp_max" type="num" value="500" />
+          <value name="mp" type="num" value="500" />
+          <value name="mp_max" type="num" value="500" />
           <value name="stat_bar" type="num" value="0" />
         </values>
       </set>
@@ -197,19 +191,13 @@
         <values>
           <value name="team" type="str" value="2" />
           <value name="facing" type="num" value="-1" />
-          <value name="hp" type="num" value="5000" />
-          <value name="hp_max" type="num" value="5000" />
-          <value name="mp" type="num" value="5000" />
-          <value name="mp_max" type="num" value="5000" />
+          <value name="hp" type="num" value="500" />
+          <value name="hp_max" type="num" value="500" />
+          <value name="mp" type="num" value="500" />
+          <value name="mp_max" type="num" value="500" />
           <value name="stat_bar" type="num" value="0" />
         </values>
       </set>
     </setup>
-    <timeline>
-      <entry repeat="99999" interval="1500">
-        <input target="@team1" click="a" />
-        <input target="@team2" click="a" />
-      </entry>
-    </timeline>
   </director>
 </directors>
