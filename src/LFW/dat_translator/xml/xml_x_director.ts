@@ -429,6 +429,7 @@ function xml_2_director_timeline(el: IXMLElement | undefined): IDirectorTimeline
 
 export function xml_2_director(el: IXMLElement): IDirectorData {
   const ret: IDirectorData = { name: attr(el, "name") ?? "" };
+  const platform = str_or_strs(el, "platform"); if (platform != null) ret.platform = platform;
   const bg = attr(el, "bg"); if (bg != null) ret.bg = bg;
   const stage = parse_stage(el.child_by_tag("stage")); if (stage) ret.stage = stage;
   const actors_el = el.child_by_tag("actors");
@@ -688,6 +689,7 @@ function xml_x_timeline_entries(xml: IXML, entries: TTimelineEntryData[], parent
 export function xml_x_director(xml: IXML, data: IDirectorData, tag: string = "director"): IXMLElement {
   const el = xml.create(tag);
   el.set_attr("name", data.name);
+  el.set_attr("platform", data.platform);
   el.set_attr("bg", data.bg);
   if (data.stage) {
     const stage = xml.create("stage");

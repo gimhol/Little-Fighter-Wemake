@@ -220,6 +220,7 @@ export interface IDirectorTimelineData {
 
 export interface IDirectorData {
   name: string;
+  platform?: string | string[];
   bg?: string;
   stage?: IDirectorStageData;
   actors?: IActorData[];

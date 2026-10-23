@@ -1,5 +1,6 @@
 import { FSM } from "../../../base/FSM";
 import { GK } from "../../../defines";
+import { supports_platform } from "../../defines/Platform";
 import type { IUIKeyEvent } from "../../IUIKeyEvent";
 import { UIComponent } from "../UIComponent";
 import { DirectorTestCase } from "./DirectorTestCase";
@@ -12,9 +13,11 @@ export class Tests extends UIComponent {
   override init(): void { }
   override on_start(): void {
     TestCase.key = -1;
-    const groups = this.lfw.datas.directors;
+    const groups = this.lfw.datas.directors
+      .map(group => group.directors.filter(data => supports_platform(data.platform)))
+      .filter(group => group.length > 0);
     if (groups.length) {
-      this.groups = groups.map((group, x) => group.directors.map((data, y) => {
+      this.groups = groups.map((group, x) => group.map((data, y) => {
         const r = new DirectorTestCase(this, data)
         r.name = `${x}-${y} ${r.name}`
         this.fsm.add(r)
