@@ -60,6 +60,7 @@ Ditto.setup({
   DEV,
   IsDesktop: !!window.runtime,
   alert: (msg) => window.alert(msg),
+  print: Log.print
 });
 if (HEADLESS_UI) {
   Object.assign(window, {

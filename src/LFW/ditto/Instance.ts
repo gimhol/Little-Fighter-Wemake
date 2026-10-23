@@ -73,6 +73,7 @@ export interface IDittoPack {
   /** 是否运行在桌面壳（Wails/Electron）中 */
   IsDesktop: boolean;
   alert(msg: string): unknown;
+  print(args: string): unknown;
 }
 
 const _Ditto: Partial<IDitto> = {

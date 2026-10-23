@@ -1,3 +1,4 @@
+import { Ditto } from "../ditto";
 import type { World } from "../World";
 
 export interface ICMDHandler { (ctx: CMDS): unknown; }
@@ -30,6 +31,9 @@ export class CMDS {
   private _args: { [name in string]: string } | undefined;
   private constructor(world: World) {
     this.world = world;
+  }
+  print(msg: string) {
+    Ditto.print(msg)
   }
   set_cmd(cmd: string) {
     this.cmd = cmd;
