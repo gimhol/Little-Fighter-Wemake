@@ -205,7 +205,7 @@ export function find_converter(cmd, env_key) {
 
 export function stage_app(app_dir, pkg, { updater = false } = {}) {
   writeFileSync(join(app_dir, "package.json"), `${JSON.stringify({
-    name: "little-fighter-wemake",
+    name: "legacy-flame-war",
     productName: APP_NAME,
     version: pkg.version,
     description: "Legacy Flame War desktop client",
