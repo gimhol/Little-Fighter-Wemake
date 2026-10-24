@@ -1,5 +1,5 @@
 import { get_pointer_cursors, type IPointerCursor } from "@/LFW/cmds/CMD_POINTER_EVENTS";
-import { current_connection } from "@/pages/network_test/current_connection";
+import { current_connection } from "@/Net/current_connection";
 import { CanvasTexture, Object3D, OrthographicCamera, Scene, Sprite, SpriteMaterial, WebGLRenderer } from "../_t";
 import type { WorldRenderer } from "./WorldRenderer";
 import csses from "./styles.module.scss";

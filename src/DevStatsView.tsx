@@ -2,7 +2,7 @@ import { useMemo, useRef } from "react";
 import csses from "./DevStatsView.module.scss";
 import type { ILFWCallback, IWorldCallbacks, LFW } from "./LFW";
 import { useCallbacks } from "./pages/network_test/useCallbacks";
-import { current_connection } from "./pages/network_test/current_connection";
+import { current_connection } from "./Net/current_connection";
 
 export interface IDevStatsViewProps {
   lfw?: LFW | null;

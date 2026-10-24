@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { ChatBox } from "./ChatBox";
 import { Connection } from "./Connection";
 import { ConnectionBox } from "./ConnectionBox";
-import { current_connection } from "./current_connection";
+import { current_connection } from "@/Net/current_connection";
 import { DelayNetworkDriver } from "./DelayNetworkDriver";
 import { LFWNetworkDriver } from "./LFWNetworkDriver";
 import { LockstepNetworkDriver } from "./LockstepNetworkDriver";

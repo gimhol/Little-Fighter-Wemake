@@ -7,7 +7,7 @@ import { GameKey } from "./LFW/defines/GameKey";
 import { SyncRenderEnum } from "./LFW/defines/SyncRenderEnum";
 import { Defines } from "./LFW/defines/defines";
 import { NICKNAME_MAX_LENGTH } from "./Net";
-import { current_connection } from "./pages/network_test/current_connection";
+import { current_connection } from "./Net/current_connection";
 import { useNickname } from "./pages/network_test/nickname_store";
 import csses from "./NetSettings.module.scss";
 

@@ -23,7 +23,7 @@ import {
   type TResp,
 } from "@/Net";
 import { Connection } from "./Connection";
-import { current_connection } from "./current_connection";
+import { current_connection } from "@/Net/current_connection";
 import { DelayNetworkDriver } from "./DelayNetworkDriver";
 import { LFWNetworkDriver } from "./LFWNetworkDriver";
 import { LockstepNetworkDriver } from "./LockstepNetworkDriver";

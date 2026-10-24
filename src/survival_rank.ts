@@ -1,5 +1,5 @@
 import { GameMode, type LFW, type SurvivalRankItem, type SurvivalRankPeriod } from "./LFW";
-import { current_connection } from "./pages/network_test/current_connection";
+import { current_connection } from "./Net/current_connection";
 import {
   get_my_rank as get_my_rank_api,
   get_rank_list as get_rank_list_api,
