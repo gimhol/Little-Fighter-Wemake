@@ -6,6 +6,7 @@ export * from "./CMD_CHANGE_STAGE";
 export * from "./CMD_DEL_PUPPET";
 export * from "./CMD_DESPAWN";
 export * from "./CMD_DIST_CAM";
+export * from "./CMD_ENTITY";
 export * from "./CMD_F1";
 export * from "./CMD_F10";
 export * from "./CMD_F2";

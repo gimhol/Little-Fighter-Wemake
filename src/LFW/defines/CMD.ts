@@ -77,6 +77,8 @@ export const enum CMD {
   LIST /**/ = "LIST",
   /** 列出场上实体 */
   ENTITIES /**/ = "ENTITIES",
+  /** 看 / 改单个实体（位置、帧、状态、各种属性） */
+  ENTITY /**/ = "ENTITY",
   /** 当前世界概要 */
   INFO /**/ = "INFO",
   /** 列出 UI 层 / 节点树 */
@@ -127,6 +129,7 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.HELP]: "HELP",
   [CMD.LIST]: "LIST",
   [CMD.ENTITIES]: "ENTITIES",
+  [CMD.ENTITY]: "ENTITY",
   [CMD.INFO]: "INFO",
   [CMD.UI]: "UI",
   [CMD.SET_LANG]: "SET_LANG"
