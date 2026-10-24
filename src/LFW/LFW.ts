@@ -63,8 +63,8 @@ export interface SurvivalRankBoardData {
 const DEFAULT_INFO: Readonly<IGameZipInfo> = {
   type: "FULL",
   version: 0,
-  title: "Little Fighter Wemake Origin Full Game",
-  description: "Little Fighter Wemake Origin Full Game Zip",
+  title: "Legacy Flame War Origin Full Game",
+  description: "Legacy Flame War Origin Full Game Zip",
   author: "Gim",
   paths: ["prel.zip.json", "data.zip.json"],
 }

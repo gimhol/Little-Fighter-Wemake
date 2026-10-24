@@ -92,7 +92,7 @@ export default defineConfig(({ command, mode }) => {
     createHtmlPlugin({
       inject: {
         data: {
-          title: `Little Fighter Wemake v${json.version}`,
+          title: `Legacy Flame War v${json.version}`,
           // 仅 bilibili-toy 构建注入 B站 Toy JS SDK script 标签（见 index.html）；
           // 其它环境（普通 web 构建/开发）不加载
           toySdk: is_toy_build

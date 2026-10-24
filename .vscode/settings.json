@@ -40,5 +40,6 @@
       ],
       "url": "/.vscode/schema/obj.schema.json5"
     }
-  ]
+  ],
+  "cmake.sourceDirectory": "D:/Users/Gimho/Desktop/Little-Fighter-Wemake/Game/native"
 }

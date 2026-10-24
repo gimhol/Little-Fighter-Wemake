@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Little Fighter Wemake",
-  "version": "0.1.62",
-  "description": "Little Fighter Wemake",
+  "name": "Legacy Flame War: Web",
+  "version": "0.1.63",
+  "description": "Legacy Flame War: Web",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -10,7 +10,7 @@
     "256": "icon256.png"
   },
   "action": {
-    "default_title": "Little Fighter Wemake",
+    "default_title": "Legacy Flame War: Web",
     "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",

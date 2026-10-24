@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Little Fighter Wemake 桌面客户端（Electron 壳）与 B站直播弹幕桥",
+  "description": "Legacy Flame War 桌面客户端（Electron 壳）与 B站直播弹幕桥",
   "engines": {
     "node": ">=18"
   },

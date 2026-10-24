@@ -598,7 +598,7 @@ function open_tool_console(tool_args = []) {
     : existsSync(batch)
       ? `cmd /k "${batch}"`
       : `cmd /k ${quoted_exe} --tool help`;
-  const line = `start "Little Fighter Wemake 数据工具" /D "${dir}" ${command}`;
+  const line = `start "Legacy Flame War 数据工具" /D "${dir}" ${command}`;
   try {
     const child = spawn("cmd.exe", ["/c", line], { detached: true, stdio: "ignore", windowsVerbatimArguments: true });
     child.unref();
@@ -650,7 +650,7 @@ function apply_update_state() {
   refresh_tray();
   const t = (key, ...args) => tray_text(APP_LANG, key, ...args);
   const { phase, version, percent, notice, error } = UPDATE_STATE;
-  const base = `Little Fighter Wemake v${app.getVersion()}`;
+  const base = `Legacy Flame War v${app.getVersion()}`;
   const status = phase === "checking" ? t("checking_update")
     : phase === "downloading" ? t("downloading_update", version, percent)
       : phase === "ready" ? t("update_ready", version)
@@ -914,7 +914,7 @@ async function main() {
     show: false,
     frame: false,
     backgroundColor: "#000000",
-    title: "Little Fighter Wemake",
+    title: "Legacy Flame War",
     webPreferences: {
       preload: join(app_dir, "preload.cjs"),
       contextIsolation: true,

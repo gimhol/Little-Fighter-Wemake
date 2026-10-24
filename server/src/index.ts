@@ -27,7 +27,7 @@ const args = arg({
 })
 function handle_help() {
   console.log(`
-Little Fighter Wemake Multiplayer Server v${info.version}
+Legacy Flame War Multiplayer Server v${info.version}
 Options:
   -h, --help
   --host <host>   监听地址（缺省 0.0.0.0，桌面端“仅本机”传 127.0.0.1）
@@ -67,7 +67,7 @@ async function main() {
     handle_help();
     return;
   }
-  console.log(`Little Fighter Wemake Multiplayer Server v${info.version}${BUILD_TAG}`)
+  console.log(`Legacy Flame War Multiplayer Server v${info.version}${BUILD_TAG}`)
   const config_file = load_config(to_str(args['--config']) ?? to_str(process.env.CONFIG_FILE_PATH));
   const { config } = config_file;
   const ssl_key = await read_file(to_str(args['--ssl-key-path']) ?? to_str(process.env.SSL_KEY_FILE_PATH) ?? config.ssl_key_file_path);
