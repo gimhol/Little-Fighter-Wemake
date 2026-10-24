@@ -18,7 +18,8 @@ import {
 } from "../defines";
 import { Ditto } from "../ditto";
 import { Entity, is_ball, is_fighter, is_human_ctrl, is_weapon } from "../entity";
-import { closer_one, manhattan_xz } from "../helper";
+import { closer_one } from "../helper";
+import { box_gap_xz } from "../helper/manhattan_xz";
 import { abs, between, max, round } from '../utils/math/base';
 import { clamp } from '../utils/math/clamp';
 import { round_float } from '../utils/math/round_float';
@@ -37,6 +38,7 @@ export enum BotBehavior {
   Move = 'Move',
   Follow = 'Follow',
 }
+const NEAR_SCAN_RADIUS = 250;
 export class BotController extends BaseController {
   readonly fsm = new FSM<BSE>()
     .add(
@@ -490,6 +492,7 @@ export class BotController extends BaseController {
   should_avoid(av: Entity): boolean {
     const { me } = this;
     if (!me.mounted) return false
+    if (this.box_gap(av) > NEAR_SCAN_RADIUS) return false
     if (!av.mounted) return false
     if (me.hp <= 0) return false
     if (av.hp <= 0) return false;
@@ -554,6 +557,7 @@ export class BotController extends BaseController {
   should_defend(e: Entity): 0 | 1 | 2 {
     const { entity: me } = this;
     if (!me.mounted) return 0
+    if (this.box_gap(e) > NEAR_SCAN_RADIUS) return 0
     if (!e.mounted) return 0
     if (
       e.invisible ||
@@ -611,6 +615,10 @@ export class BotController extends BaseController {
       if (just_a_rest && e.arest) return 0;
     }
     return 1;
+  }
+
+  box_gap(other: Entity): number {
+    return box_gap_xz(this.entity, other)
   }
 
   lookup(other: Entity) {
@@ -892,46 +900,42 @@ export class BotController extends BaseController {
   }
   update_lookup(me: number, entities: Entity[]): void {
     const self = this.entity;
-    const x0 = self.position.x;
     let i1 = me - 1;
     let i2 = me + 1;
     const len = entities.length;
-    const bound = this.target_dist_bound();
-    const prune = bound !== Infinity;
+    const self_min_x = self.aabb_min_x;
+    const self_max_x = self.aabb_max_x;
+    let limit = max(this.chase_bound(), NEAR_SCAN_RADIUS);
+    let kept_prev = this.chasings.targets.length;
 
     while (i1 >= 0 || i2 < len) {
       let l: Entity | undefined = entities[i1];
       let r: Entity | undefined = entities[i2];
-      if (prune) {
-        if (l && x0 - l.position.x > bound) l = void 0;
-        if (r && r.position.x - x0 > bound) r = void 0;
-      }
+      if (l && self_min_x - l.aabb_max_x > limit) l = void 0;
+      if (r && r.aabb_min_x - self_max_x > limit) r = void 0;
+      if (!l && !r) break;
       const e = closer_one(self, l, r);
       if (!e) break;
-      if (!e.ghosted) this.lookup(e);
+      if (!e.ghosted) {
+        this.lookup(e);
+        const kept = this.chasings.targets.length;
+        if (kept !== kept_prev) {
+          kept_prev = kept;
+          const live = this.chase_bound();
+          if (live < limit) limit = max(live, NEAR_SCAN_RADIUS);
+        }
+      }
       if (l === e) --i1;
       if (r === e) ++i2;
     }
   }
 
-  private target_dist_bound(): number {
-    const { chasings, avoidings, defends } = this;
-    if (
-      chasings.targets.length < chasings.max ||
-      avoidings.targets.length < avoidings.max ||
-      defends.targets.length < defends.max
-    ) return Infinity;
+  private chase_bound(): number {
+    const { chasings } = this;
+    if (chasings.targets.length < chasings.max) return Infinity;
     let m = -1;
     for (const t of chasings.targets) {
-      const d = manhattan_xz(this.entity, t);
-      if (d > m) m = d;
-    }
-    for (const t of avoidings.targets) {
-      const d = manhattan_xz(this.entity, t);
-      if (d > m) m = d;
-    }
-    for (const t of defends.targets) {
-      const d = manhattan_xz(this.entity, t);
+      const d = box_gap_xz(this.entity, t);
       if (d > m) m = d;
     }
     return m;

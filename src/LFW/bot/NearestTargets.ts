@@ -1,5 +1,5 @@
 import { Entity } from "../entity";
-import { manhattan_xz } from "../helper/manhattan_xz";
+import { box_gap_xz } from "../helper/manhattan_xz";
 
 export class NearestTargets {
   max: number;
@@ -14,14 +14,14 @@ export class NearestTargets {
     const { targets } = this;
     if (!self || targets.includes(other)) return;
 
-    const distance = manhattan_xz(self, other);
+    const distance = box_gap_xz(self, other);
     const len = targets.length;
     if (len < this.max) {
       targets.push(other);
       return;
     }
     for (let i = 0; i < len; ++i) {
-      if (distance > manhattan_xz(self, targets[i])) continue;
+      if (distance > box_gap_xz(self, targets[i])) continue;
       targets.splice(i, 0, other);
       targets.length = this.max;
       break;
@@ -34,7 +34,7 @@ export class NearestTargets {
 
   sort(self: Entity) {
     this.targets.sort((a, b) => {
-      const d = manhattan_xz(self, a) - manhattan_xz(self, b);
+      const d = box_gap_xz(self, a) - box_gap_xz(self, b);
       if (d !== 0) return d;
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
