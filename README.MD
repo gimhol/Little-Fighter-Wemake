@@ -1,4 +1,4 @@
-# Little Fighter Wemake
+# Legacy Flame War
 
 ![title](docs/image/readme.title.png)
 

@@ -8,7 +8,7 @@
 
 没有正式授权。
 
-Little Fighter Wemake（LFW）是我个人的非商业同人项目：不收费、不商业化、不冒充官方，也从未声称拥有原作素材的任何权利。它能做的只是：
+Legacy Flame War（LFW）是我个人的非商业同人项目：不收费、不商业化、不冒充官方，也从未声称拥有原作素材的任何权利。它能做的只是：
 
 - 明确署名原作与原作者（Marti Wong、Starsky Wong），并引导喜欢它的人支持官方版本（比如官方重制版）；
 - 如果原作者或权利人提出异议，请通过 [GitHub Issues](https://github.com/gimhol/Little-Fighter-Wemake/issues) 告诉我，我会尽快配合处理：移除或替换相关内容。
@@ -35,7 +35,7 @@ Little Fighter Wemake（LFW）是我个人的非商业同人项目：不收费�
 
 # Copyright Notice
 
-Little Fighter Wemake (LFW) is an **unofficial, non-commercial** fan remake of *Little Fighter 2* (LF2). It is not affiliated with the original authors or their official releases.
+Legacy Flame War (LFW) is an **unofficial, non-commercial** fan remake of *Little Fighter 2* (LF2). It is not affiliated with the original authors or their official releases.
 
 ## Authorization
 

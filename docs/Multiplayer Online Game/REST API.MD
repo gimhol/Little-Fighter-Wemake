@@ -155,7 +155,7 @@ curl http://localhost/api
 }
 ```
 
-`commit` / `commit_short` / `dirty` / `built_at` 是**构建时**注入的（打包时读取构建机上的 git 状态），部署后可以直接用它确认线上跑的是哪次提交。启动日志也会带上：`Little Fighter Wemake Multiplayer Server v1.0.1 (a1b2c3d)`（工作区有未提交改动时会多一个 `dirty`）。
+`commit` / `commit_short` / `dirty` / `built_at` 是**构建时**注入的（打包时读取构建机上的 git 状态），部署后可以直接用它确认线上跑的是哪次提交。启动日志也会带上：`Legacy Flame War Multiplayer Server v1.0.1 (a1b2c3d)`（工作区有未提交改动时会多一个 `dirty`）。
 
 ### GET /api/stats
 

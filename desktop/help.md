@@ -1,4 +1,4 @@
-# Little Fighter Wemake 帮助
+# Legacy Flame War 帮助
 
 `start.exe` = 游戏本体 + 弹幕桥 + 联机服务器 + 数据工具的桌面客户端；本文件随包分发（Markdown 格式）。
 
