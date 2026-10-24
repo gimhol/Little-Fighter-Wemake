@@ -13,7 +13,7 @@ const CREATE_REQUIRE_BANNER = 'import { createRequire } from "node:module"; cons
 
 const TOOL_CONSOLE_CMD = `@echo off
 cd /d "%~dp0.."
-echo Little Fighter Wemake - data tool
+echo Legacy Flame War - data tool
 echo.
 "%~dp0..\\start.exe" --tool help
 echo.
@@ -24,7 +24,7 @@ echo.
 echo Working directory: %CD%
 `;
 
-const README_TEXT = `Little Fighter Wemake 桌面客户端
+const README_TEXT = `Legacy Flame War 桌面客户端
 
 怎么用
 - 直接双击 start.exe 就是游戏本体；不接直播时以单机模式运行
@@ -59,7 +59,7 @@ const README_TEXT = `Little Fighter Wemake 桌面客户端
 - 想用自己那一份：在数据工具的配置里改 FFMPEG_CMD / MAGICK_CMD，或把 tools\\ 删掉改用 PATH 里的
 `;
 
-const MODS_README_TEXT = `Little Fighter Wemake 模组目录
+const MODS_README_TEXT = `Legacy Flame War 模组目录
 
 把模组包（*.zip）放到本目录，下一次启动游戏就会自动加载，不需要在游戏里手动选文件。
 游戏入口页的「额外数据」里会列出本次加载的模组。
@@ -208,7 +208,7 @@ export function stage_app(app_dir, pkg, { updater = false } = {}) {
     name: "little-fighter-wemake",
     productName: APP_NAME,
     version: pkg.version,
-    description: "Little Fighter Wemake desktop client",
+    description: "Legacy Flame War desktop client",
     author: pkg.author?.name ?? "Gim",
     license: "UNLICENSED",
     private: true,
