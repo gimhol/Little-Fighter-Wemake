@@ -1,13 +1,14 @@
 import type { Server as HttpServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Server as HttpsServer } from 'node:https';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { to_list, to_num, to_str } from '../config';
 import type { Context } from '../Context';
 import { AuthMgr } from './AuthMgr';
 import type { TTokenList } from './AuthMgr';
 import { DEFAULT_RANKS_FILE, RankMgr } from './RankMgr';
 import type { IRankStore } from './IRankStore';
+import { RankGuard } from './RankGuard';
 import { SqliteRankMgr } from './SqliteRankMgr';
 import { RestError } from './RestError';
 import { RestResponse } from './RestResponse';
@@ -20,6 +21,7 @@ import { split_url } from './utils';
 
 export * from './AuthMgr';
 export * from './IRankStore';
+export * from './RankGuard';
 export * from './RankMgr';
 export * from './SqliteRankMgr';
 export * from './RestError';
@@ -43,6 +45,16 @@ export interface IRestOptions {
   ranks_db?: string;
   ranks_types?: string[] | string;
   ranks_max_per_type?: number;
+  /** 排行分数上限（防作弊：超过直接拒绝） */
+  ranks_max_score?: number;
+  /** 排行提交审计日志（JSONL），缺省放在排行数据同目录 */
+  ranks_audit_path?: string;
+  /** 封禁名单文件，缺省放在排行数据同目录 */
+  ranks_bans_path?: string;
+  ranks_rate_window_ms?: number;
+  ranks_rate_per_token?: number;
+  ranks_rate_per_ip?: number;
+  ranks_rate_token_per_ip?: number;
 }
 
 export class Rest {
@@ -51,6 +63,7 @@ export class Rest {
   readonly router = new Router();
   readonly auth: AuthMgr;
   readonly ranks: IRankStore;
+  readonly ranks_guard: RankGuard;
   readonly options: IRestOptions;
   readonly started_at = Date.now();
 
@@ -59,6 +72,7 @@ export class Rest {
     this.auth = ctx.auth;
     this.options = options;
     this.ranks = create_rank_store(options);
+    this.ranks_guard = create_rank_guard(this.ranks, options);
     this.auth.add_admin_token(...(Array.isArray(options.admin_tokens) ? options.admin_tokens : [options.admin_tokens]));
     register_routes(this);
   }
@@ -162,5 +176,18 @@ function create_rank_store(options: IRestOptions): IRankStore {
     dir: to_str(options.ranks_dir) ?? to_str(process.env.RANKS_DIR),
     allowed_types,
     max_per_type,
+  });
+}
+
+function create_rank_guard(ranks: IRankStore, options: IRestOptions): RankGuard {
+  return new RankGuard({
+    dir: dirname(ranks.path),
+    max_score: to_num(options.ranks_max_score) ?? to_num(process.env.RANKS_MAX_SCORE),
+    audit_path: to_str(options.ranks_audit_path) ?? to_str(process.env.RANKS_AUDIT_PATH),
+    bans_path: to_str(options.ranks_bans_path) ?? to_str(process.env.RANKS_BANS_PATH),
+    rate_window_ms: to_num(options.ranks_rate_window_ms) ?? to_num(process.env.RANKS_RATE_WINDOW_MS),
+    rate_per_token: to_num(options.ranks_rate_per_token) ?? to_num(process.env.RANKS_RATE_PER_TOKEN),
+    rate_per_ip: to_num(options.ranks_rate_per_ip) ?? to_num(process.env.RANKS_RATE_PER_IP),
+    rate_token_per_ip: to_num(options.ranks_rate_token_per_ip) ?? to_num(process.env.RANKS_RATE_TOKEN_PER_IP),
   });
 }

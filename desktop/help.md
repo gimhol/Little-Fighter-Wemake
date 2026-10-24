@@ -179,9 +179,15 @@ GET  /api/rooms          房间列表
 GET  /api/rooms/:key     房间详情
 GET  /api/clients        客户端列表（admin）
 POST /api/auth/token     申请玩家 token
-POST /api/ranks          提交排行分数
+POST /api/ranks          提交排行分数（player，需 x-token）
 GET  /api/ranks/:type    查询排行
+DELETE /api/ranks/:type/:uid  删除某条排行成绩（admin）
+GET  /api/ranks/bans          封禁名单（admin）
+POST /api/ranks/bans          封禁 uid / token（admin）
+DELETE /api/ranks/bans/:uid   解除封禁（admin）
 ```
+
+排行提交现在要求带玩家 token（`x-token` 头），并受分数上限、提交频率限制与审计日志约束，详见 `docs/Multiplayer Online Game/REST API.MD`。
 
 ## 七、数据工具（LF2W Tool）
 

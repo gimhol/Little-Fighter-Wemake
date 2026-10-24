@@ -121,6 +121,20 @@ export class RankMgr implements IRankStore {
     return submit_to_family(this, submit => this.store(submit), info);
   }
 
+  remove(type: string, opts: { uid?: string; name?: string }): number {
+    const list = this._scores.get(type);
+    if (!list?.length) return 0;
+    const kept = opts.uid
+      ? list.filter(v => v.uid !== opts.uid)
+      : list.filter(v => v.name !== opts.name);
+    const removed = list.length - kept.length;
+    if (!removed) return 0;
+    this._scores.set(type, kept);
+    this._dirty.add(type);
+    this.save();
+    return removed;
+  }
+
   protected store(info: IRankSubmit): IRankResult {
     const list = this.list_of(info.type);
     const key = owner_key(info);

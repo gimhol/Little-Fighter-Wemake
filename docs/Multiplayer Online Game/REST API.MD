@@ -119,8 +119,12 @@ WebSocket 连接地址带上管理员 token 时，对应客户端会被标记为
 | DELETE | `/api/auth/tokens/:token` | admin | 删除玩家 token |
 | GET | `/api/me` | player | 当前 token 的身份信息 |
 | POST | `/api/me/chat` | client | 以绑定客户端身份发言 |
-| POST | `/api/ranks` | public | 提交排行分数 |
+| POST | `/api/ranks` | player | 提交排行分数（需 `x-token`） |
 | GET | `/api/ranks/:type` | public | 查询排行 |
+| GET | `/api/ranks/bans` | admin | 封禁名单 |
+| POST | `/api/ranks/bans` | admin | 封禁 uid / token |
+| DELETE | `/api/ranks/bans/:uid` | admin | 解除封禁 |
+| DELETE | `/api/ranks/:type/:uid` | admin | 删除某个提交者的成绩 |
 
 ## 接口详情
 
@@ -427,24 +431,25 @@ curl -X POST -H "Authorization: Bearer <player token>" -H "Content-Type: applica
 
 ### POST /api/ranks
 
-提交一条排行分数。
+提交一条排行分数。**需要玩家 token**（先 `POST /api/auth/token` 申请，然后放在 `x-token` 头或 `?token=` 里）。
 
 | 字段 | 类型 | 必填 | 说明 |
 | - | - | - | - |
 | `type` | string | 是 | 排行类型，最长 64 字符，只能包含字母、数字、`_`、`.`、`-`（例如 `story`、`survival_week`） |
-| `name` | string | 是 | 玩家名，最长 32 字符（仅用于展示） |
-| `score` | number | 是 | 分数，数字或数字字符串 |
+| `name` | string | 是 | 玩家名，最长 32 字符；提交时会做 NFC 归一化、剔除控制符/零宽/方向控制字符并折叠空白 |
+| `score` | number | 是 | 分数，必须是 **0 ~ `ranks.max_score`（默认 10000）之间的整数**（数字字符串也接受） |
 | `uid` | string | 否 | 提交者标识，4~64 位字母/数字/`_`/`-`（如客户端本地生成的匿名 id）；不合法或未提供时按 `name` 去重 |
 | `group` | string | 否 | 分组标识，最长 64 字符；同一 `uid` 下不同 `group` 各占一条记录（如生存榜单人榜传角色名，同一客户端的多个角色各占一行）；缺省或没有 `uid` 时不影响去重 |
-| `extra` | any | 否 | 额外信息，任意 JSON，原样保存 |
+| `extra` | object | 否 | 只保留 `fighter` / `player` / `fighter2` / `player2` / `open_id` 这几个字段，其余键会被丢弃（单项最长 64 字符） |
 
-服务器会自动记录提交时间 `date`、提交者地址 `address`，以及（若已绑定 token）客户端 id `client_id`。
+服务器会自动记录提交时间 `date`、提交者地址 `address`，以及（若已绑定在线客户端）客户端 id `client_id`；但**这几个内部字段不会出现在任何公开响应里**（不暴露 `uid`，避免被拿去顶掉别人的记录）。
 
 同一 `type` + 同一提交者（`uid`，缺省时退回 `name`）+ 同一 `group`（缺省视为空）只保留最高分：再次提交时只有分数更高才会覆盖原记录（名次、时间随新记录更新），低于或等于现有最高分的提交不会写入，响应里返回的是现有最高分记录。重名玩家只要 `uid` 不同就会各占一行，同一 `uid` 传入多个 `group` 时也会各占一行。
 
 ``` bash
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"type":"story","name":"gim","score":250,"uid":"0f8c1d92","extra":{"stage":3}}' http://localhost/api/ranks
+TOKEN=$(curl -s -X POST -H "Content-Type: application/json" -d '{"name":"gim"}' http://localhost/api/auth/token | sed -E 's/.*"token":"([^"]+)".*/\1/')
+curl -X POST -H "Content-Type: application/json" -H "x-token: $TOKEN" \
+  -d '{"type":"story","name":"gim","score":250,"uid":"0f8c1d92","extra":{"fighter":"Davis"}}' http://localhost/api/ranks
 ```
 
 ``` json
@@ -455,9 +460,7 @@ curl -X POST -H "Content-Type: application/json" \
   "type": "story",
   "name": "gim",
   "score": 250,
-  "uid": "0f8c1d92",
-  "extra": { "stage": 3 },
-  "address": "::ffff:127.0.0.1",
+  "extra": { "fighter": "Davis" },
   "date": 1789305323519
 }
 ```
@@ -471,6 +474,11 @@ curl -X POST -H "Content-Type: application/json" \
 规则与限制：
 
 - 排序按 `score` 从高到低，分数相同则更早达到的记录在前
+- **准入**：必须带有效玩家 token，否则返回 401
+- **分数上限**：`score` 必须是 0 ~ `ranks.max_score` 的整数（`RANKS_MAX_SCORE` 或配置文件 `ranks.max_score`，默认 10000），非整数/负数/超限返回 400
+- **频率限制**：同一 token 每个窗口（默认 60 秒）最多 60 次提交，同一 IP 最多 240 次，超出返回 429；申请 token 也按 IP 限流（默认 30 次/分钟）
+- **审计**：每次提交都会追加一行 JSONL（时间、类型、名字、分数、uid、token 哈希、IP、UA、名次），默认写在排行数据同目录的 `ranks_audit.jsonl`（超过 32MB 轮转为 `.1`），可用 `RANKS_AUDIT_PATH` / `ranks.audit_path` 指定
+- **封禁**：被封禁的 uid / token 提交会返回 403，名单持久化在 `ranks_bans.json`（`RANKS_BANS_PATH` / `ranks.bans_path`）
 - 每个提交者在每个类型下只有一条记录（最高分），但如果提交时带了 `group`（如角色名），则每个 `group` 各占一条；反复提交不会在榜单里产生重复行；没有 `uid` 的旧数据先按名字收敛，加载旧数据文件时也同样处理，旧文件会在下次落盘时变干净
 - 周期类型（以 `_all` / `_month` / `_week` / `_day` 结尾，例如 `survival_all`）视为同一族：提交其中任意一个，会自动把这条记录同步写入同族的其它类型，所以客户端每次提交只需发一个请求，月/周/日榜也会同时更新（各类型仍按 `uid` + `group` 去重、只留最高分；被 `RANKS_ALLOWED_TYPES` 排除的类型会跳过）
 - 每个排行类型默认最多保留 10000 条（可用 `RANKS_MAX_PER_TYPE` 或配置文件 `ranks.max_per_type` 调整），超出后名次靠后的记录会被丢弃，此时 `kept` 为 false；设为 `0` 或负数表示不限制条数
@@ -521,6 +529,43 @@ curl "http://localhost/api/ranks/story?limit=3"
 
 类型未在允许列表内时返回 400；类型不存在（从未有过提交）时返回空的 `scores`，不报错。
 
+### DELETE /api/ranks/:type/:uid
+
+删除某个提交者在某类型下的成绩（清理作弊成绩用），需要管理员 token。返回删除条数：
+
+``` json
+{ "type": "survival_all", "uid": "0f8c1d92", "removed": 1 }
+```
+
+### GET /api/ranks/bans
+
+查看封禁名单（需要管理员 token）：
+
+``` json
+{ "uids": [{ "value": "0f8c1d92", "reason": "手动改分", "at": 1789305323519 }], "tokens": [] }
+```
+
+### POST /api/ranks/bans
+
+封禁 uid 和/或玩家 token（需要管理员 token）。token 只以哈希形式保存。
+
+| 字段 | 类型 | 必填 | 说明 |
+| - | - | - | - |
+| `uid` | string | 否 | 要封禁的提交者 uid |
+| `token` | string | 否 | 要封禁的玩家 token（也可直接从 `GET /api/auth/tokens` 取） |
+| `reason` | string | 否 | 备注（最长 200 字符） |
+
+``` bash
+curl -X POST -H "Content-Type: application/json" -H "x-token: <admin>" \
+  -d '{"uid":"0f8c1d92","reason":"手动改分"}' http://localhost/api/ranks/bans
+```
+
+### DELETE /api/ranks/bans/:uid
+
+解除对某个 uid 的封禁，返回 `{ "ok": true }`。
+
+> 封禁名单持久化在 `ranks_bans.json`，重启后仍然生效（token 哈希同理）。注意玩家 token 本身保存在服务器内存里，重启后旧 token 失效，客户端会重新申请。
+
 ## 数据结构
 
 ### RoomInfo
@@ -551,15 +596,16 @@ curl "http://localhost/api/ranks/story?limit=3"
 
 ### RankScore
 
+存储里还有 `uid`，但**公开响应一律不返回 `uid` / `client_id` / `address`**（避免被用来顶掉别人的记录），只有 `extra` 里的 `open_id` 也会被剔除。
+
 | 字段 | 类型 | 说明 |
 | - | - | - |
 | `type` | string | 排行类型 |
 | `name` | string | 玩家名 |
 | `score` | number | 分数 |
-| `extra` | any | 提交时附带的额外信息 |
+| `group` | string | 分组标识（提交时带了才有） |
+| `extra` | any | 提交时附带的额外信息（仅白名单字段） |
 | `date` | number | 服务器记录的时间戳（毫秒） |
-| `client_id` | string | 提交者客户端 id（绑定了 token 时才有） |
-| `address` | string | 提交者地址 |
 
 ## 配置文件
 
@@ -611,6 +657,13 @@ curl "http://localhost/api/ranks/story?limit=3"
 | `ranks.db` | string | SQLite 数据库路径；配置后优先使用 SQLite，不可用时自动回退到文件存储（见下方“排行存储”） |
 | `ranks.allowed_types` | string 或 string[] | 允许的排行类型，缺省不限制 |
 | `ranks.max_per_type` | number | 每个排行类型保留的条数上限，默认 10000；`0` 或负数表示不限制 |
+| `ranks.max_score` | number | 允许提交的分数上限（含），默认 10000；超出直接返回 400 |
+| `ranks.audit_path` | string | 提交审计日志（JSONL），缺省为排行数据同目录的 `ranks_audit.jsonl` |
+| `ranks.bans_path` | string | 封禁名单文件，缺省为排行数据同目录的 `ranks_bans.json` |
+| `ranks.rate_window_ms` | number | 限流窗口，默认 60000 毫秒 |
+| `ranks.rate_per_token` | number | 每个 token 每窗口允许的提交次数，默认 60 |
+| `ranks.rate_per_ip` | number | 每个 IP 每窗口允许的提交次数，默认 240 |
+| `ranks.rate_token_per_ip` | number | 每个 IP 每窗口允许申请的 token 数，默认 30 |
 
 ### 环境变量
 
@@ -629,6 +682,13 @@ RANKS_DIR=/root/data/lfj/ranks
 RANKS_DB=/root/data/lfj/ranks.sqlite
 RANKS_ALLOWED_TYPES=story,versus
 RANKS_MAX_PER_TYPE=10000
+RANKS_MAX_SCORE=10000
+RANKS_AUDIT_PATH=/root/data/lfj/ranks_audit.jsonl
+RANKS_BANS_PATH=/root/data/lfj/ranks_bans.json
+RANKS_RATE_WINDOW_MS=60000
+RANKS_RATE_PER_TOKEN=60
+RANKS_RATE_PER_IP=240
+RANKS_RATE_TOKEN_PER_IP=30
 ```
 
 | 配置 | 说明 |
@@ -640,6 +700,10 @@ RANKS_MAX_PER_TYPE=10000
 | `RANKS_DB` | SQLite 数据库路径；配置且可用时优先，否则回退到文件存储 |
 | `RANKS_ALLOWED_TYPES` | 允许的排行类型，逗号分隔，缺省不限制 |
 | `RANKS_MAX_PER_TYPE` | 每个排行类型保留的条数上限，缺省 10000；`0` 或负数表示不限制 |
+| `RANKS_MAX_SCORE` | 允许提交的分数上限（含），缺省 10000 |
+| `RANKS_AUDIT_PATH` | 提交审计日志路径，缺省为排行数据同目录的 `ranks_audit.jsonl` |
+| `RANKS_BANS_PATH` | 封禁名单路径，缺省为排行数据同目录的 `ranks_bans.json` |
+| `RANKS_RATE_WINDOW_MS` / `RANKS_RATE_PER_TOKEN` / `RANKS_RATE_PER_IP` / `RANKS_RATE_TOKEN_PER_IP` | 限流窗口与配额，缺省 60000ms / 60 次 / 240 次 / 30 次 |
 
 ### 排行存储
 

@@ -13,6 +13,14 @@ export interface IRanksConfig {
   db?: string;
   allowed_types?: string | string[];
   max_per_type?: number;
+  /** 分数上限：超过直接拒绝（防作弊第一道闸） */
+  max_score?: number;
+  audit_path?: string;
+  bans_path?: string;
+  rate_window_ms?: number;
+  rate_per_token?: number;
+  rate_per_ip?: number;
+  rate_token_per_ip?: number;
 }
 
 export interface IServerConfig {

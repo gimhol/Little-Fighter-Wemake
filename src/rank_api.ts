@@ -83,6 +83,34 @@ function rank_uid(): string {
   }
 }
 
+/**
+ * 排行提交用的玩家 token。服务端只把它当“可限流、可封禁、可追溯”的句柄（任何人都能申请），
+ * 不是身份认证；服务端重启后 token 失效，遇到 401 就换一个新的重试一次。
+ */
+const TOKEN_KEY = 'rank_api_token';
+
+function cached_token(): string {
+  try { return localStorage.getItem(TOKEN_KEY) ?? '' } catch { return '' }
+}
+
+function set_cached_token(token: string) {
+  try { localStorage.setItem(TOKEN_KEY, token) } catch { /* 隐私模式等写不进去时忽略 */ }
+}
+
+async function request_token(name: string): Promise<string> {
+  const resp = await fetch(`${rank_api_base()}/api/auth/token`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!resp.ok) throw new Error(`[rank_api] 申请 token 失败: ${resp.status}`);
+  const data = await resp.json() as { token?: string };
+  const token = `${data?.token ?? ''}`;
+  if (!token) throw new Error('[rank_api] 申请 token 失败: 响应缺少 token');
+  set_cached_token(token);
+  return token;
+}
+
 async function post_score(type: string, name: string, score: number, fighter: string, player: string, fighter2: string = '', player2: string = '', open_id: string = '', owner_uid: string = '', group: string = ''): Promise<void> {
   const extra: { fighter: string; player: string; fighter2?: string; player2?: string; open_id?: string } = { fighter, player };
   if (fighter2) extra.fighter2 = fighter2;
@@ -90,11 +118,17 @@ async function post_score(type: string, name: string, score: number, fighter: st
   if (open_id) extra.open_id = open_id;
   const body: { type: string; name: string; score: number; uid: string; extra: typeof extra; group?: string } = { type, name, score, uid: owner_uid || rank_uid(), extra };
   if (group) body.group = group;
-  const resp = await api('/api/ranks', {
+  const send = (token: string) => api('/api/ranks', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-token': token },
     body: JSON.stringify(body),
   });
+  const token = cached_token() || await request_token(name);
+  let resp = await send(token);
+  if (resp.status === 401) {
+    set_cached_token('');
+    resp = await send(await request_token(name));
+  }
   if (!resp.ok) throw new Error(`[rank_api] 提交失败: ${resp.status}`);
 }
 

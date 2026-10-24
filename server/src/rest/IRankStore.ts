@@ -58,6 +58,8 @@ export interface IRankStore {
   extra_player2(extra: unknown): string | undefined;
   char_lookup(type: string, names: string[]): IRankLookup[];
   submit(info: IRankSubmit): IRankResult;
+  /** 删除匹配的记录（清理作弊成绩用），返回删除条数 */
+  remove(type: string, opts: { uid?: string; name?: string }): number;
 }
 
 export const DEFAULT_RANKS_FILE = 'ranks.json';

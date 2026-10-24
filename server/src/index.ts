@@ -50,6 +50,13 @@ Environment variables (.env is supported):
   RANKS_DB
   RANKS_ALLOWED_TYPES
   RANKS_MAX_PER_TYPE
+  RANKS_MAX_SCORE
+  RANKS_AUDIT_PATH
+  RANKS_BANS_PATH
+  RANKS_RATE_WINDOW_MS
+  RANKS_RATE_PER_TOKEN
+  RANKS_RATE_PER_IP
+  RANKS_RATE_TOKEN_PER_IP
 
 REST API (与 ws 共用端口):
   GET  /api                接口清单
@@ -58,8 +65,12 @@ REST API (与 ws 共用端口):
   GET  /api/rooms/:key     房间详情
   GET  /api/clients        客户端列表（admin）
   POST /api/auth/token     申请玩家 token
-  POST /api/ranks          提交排行分数
+  POST /api/ranks          提交排行分数（player，需 x-token）
   GET  /api/ranks/:type    查询排行
+  DELETE /api/ranks/:type/:uid  删除某条排行成绩（admin）
+  GET  /api/ranks/bans          封禁名单（admin）
+  POST /api/ranks/bans          封禁 uid / token（admin）
+  DELETE /api/ranks/bans/:uid   解除封禁（admin）
 `.trim())
 }
 async function main() {
@@ -97,6 +108,13 @@ async function main() {
     ranks_db: to_str(process.env.RANKS_DB) ?? to_str(config.ranks?.db),
     ranks_types: to_list(process.env.RANKS_ALLOWED_TYPES) ?? to_list(config.ranks?.allowed_types),
     ranks_max_per_type: to_num(process.env.RANKS_MAX_PER_TYPE) ?? to_num(config.ranks?.max_per_type),
+    ranks_max_score: to_num(process.env.RANKS_MAX_SCORE) ?? to_num(config.ranks?.max_score),
+    ranks_audit_path: to_str(process.env.RANKS_AUDIT_PATH) ?? to_str(config.ranks?.audit_path),
+    ranks_bans_path: to_str(process.env.RANKS_BANS_PATH) ?? to_str(config.ranks?.bans_path),
+    ranks_rate_window_ms: to_num(process.env.RANKS_RATE_WINDOW_MS) ?? to_num(config.ranks?.rate_window_ms),
+    ranks_rate_per_token: to_num(process.env.RANKS_RATE_PER_TOKEN) ?? to_num(config.ranks?.rate_per_token),
+    ranks_rate_per_ip: to_num(process.env.RANKS_RATE_PER_IP) ?? to_num(config.ranks?.rate_per_ip),
+    ranks_rate_token_per_ip: to_num(process.env.RANKS_RATE_TOKEN_PER_IP) ?? to_num(config.ranks?.rate_token_per_ip),
     log: to_bool(config.rest?.log),
     max_body_size: to_num(config.rest?.max_body_size),
     info: { ssl: is_https, port, http_port, https_port, config_file: config_file.loaded ? config_file.path : void 0, commit: __GIT_COMMIT__, dirty: __GIT_DIRTY__, built_at: __BUILD_TIME__ },

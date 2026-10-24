@@ -5,6 +5,7 @@ export function register_auth_routes(rest: Rest) {
   const { router, auth } = rest;
 
   router.post('/api/auth/token', (c) => {
+    rest.ranks_guard.check_token_issue(c.req.raw.socket.remoteAddress ?? void 0);
     const body = body_of(c.req.body);
     const player = auth.create_player_token(str_of(body?.name), strs_of(body?.players));
     return {

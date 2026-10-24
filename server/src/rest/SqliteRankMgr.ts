@@ -229,6 +229,14 @@ export class SqliteRankMgr implements IRankStore {
     return submit_to_family(this, submit => this.store(submit), info);
   }
 
+  remove(type: string, opts: { uid?: string; name?: string }): number {
+    const stmt = opts.uid
+      ? this._db.prepare(`DELETE FROM scores WHERE type = ? AND uid = ?`)
+      : this._db.prepare(`DELETE FROM scores WHERE type = ? AND name = ?`);
+    const result = stmt.run(type, opts.uid ?? opts.name ?? '');
+    return Number(result.changes) || 0;
+  }
+
   protected store(info: IRankSubmit): IRankResult {
     const key = owner_key(info);
     const date = Date.now();
