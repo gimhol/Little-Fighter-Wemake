@@ -1,9 +1,8 @@
-import { AGK, Defines, E_E, GK, StateEnum, WeaponEnum, WT } from "../../defines";
+import { AGK, E_E, GK, StateEnum, WeaponEnum, WT } from "../../defines";
 import { BotStateEnum, BSE } from "../../defines/BotStateEnum";
 import { is_fighter, is_weapon } from "../../entity";
 import { abs, between, round } from '../../utils/math/base';
 import { round_float } from '../../utils/math/round_float';
-import { BotBehavior } from "../BotController";
 import { BotState_Base } from "./BotState";
 
 export class BotState_Chasing extends BotState_Base {
@@ -18,11 +17,6 @@ export class BotState_Chasing extends BotState_Base {
     const { ctrl: c } = this;
     const me = c.entity;
     const en = c.chasings.get();
-
-    if (en && this.ctrl.is_leave_chase_range(en))
-      return BSE.Following;
-    if (this.ctrl.is_leave_goto_range(me))
-      return BSE.Following;
 
     if (this.handle_bot_actions('hba_c')) return;
     if (this.handle_defends('hd_c1')) return;
@@ -55,21 +49,6 @@ export class BotState_Chasing extends BotState_Base {
      * 敌人在低时为负数
      */
     // const ry = round(en_y - my_y)
-
-    /** 敌人与自己的距离X */
-    const absx = round(abs(my_x - en_x))
-
-    if (
-      absx > Defines.AI_STAY_CHASING_RANGE &&
-      (
-        c.behavior === BotBehavior.Stay ||
-        c.behavior === BotBehavior.Follow
-      )
-    ) {
-      c.en_out_of_range = true;
-      return BotStateEnum.Following;
-    }
-
 
     /** 敌人与自己的距离Z */
     const abs_dz = round_float(abs(my_z - en_z))

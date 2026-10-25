@@ -362,6 +362,7 @@ export class BotController extends BaseController {
     )
   }
 
+  /** 追击距离的判定本身还在，但 AI 已经不拿它限制追击（只留给探针 / 外部脚本用）。 */
   is_leave_chase_range(target: Entity): boolean {
     const pos = this.following?.position ?? this.goingto;
     if (!pos) return false;
@@ -400,11 +401,6 @@ export class BotController extends BaseController {
     if (this.entity.catching)
       return this.entity.catching == e;
 
-    // 正在注视的对象已失效(死亡/消失/回到可追击范围)时置空
-    if (this.watching === e) {
-      if (!e.mounted || e.hp <= 0 || !this.is_leave_chase_range(e))
-        this.watching = null;
-    }
     const { entity: me } = this;
     if (!me.mounted) return false
     if (!e.mounted) return false
@@ -470,10 +466,6 @@ export class BotController extends BaseController {
     if (e.invulnerable) return false
     if (!me.is_on_ground) return true
 
-    if (this.is_leave_chase_range(e)) {
-      this.watching = e;
-      return false
-    }
     if (this.bot_state === BSE.Avoiding) {
       // 已拉开一定距离，攻击
       return this.w_atk_too_far(e) || !this.can_back_off(e)
