@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Legacy Flame War: Web",
-  "version": "0.1.63",
+  "version": "0.1.64",
   "description": "Legacy Flame War: Web",
   "icons": {
     "16": "icon16.png",
