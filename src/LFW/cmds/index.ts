@@ -3,6 +3,7 @@ export * from "./CMDS";
 export * from "./CMD_BGM";
 export * from "./CMD_CHANGE_BG";
 export * from "./CMD_CHANGE_STAGE";
+export * from "./CMD_DATASET";
 export * from "./CMD_DEL_PUPPET";
 export * from "./CMD_DESPAWN";
 export * from "./CMD_DIST_CAM";

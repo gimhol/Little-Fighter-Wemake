@@ -81,6 +81,8 @@ export const enum CMD {
   ENTITY /**/ = "ENTITY",
   /** 当前世界概要 */
   INFO /**/ = "INFO",
+  /** 数据集分层（背景 / 实体 / 世界） */
+  DATASET /**/ = "DATASET",
   /** 列出 UI 层 / 节点树 */
   UI /**/ = "UI",
 
@@ -131,6 +133,7 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.ENTITIES]: "ENTITIES",
   [CMD.ENTITY]: "ENTITY",
   [CMD.INFO]: "INFO",
+  [CMD.DATASET]: "DATASET",
   [CMD.UI]: "UI",
   [CMD.SET_LANG]: "SET_LANG"
 }
