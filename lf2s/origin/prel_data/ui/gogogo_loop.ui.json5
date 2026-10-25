@@ -3,7 +3,7 @@
   name: "gogogo_loop",
   visible: false,
   opacity: 0,
-  i18n: "Go! ➡",
+  i18n: "Go! ▶",
   outlineColor: "#005A8E",
   outlineWidth: 5,
   outlineAlpha: 1,
