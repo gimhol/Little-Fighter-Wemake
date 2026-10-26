@@ -6,4 +6,22 @@
       file: "data/fx.obj.json5",
     },
   ],
+  // 原创「平替」地图（背景在 bg/<id>/<id>.index.json5 里各自登记）
+  stages: [
+    {
+      id: "frost_hollow",
+      type: "stage",
+      file: "data/frost_hollow.stage.json5",
+    },
+    {
+      id: "amber_docks",
+      type: "stage",
+      file: "data/amber_docks.stage.json5",
+    },
+    {
+      id: "sunken_shrine",
+      type: "stage",
+      file: "data/sunken_shrine.stage.json5",
+    },
+  ],
 }

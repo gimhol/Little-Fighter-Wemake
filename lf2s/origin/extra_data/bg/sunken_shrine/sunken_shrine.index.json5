@@ -1,0 +1,10 @@
+{
+  backgrounds: [
+    {
+      id: "sunken_shrine",
+      type: "bg",
+      file: "bg/sunken_shrine/sunken_shrine.bg.json5",
+    },
+  ],
+}
+

@@ -1,0 +1,10 @@
+{
+  backgrounds: [
+    {
+      id: "frost_hollow",
+      type: "bg",
+      file: "bg/frost_hollow/frost_hollow.bg.json5",
+    },
+  ],
+}
+

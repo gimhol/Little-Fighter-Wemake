@@ -1,0 +1,10 @@
+{
+  backgrounds: [
+    {
+      id: "amber_docks",
+      type: "bg",
+      file: "bg/amber_docks/amber_docks.bg.json5",
+    },
+  ],
+}
+
