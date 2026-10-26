@@ -83,6 +83,15 @@
     "moves.whirlwind_kick": "Whirlwind Kick",
     "moves.whirlwind_throw": "Whirlwind Throw",
     "moves.wolf_punch": "Wolf Punch",
+    "moves.rocky_crush_punch": "Crush Punch",
+    "moves.rocky_quake_wave": "Quake Wave",
+    "moves.rocky_iron_charge": "Iron Charge",
+    "moves.rin_shadow_rush": "Shadow Rush",
+    "moves.rin_triple_kick": "Triple Kick",
+    "moves.rin_wind_blade": "Wind Blade",
+    "moves.sera_double_moon": "Double Moon Slash",
+    "moves.sera_rising_slash": "Rising Slash",
+    "moves.sera_spirit_wave": "Spirit Wave"
   },
   "zh-hans": {
     "moves.angels_blessing": "天使祝福",
@@ -168,6 +177,15 @@
     "moves.whirlwind_kick": "旋风腿",
     "moves.whirlwind_throw": "旋风摔",
     "moves.wolf_punch": "狼拳",
+    "moves.rocky_crush_punch": "崩山重拳",
+    "moves.rocky_quake_wave": "震地波",
+    "moves.rocky_iron_charge": "铁壁冲",
+    "moves.rin_shadow_rush": "疾影冲",
+    "moves.rin_triple_kick": "三连踢",
+    "moves.rin_wind_blade": "风刃",
+    "moves.sera_double_moon": "双月斩",
+    "moves.sera_rising_slash": "升龙斩",
+    "moves.sera_spirit_wave": "灵刃波"
   },
   "zh-hant": {
     "moves.angels_blessing": "天使祝福",
@@ -253,5 +271,14 @@
     "moves.whirlwind_kick": "旋風腿",
     "moves.whirlwind_throw": "旋風摔",
     "moves.wolf_punch": "狼拳",
-  },
+    "moves.rocky_crush_punch": "崩山重拳",
+    "moves.rocky_quake_wave": "震地波",
+    "moves.rocky_iron_charge": "铁壁冲",
+    "moves.rin_shadow_rush": "疾影冲",
+    "moves.rin_triple_kick": "三连踢",
+    "moves.rin_wind_blade": "风刃",
+    "moves.sera_double_moon": "双月斩",
+    "moves.sera_rising_slash": "升龙斩",
+    "moves.sera_spirit_wave": "灵刃波"
+  }
 }

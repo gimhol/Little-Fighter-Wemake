@@ -1,0 +1,73 @@
+{
+  "oid": "rin",
+  "start_delay": 500,
+  "end_delay": 1600,
+  "moves": [
+    {
+      "name": "moves.rin_shadow_rush",
+      "keys": "D + v + A",
+      "seq": [
+        {
+          "time": 0,
+          "keydowns": "dDa"
+        },
+        {
+          "time": 120,
+          "keyups": "dDa"
+        }
+      ],
+      "mp": 45,
+      "dx": -120,
+      "entities": [
+        {
+          "oid": "30",
+          "dx": 130
+        }
+      ]
+    },
+    {
+      "name": "moves.rin_triple_kick",
+      "keys": "D + ^ + A",
+      "seq": [
+        {
+          "time": 0,
+          "keydowns": "dUa"
+        },
+        {
+          "time": 120,
+          "keyups": "dUa"
+        }
+      ],
+      "mp": 35,
+      "dx": -80,
+      "entities": [
+        {
+          "oid": "30",
+          "dx": 130
+        }
+      ]
+    },
+    {
+      "name": "moves.rin_wind_blade",
+      "keys": "D + > + A",
+      "seq": [
+        {
+          "time": 0,
+          "keydowns": "dRa"
+        },
+        {
+          "time": 120,
+          "keyups": "dRa"
+        }
+      ],
+      "mp": 30,
+      "dx": -110,
+      "entities": [
+        {
+          "oid": "30",
+          "dx": 130
+        }
+      ]
+    }
+  ]
+}
