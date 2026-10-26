@@ -27,7 +27,13 @@ export class CMDS {
     for (let i = 0; i < cmds.length; i++) {
       this.inst.set_cmd(cmds[i]);
       const cmd = this.inst.words[0].toLowerCase();
-      this.handler(cmd)?.(this.inst);
+      const handler = this.handler(cmd);
+      if (!handler) continue;
+      if (this.inst.words[1]?.toLowerCase() === 'help') {
+        Ditto.Log(this.helps.get(cmd) ?? '');
+        continue;
+      }
+      handler(this.inst);
     }
   }
   readonly world: World;
