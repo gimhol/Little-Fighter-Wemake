@@ -75,6 +75,8 @@ class Inner {
   directors: IDirectorGroupData[] = [];
   randomings = new Map<string, Randoming<IEntityData>>();
   bg_randomings = new Map<string, Randoming<IBgData>>();
+  private _builtins_loaded = false;
+  private _bg_datas = new Map<string, IBgData>();
 
   constructor(mgr: DatMgr, id: number) {
     this.id = id;
@@ -150,6 +152,17 @@ class Inner {
 
   private _add_bg(data: IBgData) {
     const list = this.datas[data.type];
+    const prev = this._bg_datas.get(data.id);
+    if (prev) {
+      // 背景数据里没有 file 字段（文件名在索引项上），只能拿名字 + 层数当指纹。
+      const fp = (v: IBgData) => `"${v.base?.name ?? ""}" (${v.layers?.length ?? 0} layers)`;
+      Ditto.warn(
+        DatMgr.TAG + "::_add_bg",
+        "id duplicated, old data will be overwritten!",
+        `key: ${data.id}, old: ${fp(prev)}, new: ${fp(data)}, same data: ${JSON.stringify(prev) === JSON.stringify(data) ? "yes" : "no"}`,
+      );
+    }
+    this._bg_datas.set(data.id, data);
     const idx = list.findIndex(v => v.id === data.id);
     if (idx < 0) list.push(data); else list[idx] = data;
     data.base.group?.forEach(v => this.bg_randomings.delete(v));
@@ -204,21 +217,24 @@ class Inner {
     return data;
   }
   async load(index_files: string[]) {
-    for (const k of Object.keys(Defines.BuiltIn_Imgs)) {
-      const src = (Defines.BuiltIn_Imgs as any)[k];
-      if (!is_non_blank_str(src)) continue;
-      this.lfw.emit_progress(`${src}`, 0);
-      await this.lfw.images.load_img(src, src);
-      if (this.cancelled) throw new Error("cancelled");
-    }
-    for (const k of Object.keys(Defines.BuiltIn_Dats)) {
-      const src = (Defines.BuiltIn_Dats as any)[k];
-      if (!is_non_blank_str(src)) continue;
-      this.lfw.emit_progress(`${src}`, 0);
-      const raw = await this.lfw.resources.import_json<IEntityData>(src).then(r => r.data)
-      const cooked = await this._cook_data(raw) as IEntityData;
-      this._add_object(src, cooked);
-      if (this.cancelled) throw new Error("cancelled");
+    if (!this._builtins_loaded) {
+      for (const k of Object.keys(Defines.BuiltIn_Imgs)) {
+        const src = (Defines.BuiltIn_Imgs as any)[k];
+        if (!is_non_blank_str(src)) continue;
+        this.lfw.emit_progress(`${src}`, 0);
+        await this.lfw.images.load_img(src, src);
+        if (this.cancelled) throw new Error("cancelled");
+      }
+      for (const k of Object.keys(Defines.BuiltIn_Dats)) {
+        const src = (Defines.BuiltIn_Dats as any)[k];
+        if (!is_non_blank_str(src)) continue;
+        this.lfw.emit_progress(`${src}`, 0);
+        const raw = await this.lfw.resources.import_json<IEntityData>(src).then(r => r.data)
+        const cooked = await this._cook_data(raw) as IEntityData;
+        this._add_object(src, cooked);
+        if (this.cancelled) throw new Error("cancelled");
+      }
+      this._builtins_loaded = true;
     }
     const data = await this.solve_index_files(index_files);
     if (this.cancelled) throw new Error("cancelled");
