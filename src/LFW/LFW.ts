@@ -629,7 +629,15 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     }
 
     try {
+      const loaded_before = (a: I.IZip | string): boolean => this.zips.all.some((z) => {
+        if (is_str(a)) return z.info?.url === a || z.zip.name === a
+        return z.zip === a || (!!a.name && z.zip.name === a.name)
+      });
       for (const a of arg1) {
+        if (loaded_before(a)) {
+          if (this.__debugging) I.Ditto.Log(`[${LFW.TAG}::load] skip already loaded zip: ${is_str(a) ? a : a.name}`)
+          continue
+        }
         const zip = is_str(a) ?
           await this._load_zip_from_url(a) :
           await this._load_zip_from_object(a)
