@@ -65,6 +65,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
 
   protected _staring?: Entity | undefined;
   protected _free?: boolean
+  protected static readonly _restart_delay_ms = 5000;
   protected static _situations: Randoming<DemoSituation> | null = null
   protected static _situation: DemoSituation | null = null
   protected static _stages: Randoming<IStageInfo> | null = null
@@ -373,6 +374,13 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
       }
     }
     this.fsm.update(dt)
+    if (
+      this.fsm.state?.key === ModeState.End &&
+      this.fsm.state_time >= DemoModeLogic._restart_delay_ms
+    ) {
+      this.clearup()
+      this.startup()
+    }
   }
 
   override on_key_down(e: IUIKeyEvent): void {
