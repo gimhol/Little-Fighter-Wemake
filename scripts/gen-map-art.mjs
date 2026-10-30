@@ -319,114 +319,7 @@ function floorPlane(g, opts) {
   }
 }
 
-/**
- * 抬高的平台：`h` 是地形高度（世界单位 = 屏幕像素）。
- * 顶面按深度带做透视（后沿高、前沿低），正面压到地面前沿。
- * `ribs` 可选：正面竖向棱线（集装箱那种），`blocks` 可选：正面砌块缝（石头台基那种）。
- */
-function raisedBlock(g, x0, x1, h, palette) {
-  const topBack = groundY(0) - h
-  const topFront = groundY(1) - h
-  const frontBottom = groundY(1)
-  const { top, topBackShade, front, edge, crack, ribs, blocks } = palette
-  // 顶面：后暗前亮（真渐变，不是叠一层 alpha），前缘再压一条高光
-  for (let y = Math.round(topBack); y <= Math.round(topFront); y++) {
-    const k = (y - topBack) / Math.max(1, topFront - topBack)
-    const c = [
-      Math.round(topBackShade[0] + (top[0] - topBackShade[0]) * k),
-      Math.round(topBackShade[1] + (top[1] - topBackShade[1]) * k),
-      Math.round(topBackShade[2] + (top[2] - topBackShade[2]) * k),
-    ]
-    for (let x = x0; x < x1; x++) g.blend(x, y, c, 1)
-  }
-  // 顶面的透视缝：越靠前间距越大（与正面砌块对齐的观感）
-  {
-    let t = 0
-    while (t < 1) {
-      const y = topBack + (topFront - topBack) * t
-      for (let x = x0; x <= x1; x++) g.blend(x, Math.round(y), crack, 0.12)
-      t += 1 / 7
-    }
-    const baseCols = 6
-    for (let i = 0; i <= baseCols; i++) {
-      const bx = x0 + ((x1 - x0) * i) / baseCols
-      for (let k = 0; k < 1; k += 0.02) {
-        const y = topBack + (topFront - topBack) * k
-        // 近处缝向左/右散开，做出"从后往前张开"的透视
-        const x = bx + (bx - (x0 + x1) / 2) * k * 0.18
-        g.blend(x, y, crack, 0.1 + k * 0.14)
-      }
-    }
-  }
-  // 顶面纹理：沿深度方向的分层带，避免变成一整块纯色
-  const bands = 7
-  for (let i = 0; i < bands; i++) {
-    const y = topBack + ((topFront - topBack) * (i + 0.5)) / bands
-    const c = i % 2 ? palette.topBackShade : palette.edge
-    for (let x = x0 + 2; x < x1 - 2; x++) {
-      if ((x + i * 17) % 5 > 1) g.blend(x, Math.round(y), c, 0.14)
-    }
-    // 顶面横缝（透视）
-    for (let x = x0 + 2; x < x1 - 2; x++) g.blend(x, Math.round(y), c, 0.08)
-  }
-  g.rect(x0, topBack, x1, topBack + 2, topBackShade)
-  g.rect(x0, topFront, x1, frontBottom, front)
-  g.rect(x0, topFront - 1, x1, topFront, edge)
-  if (ribs) {
-    for (let x = x0 + 4; x < x1 - 2; x += ribs) {
-      for (let y = topFront; y <= frontBottom; y++) g.blend(x, y, crack, 0.45)
-      for (let y = topFront; y <= frontBottom; y++) g.blend(x + 1, y, edge, 0.18)
-    }
-  }
-  if (blocks) {
-    for (let y = topFront + blocks; y < frontBottom; y += blocks) {
-      for (let x = x0; x <= x1; x++) g.blend(x, y, crack, 0.35)
-    }
-    let row = 0
-    for (let y = topFront; y < frontBottom; y += blocks, row++) {
-      const shift = row % 2 ? blocks : 0
-      for (let x = x0 + shift; x <= x1; x += blocks * 2) {
-        for (let yy = y; yy < Math.min(frontBottom, y + blocks); yy++) {
-          g.blend(x, yy, crack, 0.28)
-        }
-      }
-    }
-  }
-  // 前沿下方的投影，让平台"压"在地面上
-  for (let y = topFront + 1; y < Math.min(g.h, topFront + 10); y++) {
-    for (let x = x0; x <= x1; x++) g.blend(x, y, crack, 0.12 * (1 - (y - topFront) / 10))
-  }
-  g.rect(x0, topFront, x0 + 2, frontBottom, topBackShade)
-  g.rect(x1 - 2, topFront, x1, frontBottom, topBackShade)
-  const seed = rng(Math.round(x0 * 31 + h))
-  const cracks = Math.max(2, Math.round((x1 - x0) / 90))
-  for (let i = 0; i < cracks; i++) {
-    let x = x0 + 6 + Math.floor(seed() * Math.max(1, x1 - x0 - 12))
-    for (let y = topFront + 3; y < frontBottom; y++) {
-      if (seed() < 0.25) x += seed() < 0.5 ? -1 : 1
-      g.blend(x, y, crack, 0.7)
-    }
-  }
-}
 
-/** 斜坡：从 (x0,h0) 线性升到 (x1,h1)，画成侧面梯形 */
-function ramp(g, x0, x1, h0, h1, color, edge) {
-  const steps = Math.max(1, Math.round(x1 - x0))
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps
-    const x = Math.round(x0 + (x1 - x0) * t)
-    const top = groundY(1) - (h0 + (h1 - h0) * t)
-    const bottom = groundY(1)
-    const yFrom = Math.max(0, Math.round(top))
-    const yTo = Math.min(g.h - 1, Math.round(bottom))
-    for (let y = yFrom; y <= yTo; y++) {
-      const k = (y - Math.max(0, top)) / Math.max(1, bottom - top)
-      const shade = 0.72 + 0.28 * (1 - k)
-      g.blend(x, y, [color[0] * shade, color[1] * shade, color[2] * shade].map(Math.round), 1)
-    }
-    if (i % 2 === 0) g.blend(x, Math.max(0, Math.round(top)), edge, 0.9)
-  }
-}
 
 // ---------------------------------------------------------------- 地图一：霜谷
 
@@ -567,24 +460,6 @@ function frostGround() {
   for (const [cx, bw, bh, sd] of [[300, 220, 46, 5], [1020, 170, 34, 7], [2120, 250, 52, 9]]) {
     boulder(g, cx, groundY(0.32), bw, bh, sd)
   }
-  // 高台 + 两侧斜坡（与 terrain 对应：x 1430..1930，h=70）
-  ramp(g, 1370, 1430, 0, 70, [150, 176, 198], [232, 244, 252])
-  raisedBlock(g, 1430, 1930, 70, {
-    top: [214, 230, 242],
-    topBackShade: [186, 208, 226],
-    front: [162, 188, 210],
-    edge: [240, 250, 255],
-    crack: [120, 146, 170],
-    blocks: 9,
-  })
-  ramp(g, 1930, 1990, 70, 0, [150, 176, 198], [232, 244, 252])
-  // 平台脚下堆雪
-  for (let x = 1390; x <= 2010; x++) {
-    const h = 2 + rand() * 4
-    for (let y = Math.round(groundY(1) - h); y <= groundY(1); y++) {
-      g.blend(x, y, [236, 246, 252], 0.5)
-    }
-  }
   return g
 }
 
@@ -705,28 +580,6 @@ function docksGround() {
       g.blend(x, y - rand() * 6, [226, 168, 104], 0.18 + rand() * 0.2)
     }
   }
-  // 集装箱托盘（与 terrain 对应：x 700..1000，h=55）
-  ramp(g, 660, 700, 0, 55, [104, 70, 56], [150, 104, 78])
-  raisedBlock(g, 700, 1000, 55, {
-    top: [176, 100, 66],
-    topBackShade: [132, 74, 52],
-    front: [102, 62, 46],
-    edge: [222, 148, 96],
-    crack: [54, 34, 28],
-    ribs: 11,
-  })
-  ramp(g, 1000, 1040, 55, 0, [104, 70, 56], [150, 104, 78])
-  // 木箱（与 terrain 对应：x 1750..1850，h=28）
-  ramp(g, 1730, 1750, 0, 28, [92, 74, 46], [138, 112, 70])
-  raisedBlock(g, 1750, 1850, 28, {
-    top: [156, 124, 78],
-    topBackShade: [116, 92, 58],
-    front: [98, 78, 50],
-    edge: [190, 156, 100],
-    crack: [58, 46, 30],
-    blocks: 12,
-  })
-  ramp(g, 1850, 1870, 28, 0, [92, 74, 46], [138, 112, 70])
   return g
 }
 
@@ -836,25 +689,6 @@ function shrineGround() {
     const y = groundY(t) + rand() * 6
     g.blend(x, y, [30, 44, 34], 0.12 + rand() * 0.2)
   }
-  const stone = {
-    top: [126, 136, 104],
-    topBackShade: [96, 106, 80],
-    front: [82, 92, 68],
-    edge: [168, 176, 138],
-    crack: [44, 52, 40],
-  }
-  // 两处石台（与 terrain 对应：x 380..640 h=35；x 900..1160 h=75）
-  ramp(g, 340, 380, 0, 35, [104, 114, 86], [168, 176, 138])
-  raisedBlock(g, 380, 640, 35, { ...stone, blocks: 7 })
-  ramp(g, 640, 680, 35, 0, [104, 114, 86], [168, 176, 138])
-  ramp(g, 860, 900, 0, 75, [104, 114, 86], [168, 176, 138])
-  raisedBlock(g, 900, 1160, 75, {
-    ...stone,
-    top: [138, 148, 114],
-    topBackShade: [104, 114, 86],
-    blocks: 8,
-  })
-  ramp(g, 1160, 1200, 75, 0, [104, 114, 86], [168, 176, 138])
   return g
 }
 

@@ -1,0 +1,14 @@
+{
+  objects: [
+    {
+      id: 'sera',
+      type: '0',
+      file: 'characters/sera/sera.obj.json5',
+    },
+    {
+      id: 'sera_wave',
+      type: '0',
+      file: 'characters/sera/sera_wave.obj.json5',
+    },
+  ],
+}

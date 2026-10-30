@@ -1,0 +1,73 @@
+{
+  "oid": "rocky",
+  "start_delay": 500,
+  "end_delay": 1600,
+  "moves": [
+    {
+      "name": "moves.rocky_crush_punch",
+      "keys": "D + v + A",
+      "seq": [
+        {
+          "time": 0,
+          "keydowns": "dDa"
+        },
+        {
+          "time": 120,
+          "keyups": "dDa"
+        }
+      ],
+      "mp": 45,
+      "dx": -90,
+      "entities": [
+        {
+          "oid": "30",
+          "dx": 130
+        }
+      ]
+    },
+    {
+      "name": "moves.rocky_quake_wave",
+      "keys": "D + ^ + A",
+      "seq": [
+        {
+          "time": 0,
+          "keydowns": "dUa"
+        },
+        {
+          "time": 120,
+          "keyups": "dUa"
+        }
+      ],
+      "mp": 35,
+      "dx": -110,
+      "entities": [
+        {
+          "oid": "30",
+          "dx": 130
+        }
+      ]
+    },
+    {
+      "name": "moves.rocky_iron_charge",
+      "keys": "D + > + A",
+      "seq": [
+        {
+          "time": 0,
+          "keydowns": "dRa"
+        },
+        {
+          "time": 120,
+          "keyups": "dRa"
+        }
+      ],
+      "mp": 40,
+      "dx": -140,
+      "entities": [
+        {
+          "oid": "30",
+          "dx": 130
+        }
+      ]
+    }
+  ]
+}

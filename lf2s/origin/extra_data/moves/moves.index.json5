@@ -24,5 +24,8 @@
     { id: "9", type: "moves", file: "moves/9.moves.json5" },
     { id: "10", type: "moves", file: "moves/10.moves.json5" },
     { id: "11", type: "moves", file: "moves/11.moves.json5" },
+    { id: "rocky", type: "moves", file: "moves/rocky.moves.json5" },
+    { id: "rin", type: "moves", file: "moves/rin.moves.json5" },
+    { id: "sera", type: "moves", file: "moves/sera.moves.json5" },
   ],
 }

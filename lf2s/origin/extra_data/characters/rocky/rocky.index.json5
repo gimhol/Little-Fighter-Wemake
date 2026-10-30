@@ -1,0 +1,14 @@
+{
+  objects: [
+    {
+      id: 'rocky',
+      type: '0',
+      file: 'characters/rocky/rocky.obj.json5',
+    },
+    {
+      id: 'rocky_shock',
+      type: '0',
+      file: 'characters/rocky/rocky_shock.obj.json5',
+    },
+  ],
+}

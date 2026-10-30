@@ -1,0 +1,14 @@
+{
+  objects: [
+    {
+      id: 'rin',
+      type: '0',
+      file: 'characters/rin/rin.obj.json5',
+    },
+    {
+      id: 'rin_gale',
+      type: '0',
+      file: 'characters/rin/rin_gale.obj.json5',
+    },
+  ],
+}
