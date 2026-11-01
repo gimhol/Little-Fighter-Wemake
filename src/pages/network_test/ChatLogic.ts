@@ -118,17 +118,16 @@ export class ChatLogic extends UIComponent {
     if (!this._input) return;
     const renderer = this.input_renderer();
     const text = renderer?.get_input_value?.() ?? this._input.text;
-    if (!chat_store.send(text)) {
-      this.close();
-      return;
-    }
+    if (!chat_store.send(text)) return;
     this._input.text = "";
     renderer?.set_input_value?.("");
-    chat_store.peek = true;
-    this._hold = PEEK_HOLD_MS;
+    this._hold = 0;
     this._alpha = 1;
-    this.set_input_visible(false);
+    this.node.set_opacity(1);
+    chat_store.peek = false;
+    this.set_input_visible(true);
     this.render();
+    this.focus_input();
   }
 
   close(): void {
