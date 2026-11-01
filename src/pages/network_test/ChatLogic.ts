@@ -170,6 +170,15 @@ export class ChatLogic extends UIComponent {
     else if (!chat_store.peek) this._focus_pending = true;
   }
 
+  private set_pointer_through(v: boolean): void {
+    const walk = (n: UINode) => {
+      n.pointer_through = v;
+      for (const c of n.children) walk(c);
+    };
+    walk(this.node);
+    this.node.pointer_through = true;
+  }
+
   private blur_input(): void {
     this._input?.node.blur();
     this._focus_pending = false;
@@ -256,7 +265,9 @@ export class ChatLogic extends UIComponent {
   private render(): void {
     const items = chat_store.items;
     const typing = !chat_store.peek;
-    this.node.set_disabled(!typing);
+    // peek（只读展示）时整棵子树都不参与指针命中：点击/拖动穿透到下层；
+    // 注意不能靠 disabled —— World.update_ui 会跳过 disabled 页面，peek 计时与消息刷新都会停摆
+    this.set_pointer_through(!typing);
     let used = 0;
     let slot = this._rows.length - 1;
     for (let i = items.length - 1; i >= 0 && slot >= 0; i--) {
