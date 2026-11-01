@@ -81,6 +81,7 @@ export class UINodeRenderer implements IUINodeRenderer {
   protected release_dom() {
     if (!this._css_obj) return;
     this.mesh.remove(this._css_obj);
+    this._input?.remove();
     delete this._css_obj;
     delete this._dom;
     delete this._input
@@ -147,6 +148,7 @@ export class UINodeRenderer implements IUINodeRenderer {
         if (e.key === 'Escape') {
           // Esc 退出输入：把键盘交还给游戏
           ele_input.blur();
+          text_input.on_cancel?.();
           e.preventDefault();
           return;
         }
@@ -590,6 +592,8 @@ export class UINodeRenderer implements IUINodeRenderer {
       this._dom.style.opacity = '' + this.mesh.material.alpha
       if (this._input) {
         const font_size = this.ui.find_component(TextInput)?.fontSize;
+        const font_family = this.ui.find_component(TextInput)?.fontFamily;
+        if (is_str(font_family)) this._input.style.fontFamily = font_family;
         if (is_num(font_size)) {
           this._input.style.fontSize = `${font_size}px`;
           this._input.style.lineHeight = 'normal';

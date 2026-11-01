@@ -8,11 +8,13 @@ export class TextInput extends UIComponent {
   get defaultValue() { return this.props_holder.str('defaultValue') }
   get placeholder() { return this.props_holder.str('placeholder') }
   get fontSize() { return this.props_holder.num('fontSize') }
+  get fontFamily() { return this.props_holder.str('fontFamily') }
 
   get text(): string { return this._text; }
   set text(text: string) { this._text = text; }
 
   on_submit?: () => void;
+  on_cancel?: () => void;
 }
 
 
