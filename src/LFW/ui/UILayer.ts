@@ -173,7 +173,7 @@ export class UILayers {
   pages_top_down(): UINode[] {
     const ret: UINode[] = [];
     for (let i = this._all.length - 1; i >= 0; i--) {
-      const { ui } = this._all[i];
+      const ui = this._all[i]?.ui;
       if (ui) ret.push(ui);
     }
     return ret;
@@ -189,7 +189,7 @@ export class UILayers {
   }
   get ui(): UINode | undefined {
     for (let i = this._all.length - 1; i >= 0; i--) {
-      const { ui } = this._all[i];
+      const ui = this._all[i]?.ui;
       if (ui) return ui;
     }
     return undefined

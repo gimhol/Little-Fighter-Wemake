@@ -57,6 +57,7 @@ export class ChatLogic extends UIComponent {
 
   override on_start(): void {
     const q = (id: string) => this.node.search_node(id) ?? undefined;
+    this.node.pointer_through = true;
     this._list = q("chat_rows");
     this._rows = (this._list?.children ?? []).map((row) => ({
       name: row.children[0],

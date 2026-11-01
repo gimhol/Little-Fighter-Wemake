@@ -72,6 +72,7 @@ export class UINode implements IDebugging {
   protected _visible = true;
   protected _disabled = false;
   protected _clip_children = false;
+  protected _pointer_through = false;
   protected _opacity = 1;
 
   readonly pos: IVector3 = new D.Vector3();
@@ -220,6 +221,14 @@ export class UINode implements IDebugging {
   set clip_children(v: boolean) {
     this._clip_children = v;
   }
+  /**
+   * 本节点自身是否让指针穿过
+   *
+   * 为 true 时该节点不产生指针命中（不影响子节点），常用于“整页容器”：
+   * 容器本身不该吞点击，只有里面真正的控件才响应
+   */
+  get pointer_through(): boolean { return this._pointer_through; }
+  set pointer_through(v: boolean) { this._pointer_through = v; }
   /**
    * 当前节点是否可见
    * 
