@@ -63,6 +63,8 @@ import img_btn_3_2 from "./assets/btn_3_2.png";
 import img_btn_3_3 from "./assets/btn_3_3.png";
 import img_btn_4_3 from "./assets/btn_4_3.png";
 import { install_danmu_bridge_if_requested } from "./danmu_bridge";
+import { install_chat_hotkey } from "./Net/chat_overlay";
+import { current_connection } from "./Net/current_connection";
 import { load_desktop_mods } from "./desktop_mods";
 import { useForage } from "./hooks/useForage";
 import i18n, { react_lang_code } from "./i18n";
@@ -70,13 +72,14 @@ import "./init";
 import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
-import { Networking } from "./pages/network_test/Networking";
 import { NetworkLogic } from "./pages/network_test/NetworkLogic";
+import { ChatLogic } from "./pages/network_test/ChatLogic";
 import { useCallbacks } from "./pages/network_test/useCallbacks";
 import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { is_toy_env } from "./toy_sdk";
 
 Factory.register_component(NetworkLogic);
+Factory.register_component(ChatLogic);
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"
 type debug_ui_pos = "left" | "right" | "top" | "bottom"
@@ -183,7 +186,6 @@ function App() {
   const [loaded, set_loaded] = useState(false);
   const [paused, _set_paused] = useState(false);
   const [bg_id, _set_bg_id] = useState(Defines.VOID_BG.id);
-  const [networking, set_networking] = useState(params.network === '1')
   const [dat_viewer_open, set_dat_viewer_open] = useState(false);
   const [editor_open, set_editor_open] = useState(false);
 
@@ -273,13 +275,12 @@ function App() {
     on_broadcast: (message, lfw) => {
       switch (message) {
         case 'network_game':
-          if (params.network === '1') set_networking(prev => !prev)
-          else if (lfw.layers.ui?.id !== 'network_page') lfw.layers.push_page({ id: 'network_page' }, 1)
+          if (lfw.layers.at(1)?.ui?.id !== 'network_page') lfw.layers.push_page({ id: 'network_page' }, 1)
           break;
         case 'select_extra_data':
         case 'select_mods':
           open_file({ accept: '.zip', multiple: true }).then(async (files) => {
-            if (!files.length || networking) return;
+            if (!files.length) return;
             load_files(lfw, files)
           });
           break;
@@ -341,24 +342,6 @@ function App() {
   })
 
   useEffect(() => {
-    if (!lfw) return;
-    const btns = [
-      lfw.ui?.search_node("btn_game_start"),
-      lfw.ui?.search_node("btn_extra_data"),
-      lfw.ui?.search_node("btn_custom_game")
-    ]
-    for (const btn of btns) {
-      btn?.blur()
-      btn?.set_opacity(networking ? 0.3 : 1)
-      btn?.set_disabled(networking)
-    }
-  }, [networking, lfw])
-
-  useEffect(() => {
-    if (!networking) set_net_settings_open(false);
-  }, [networking])
-
-  useEffect(() => {
     lfw?.broadcast('stats_visible:' + (app_state.show_stats ? 1 : 0))
   }, [lfw, app_state.show_stats])
 
@@ -366,6 +349,7 @@ function App() {
     if (lfw) {
       install_mock_danmu_if_requested(lfw)
       install_danmu_bridge_if_requested(lfw)
+      install_chat_hotkey(lfw)
     }
   }, [lfw])
 
@@ -674,7 +658,7 @@ function App() {
 
 
   const on_drop = async (e: React.DragEvent) => {
-    if (!lfw || networking) return;
+    if (!lfw) return;
     const { items } = e.dataTransfer;
     const files: File[] = [];
     for (let i = 0; i < items.length; i++) {
@@ -775,7 +759,8 @@ function App() {
         <ToggleImgButton
           onClick={() => {
             if (!lfw) return;
-            if (networking) {
+            // 联机中（有活连接）：打开 DOM 设置浮层，不改动 LFW 页面栈、不暂停世界
+            if (current_connection.conn) {
               set_net_settings_open(v => !v);
               return;
             }
@@ -1190,13 +1175,7 @@ function App() {
         onClose={() => set_editor_open(false)}
         style={{ background: 'black', position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, zIndex: 1 }}
         lfw={lfw} />
-      {networking && <Networking
-        lfw={lfw}
-        sync_mode={params.net_sync === 'delay' ? 'delay' : params.net_sync === 'lockstep' ? 'lockstep' : void 0}
-        input_delay={Number(params.net_delay) || void 0}
-        show_all_rooms={params.rooms === 'all'}
-        on_close={() => set_networking(false)} />}
-      {networking && net_settings_open && lfw && (
+      {net_settings_open && lfw && (
         <NetSettings lfw={lfw} on_close={() => set_net_settings_open(false)} />
       )}
     </>

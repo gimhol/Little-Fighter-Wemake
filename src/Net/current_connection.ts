@@ -1,5 +1,6 @@
 import type { Connection } from "@/pages/network_test/Connection";
 import type { LFWNetworkDriver } from "@/pages/network_test/LFWNetworkDriver";
+import type { NetworkLogic } from "@/pages/network_test/NetworkLogic";
 
 /**
  * 当前联机连接与驱动器。
@@ -11,4 +12,5 @@ import type { LFWNetworkDriver } from "@/pages/network_test/LFWNetworkDriver";
 export const current_connection: {
   conn: Connection | null;
   driver: LFWNetworkDriver | null;
-} = { conn: null, driver: null };
+  logic: NetworkLogic | null;
+} = { conn: null, driver: null, logic: null };

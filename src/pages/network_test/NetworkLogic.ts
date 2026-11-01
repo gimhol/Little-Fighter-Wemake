@@ -19,11 +19,12 @@ import {
   type IRoomInfo,
   type NetSyncMode,
   type RoomSyncMode,
-  type TChatTarget,
   type TResp,
 } from "@/Net";
 import { Connection } from "./Connection";
 import { current_connection } from "@/Net/current_connection";
+import { chat_store } from "@/Net/chat_store";
+import { peek_chat } from "@/Net/chat_overlay";
 import { DelayNetworkDriver } from "./DelayNetworkDriver";
 import { LFWNetworkDriver } from "./LFWNetworkDriver";
 import { LockstepNetworkDriver } from "./LockstepNetworkDriver";
@@ -34,7 +35,6 @@ type TMode = 'connect' | 'rooms' | 'room' | 'started';
 type TConnectMode = 'guest' | 'account';
 type TAccountState = 'out' | 'pending' | 'in';
 type TLeaver = { id: string; name: string; left: boolean };
-type TChatItem = { kind: 'msg'; msg: IRespChat } | { kind: 'sys'; text: string };
 type TInputRenderer = {
   get_input_value?(): string;
   set_input_value?(value: string): void;
@@ -43,12 +43,16 @@ type TInputRenderer = {
 
 const ROOM_PAGE_SIZE = 5;
 const ROOM_ROW_STEP = 56;
+/** 顶栏右侧按钮的右边缘（留出外壳窗口按钮的位置） */
+const TOPBAR_RIGHT = 620;
+const CONNECT_PAGE_ID = 'network_page';
+const ROOMS_PAGE_ID = 'network_rooms_page';
+const ROOM_PAGE_ID = 'network_room_page';
+const OVERLAY_PAGE_ID = 'network_overlay_page';
+/** 连接弹窗所在层（0 = 整页，1 = 弹窗/浮层，2 = 聊天） */
+const CONNECT_LAYER = 1;
+const OVERLAY_LAYER = 1;
 const PLAYER_ROW_STEP = 32;
-const CHAT_ROW_STEP = 19;
-const CHAT_MAX = 100;
-const CHAT_SHOW = 15;
-const CHAT_COOLDOWN_MS = 800;
-const CHAT_BACKOFF_MS = 1200;
 const COUNTDOWN_MS = 5000;
 
 const ROOM_NAME = 0;
@@ -68,6 +72,8 @@ const PLAYER_KICK = 4;
 
 export class NetworkLogic extends UIComponent {
   static override readonly TAGS: string[] = ["NetworkLogic"];
+  /** 整个 LFW 只有一个实例：连接页 / 房间列表页 / 房间内页 / 浮层页 都只是把节点接上来 */
+  static override readonly SINGLETON: boolean = true;
 
   private mode: TMode = 'connect';
   private connect_mode: TConnectMode = 'guest';
@@ -87,7 +93,6 @@ export class NetworkLogic extends UIComponent {
   private address = '';
   private status = '';
   private rtts: Record<string, number> = {};
-  private chat_items: TChatItem[] = [];
   private leavers: TLeaver[] = [];
   private reconnecting = 0;
   private rejoin_failed: '' | 'rejected' | 'timeout' = '';
@@ -95,8 +100,15 @@ export class NetworkLogic extends UIComponent {
   private countdown_elapsed = 0;
   private countdown_sec = 5;
   private countdown_sent = false;
-  private chat_cooldown_until = 0;
 
+  private rooms_page: UINode | undefined;
+  private room_page: UINode | undefined;
+  private connect_page: UINode | undefined;
+  private overlay_page: UINode | undefined;
+  /** 当前展示的联机页面 id（避免重复 set_page 造成递归） */
+  private _page_id: string | undefined;
+  private _syncing_page = false;
+  private _syncing_overlay = false;
   private bg: UINode | undefined;
   private dim: UINode | undefined;
   private topbar: UINode | undefined;
@@ -171,13 +183,6 @@ export class NetworkLogic extends UIComponent {
   private btn_leave: UINode | undefined;
   private btn_ready: UINode | undefined;
 
-  private chat_panel: UINode | undefined;
-  private chat_target: UINode | undefined;
-  private btn_chat_target: UINode | undefined;
-  private chat_rows: UINode[] = [];
-  private chat_input: UINode | undefined;
-  private btn_send: UINode | undefined;
-
   private overlay_dim: UINode | undefined;
   private overlay_panel: UINode | undefined;
   private overlay_title: UINode | undefined;
@@ -204,21 +209,54 @@ export class NetworkLogic extends UIComponent {
   };
 
   override on_start(): void {
-    const q = (id: string) => this.node.search_node(id) ?? undefined;
+    current_connection.logic = this;
+    this.lfw.callbacks.add(this.lfw_cb);
+    this.lfw.world.callbacks.add(this.world_cb);
+  }
+
+  override on_link(node: UINode): void {
+    switch (node.id) {
+      case CONNECT_PAGE_ID:
+        this._page_id = CONNECT_PAGE_ID;
+        this.bind_connect_page(node);
+        break;
+      case ROOMS_PAGE_ID:
+        this._page_id = ROOMS_PAGE_ID;
+        this.bind_rooms_page(node);
+        break;
+      case ROOM_PAGE_ID:
+        this._page_id = ROOM_PAGE_ID;
+        this.bind_room_page(node);
+        break;
+      case OVERLAY_PAGE_ID:
+        this.bind_overlay_page(node);
+        break;
+    }
+  }
+
+  override on_unlink(node: UINode): void {
+    switch (node.id) {
+      case CONNECT_PAGE_ID:
+        this.connect_page = void 0;
+        break;
+      case ROOMS_PAGE_ID:
+        this.unbind_rooms_page(node);
+        break;
+      case ROOM_PAGE_ID:
+        this.unbind_room_page(node);
+        break;
+      case OVERLAY_PAGE_ID:
+        this.unbind_overlay_page(node);
+        break;
+    }
+  }
+
+  /** 连接页（大厅入口）：账号/地址/昵称 + 连接按钮 */
+  private bind_connect_page(node: UINode): void {
+    this.connect_page = node;
+    const q = (id: string) => node.search_node(id) ?? undefined;
     this.bg = q('network_bg');
     this.dim = q('network_dim');
-    this.topbar = q('network_topbar');
-    this.top_title = q('network_top_title');
-    this.top_sub = q('network_top_sub');
-    this.account_chip_bg = q('network_account_chip_bg');
-    this.account_chip = q('network_account_chip');
-    this.btn_logout = q('network_btn_logout');
-    this.btn_create = q('network_btn_create');
-    this.btn_refresh = q('network_btn_refresh');
-    this.btn_auto = q('network_btn_auto');
-    this.btn_disconnect = q('network_btn_disconnect');
-    this.btn_room_refresh = q('network_btn_room_refresh');
-    this.btn_leave_top = q('network_btn_leave_top');
 
     this.connect_panel = q('network_connect_panel');
     this.address_input = q('network_address_input');
@@ -245,6 +283,65 @@ export class NetworkLogic extends UIComponent {
     this.btn_account_enter = q('network_btn_account_enter');
     this.btn_account_logout = q('network_btn_account_logout');
 
+    this.bind_overlay_nodes(q);
+
+    this.bind(this.connect_close, () => this.close_page(), 'cancel');
+    this.bind(this.btn_connect, () => this.connect());
+    this.bind(this.btn_connect_cancel, () => this.cancel_connect(), 'cancel');
+    this.bind(this.tab_guest, () => this.set_connect_mode('guest'));
+    this.bind(this.tab_account, () => this.set_connect_mode('account'));
+    this.bind(this.btn_account_login, () => this.account_login());
+    this.bind(this.btn_account_mock, () => this.set_account_state('in'));
+    this.bind(this.btn_account_cancel_0, () => this.close_page(), 'cancel');
+    this.bind(this.btn_account_cancel_1, () => this.close_page(), 'cancel');
+    this.bind(this.btn_account_enter, () => this.account_enter_lobby());
+    this.bind(this.btn_account_logout, () => this.account_logout(), 'cancel');
+    this.bind(this.btn_continue_solo, () => this.continue_solo());
+    this.bind(this.btn_back_lobby, () => this.back_lobby(), 'cancel');
+    this.bind(this.btn_continue_game, () => this.continue_game());
+
+    const address_input = this.address_input?.find_component(TextInput);
+    if (address_input) address_input.on_submit = () => this.connect();
+    const nickname_input = this.nickname_input?.find_component(TextInput);
+    if (nickname_input) nickname_input.on_submit = () => this.connect();
+    const account_address_input = this.account_address_input?.find_component(TextInput);
+    if (account_address_input) account_address_input.on_submit = () => this.connect();
+
+    this.set_input(this.address_input, 'lfj.gim.ink');
+    this.set_input(this.account_address_input, 'lfj.gim.ink');
+    this.set_connect_mode('guest');
+    this.set_account_state('out');
+    void this.init_nickname();
+    this.set_mode(this.mode);
+    this.render_rooms();
+    this.update_topbar();
+    this.update_overlay();
+    this.sync_status_visibility();
+    window.requestAnimationFrame(() => this.apply_placeholders());
+  }
+
+  override on_resume(): void {
+    window.requestAnimationFrame(() => {
+      this.refresh_texts();
+      this.apply_placeholders();
+    });
+  }
+
+  /** 房间列表页 push 出来时，把它的节点接到本逻辑上 */
+  bind_rooms_page(node: UINode): void {
+    const q = (id: string) => node.search_node(id) ?? undefined;
+    this.rooms_page = node;
+    this.topbar = q('network_topbar');
+    this.top_title = q('network_top_title');
+    this.top_sub = q('network_top_sub');
+    this.account_chip_bg = q('network_account_chip_bg');
+    this.account_chip = q('network_account_chip');
+    this.btn_logout = q('network_btn_logout');
+    this.btn_create = q('network_btn_create');
+    this.btn_refresh = q('network_btn_refresh');
+    this.btn_auto = q('network_btn_auto');
+    this.btn_disconnect = q('network_btn_disconnect');
+
     this.rooms_panel = q('network_rooms_panel');
     this.rooms_total = q('network_rooms_total');
     this.no_rooms = q('network_no_rooms');
@@ -252,7 +349,65 @@ export class NetworkLogic extends UIComponent {
     this.btn_next = q('network_btn_next');
     this.page_label = q('network_page_label');
     this.rooms_status = q('network_rooms_status');
-    this.room_status = q('network_room_status');
+    this.room_rows = q('network_room_rows')?.children.slice() ?? [];
+
+    for (let i = 0; i < this.room_rows.length; i++) {
+      const row = this.room_rows[i];
+      row.move_to(0, i * ROOM_ROW_STEP, 0);
+      this.bind(row.children[ROOM_JOIN], () => void this.join_room(i));
+      const text_input = row.children[ROOM_PWD_BG]?.children[0]?.find_component(TextInput);
+      if (text_input) text_input.on_submit = () => void this.join_room(i);
+    }
+
+    this.bind(this.btn_logout, () => this.account_logout(), 'cancel');
+    this.bind(this.btn_create, () => void this.create_room());
+    this.bind(this.btn_refresh, () => this.request_rooms());
+    this.bind(this.btn_auto, () => this.toggle_auto_refresh());
+    this.bind(this.btn_disconnect, () => this.disconnect(), 'cancel');
+    this.bind(this.btn_prev, () => this.goto_page(this.page - 1));
+    this.bind(this.btn_next, () => this.goto_page(this.page + 1));
+
+    this.apply_placeholders();
+    this.update_visibility();
+    this.update_topbar();
+    this.render_rooms();
+  }
+
+  unbind_rooms_page(node: UINode): void {
+    if (this.rooms_page !== node) return;
+    this.rooms_page = undefined;
+    this.topbar = void 0;
+    this.top_title = void 0;
+    this.top_sub = void 0;
+    this.account_chip_bg = void 0;
+    this.account_chip = void 0;
+    this.btn_logout = void 0;
+    this.btn_create = void 0;
+    this.btn_refresh = void 0;
+    this.btn_auto = void 0;
+    this.btn_disconnect = void 0;
+    this.rooms_panel = void 0;
+    this.rooms_total = void 0;
+    this.no_rooms = void 0;
+    this.btn_prev = void 0;
+    this.btn_next = void 0;
+    this.page_label = void 0;
+    this.rooms_status = void 0;
+    this.room_rows = [];
+  }
+
+  /** 房间内页 push 出来时，把它的节点接到本逻辑上 */
+  bind_room_page(node: UINode): void {
+    const q = (id: string) => node.search_node(id) ?? undefined;
+    this.room_page = node;
+    this.topbar = q('network_topbar');
+    this.top_title = q('network_top_title');
+    this.top_sub = q('network_top_sub');
+    this.account_chip_bg = q('network_account_chip_bg');
+    this.account_chip = q('network_account_chip');
+    this.btn_logout = q('network_btn_logout');
+    this.btn_room_refresh = q('network_btn_room_refresh');
+    this.btn_leave_top = q('network_btn_leave_top');
 
     this.room_panel = q('network_room_panel');
     this.room_title = q('network_room_title');
@@ -276,13 +431,97 @@ export class NetworkLogic extends UIComponent {
     this.countdown = q('network_countdown');
     this.btn_leave = q('network_btn_leave');
     this.btn_ready = q('network_btn_ready');
+    this.room_status = q('network_room_status');
+    this.player_rows = q('network_player_rows')?.children.slice() ?? [];
 
-    this.chat_panel = q('network_chat_panel');
-    this.chat_target = q('network_chat_target');
-    this.btn_chat_target = q('network_btn_chat_target');
-    this.chat_input = q('network_chat_input');
-    this.btn_send = q('network_btn_send');
+    for (let i = 0; i < this.player_rows.length; i++) {
+      const row = this.player_rows[i];
+      row.move_to(0, i * PLAYER_ROW_STEP, 0);
+      this.bind(row.children[PLAYER_KICK], () => this.kick_row(i), 'cancel');
+    }
 
+    this.bind(this.btn_logout, () => this.account_logout(), 'cancel');
+    this.bind(this.btn_room_refresh, () => this.render_room());
+    this.bind(this.btn_leave_top, () => void this.leave_room(), 'cancel');
+    this.bind(this.btn_leave, () => void this.leave_room(), 'cancel');
+    this.bind(this.btn_ready, () => void this.toggle_ready());
+    this.bind(this.btn_set_pwd, () => void this.set_pwd());
+    this.bind(this.sync_auto, () => void this.set_sync('auto'));
+    this.bind(this.sync_lockstep, () => void this.set_sync('lockstep'));
+    this.bind(this.sync_delay, () => void this.set_sync('delay'));
+
+    const pwd_input = this.pwd_input?.find_component(TextInput);
+    if (pwd_input) pwd_input.on_submit = () => void this.set_pwd();
+
+    this.apply_placeholders();
+    this.update_visibility();
+    this.update_topbar();
+    this.render_room();
+  }
+
+  unbind_room_page(node: UINode): void {
+    if (this.room_page !== node) return;
+    this.room_page = undefined;
+    this.topbar = void 0;
+    this.top_title = void 0;
+    this.top_sub = void 0;
+    this.account_chip_bg = void 0;
+    this.account_chip = void 0;
+    this.btn_logout = void 0;
+    this.btn_room_refresh = void 0;
+    this.btn_leave_top = void 0;
+    this.room_panel = void 0;
+    this.room_title = void 0;
+    this.room_code = void 0;
+    this.room_badge = void 0;
+    this.room_badge_bg = void 0;
+    this.room_count = void 0;
+    this.sync_auto = void 0;
+    this.sync_lockstep = void 0;
+    this.sync_delay = void 0;
+    this.recommend = void 0;
+    this.room_lfw = void 0;
+    this.room_data_0 = void 0;
+    this.room_data_1 = void 0;
+    this.pwd_label = void 0;
+    this.pwd_bg = void 0;
+    this.pwd_input = void 0;
+    this.btn_set_pwd = void 0;
+    this.pwd_hint = void 0;
+    this.empty_slot = void 0;
+    this.countdown = void 0;
+    this.btn_leave = void 0;
+    this.btn_ready = void 0;
+    this.room_status = void 0;
+    this.player_rows = [];
+  }
+
+  /** 浮层页（暂停/重连/失败）：绑定它的节点 */
+  private bind_overlay_page(node: UINode): void {
+    this.overlay_page = node;
+    const q = (id: string) => node.search_node(id) ?? undefined;
+    this.bind_overlay_nodes(q);
+    this.bind(this.btn_continue_solo, () => this.continue_solo());
+    this.bind(this.btn_back_lobby, () => this.back_lobby(), 'cancel');
+    this.bind(this.btn_continue_game, () => this.continue_game());
+    this.update_overlay();
+    this.layout_centered_rows();
+  }
+
+  private unbind_overlay_page(node: UINode): void {
+    if (this.overlay_page !== node) return;
+    this.overlay_page = void 0;
+    this.overlay_dim = void 0;
+    this.overlay_panel = void 0;
+    this.overlay_title = void 0;
+    this.overlay_line_0 = void 0;
+    this.overlay_line_1 = void 0;
+    this.btn_continue_solo = void 0;
+    this.btn_back_lobby = void 0;
+    this.btn_continue_game = void 0;
+  }
+
+  private bind_overlay_nodes(q: (id: string) => UINode | undefined): void {
     this.overlay_dim = q('network_overlay_dim');
     this.overlay_panel = q('network_overlay_panel');
     this.overlay_title = q('network_overlay_title');
@@ -291,93 +530,52 @@ export class NetworkLogic extends UIComponent {
     this.btn_continue_solo = q('network_btn_continue_solo');
     this.btn_back_lobby = q('network_btn_back_lobby');
     this.btn_continue_game = q('network_btn_continue_game');
-
-    this.room_rows = q('network_room_rows')?.children.slice() ?? [];
-    this.player_rows = q('network_player_rows')?.children.slice() ?? [];
-    this.chat_rows = q('network_chat_rows')?.children.slice() ?? [];
-    const chat_box = q('network_chat_rows');
-    if (chat_box) chat_box.clip_children = true;
-
-    for (let i = 0; i < this.room_rows.length; i++) {
-      const row = this.room_rows[i];
-      row.move_to(0, i * ROOM_ROW_STEP, 0);
-      this.bind(row.children[ROOM_JOIN], () => void this.join_room(i));
-      const pwd_input = row.children[ROOM_PWD_BG]?.children[0];
-      const text_input = pwd_input?.find_component(TextInput);
-      if (text_input) text_input.on_submit = () => void this.join_room(i);
-    }
-    for (let i = 0; i < this.player_rows.length; i++) {
-      const row = this.player_rows[i];
-      row.move_to(0, i * PLAYER_ROW_STEP, 0);
-      this.bind(row.children[PLAYER_KICK], () => this.kick_row(i), 'cancel');
-    }
-    for (let i = 0; i < this.chat_rows.length; i++) {
-      this.chat_rows[i].move_to(0, i * CHAT_ROW_STEP, 0);
-    }
-
-    this.bind(this.connect_close, () => this.close_page(), 'cancel');
-    this.bind(this.btn_connect, () => this.connect());
-    this.bind(this.btn_connect_cancel, () => this.cancel_connect(), 'cancel');
-    this.bind(this.tab_guest, () => this.set_connect_mode('guest'));
-    this.bind(this.tab_account, () => this.set_connect_mode('account'));
-    this.bind(this.btn_account_login, () => this.account_login());
-    this.bind(this.btn_account_mock, () => this.set_account_state('in'));
-    this.bind(this.btn_account_cancel_0, () => this.close_page(), 'cancel');
-    this.bind(this.btn_account_cancel_1, () => this.close_page(), 'cancel');
-    this.bind(this.btn_account_enter, () => this.account_enter_lobby());
-    this.bind(this.btn_account_logout, () => this.account_logout(), 'cancel');
-    this.bind(this.btn_logout, () => this.account_logout(), 'cancel');
-    this.bind(this.btn_create, () => void this.create_room());
-    this.bind(this.btn_refresh, () => this.mode === 'room' ? this.render_room() : this.request_rooms());
-    this.bind(this.btn_auto, () => this.toggle_auto_refresh());
-    this.bind(this.btn_disconnect, () => this.disconnect(), 'cancel');
-    this.bind(this.btn_room_refresh, () => this.render_room());
-    this.bind(this.btn_leave_top, () => void this.leave_room(), 'cancel');
-    this.bind(this.btn_prev, () => this.goto_page(this.page - 1));
-    this.bind(this.btn_next, () => this.goto_page(this.page + 1));
-    this.bind(this.btn_leave, () => void this.leave_room(), 'cancel');
-    this.bind(this.btn_ready, () => void this.toggle_ready());
-    this.bind(this.btn_set_pwd, () => void this.set_pwd());
-    this.bind(this.btn_send, () => this.send_chat());
-    this.bind(this.sync_auto, () => void this.set_sync('auto'));
-    this.bind(this.sync_lockstep, () => void this.set_sync('lockstep'));
-    this.bind(this.sync_delay, () => void this.set_sync('delay'));
-    this.bind(this.btn_continue_solo, () => this.continue_solo());
-    this.bind(this.btn_back_lobby, () => this.back_lobby(), 'cancel');
-    this.bind(this.btn_continue_game, () => this.continue_game());
-
-    const address_input = this.address_input?.find_component(TextInput);
-    if (address_input) address_input.on_submit = () => this.connect();
-    const nickname_input = this.nickname_input?.find_component(TextInput);
-    if (nickname_input) nickname_input.on_submit = () => this.connect();
-    const account_address_input = this.account_address_input?.find_component(TextInput);
-    if (account_address_input) account_address_input.on_submit = () => this.connect();
-    const pwd_input = this.pwd_input?.find_component(TextInput);
-    if (pwd_input) pwd_input.on_submit = () => void this.set_pwd();
-    const chat_input = this.chat_input?.find_component(TextInput);
-    if (chat_input) chat_input.on_submit = () => this.send_chat();
-
-    this.set_input(this.address_input, 'lfj.gim.ink');
-    this.set_input(this.account_address_input, 'lfj.gim.ink');
-    this.set_connect_mode('guest');
-    this.set_account_state('out');
-    this.lfw.callbacks.add(this.lfw_cb);
-    this.lfw.world.callbacks.add(this.world_cb);
-    void this.init_nickname();
-    this.set_mode('connect');
-    this.render_rooms();
-    this.render_chat();
-    this.update_topbar();
-    this.update_overlay();
-    this.sync_status_visibility();
-    window.requestAnimationFrame(() => this.apply_placeholders());
   }
 
-  override on_resume(): void {
-    window.requestAnimationFrame(() => {
-      this.refresh_texts();
-      this.apply_placeholders();
-    });
+  /** 连接页是浮在上层的弹窗；房间列表 / 房间内是 layer 0 的整页 */
+  private sync_pages(mode: TMode): void {
+    if (this._syncing_page) return;
+    if (mode === 'started') return;
+    const layers = this.lfw.layers;
+    const current = layers.at(0)?.ui?.id;
+    const want = mode === 'room' ? ROOM_PAGE_ID : mode === 'rooms' ? ROOMS_PAGE_ID : void 0;
+    this._syncing_page = true;
+    try {
+      if (want) {
+        if (current !== want) layers.set_page({ id: want }, 0);
+        this.close_connect_popup();
+      } else {
+        if (current === ROOMS_PAGE_ID || current === ROOM_PAGE_ID) layers.set_page({ id: 'entry' }, 0);
+        this.open_connect_popup();
+      }
+    } finally {
+      this._syncing_page = false;
+    }
+  }
+
+  /** 连接页以弹窗形式浮在最上层（保留原来的观感） */
+  private open_connect_popup(): void {
+    if (this.connect_page) return;
+    this.lfw.layers.push_page({ id: CONNECT_PAGE_ID }, CONNECT_LAYER);
+  }
+
+  private close_connect_popup(): void {
+    if (!this.connect_page) return;
+    const layer = this.lfw.layers.at(CONNECT_LAYER);
+    if (layer?.ui?.id === CONNECT_PAGE_ID) layer.pop();
+  }
+
+  /** 暂停/重连浮层单独一层，盖在游戏之上 */
+  private sync_overlay_page(show: boolean): void {
+    if (this._syncing_overlay) return;
+    if (show === !!this.overlay_page) return;
+    this._syncing_overlay = true;
+    try {
+      if (show) this.lfw.layers.push_page({ id: OVERLAY_PAGE_ID }, OVERLAY_LAYER);
+      else this.lfw.layers.pop_page({ until: page => page.id === OVERLAY_PAGE_ID, inclusive: true }, OVERLAY_LAYER);
+    } finally {
+      this._syncing_overlay = false;
+    }
   }
 
   /** 语言变化或从设置页返回时，重新生成本页所有动态文字 */
@@ -385,10 +583,8 @@ export class NetworkLogic extends UIComponent {
     this.set_connect_mode(this.connect_mode);
     this.set_account_state(this.account_state);
     this.update_topbar();
-    this.update_chat_target();
     this.render_rooms();
     this.render_room();
-    this.render_chat();
     this.render_countdown();
     this.update_overlay();
     this.sync_status_visibility();
@@ -397,6 +593,9 @@ export class NetworkLogic extends UIComponent {
 
   override on_stop(): void {
     this.stop_auto_refresh();
+    this.sync_overlay_page(false);
+    this.close_connect_popup();
+    if (current_connection.logic === this) current_connection.logic = null;
     this.lfw.callbacks.del(this.lfw_cb);
     this.lfw.world.callbacks.del(this.world_cb);
     for (const { player, cb } of this.watched_players) player.callbacks.del(cb);
@@ -413,8 +612,6 @@ export class NetworkLogic extends UIComponent {
     }
     this.room_rows.length = 0;
     this.player_rows.length = 0;
-    this.chat_rows.length = 0;
-    this.chat_items.length = 0;
   }
 
   override update(dt: number): void {
@@ -579,7 +776,6 @@ export class NetworkLogic extends UIComponent {
 
   private apply_placeholders(): void {
     this.set_placeholder(this.pwd_input, this.t('network.pwd_hint'));
-    this.set_placeholder(this.chat_input, this.t('network.chat_placeholder'));
     for (const row of this.room_rows) {
       this.set_placeholder(row.children[ROOM_PWD_BG]?.children[0], this.t('network.enter_pwd'));
     }
@@ -686,6 +882,9 @@ export class NetworkLogic extends UIComponent {
     this.set_connecting(true);
     const conn = new Connection(nickname);
     this.conn = conn;
+    chat_store.set_sender((text, target) => {
+      this.conn?.send(MsgEnum.Chat, { target, text }).catch(() => void 0);
+    });
     current_connection.conn = conn;
     conn.callbacks.add({
       on_register: () => {
@@ -759,7 +958,7 @@ export class NetworkLogic extends UIComponent {
 
   private close_page(): void {
     this.disconnect();
-    this.node.pop_page();
+    this.lfw.release_singleton(NetworkLogic);
   }
 
   private disconnect(): void {
@@ -783,7 +982,6 @@ export class NetworkLogic extends UIComponent {
     this.rooms = [];
     this.page = 0;
     this.rtts = {};
-    this.chat_items.length = 0;
     this.leavers.length = 0;
     this.reconnecting = 0;
     this.rejoin_failed = '';
@@ -797,7 +995,6 @@ export class NetworkLogic extends UIComponent {
     this.clear_status();
     this.set_mode('connect');
     this.render_rooms();
-    this.render_chat();
     this.update_topbar();
     this.update_overlay();
   }
@@ -871,7 +1068,6 @@ export class NetworkLogic extends UIComponent {
     this.countdown_sec = 5;
     this.countdown_sent = false;
     this.set_mode('started');
-    this.render_chat();
     this.update_overlay();
   }
 
@@ -910,7 +1106,8 @@ export class NetworkLogic extends UIComponent {
     this.leavers.length = 0;
     this.reconnecting = 0;
     this.rejoin_failed = '';
-    this.node.pop_page();
+    this.sync_overlay_page(false);
+    this.lfw.release_singleton(NetworkLogic);
   }
 
   private back_lobby(): void {
@@ -1022,42 +1219,18 @@ export class NetworkLogic extends UIComponent {
     conn.send(MsgEnum.Kick, { client_id: member.id }).catch((e) => this.set_status(this.error_text(e)));
   }
 
-  private send_chat(): void {
-    const conn = this.conn;
-    if (!conn) return;
-    // 回车发送（即使是空内容）后把焦点还给游戏：输入框聚焦时 Keyboard 会忽略按键，否则对局中无法操作
-    this.blur_inputs();
-    const now = Date.now();
-    if (now < this.chat_cooldown_until) return;
-    const text = this.input_value(this.chat_input).trim();
-    if (!text) return;
-    const target: TChatTarget = this.room ? 'room' : 'global';
-    this.chat_cooldown_until = now + CHAT_COOLDOWN_MS;
-    conn.send(MsgEnum.Chat, { target, text }).then(
-      () => this.set_input(this.chat_input, ''),
-      (e) => {
-        const code = e?.lfw?.code;
-        if (code === ErrCode.ChatTooFrequent) {
-          this.chat_cooldown_until = Date.now() + CHAT_BACKOFF_MS;
-          return;
-        }
-        this.set_status(this.error_text(e));
-      },
-    );
-  }
-
   private add_chat(msg: IRespChat): void {
     if (this.room && msg.target === 'global') return;
-    this.chat_items.push({ kind: 'msg', msg });
-    if (this.chat_items.length > CHAT_MAX) this.chat_items.splice(0, this.chat_items.length - CHAT_MAX);
-    this.render_chat();
+    chat_store.push({ kind: 'msg', msg });
+    this.peek_chat();
+  }
+  private peek_chat(): void {
+    peek_chat(this.lfw);
   }
 
   private add_notice(text: string): void {
     if (!text) return;
-    this.chat_items.push({ kind: 'sys', text });
-    if (this.chat_items.length > CHAT_MAX) this.chat_items.splice(0, this.chat_items.length - CHAT_MAX);
-    this.render_chat();
+    chat_store.push_sys(text);
   }
 
   private request_rooms(): void {
@@ -1215,14 +1388,43 @@ export class NetworkLogic extends UIComponent {
     }
   }
 
+  /** 左对齐排布：从 left_x 起依次紧贴排列 */
+  private left_row(nodes: (UINode | undefined)[], left_x: number, gap: number): void {
+    const items = nodes.filter((n): n is UINode => !!n && n.visible);
+    if (!items.length) return;
+    let x = left_x;
+    for (const n of items) {
+      const pad = n.text ? 2 : 0;
+      n.move_to(x + pad + n.center.x * n.w, n.y, n.z);
+      x += n.w + (n.text ? 4 : 0) + gap;
+    }
+  }
+
+  /** 右对齐排布：节点右边缘对齐到 right_x，宽度自适应（i18n 文案长度不同） */
+  private right_row(nodes: (UINode | undefined)[], right_x: number, gap: number): void {
+    const items = nodes.filter((n): n is UINode => !!n && n.visible);
+    if (!items.length) return;
+    const widths = items.map(n => n.w + (n.text ? 4 : 0));
+    const total = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let x = right_x - total;
+    for (let i = 0; i < items.length; i++) {
+      const n = items[i];
+      const pad = n.text ? 2 : 0;
+      n.move_to(x + pad + n.center.x * n.w, n.y, n.z);
+      x += widths[i] + gap;
+    }
+  }
+
   private layout_centered_rows(): void {
     this.center_row([this.btn_connect, this.btn_connect_cancel], 200, 24);
     this.center_row([this.btn_account_login, this.btn_account_cancel_0], 200, 40);
     this.center_row([this.btn_account_mock, this.btn_account_cancel_1], 200, 40);
     this.center_row([this.btn_account_enter, this.btn_account_logout], 200, 40);
-    this.center_row([this.btn_prev, this.page_label, this.btn_next], 241, 16);
-    this.center_row([this.btn_leave, this.btn_ready], 241, 24);
-    this.center_row([this.btn_chat_target, this.chat_input?.parent, this.btn_send], 142, 12);
+    this.center_row([this.btn_prev, this.page_label, this.btn_next], 397, 16);
+    this.left_row([this.room_title, this.room_code, this.room_badge_bg], 16, 12);
+    this.right_row([this.account_chip_bg, this.btn_logout, this.btn_create, this.btn_refresh, this.btn_auto, this.btn_disconnect], TOPBAR_RIGHT, 20);
+    this.right_row([this.btn_room_refresh, this.btn_leave_top], TOPBAR_RIGHT, 20);
+    this.center_row([this.btn_leave, this.btn_ready], 397, 24);
     this.center_row([this.btn_continue_solo, this.btn_back_lobby], 172, 20);
     if (this.btn_continue_game?.visible) {
       this.btn_continue_game.cx = 0.5;
@@ -1237,7 +1439,7 @@ export class NetworkLogic extends UIComponent {
       this.set_text(this.rooms_status, '');
       this.set_text(this.room_status, '');
     } else if (this.mode === 'room' || this.mode === 'started') {
-      this.set_text(this.room_status, this.fit(text, 440, this.room_status));
+      this.set_text(this.room_status, this.fit(text, 620, this.room_status));
       this.set_text(this.connect_status, '');
       this.set_text(this.rooms_status, '');
     } else {
@@ -1284,27 +1486,24 @@ export class NetworkLogic extends UIComponent {
       this.stop_auto_refresh();
       if (mode === 'rooms') this.start_auto_refresh();
     }
+    this.sync_pages(mode);
     this.update_visibility();
     // 进入对局时把焦点从输入框收回（否则键盘事件都被输入框吃掉，游戏无法操作）
     if (mode === 'started') this.blur_inputs();
     this.update_topbar();
-    this.update_chat_target();
     if (mode === 'rooms') this.render_rooms();
     if (mode === 'room') this.render_room();
-    if (mode !== 'connect') this.render_chat();
     this.layout_centered_rows();
   }
 
   private update_visibility(): void {
     const mode = this.mode;
-    const connected = !!this.conn;
-    if (this.bg) this.bg.visible = mode !== 'started';
+    if (this.bg) this.bg.visible = mode === 'connect';
     if (this.dim) this.dim.visible = mode === 'connect';
     if (this.topbar) this.topbar.visible = mode === 'rooms' || mode === 'room';
     if (this.connect_panel) this.connect_panel.visible = mode === 'connect';
     if (this.rooms_panel) this.rooms_panel.visible = mode === 'rooms';
     if (this.room_panel) this.room_panel.visible = mode === 'room';
-    if (this.chat_panel) this.chat_panel.visible = connected && mode !== 'connect';
   }
 
   private update_topbar(): void {
@@ -1313,10 +1512,9 @@ export class NetworkLogic extends UIComponent {
     if (!conn || this.mode === 'connect') return;
     const address = this.address || conn.url || '';
     const info = this.mode === 'room' && this.room
-      ? `${this.room.title || this.t('network.room')}\u3000·\u3000#${this.room.code ?? ''}\u3000·\u3000${this.session_account ? '' : `${address}\u3000·\u3000`}${conn.rtt}ms`
+      ? `${address}\u3000·\u3000${conn.rtt}ms`
       : `${this.t(this.session_account ? 'network.account' : 'network.guest')}\u3000·\u3000${address}\u3000·\u3000${conn.rtt}ms`;
-    this.set_text(this.top_title, this.fit(this.t(this.mode === 'room' ? 'network.room' : 'network.online'), 68, this.top_title));
-    this.set_text(this.top_sub, this.fit(info, 224, this.top_sub));
+    this.set_text(this.top_sub, this.fit(info, 300, this.top_sub));
     if (this.btn_create) this.btn_create.visible = this.mode === 'rooms';
     if (this.btn_refresh) this.btn_refresh.visible = this.mode === 'rooms';
     if (this.btn_auto) {
@@ -1332,22 +1530,11 @@ export class NetworkLogic extends UIComponent {
     if (this.btn_leave_top) this.btn_leave_top.visible = this.mode === 'room';
   }
 
-  private update_chat_target(): void {
-    const room = !!this.room;
-    const text = `[${this.t(room ? 'network.room_chat' : 'network.global')}]`;
-    const color = room ? '#ff7b00' : '#ffffff';
-    this.set_text(this.chat_target, this.fit(text, 190, this.chat_target));
-    this.set_text(this.btn_chat_target, this.fit(text, 52, this.btn_chat_target));
-    if (this.chat_target) this.paint(this.chat_target, { fill_style: color });
-    if (this.btn_chat_target) this.paint(this.btn_chat_target, { fill_style: color });
-    this.layout_centered_rows();
-  }
-
   private render_rooms(): void {
     const page_count = Math.max(1, Math.ceil(this.rooms.length / ROOM_PAGE_SIZE));
     if (this.page > page_count - 1) this.page = page_count - 1;
     const rooms = this.page_rooms();
-    this.set_text(this.rooms_total, this.fit(this.t('network.rooms_total', this.rooms.length), 350, this.rooms_total));
+    this.set_text(this.rooms_total, this.fit(this.t('network.rooms_total', this.rooms.length), 168, this.rooms_total));
     this.set_text(this.page_label, `${this.page + 1} / ${page_count}`);
     if (this.no_rooms) this.no_rooms.visible = this.rooms.length === 0;
     if (this.btn_prev) {
@@ -1365,8 +1552,8 @@ export class NetworkLogic extends UIComponent {
       const room = rooms[i];
       row.visible = !!room;
       if (!room) continue;
-      this.set_text(row.children[ROOM_NAME], this.fit(room.title || `${this.t('network.room')} ${room.code ?? ''}`, 146, row.children[ROOM_NAME]));
-      this.set_text(row.children[ROOM_CODE], room.code ? `#${room.code}` : '');
+      this.set_text(row.children[ROOM_NAME], this.fit(room.title || `${this.t('network.room')} ${room.code ?? ''}`, 296, row.children[ROOM_NAME]));
+      this.set_text(row.children[ROOM_CODE], this.fit(room.code ? `#${room.code}` : '', 92, row.children[ROOM_CODE]));
       const badge_bg = row.children[ROOM_BADGE_BG];
       const badge = badge_bg?.children[0];
       this.set_text(badge, this.fit(room.started ? this.t('network.running') : this.t('network.waiting'), 44, badge));
@@ -1385,7 +1572,7 @@ export class NetworkLogic extends UIComponent {
         room.lfw_version ? `LFW ${this.version_short(room.lfw_version)}` : '',
         room.data_infos?.length ? `${this.t('network.data_package')}×${room.data_infos.length}` : '',
       ].filter(Boolean).join('\u3000·\u3000');
-      this.set_text(row.children[ROOM_META], this.fit(meta, 300, row.children[ROOM_META]));
+      this.set_text(row.children[ROOM_META], this.fit(meta, 560, row.children[ROOM_META]));
     }
     this.layout_centered_rows();
   }
@@ -1408,10 +1595,10 @@ export class NetworkLogic extends UIComponent {
     this.set_sync_style(this.sync_lockstep, mode === 'lockstep');
     this.set_sync_style(this.sync_delay, mode === 'delay');
     if (this.room_lfw) this.room_lfw.visible = !!room.lfw_version;
-    this.set_text(this.room_lfw, this.fit(room.lfw_version ? `${this.t('network.lfw_version')}: ${this.version_short(room.lfw_version)}` : '', 440, this.room_lfw));
+    this.set_text(this.room_lfw, this.fit(room.lfw_version ? `${this.t('network.lfw_version')}: ${this.version_short(room.lfw_version)}` : '', 600, this.room_lfw));
     const infos = room.data_infos ?? [];
-    this.set_text(this.room_data_0, this.fit(infos[0] ? `${this.t('network.data_package')}[1] ${this.data_info_text(infos[0])}` : '', 440, this.room_data_0));
-    this.set_text(this.room_data_1, this.fit(infos[1] ? `${this.t('network.data_package')}[2] ${this.data_info_text(infos[1])}` : '', 440, this.room_data_1));
+    this.set_text(this.room_data_0, this.fit(infos[0] ? `${this.t('network.data_package')}[1] ${this.data_info_text(infos[0])}` : '', 600, this.room_data_0));
+    this.set_text(this.room_data_1, this.fit(infos[1] ? `${this.t('network.data_package')}[2] ${this.data_info_text(infos[1])}` : '', 600, this.room_data_1));
     if (this.room_data_0) this.room_data_0.visible = !!infos[0];
     if (this.room_data_1) this.room_data_1.visible = !!infos[1];
     if (this.pwd_label) this.pwd_label.visible = owner;
@@ -1421,7 +1608,7 @@ export class NetworkLogic extends UIComponent {
     this.render_room_players();
     if (this.empty_slot) {
       this.empty_slot.visible = clients.length < max;
-      this.empty_slot.move_to(241, 158 + clients.length * PLAYER_ROW_STEP + PLAYER_ROW_STEP / 2, 0);
+      this.empty_slot.move_to(397, 178 + clients.length * PLAYER_ROW_STEP + PLAYER_ROW_STEP / 2, 0);
     }
     if (this.btn_leave) this.btn_leave.visible = true;
     if (this.btn_ready) {
@@ -1460,11 +1647,11 @@ export class NetworkLogic extends UIComponent {
       const member = clients[i];
       row.visible = !!member;
       if (!member) continue;
-      this.set_text(row.children[PLAYER_NAME], this.fit(member.name || member.id || '-', 150, row.children[PLAYER_NAME]));
+      this.set_text(row.children[PLAYER_NAME], this.fit(member.name || member.id || '-', 190, row.children[PLAYER_NAME]));
       const tags: string[] = [];
       if (member.id === me?.id) tags.push(`(${this.t('network.you')})`);
       if (member.id === room.owner?.id) tags.push(`(${this.t('network.owner')})`);
-      this.set_text(row.children[PLAYER_TAGS], this.fit(tags.join(' '), 80, row.children[PLAYER_TAGS]));
+      this.set_text(row.children[PLAYER_TAGS], this.fit(tags.join(' '), 150, row.children[PLAYER_TAGS]));
       const rtt = member.id ? this.rtts[member.id] : 0;
       this.set_text(row.children[PLAYER_RTT], rtt ? `${rtt}ms` : '-');
       const state = row.children[PLAYER_STATE];
@@ -1501,33 +1688,12 @@ export class NetworkLogic extends UIComponent {
       : this.t('network.enter_game'), 370, this.countdown));
   }
 
-  private render_chat(): void {
-    const items = this.chat_items.filter(item => {
-      if (item.kind === 'sys') return true;
-      return !this.room || item.msg.target !== 'global';
-    }).slice(-CHAT_SHOW);
-    for (let i = 0; i < this.chat_rows.length; i++) {
-      const row = this.chat_rows[i];
-      const item = items[i];
-      row.visible = !!item;
-      if (!item) continue;
-      if (item.kind === 'sys') {
-        this.set_text(row, this.fit(item.text, 264, row));
-        this.paint(row, { fill_style: '#9b9bff' });
-        continue;
-      }
-      const msg = item.msg;
-      const sender = msg.sender?.name || '?';
-      this.set_text(row, this.fit(`${sender}: ${msg.text ?? ''}`, 264, row));
-      this.paint(row, { fill_style: msg.target === 'private' ? '#C9A0FF' : msg.target === 'room' ? '#ff7b00' : '#ffffff' });
-    }
-  }
-
   private update_overlay(): void {
     const failed = !!this.rejoin_failed;
     const reconnecting = this.reconnecting > 0;
     const paused = !failed && !reconnecting && this.leavers.length > 0;
     const show = failed || reconnecting || paused;
+    this.sync_overlay_page(show);
     if (this.overlay_dim) this.overlay_dim.visible = show;
     if (this.overlay_panel) this.overlay_panel.visible = show;
     if (!show) return;

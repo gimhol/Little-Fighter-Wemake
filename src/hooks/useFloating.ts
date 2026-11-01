@@ -282,7 +282,7 @@ export function useFloating(opts: IUseFloatingOpts) {
     }
 
     // 面板自身尺寸变化：若超出屏幕则重新钳制到屏幕内（保持贴边/比例语义不变）。
-    // 例如 ChatBox 收到新消息后高度自然变大，应保持底部贴屏幕底而不超出。
+    // 例如面板内容变多后高度自然变大，应保持底部贴屏幕底而不超出。
     const on_target_resize = () => {
       if (!visible) return;
       const rect = target.getBoundingClientRect()
