@@ -34,6 +34,7 @@ import { ZipMgr, type ILoadedZip } from "./ZipMgr";
 /** 生存排行周期 */
 export type SurvivalRankPeriod = 'all' | 'month' | 'week' | 'day'
 
+export type UIComponentClass = abstract new (...args: never[]) => UI.UIComponent;
 /** 生存排行榜单条目（轻量，仅展示用） */
 export interface SurvivalRankItem {
   rank: number
@@ -209,8 +210,38 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   readonly bgms: string[] = []
   readonly layers: UI.UILayers;
 
+  protected readonly _singletons = new Map<UIComponentClass, UI.UIComponent>();
+  protected _host_node?: UI.UINode;
+
   /** @deprecated 使用 `layers` */
   get ui_stacks(): UI.UILayers { return this.layers }
+
+  get host_node(): UI.UINode {
+    if (this._host_node) return this._host_node;
+    return this._host_node = new UI.UINode(this, {
+      id: '__host__',
+      name: '__host__',
+      center: [0, 0, 0],
+      pos: [0, 0, 0],
+      size: [0, 0, 0],
+      scale: [1, 1, 1],
+    } as unknown as UI.ICookedUIInfo);
+  }
+
+  get_singleton<T extends UI.UIComponent>(cls: UIComponentClass): T | undefined {
+    return this._singletons.get(cls) as T | undefined;
+  }
+
+  adopt_singleton(cls: UIComponentClass, component: UI.UIComponent): void {
+    this._singletons.set(cls, component);
+  }
+
+  release_singleton(cls: UIComponentClass): void {
+    const component = this._singletons.get(cls);
+    if (!component) return;
+    this._singletons.delete(cls);
+    component.on_stop?.();
+  }
 
   protected __id = 100;
   protected __team = Number(D.TeamEnum.Max);

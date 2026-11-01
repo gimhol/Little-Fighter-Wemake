@@ -148,6 +148,19 @@ export class Factory {
         props: info.props || {},
         weight: info.weight ?? 0
       }
+      if (clz.SINGLETON) {
+        const lfw = layout.lfw;
+        let singleton = lfw.get_singleton(clz);
+        if (!singleton) {
+          singleton = new clz(lfw.host_node, rinfo.name, rinfo);
+          singleton.init?.();
+          lfw.adopt_singleton(clz, singleton);
+          lfw.host_node.add_components(singleton);
+          singleton.on_start?.();
+        }
+        layout.link_singleton(singleton);
+        continue;
+      }
       const component = new clz(layout, rinfo.name, rinfo)
       component.init?.()
       ret.push(component);

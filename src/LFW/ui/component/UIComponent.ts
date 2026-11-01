@@ -24,6 +24,7 @@ export class UIComponent<
   static get TAG(): string { return this.TAGS[0]; }
   static readonly TAGS: string[] = ["UIComponent"]
   static readonly PROPS: IPropsMeta = {}
+  static readonly SINGLETON: boolean = false;
   readonly node: UINode;
   readonly f_name: string;
   readonly callbacks = new Callbacks<C>()
@@ -219,6 +220,10 @@ export class UIComponent<
   on_add?(): void;
 
   on_del?(): void;
+
+  on_link?(node: UINode): void;
+
+  on_unlink?(node: UINode): void;
 
   /** stupid. */
   find_node(which: string | null | undefined): UINode | null {

@@ -536,6 +536,7 @@ export class World {
       if (!ui || ui.disabled) continue;
       ui.update(uidt);
     }
+    this.lfw.host_node.update(uidt);
   }
 
   change_bg(bg_id: string | undefined): void {

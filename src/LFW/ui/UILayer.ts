@@ -194,7 +194,7 @@ export class UILayers {
   }
   dispose() {
     for (const i of this._all)
-      i.dispose();
+      i?.dispose();
     this._all.length = 0;
   }
 }

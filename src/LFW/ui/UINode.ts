@@ -67,6 +67,7 @@ export class UINode implements IDebugging {
   protected _layer?: UILayer;
   protected _focused_node?: UINode;
   protected _components: UIComponent[] = [];
+  protected _linked_singletons: UIComponent[] = [];
   protected _state: any = {};
   protected _visible = true;
   protected _disabled = false;
@@ -307,6 +308,15 @@ export class UINode implements IDebugging {
   }
   get components(): ReadonlyArray<UIComponent> {
     return this._components;
+  }
+
+  link_singleton(component: UIComponent): void {
+    if (this._linked_singletons.includes(component)) return;
+    this._linked_singletons.push(component);
+  }
+
+  fire_singleton_links(): void {
+    for (const c of this._linked_singletons) c.on_link?.(this);
   }
 
   /** 光标是否在本节点上 */
@@ -558,6 +568,8 @@ export class UINode implements IDebugging {
       c.stopped = true;
       c.on_stop?.();
     }
+    for (const c of this._linked_singletons) c.on_unlink?.(this);
+    this._linked_singletons.length = 0;
     for (const l of this.children) l.on_stop();
     const { stop } = this.data.actions || {};
     if (stop) actor.act(this, stop);
@@ -634,6 +646,7 @@ export class UINode implements IDebugging {
     }
     for (const component of ret._components)
       component.on_add?.();
+    ret.fire_singleton_links();
     return ret;
   }
 
