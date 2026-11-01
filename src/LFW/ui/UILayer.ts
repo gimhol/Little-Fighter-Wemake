@@ -57,6 +57,7 @@ export interface IPushPageOpts {
    * @type {?boolean}
    */
   pass_through_pointer?: boolean;
+  pass_through_esc?: boolean;
 }
 /** @deprecated 使用 IPopPageOpts */
 export type IPopUIOpts = IPopPageOpts
@@ -93,7 +94,7 @@ export class UILayer {
   }
 
   set(opts: IPushPageOpts = {}): void {
-    const { id, pass_through_pointer } = opts
+    const { id, pass_through_pointer, pass_through_esc } = opts
     if (is_str(id) && this.ui?.id === id) return;
     const prev = this.pages.pop();
     prev?.on_pause();
@@ -104,6 +105,7 @@ export class UILayer {
       curr.z = curr.z + this._index
       this.pages.push(curr);
       if (pass_through_pointer) this.lfw.layers.mark_pointer_passthrough(curr);
+      if (pass_through_esc) curr.esc_through = true;
       curr.on_start();
       curr.on_resume();
     }
@@ -111,7 +113,7 @@ export class UILayer {
   }
 
   push(opts: IPushPageOpts = {}): void {
-    const { id, pass_through_pointer } = opts
+    const { id, pass_through_pointer, pass_through_esc } = opts
     const prev = this.ui;
     prev?.on_pause();
     const info = this.lfw.uis.all?.find((v) => v.id === id)
@@ -120,6 +122,7 @@ export class UILayer {
       curr.z = curr.z + this._index
       this.pages.push(curr);
       if (pass_through_pointer) this.lfw.layers.mark_pointer_passthrough(curr);
+      if (pass_through_esc) curr.esc_through = true;
       curr.on_start();
       curr.on_resume();
     }

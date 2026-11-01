@@ -13,13 +13,13 @@ export function is_chat_open(lfw: LFW): boolean {
 export function open_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
   chat_store.peek = false;
-  lfw.layers.push_page({ id: "chat", pass_through_pointer: true }, CHAT_LAYER);
+  lfw.layers.push_page({ id: "chat", pass_through_pointer: true, pass_through_esc: true }, CHAT_LAYER);
 }
 
 export function peek_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
   chat_store.peek = true;
-  lfw.layers.push_page({ id: "chat", pass_through_pointer: true }, CHAT_LAYER);
+  lfw.layers.push_page({ id: "chat", pass_through_pointer: true, pass_through_esc: true }, CHAT_LAYER);
 }
 
 export function close_chat(lfw: LFW): void {
@@ -45,22 +45,23 @@ const installed = new WeakSet<LFW>();
 export function install_chat_hotkey(lfw: LFW): void {
   if (installed.has(lfw)) return;
   installed.add(lfw);
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !is_chat_open(lfw)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    close_chat(lfw);
+  }, true);
   const key: IKeyboardCallback = {
     on_key_down: (e) => {
       const native = e.native;
       const is_t = !native?.ctrlKey && !native?.metaKey && (e.key === "t" || native?.code === "KeyT");
-      if (is_chat_open(lfw)) {
-        if (e.key === "escape") {
-          close_chat(lfw);
-          e.interrupt();
-          return;
-        }
-        if (!is_t) return;
+      if (!is_t) return;
+      if (chat_store.peek || is_chat_open(lfw)) {
         toggle_chat(lfw);
         e.interrupt();
         return;
       }
-      if (!is_t || !current_connection.conn) return;
+      if (!current_connection.conn) return;
       open_chat(lfw);
       e.interrupt();
     },

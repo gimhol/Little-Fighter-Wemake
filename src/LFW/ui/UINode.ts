@@ -73,6 +73,7 @@ export class UINode implements IDebugging {
   protected _disabled = false;
   protected _clip_children = false;
   protected _pointer_through = false;
+  protected _esc_through = false;
   protected _opacity = 1;
 
   readonly pos: IVector3 = new D.Vector3();
@@ -229,6 +230,8 @@ export class UINode implements IDebugging {
    */
   get pointer_through(): boolean { return this._pointer_through; }
   set pointer_through(v: boolean) { this._pointer_through = v; }
+  get esc_through(): boolean { return this._esc_through; }
+  set esc_through(v: boolean) { this._esc_through = v; }
   /**
    * 当前节点是否可见
    * 

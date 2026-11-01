@@ -1,19 +1,19 @@
+import { Err } from "@fimagine/logger";
 import "current-device";
 import './DittoImpl';
 import * as dom from "./DittoImpl";
-import { HeadlessUIInputHandle } from "./DittoImpl/ui/HeadlessUIInputHandle";
 import { get_ui_snapshot, HeadlessUINodeRenderer } from "./DittoImpl/renderer/HeadlessUINodeRenderer";
 import { UINodeRenderer } from "./DittoImpl/renderer/UINodeRenderer";
-import { ui_test_run } from "./ui_test";
 import { WorldRenderer } from "./DittoImpl/renderer/WorldRenderer";
+import { HeadlessUIInputHandle } from "./DittoImpl/ui/HeadlessUIInputHandle";
 import { actor, Ditto, LFW, UIActionEnum } from "./LFW";
 import { Debug, Log, Warn } from "./Log";
-import { ewents } from './Utils/ewents';
 import { is_extension_page } from './Utils/environment';
+import { ewents } from './Utils/ewents';
 import './i18n';
-import { Err } from "@fimagine/logger";
 import { install_mock_toy_if_requested } from "./mock_toy";
 import { close_browser, enable_immersive_landscape } from "./toy_sdk";
+import { ui_test_run } from "./ui_test";
 
 // 本地开发：URL 带 TOY=1 时模拟 B站 Toy 容器（便于 localhost 测试生存排行等）
 install_mock_toy_if_requested()

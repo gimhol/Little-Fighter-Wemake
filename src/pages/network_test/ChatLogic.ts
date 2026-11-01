@@ -114,6 +114,12 @@ export class ChatLogic extends UIComponent {
     e.stop_immediate_propagation();
   }
 
+  override on_stop(): void {
+    this.blur_input();
+    chat_store.peek = false;
+    this._closing = true;
+  }
+
   send(): void {
     if (!this._input) return;
     const renderer = this.input_renderer();

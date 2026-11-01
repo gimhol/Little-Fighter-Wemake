@@ -603,9 +603,8 @@ export class NetworkLogic extends UIComponent {
     const conn = this.conn;
     this.conn = null;
     this.room = undefined;
-    this.driver = null;
+    this.release_world();
     if (current_connection.conn === conn) current_connection.conn = null;
-    current_connection.driver = null;
     if (conn) {
       conn.disable_rejoin();
       conn.close();
@@ -970,12 +969,23 @@ export class NetworkLogic extends UIComponent {
     }
   }
 
+  private release_world(): void {
+    const world = this.lfw.world;
+    if (world) {
+      world.before_update = void 0;
+      world.after_update = void 0;
+      world.extra_steps = 0;
+      world.awake();
+    }
+    this.driver = null;
+    current_connection.driver = null;
+  }
+
   private reset_connection(): void {
     this.conn = null;
     this.room = undefined;
-    this.driver = null;
+    this.release_world();
     if (current_connection.conn) current_connection.conn = null;
-    current_connection.driver = null;
     for (const { player, cb } of this.watched_players) player.callbacks.del(cb);
     this.watched_players.length = 0;
     this.stop_auto_refresh();
@@ -1002,8 +1012,7 @@ export class NetworkLogic extends UIComponent {
   private on_room_change(room: IRoomInfo | undefined): void {
     this.room = room;
     if (!room) {
-      this.driver = null;
-      current_connection.driver = null;
+      this.release_world();
       this.rtts = {};
       this.leavers.length = 0;
       this.reconnecting = 0;
@@ -1102,6 +1111,7 @@ export class NetworkLogic extends UIComponent {
 
   private continue_solo(): void {
     this.driver?.continue_solo();
+    this.release_world();
     this.conn?.give_up();
     this.leavers.length = 0;
     this.reconnecting = 0;
@@ -1115,6 +1125,7 @@ export class NetworkLogic extends UIComponent {
     this.reconnecting = 0;
     this.rejoin_failed = '';
     this.conn?.give_up();
+    this.release_world();
     this.update_overlay();
   }
 
