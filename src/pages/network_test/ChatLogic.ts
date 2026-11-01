@@ -50,6 +50,7 @@ export class ChatLogic extends UIComponent {
   private _alpha = 1;
   private _closing = false;
   private _seen = -1;
+  private _target: TChatTarget | undefined;
   private _focus_pending = false;
   private _focus_frames = 0;
 
@@ -70,12 +71,6 @@ export class ChatLogic extends UIComponent {
     q("chat_close")?.callbacks.add({ on_click: () => this.close() });
     q("chat_send")?.callbacks.add({ on_click: () => this.send() });
     q("chat_input_bg")?.callbacks.add({ on_click: () => this.focus_input() });
-    q("chat_target")?.callbacks.add({
-      on_click: () => {
-        chat_store.toggle_target();
-        this.render();
-      },
-    });
 
     this._hold = chat_store.peek ? PEEK_HOLD_MS : 0;
     this.set_input_visible(!chat_store.peek);
@@ -96,6 +91,9 @@ export class ChatLogic extends UIComponent {
       this._hold = PEEK_HOLD_MS;
       this._alpha = 1;
       this.node.set_opacity(1);
+      this.render();
+    } else if (chat_store.target !== this._target) {
+      // 进/出房间后发送频道会变，标签需要跟着刷新
       this.render();
     }
     if (!chat_store.peek) return;
@@ -264,6 +262,7 @@ export class ChatLogic extends UIComponent {
     if (typing) this.node.search_node("chat_bg")?.resize(BG_W, used + BG_EXTRA_H);
 
     const target = chat_store.target;
+    this._target = target;
     const tag = this.node.search_node("chat_target");
     if (tag) {
       const color = CHANNEL_COLOR[target];

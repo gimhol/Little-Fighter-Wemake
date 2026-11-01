@@ -6,7 +6,7 @@ export type TChatTarget = "room" | "global";
 class ChatStore {
   private _items: TChatItem[] = [];
   private _sender: ((text: string, target: TChatTarget) => void) | null = null;
-  private _target: TChatTarget = "room";
+  private _target: TChatTarget = "global";
   peek = false;
 
   get items(): readonly TChatItem[] { return this._items; }
@@ -21,8 +21,8 @@ class ChatStore {
     this._sender = fn;
   }
 
-  toggle_target(): void {
-    this._target = this._target === "room" ? "global" : "room";
+  set_in_room(in_room: boolean): void {
+    this._target = in_room ? "room" : "global";
   }
 
   push(item: TChatItem): void {

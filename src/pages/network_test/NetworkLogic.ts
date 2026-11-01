@@ -1488,6 +1488,8 @@ export class NetworkLogic extends UIComponent {
     }
     this.sync_pages(mode);
     this.update_visibility();
+    // 聊天频道跟着位置走：房间里（含对局中）只能发房间频道，房间外只能发全局频道
+    chat_store.set_in_room(mode === 'room' || mode === 'started');
     // 进入对局时把焦点从输入框收回（否则键盘事件都被输入框吃掉，游戏无法操作）
     if (mode === 'started') this.blur_inputs();
     this.update_topbar();
