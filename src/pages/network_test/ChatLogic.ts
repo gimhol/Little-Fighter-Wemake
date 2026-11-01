@@ -127,7 +127,6 @@ export class ChatLogic extends UIComponent {
     chat_store.peek = false;
     this.set_input_visible(true);
     this.render();
-    this.focus_input();
   }
 
   close(): void {
@@ -162,11 +161,13 @@ export class ChatLogic extends UIComponent {
   }
 
   private set_input_visible(visible: boolean): void {
+    const bg = this.node.search_node("chat_bg");
+    const changed = !bg || bg.visible !== visible;
     this.node.search_node("chat_bg")?.set_visible(visible);
     this.node.search_node("chat_input_bg")?.set_visible(visible);
     this.node.search_node("chat_input_divider")?.set_visible(visible);
     if (!visible) this.blur_input();
-    else if (!chat_store.peek) this._focus_pending = true;
+    else if (changed && !chat_store.peek) this._focus_pending = true;
   }
 
   private set_pointer_through(v: boolean): void {
