@@ -182,6 +182,10 @@ export class UINodeRenderer implements IUINodeRenderer {
     this._input?.focus();
   }
 
+  blur_input(): void {
+    this._input?.blur();
+  }
+
   on_pause(): void {
     if (this.ui.root === this.ui) this.detach_ui_layer();
     const text_input = this.ui.find_component(TextInput)

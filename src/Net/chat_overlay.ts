@@ -13,13 +13,13 @@ export function is_chat_open(lfw: LFW): boolean {
 export function open_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
   chat_store.peek = false;
-  lfw.layers.push_page({ id: "chat" }, CHAT_LAYER);
+  lfw.layers.push_page({ id: "chat", pass_through_pointer: true }, CHAT_LAYER);
 }
 
 export function peek_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
   chat_store.peek = true;
-  lfw.layers.push_page({ id: "chat" }, CHAT_LAYER);
+  lfw.layers.push_page({ id: "chat", pass_through_pointer: true }, CHAT_LAYER);
 }
 
 export function close_chat(lfw: LFW): void {

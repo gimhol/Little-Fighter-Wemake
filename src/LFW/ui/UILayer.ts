@@ -47,6 +47,16 @@ export interface IPopPageOpts {
 export interface IPushPageOpts {
   id?: string;
   transition?: string;
+  /**
+   * 不吞掉未命中的指针事件
+   *
+   * 为 true 时，指针没有命中本页任何节点的事件会继续下发
+   * 用于聊天浮层
+   *
+   * @default false
+   * @type {?boolean}
+   */
+  pass_through_pointer?: boolean;
 }
 /** @deprecated 使用 IPopPageOpts */
 export type IPopUIOpts = IPopPageOpts
@@ -83,7 +93,7 @@ export class UILayer {
   }
 
   set(opts: IPushPageOpts = {}): void {
-    const { id } = opts
+    const { id, pass_through_pointer } = opts
     if (is_str(id) && this.ui?.id === id) return;
     const prev = this.pages.pop();
     prev?.on_pause();
@@ -93,6 +103,7 @@ export class UILayer {
     if (curr) {
       curr.z = curr.z + this._index
       this.pages.push(curr);
+      if (pass_through_pointer) this.lfw.layers.mark_pointer_passthrough(curr);
       curr.on_start();
       curr.on_resume();
     }
@@ -100,7 +111,7 @@ export class UILayer {
   }
 
   push(opts: IPushPageOpts = {}): void {
-    const { id } = opts
+    const { id, pass_through_pointer } = opts
     const prev = this.ui;
     prev?.on_pause();
     const info = this.lfw.uis.all?.find((v) => v.id === id)
@@ -108,6 +119,7 @@ export class UILayer {
     if (curr) {
       curr.z = curr.z + this._index
       this.pages.push(curr);
+      if (pass_through_pointer) this.lfw.layers.mark_pointer_passthrough(curr);
       curr.on_start();
       curr.on_resume();
     }
@@ -148,8 +160,23 @@ export class UILayer {
 export class UILayers {
   readonly lfw: LFW;
   protected _all: UILayer[] = [];
+  protected _pointer_passthrough = new WeakSet<UINode>();
   constructor(lfw: LFW) {
     this.lfw = lfw;
+  }
+  mark_pointer_passthrough(ui: UINode): void {
+    this._pointer_passthrough.add(ui);
+  }
+  is_pointer_passthrough(ui: UINode | undefined): boolean {
+    return !!ui && this._pointer_passthrough.has(ui);
+  }
+  pages_top_down(): UINode[] {
+    const ret: UINode[] = [];
+    for (let i = this._all.length - 1; i >= 0; i--) {
+      const { ui } = this._all[i];
+      if (ui) ret.push(ui);
+    }
+    return ret;
   }
   get bottom(): UILayer | undefined {
     return this._all[0]

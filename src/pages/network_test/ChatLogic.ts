@@ -37,6 +37,7 @@ type TInputRenderer = {
   get_input_value?(): string;
   set_input_value?(value: string): void;
   focus_input?(): void;
+  blur_input?(): void;
 };
 
 export class ChatLogic extends UIComponent {
@@ -132,6 +133,7 @@ export class ChatLogic extends UIComponent {
   close(): void {
     if (this._closing) return;
     this._closing = true;
+    this.blur_input();
     this.node.set_opacity(1);
     this.node.pop_page();
   }
@@ -163,6 +165,14 @@ export class ChatLogic extends UIComponent {
     this.node.search_node("chat_bg")?.set_visible(visible);
     this.node.search_node("chat_input_bg")?.set_visible(visible);
     this.node.search_node("chat_input_divider")?.set_visible(visible);
+    if (!visible) this.blur_input();
+    else if (!chat_store.peek) this._focus_pending = true;
+  }
+
+  private blur_input(): void {
+    this._input?.node.blur();
+    this._focus_pending = false;
+    this.input_renderer()?.blur_input?.();
   }
 
   private fit(text: string, max_w: number, node: UINode): string {
@@ -245,6 +255,7 @@ export class ChatLogic extends UIComponent {
   private render(): void {
     const items = chat_store.items;
     const typing = !chat_store.peek;
+    this.node.set_disabled(!typing);
     let used = 0;
     let slot = this._rows.length - 1;
     for (let i = items.length - 1; i >= 0 && slot >= 0; i--) {

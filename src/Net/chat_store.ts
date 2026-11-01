@@ -2,7 +2,6 @@ import type { IRespChat } from "./IMsg_Chat";
 
 export type TChatItem = { kind: "msg"; msg: IRespChat } | { kind: "sys"; text: string };
 export type TChatTarget = "room" | "global";
-
 class ChatStore {
   private _items: TChatItem[] = [];
   private _sender: ((text: string, target: TChatTarget) => void) | null = null;

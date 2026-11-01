@@ -87,7 +87,21 @@ export class UIInputHandle implements IUIInputHandle {
   }
   protected push_pointer(cmd: CMD, e: IPointingEvent) {
     const { ui } = this.lfw; if (!ui) return;
-    const intersections = this.intersections(e.scene_x, e.scene_y, ui);
+    let page: UINode | undefined;
+    let intersections: IIntersection[] = [];
+    for (const candidate of this.lfw.layers.pages_top_down()) {
+      const hits = this.intersections(e.scene_x, e.scene_y, candidate);
+      if (hits.length) {
+        page = candidate;
+        intersections = hits;
+        break;
+      }
+      if (!this.lfw.layers.is_pointer_passthrough(candidate)) {
+        page = candidate;
+        break;
+      }
+    }
+    if (!page) return;
     const paths: string[] = [];
     const pages: string[] = [];
     const points: string[] = [];
