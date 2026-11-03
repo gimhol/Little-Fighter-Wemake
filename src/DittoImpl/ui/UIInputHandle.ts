@@ -109,16 +109,19 @@ export class UIInputHandle implements IUIInputHandle {
       }
     }
 
-    const args = [`--b=${e.button}`, this.pos_arg(e)];
-    args.push(`--paths=${paths.join('|')}`);
-    args.push(`--points=${points.join('|')}`);
-    this.lfw.push_cmd(cmd, ...args);
+    if (paths.length) {
+      const args = [`--b=${e.button}`, this.pos_arg(e)];
+      args.push(`--paths=${paths.join('|')}`);
+      args.push(`--points=${points.join('|')}`);
+      this.lfw.push_cmd(cmd, ...args);
+    }
 
-    const largs = [`--b=${e.button}`, this.pos_arg(e)];
-    largs.push(`--paths=${lpaths.join('|')}`);
-    largs.push(`--points=${lpoints.join('|')}`);
-    this.lfw.push_lcmd(cmd, ...largs);
-
+    if (lpaths.length) {
+      const largs = [`--b=${e.button}`, this.pos_arg(e)];
+      largs.push(`--paths=${lpaths.join('|')}`);
+      largs.push(`--points=${lpoints.join('|')}`);
+      this.lfw.push_lcmd(cmd, ...largs);
+    }
   }
   protected intersections(x: number, y: number, ui: UINode): IIntersection[] {
     this.pointer_vec_2.x = x;
