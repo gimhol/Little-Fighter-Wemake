@@ -57,7 +57,6 @@ export class ChatLogic extends UIComponent {
 
   override on_start(): void {
     const q = (id: string) => this.node.search_node(id) ?? undefined;
-    this.node.touchable = false;
     this._list = q("chat_rows");
     this._rows = (this._list?.children ?? []).map((row) => ({
       name: row.children[0],
@@ -95,7 +94,6 @@ export class ChatLogic extends UIComponent {
       this.node.set_opacity(1);
       this.render();
     } else if (chat_store.target !== this._target) {
-      // 进/出房间后发送频道会变，标签需要跟着刷新
       this.render();
     }
     if (!chat_store.peek) return;
@@ -143,7 +141,6 @@ export class ChatLogic extends UIComponent {
     this.node.pop_page();
   }
 
-  /** 点击输入行任意位置都让输入框获得焦点（peek 状态下顺带唤回输入行） */
   focus_input(): void {
     if (chat_store.peek) {
       chat_store.peek = false;
@@ -197,7 +194,6 @@ export class ChatLogic extends UIComponent {
     return chars.slice(0, lo).join("") + ELLIPSIS;
   }
 
-  /** 折行：按可用宽度把文本切成多行，超过 max_lines 时末行加省略号 */
   private wrap_lines(text: string, max_w: number, node: UINode, max_lines: number): string {
     if (max_w <= 8 || !text) return "";
     const measure = (s: string) => this.lfw.images.measure_text(s, node.style).w ?? 0;
@@ -219,7 +215,6 @@ export class ChatLogic extends UIComponent {
       }
       let take = Math.max(1, lo);
       if (i + take < chars.length && !last) {
-        // 优先在空格处断行，避免把英文单词劈开（中文没有空格，走字符断行）
         const seg = chars.slice(i, i + take);
         for (let k = seg.length - 1; k >= seg.length >> 1; k--) {
           if (seg[k] === " ") {
@@ -227,7 +222,6 @@ export class ChatLogic extends UIComponent {
             break;
           }
         }
-        // 中文禁则：行首不留收尾标点，行尾不留开头标点
         while (take > 1 && NO_LINE_START.includes(chars[i + take])) take--;
         while (take > 1 && NO_LINE_END.includes(chars[i + take - 1])) take--;
       }
@@ -262,7 +256,6 @@ export class ChatLogic extends UIComponent {
   private render(): void {
     const items = chat_store.items;
     const typing = !chat_store.peek;
-    this.node.touchable = typing;
     let used = 0;
     let slot = this._rows.length - 1;
     for (let i = items.length - 1; i >= 0 && slot >= 0; i--) {

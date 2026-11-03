@@ -111,11 +111,7 @@ export class UILayer {
     this.callback.call('on_push', curr, prev, this)
   }
 
-  /**
-   * 弹页：默认只弹栈顶一页；带 `until` 时从栈顶往下弹到判定命中为止。
-   * `min_pages` 为本层保留下限，弹到下限即停（不会把层弹空）
-   */
-  pop(opts: IPopPageOpts = {}): void {
+  pop(opts: IPopPageOpts = {}): boolean {
     const { inclusive, until, min_pages = 0 } = opts;
     const poppeds: UINode[] = []
     const len = this.pages.length
@@ -137,9 +133,12 @@ export class UILayer {
       if (i === 0) popped?.on_pause();
       popped?.on_stop();
     }
+    if (poppeds.length) return false;
+
     this.pages.splice(len - poppeds.length, poppeds.length)
     this.ui?.on_resume();
     this.callback.call('on_pop', this.ui, poppeds, this)
+    return true;
   }
 }
 export class UILayers {
