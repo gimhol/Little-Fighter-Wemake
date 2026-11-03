@@ -73,7 +73,6 @@ export class UINode implements IDebugging {
   protected _disabled = false;
   protected _clip_children = false;
   protected _touchable: boolean | null = null;
-  protected _esc_through = false;
   protected _opacity = 1;
 
   readonly pos: IVector3 = new D.Vector3();
@@ -222,8 +221,6 @@ export class UINode implements IDebugging {
 
   get touchable(): boolean { return this._touchable ?? this._parent?.touchable ?? true; }
   set touchable(v: boolean | undefined | null) { this._touchable = v ?? null; }
-  get esc_through(): boolean { return this._esc_through; }
-  set esc_through(v: boolean) { this._esc_through = v; }
   get local_only(): boolean { return this._local_only ?? this._parent?.local_only ?? false; }
   set local_only(v: boolean | undefined | null) { this._local_only = v ?? null; }
 

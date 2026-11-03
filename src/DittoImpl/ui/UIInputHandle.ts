@@ -1,7 +1,7 @@
+import { set_local_cursor } from "@/LFW/cmds/CMD_POINTER_EVENTS";
+import { CMD } from "@/LFW/defines/CMD";
 import type { IPointingEvent } from "@/LFW/ditto/pointings";
 import type { IUIInputHandle } from "@/LFW/ditto/ui/IEventHandle";
-import { CMD } from "@/LFW/defines/CMD";
-import { set_local_cursor } from "@/LFW/cmds/CMD_POINTER_EVENTS";
 import type { LFW } from "@/LFW/LFW";
 import { UINode } from "@/LFW/ui/UINode";
 import * as T from "../_t";
@@ -91,26 +91,19 @@ export class UIInputHandle implements IUIInputHandle {
     let intersections: IIntersection[] = [];
     for (const candidate of this.lfw.layers.pages_top_down()) {
       const hits = this.intersections(e.scene_x, e.scene_y, candidate);
-      if (hits.length) {
-        page = candidate;
-        intersections = hits;
-        break;
-      }
-      if (!this.lfw.layers.is_pointer_passthrough(candidate)) {
-        page = candidate;
-        break;
-      }
+      if (!hits.length) continue;
+      page = candidate;
+      intersections = hits;
+      break;
     }
     if (!page) return;
     const paths: string[] = [];
-    const pages: string[] = [];
     const points: string[] = [];
     for (const { extra, point } of intersections) {
       const path = node_path(extra);
       const page_id = extra.root.id;
       if (!path || !page_id) continue;
       paths.push(path);
-      pages.push(page_id);
       points.push(`${point.x},${point.y},${point.z}`);
     }
     const empty = !paths.length;
@@ -125,7 +118,6 @@ export class UIInputHandle implements IUIInputHandle {
     const args = [`--b=${e.button}`, this.pos_arg(e)];
     if (!empty) {
       args.push(`--paths=${paths.join('|')}`);
-      args.push(`--pages=${pages.join('|')}`);
       args.push(`--points=${points.join('|')}`);
     }
     this.lfw.push_cmd(cmd, ...args);

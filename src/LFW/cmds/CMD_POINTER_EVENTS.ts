@@ -82,7 +82,6 @@ interface IPointerTargets {
   points: IVector3[];
   button: number | undefined;
   from: string | undefined;
-  me: string | undefined;
 }
 
 interface IPointerState {
@@ -158,7 +157,6 @@ function move_cursor(c: CMDS, hidden: boolean | undefined, down?: boolean): IPoi
 function read_targets(tag: string, c: CMDS): IPointerTargets | undefined {
   const button = c.num_arg('--b');
   const from = c.str_arg('--from');
-  const me = c.str_arg('--me');
   const paths_raw = c.str_arg('--paths') ?? '';
   const points_raw = c.str_arg('--points') ?? '';
   const path_parts = paths_raw ? paths_raw.split('|') : [];
@@ -182,7 +180,7 @@ function read_targets(tag: string, c: CMDS): IPointerTargets | undefined {
     nodes.push(node);
     points.push(Ditto.vec3(point?.at(0), point?.at(1), point?.at(2)))
   }
-  return { nodes, points, from, button, me };
+  return { nodes, points, from, button };
 }
 
 
@@ -215,7 +213,6 @@ CMDS.register(CMD.POINTER_DOWN, help_down, (c) => {
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i]
     if (!ui.visible || ui.disabled) continue;
-    if (ui.local_only && targets.from !== targets.me) continue;
     state.down_uis.add(ui);
     const event = new LFWPointerEvent(points[i], targets.button);
     ui.on_pointer_down(event);
@@ -236,7 +233,6 @@ CMDS.register(CMD.POINTER_MOVE, help_move, (c) => {
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i];
     if (!ui.visible || ui.disabled) continue;
-    if (ui.local_only && targets.from !== targets.me) continue;
     ui.on_pointer_move(new LFWPointerEvent(points[i], targets.button));
 
     if (on_uis.has(ui)) {
@@ -268,7 +264,6 @@ CMDS.register(CMD.POINTER_UP, help_up, (c) => {
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i]
     if (!ui.visible || ui.disabled) continue;
-    if (ui.local_only && targets.from !== targets.me) continue;
     uis.push(ui);
     pts.push(points[i]);
   }
@@ -303,7 +298,6 @@ CMDS.register(CMD.POINTER_CLICK, help_click, (c) => {
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i];
     if (!ui || !ui.visible || ui.disabled) continue;
-    if (ui.local_only && targets.from !== targets.me) continue;
     const event = new LFWPointerEvent(points[i], button);
     ui.on_click(event);
     if (event.stopped) break;
@@ -320,7 +314,6 @@ CMDS.register(CMD.POINTER_CANCEL, help_cancel, (c) => {
 
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i];
-    if (ui.local_only && targets.from !== targets.me) continue;
     const event = new LFWPointerEvent(points[i], button);
     ui.on_pointer_cancel(event);
     state.down_uis.delete(ui);
@@ -335,7 +328,6 @@ CMDS.register(CMD.POINTER_ENTER, help_enter, (c) => {
   const state = pointer_state(c);
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i];
-    if (ui.local_only && targets.from !== targets.me) continue;
     if (!ui || !ui.visible || ui.disabled) continue;
     ui.on_pointer_enter();
     state.on_uis.add(ui);
@@ -351,7 +343,6 @@ CMDS.register(CMD.POINTER_LEAVE, help_leave, (c) => {
   for (let i = 0; i < nodes.length; i++) {
     const ui = nodes[i];
     if (!ui) continue;
-    if (ui.local_only && targets.from !== targets.me) continue;
     ui.on_pointer_leave();
     state.on_uis.delete(ui);
   }

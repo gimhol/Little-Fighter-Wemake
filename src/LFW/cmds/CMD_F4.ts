@@ -13,7 +13,6 @@ CMDS.register(CMD.F4, help, (c) => {
     const { length } = layer.pages;
     if (length <= 1 && i == 0) continue;
     if (length <= 0) continue;
-    if (layer.ui?.esc_through) continue;
     layer.pop();
     break;
   }
