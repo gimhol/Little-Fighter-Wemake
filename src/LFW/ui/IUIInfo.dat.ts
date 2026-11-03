@@ -46,12 +46,12 @@ export interface IUIInfo {
   /**
    * 是否只响应本地玩家的指针事件
    *
-   * 默认跟随父节点（根节点默认 `true`）；设为 `false` 时，远程玩家的指针事件也会作用于此节点
+   * 默认为 `false`（未显式设置时跟随父节点，根节点为 `false`）；设为 `true` 时，远程玩家的指针事件不会作用于此节点
    *
    * @type {(boolean | string)}
    * @memberof IUIInfo
    */
-  is_local?: boolean | string;
+  local_only?: boolean | string;
   color?: string;
   background?: string;
   backgroundAlpha?: number | string;
