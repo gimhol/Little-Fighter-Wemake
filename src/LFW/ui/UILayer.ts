@@ -65,6 +65,7 @@ export interface IPopPageOpts {
 export interface IPushPageOpts {
   id?: string;
   transition?: string;
+  pass_through_esc?: boolean;
 }
 export interface ICloseModalOpts {
   /**
@@ -169,7 +170,7 @@ export class UILayer {
 
   /** 切换到指定页面（本层弹窗随之关闭） */
   set(opts: IPushPageOpts = {}): void {
-    const { id } = opts
+    const { id, pass_through_esc } = opts
     if (is_str(id) && this.page?.id === id) return;
     this.close_modals();
     const prev = this.pages.pop();
@@ -178,6 +179,7 @@ export class UILayer {
     const curr = this._create(id);
     if (curr) {
       this.pages.push(curr);
+      if (pass_through_esc) curr.esc_through = true;
       curr.on_start();
       curr.on_resume();
     }
@@ -186,13 +188,14 @@ export class UILayer {
 
   /** 压入新页面（本层弹窗随之关闭） */
   push(opts: IPushPageOpts = {}): void {
-    const { id } = opts
+    const { id, pass_through_esc } = opts
     this.close_modals();
     const prev = this.ui;
     prev?.on_pause();
     const curr = this._create(id);
     if (curr) {
       this.pages.push(curr);
+      if (pass_through_esc) curr.esc_through = true;
       curr.on_start();
       curr.on_resume();
     }

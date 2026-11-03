@@ -14,13 +14,13 @@ export function is_chat_open(lfw: LFW): boolean {
 export function open_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
   chat_store.peek = false;
-  lfw.layers.push_page({ id: "chat" }, CHAT_LAYER);
+  lfw.layers.push_page({ id: "chat", pass_through_esc: true }, CHAT_LAYER);
 }
 
 export function peek_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
   chat_store.peek = true;
-  lfw.layers.push_page({ id: "chat" }, CHAT_LAYER);
+  lfw.layers.push_page({ id: "chat", pass_through_esc: true }, CHAT_LAYER);
 }
 
 export function close_chat(lfw: LFW): void {
@@ -47,9 +47,7 @@ export function install_chat_hotkey(lfw: LFW): void {
   if (installed.has(lfw)) return;
   installed.add(lfw);
   window.addEventListener("keydown", (e) => {
-    if (!is_chat_open(lfw)) return;
-    const key = e.key.toLowerCase();
-    if (key !== "escape" && key !== "f4") return;
+    if (e.key !== "Escape" || !is_chat_open(lfw)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     close_chat(lfw);

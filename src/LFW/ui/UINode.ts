@@ -107,6 +107,7 @@ export class UINode implements IDebugging {
   protected _foreground: string | null = null;
   protected _foregroundAlpha: number | null = null;
   protected _local_only: boolean | null = null;
+  protected _esc_through = false;
 
   get cross(): Readonly<ICrossInfo> {
     if (this._cache_cross) return this._cache_cross;
@@ -227,6 +228,8 @@ export class UINode implements IDebugging {
   set touchable(v: boolean | undefined | null) { this._touchable = v ?? null; }
   get local_only(): boolean { return this._local_only ?? this._parent?.local_only ?? false; }
   set local_only(v: boolean | undefined | null) { this._local_only = v ?? null; }
+  get esc_through(): boolean { return this._esc_through; }
+  set esc_through(v: boolean) { this._esc_through = v; }
 
 
 

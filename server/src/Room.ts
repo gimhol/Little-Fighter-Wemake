@@ -43,7 +43,7 @@ const MAX_TICK_CACHE = (REJOIN_TTL / 1000) * 60;
 const REJOIN_CHUNK = 512;
 /** 联机时会提示“谁按了”的指令（F1~F10 与作弊类）：小写指令 → 展示名 */
 const NOTIFY_CMDS = new Map<string, string>([
-  ['f1', 'F1'], ['f2', 'F2'], ['f3', 'F3'], ['f5', 'F5'],
+  ['f1', 'F1'], ['f2', 'F2'], ['f3', 'F3'], ['f4', 'F4'], ['f5', 'F5'],
   ['f6', 'F6'], ['f7', 'F7'], ['f8', 'F8'], ['f9', 'F9'], ['f10', 'F10'],
   ['lf2_net', 'LF2_NET'], ['hero_ft', 'HERO_FT'], ['gim_ink', 'GIM_INK'],
   ['kill_enemies', 'KILL_ENEMIES'], ['kill_boss', 'KILL_BOSS'],
