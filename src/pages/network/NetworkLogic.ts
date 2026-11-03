@@ -24,6 +24,7 @@ import {
 import { Connection } from "./Connection";
 import { current_connection } from "@/Net/current_connection";
 import { chat_store } from "@/Net/chat_store";
+import { SystemPlayerInfo } from "@/Net/SystemPlayerInfo";
 import { peek_chat } from "@/Net/chat_overlay";
 import { DelayNetworkDriver } from "./DelayNetworkDriver";
 import { LFWNetworkDriver } from "./LFWNetworkDriver";
@@ -1232,6 +1233,7 @@ export class NetworkLogic extends UIComponent {
   private add_chat(msg: IRespChat): void {
     if (this.room && msg.target === 'global') return;
     chat_store.push({ kind: 'msg', msg });
+    if (msg.sender?.id === SystemPlayerInfo.id) return;
     this.peek_chat();
   }
   private peek_chat(): void {
@@ -1495,13 +1497,12 @@ export class NetworkLogic extends UIComponent {
       this.clear_status();
       this.stop_auto_refresh();
       if (mode === 'rooms') this.start_auto_refresh();
+      if (mode === 'started') this.blur_inputs();
     }
     this.sync_pages(mode);
     this.update_visibility();
     // 聊天频道跟着位置走：房间里（含对局中）只能发房间频道，房间外只能发全局频道
     chat_store.set_in_room(mode === 'room' || mode === 'started');
-    // 进入对局时把焦点从输入框收回（否则键盘事件都被输入框吃掉，游戏无法操作）
-    if (mode === 'started') this.blur_inputs();
     this.update_topbar();
     if (mode === 'rooms') this.render_rooms();
     if (mode === 'room') this.render_room();

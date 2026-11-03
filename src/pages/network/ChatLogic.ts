@@ -38,6 +38,7 @@ type TInputRenderer = {
   set_input_value?(value: string): void;
   focus_input?(): void;
   blur_input?(): void;
+  has_focus?(): boolean;
 };
 
 export class ChatLogic extends UIComponent {
@@ -54,8 +55,11 @@ export class ChatLogic extends UIComponent {
   private _target: TChatTarget | undefined;
   private _focus_pending = false;
   private _focus_frames = 0;
+  private _locked = false;
 
   override on_start(): void {
+    this._closing = false;
+    this._locked = !chat_store.peek;
     const q = (id: string) => this.node.search_node(id) ?? undefined;
     this._list = q("chat_rows");
     this._rows = (this._list?.children ?? []).map((row) => ({
@@ -83,8 +87,10 @@ export class ChatLogic extends UIComponent {
 
   override update(dt: number): void {
     if (this._closing) return;
+    if (this._locked) chat_store.peek = false;
     if (this._focus_pending) {
-      if (this._input?.node.focused || ++this._focus_frames > 30) this._focus_pending = false;
+      const focused = this.input_renderer()?.has_focus?.() ?? !!this._input?.node.focused;
+      if (focused || ++this._focus_frames > 30) this._focus_pending = false;
       else this.input_renderer()?.focus_input?.();
     }
     if (chat_store.items.length !== this._seen) {
@@ -123,6 +129,7 @@ export class ChatLogic extends UIComponent {
     const renderer = this.input_renderer();
     const text = renderer?.get_input_value?.() ?? this._input.text;
     if (!chat_store.send(text)) return;
+    this._locked = true;
     this._input.text = "";
     renderer?.set_input_value?.("");
     this._hold = 0;
@@ -131,6 +138,13 @@ export class ChatLogic extends UIComponent {
     chat_store.peek = false;
     this.set_input_visible(true);
     this.render();
+    this.keep_focus();
+  }
+
+  private keep_focus(): void {
+    this._focus_pending = true;
+    this._focus_frames = 0;
+    this.input_renderer()?.focus_input?.();
   }
 
   close(): void {
@@ -142,6 +156,7 @@ export class ChatLogic extends UIComponent {
   }
 
   focus_input(): void {
+    this._locked = true;
     if (chat_store.peek) {
       chat_store.peek = false;
       this._hold = 0;

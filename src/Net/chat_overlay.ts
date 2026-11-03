@@ -7,7 +7,8 @@ import { current_connection } from "./current_connection";
 export const CHAT_LAYER = 2;
 
 export function is_chat_open(lfw: LFW): boolean {
-  return lfw.layers.at(CHAT_LAYER)?.ui?.id === "chat";
+  const layer = lfw.layers.at(CHAT_LAYER);
+  return !!layer && layer.pages.some(page => page.id === "chat");
 }
 
 export function open_chat(lfw: LFW): void {
@@ -46,7 +47,9 @@ export function install_chat_hotkey(lfw: LFW): void {
   if (installed.has(lfw)) return;
   installed.add(lfw);
   window.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !is_chat_open(lfw)) return;
+    if (!is_chat_open(lfw)) return;
+    const key = e.key.toLowerCase();
+    if (key !== "escape" && key !== "f4") return;
     e.preventDefault();
     e.stopImmediatePropagation();
     close_chat(lfw);

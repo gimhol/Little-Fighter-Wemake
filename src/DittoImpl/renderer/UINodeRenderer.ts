@@ -182,6 +182,10 @@ export class UINodeRenderer implements IUINodeRenderer {
     this._input?.focus();
   }
 
+  has_focus(): boolean {
+    return !!this._input && document.activeElement === this._input;
+  }
+
   blur_input(): void {
     this._input?.blur();
   }
