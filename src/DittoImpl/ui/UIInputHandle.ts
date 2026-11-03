@@ -89,7 +89,7 @@ export class UIInputHandle implements IUIInputHandle {
     const { ui } = this.lfw; if (!ui) return;
     let page: UINode | undefined;
     let intersections: IIntersection[] = [];
-    for (const candidate of this.lfw.layers.pages_top_down()) {
+    for (const candidate of this.lfw.layers.pages()) {
       const hits = this.intersections(e.scene_x, e.scene_y, candidate);
       if (!hits.length) continue;
       page = candidate;

@@ -148,7 +148,7 @@ export class UILayers {
   constructor(lfw: LFW) {
     this.lfw = lfw;
   }
-  pages_top_down(): UINode[] {
+  pages(): UINode[] {
     const ret: UINode[] = [];
     for (let i = this._all.length - 1; i >= 0; i--) {
       const ui = this._all[i]?.ui;
