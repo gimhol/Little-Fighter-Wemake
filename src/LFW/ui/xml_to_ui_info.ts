@@ -66,6 +66,8 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   if (disabled != null) ret.disabled = disabled === 'true';
   const clips = el.attr('clips');
   if (clips != null) ret.clips = clips === 'true';
+  const is_local = el.attr('is_local');
+  if (is_local != null) ret.is_local = is_local === 'true';
   const bgAlpha = el.attr('backgroundAlpha');
   if (bgAlpha != null) ret.backgroundAlpha = Number(bgAlpha);
   const fgAlpha = el.attr('foregroundAlpha');

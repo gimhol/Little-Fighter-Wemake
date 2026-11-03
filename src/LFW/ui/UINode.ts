@@ -224,7 +224,7 @@ export class UINode implements IDebugging {
   set touchable(v: boolean | undefined | null) { this._touchable = v ?? null; }
   get esc_through(): boolean { return this._esc_through; }
   set esc_through(v: boolean) { this._esc_through = v; }
-  get is_local(): boolean { return this._is_local ?? this._parent?._is_local ?? true; }
+  get is_local(): boolean { return this._is_local ?? this._parent?.is_local ?? true; }
   set is_local(v: boolean | undefined | null) { this._is_local = v ?? null; }
 
 
@@ -426,6 +426,7 @@ export class UINode implements IDebugging {
     this._disabled = this.data.disabled == true
     this._visible = this.data.visible != false
     this._clip_children = this.data.clips == true
+    this.is_local = this.data.is_local
     this._opacity = this.data.opacity ?? 1
     this.center.set(...this.data.center);
     this.pos.set(...this.data.pos);
