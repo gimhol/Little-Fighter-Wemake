@@ -328,6 +328,7 @@ export class World {
     this.step();
     this._lifetime++;
     this.lfw.cmds.length = 0;
+    this.lfw.lcmds.length = 0;
     this.lfw.broadcasts.length = 0;
     if (this.extra_steps > 0) this.catch_up();
 
