@@ -1,4 +1,4 @@
-<node id="chat" size="794,450" center="0,0" pos="0,0" local_only="true">
+<node id="chat" size="794,450" center="0,0" pos="0,0" local_only="true" ignore_esc="true">
   <component cls="ChatLogic"/>
 
   <node id="chat_bg" size="640,150" center="0,1" pos="0,423" color="#00000066" visible="false"/>

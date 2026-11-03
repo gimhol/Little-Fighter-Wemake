@@ -52,6 +52,7 @@ export interface IUIInfo {
    * @memberof IUIInfo
    */
   local_only?: boolean | string;
+  ignore_esc?: boolean | string;
   color?: string;
   background?: string;
   backgroundAlpha?: number | string;

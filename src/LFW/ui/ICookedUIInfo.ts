@@ -29,6 +29,7 @@ export interface ICookedUIInfo extends IUIInfo {
   disabled?: boolean;
   clips?: boolean;
   local_only?: boolean;
+  ignore_esc?: boolean;
   backgroundAlpha?: number;
   foregroundAlpha?: number;
   outlineWidth?: number;

@@ -164,6 +164,7 @@ export async function cook_ui_info(
     disabled: void 0,
     clips: void 0,
     local_only: void 0,
+    ignore_esc: void 0,
     backgroundAlpha: void 0,
     foregroundAlpha: void 0,
     outlineWidth: void 0,
@@ -185,6 +186,7 @@ export async function cook_ui_info(
   ret.disabled        /**/ = parse_boolean(raw.disabled);
   ret.clips           /**/ = parse_boolean(raw.clips);
   ret.local_only        /**/ = parse_boolean(raw.local_only);
+  ret.ignore_esc        /**/ = parse_boolean(raw.ignore_esc);
   ret.count           /**/ = parse_num(raw.count);
   ret.opacity         /**/ = parse_num(raw.opacity);
   ret.color           /**/ = parse_str(raw.color) ?? void 0;

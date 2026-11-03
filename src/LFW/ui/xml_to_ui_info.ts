@@ -68,6 +68,8 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   if (clips != null) ret.clips = clips === 'true';
   const local_only = el.attr('local_only');
   if (local_only != null) ret.local_only = local_only === 'true';
+  const ignore_esc = el.attr('ignore_esc');
+  if (ignore_esc != null) ret.ignore_esc = ignore_esc === 'true';
   const bgAlpha = el.attr('backgroundAlpha');
   if (bgAlpha != null) ret.backgroundAlpha = Number(bgAlpha);
   const fgAlpha = el.attr('foregroundAlpha');

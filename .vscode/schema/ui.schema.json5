@@ -382,6 +382,10 @@
           description: "是否只响应本地玩家的指针事件，默认 false",
           type: ["boolean", "string"],
         },
+        ignore_esc: {
+          description: "Esc(CMD.F4) 是否穿透本节点所在页面，默认 false",
+          type: ["boolean", "string"],
+        },
         id: {
           description: "节点ID",
           type: "string",
