@@ -1,11 +1,11 @@
 import { CMD } from "@/LFW/defines/CMD";
-import { is_editing_element } from "../Utils/is_editing_element";
 import { LFW } from "../LFW";
 import { Callbacks } from "../LFW/base/Callbacks";
 import { NoEmitCallbacks } from "../LFW/base/NoEmitCallbacks";
 import type { IKeyboard } from "../LFW/ditto/keyboard/IKeyboard";
 import type { IKeyboardCallback } from "../LFW/ditto/keyboard/IKeyboardCallback";
 import type { IKeyEvent } from "../LFW/ditto/keyboard/IKeyEvent";
+import { is_editing_element } from "../Utils/is_editing_element";
 
 class __KeyEvent implements IKeyEvent {
   readonly times: number;
@@ -36,8 +36,7 @@ class __KeyEvent implements IKeyEvent {
     this.preventDefault()
   }
 }
-export interface __IKeyboardCallback extends IKeyboardCallback {
-}
+export type __IKeyboardCallback = IKeyboardCallback
 export class __Keyboard implements IKeyboard {
   static TAG = '__Keyboard';
   enabled: boolean = true;
@@ -118,7 +117,6 @@ export class __Keyboard implements IKeyboard {
       const [ax, ay] = gamepad.axes || [0, 0];
       const [pax, pay] = this.gamepad_axes.at(i) || [0, 0];
       const alz = this._axe_live_zone;
-      const adz = this._axe_dead_zone;
       if (ax >= alz && pax < alz) {
         this.update_gp_btn(index, GPBtnCode.Right, 1, 1)
       } else if (ax < alz && pax >= alz) {
@@ -147,7 +145,10 @@ export class __Keyboard implements IKeyboard {
     const key_code = `${index + 1}: ${btn_name}`;
     if (this.gamepad_buttons.get(key_code + dpad) === pressed) return false;
     this.gamepad_buttons.set(key_code + dpad, pressed);
-    pressed ? this.key_down(key_code, 'controller') : this.key_up(key_code, 'controller');
+    if (pressed)
+      this.key_down(key_code, 'controller')
+    else
+      this.key_up(key_code, 'controller');
     return true;
   }
   dispose() {
@@ -160,7 +161,6 @@ export class __Keyboard implements IKeyboard {
 }
 
 enum GPBtnCode {
-  __MIN = 0,
   A = 0,
   B = 1,
   X = 2,
@@ -177,7 +177,6 @@ enum GPBtnCode {
   Down = 13,
   Left = 14,
   Right = 15,
-  __MAX = 15
 }
 const GPBtnName: Record<GPBtnCode, string> = {
   [GPBtnCode.A]: 'A',
