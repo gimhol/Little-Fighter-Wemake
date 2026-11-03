@@ -1,4 +1,4 @@
-<node id="network_room_page" name="页面：房间">
+<node id="network_room_page" name="页面：房间" local_only="true">
   <component cls="NetworkLogic"/>
 
   <node id="network_bg" pos="0,0,-450">

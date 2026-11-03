@@ -1,4 +1,4 @@
-<node id="network_overlay_page" name="页面：联机浮层">
+<node id="network_overlay_page" name="页面：联机浮层" local_only="true">
   <component cls="NetworkLogic"/>
 
   <node id="network_overlay_dim" size="794,450" center="0,0" pos="0,0,20" color="#0000008c"/>

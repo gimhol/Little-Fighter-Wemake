@@ -33,7 +33,6 @@ export class UIInputHandle implements IUIInputHandle {
   private pointer_vec_2 = new T.Vector2();
   private pointer_raycaster = new T.Raycaster();
   private world_renderer: WorldRenderer
-  private _empty_move = false;
   constructor(lfw: LFW) {
     this.lfw = lfw;
     this.world_renderer = this.lfw.world.renderer as WorldRenderer
@@ -56,23 +55,17 @@ export class UIInputHandle implements IUIInputHandle {
     this.lfw.push_cmd(CMD.POINTER_CANCEL, `--b=${e.button}`, this.pos_arg(e));
   }
   on_pointer_enter(e: IPointingEvent) {
-    this._empty_move = false;
     this.update_local_cursor(e, false);
     this.push_pointer(CMD.POINTER_MOVE, e);
   }
   on_pointer_leave(e: IPointingEvent) {
     if (!this.lfw.ui) return;
-    this._empty_move = true;
     this.update_local_cursor(e, true);
     this.lfw.push_cmd(CMD.POINTER_LEAVE, this.pos_arg(e));
   }
   on_click(): void { }
   on_wheel(): void { }
-  protected push_empty_move(e: IPointingEvent) {
-    if (this._empty_move) return;
-    this._empty_move = true;
-    this.lfw.push_cmd(CMD.POINTER_MOVE, `--b=${e.button}`, this.pos_arg(e));
-  }
+
   protected pos_arg(e: IPointingEvent): string {
     const { screen_w, screen_h } = this.lfw.world.dataset;
     const x = Math.round((e.scene_x + 1) / 2 * screen_w * 10) / 10;
@@ -89,7 +82,7 @@ export class UIInputHandle implements IUIInputHandle {
     const { ui } = this.lfw; if (!ui) return;
     let page: UINode | undefined;
     let intersections: IIntersection[] = [];
-    for (const candidate of this.lfw.layers.pages()) {
+    for (const candidate of this.lfw.layers.pages) {
       const hits = this.intersections(e.scene_x, e.scene_y, candidate);
       if (!hits.length) continue;
       page = candidate;
@@ -97,30 +90,35 @@ export class UIInputHandle implements IUIInputHandle {
       break;
     }
     if (!page) return;
+
+    const lpaths: string[] = [];
+    const lpoints: string[] = [];
+
     const paths: string[] = [];
     const points: string[] = [];
     for (const { extra, point } of intersections) {
       const path = node_path(extra);
       const page_id = extra.root.id;
       if (!path || !page_id) continue;
-      paths.push(path);
-      points.push(`${point.x},${point.y},${point.z}`);
-    }
-    const empty = !paths.length;
-    if (empty && cmd == CMD.POINTER_DOWN) return;
-    if (cmd == CMD.POINTER_MOVE) {
-      if (empty) {
-        this.push_empty_move(e);
-        return;
+      if (extra.local_only) {
+        lpaths.push(path);
+        lpoints.push(`${point.x},${point.y},${point.z}`);
+      } else {
+        paths.push(path);
+        points.push(`${point.x},${point.y},${point.z}`);
       }
-      this._empty_move = false;
     }
+
     const args = [`--b=${e.button}`, this.pos_arg(e)];
-    if (!empty) {
-      args.push(`--paths=${paths.join('|')}`);
-      args.push(`--points=${points.join('|')}`);
-    }
+    args.push(`--paths=${paths.join('|')}`);
+    args.push(`--points=${points.join('|')}`);
     this.lfw.push_cmd(cmd, ...args);
+
+    const largs = [`--b=${e.button}`, this.pos_arg(e)];
+    largs.push(`--paths=${lpaths.join('|')}`);
+    largs.push(`--points=${lpoints.join('|')}`);
+    this.lfw.push_lcmd(cmd, ...largs);
+
   }
   protected intersections(x: number, y: number, ui: UINode): IIntersection[] {
     this.pointer_vec_2.x = x;

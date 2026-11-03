@@ -299,8 +299,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return this.survival_rank_cheated || this.survival_rank_modded
   }
 
+  lcmds: string[] = [];
   cmds: string[] = [];
   broadcasts: string[] = [];
+  push_lcmd(...words: string[]) {
+    this.lcmds.push(words.join(' '));
+    return this;
+  }
   push_cmd(...words: string[]) {
     this.cmds.push(words.join(' '));
     return this;

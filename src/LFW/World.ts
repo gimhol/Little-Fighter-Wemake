@@ -569,9 +569,9 @@ export class World {
     return this.stage.id !== Defines.VOID_STAGE.id && !this.lfw.is_cheat(CheatEnum.HERO_FT)
   }
   protected handle_cmds() {
-    const { cmds } = this.lfw;
-    if (!cmds.length) return;
-    CMDS.handle(this, cmds);
+    const { cmds, lcmds } = this.lfw;
+    if (cmds.length) CMDS.handle(this, cmds);
+    if (lcmds.length) CMDS.handle(this, lcmds);
   }
 
   mark_players_alive(e: Entity, is_alive: boolean) {
