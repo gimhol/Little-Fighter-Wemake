@@ -57,7 +57,7 @@ export class ChatLogic extends UIComponent {
 
   override on_start(): void {
     const q = (id: string) => this.node.search_node(id) ?? undefined;
-    this.node.touchable = true;
+    this.node.touchable = false;
     this._list = q("chat_rows");
     this._rows = (this._list?.children ?? []).map((row) => ({
       name: row.children[0],
@@ -262,7 +262,7 @@ export class ChatLogic extends UIComponent {
   private render(): void {
     const items = chat_store.items;
     const typing = !chat_store.peek;
-    this.node.touchable = !typing;
+    this.node.touchable = typing;
     let used = 0;
     let slot = this._rows.length - 1;
     for (let i = items.length - 1; i >= 0 && slot >= 0; i--) {

@@ -15,7 +15,6 @@ import { install_mock_toy_if_requested } from "./mock_toy";
 import { close_browser, enable_immersive_landscape } from "./toy_sdk";
 import { ui_test_run } from "./ui_test";
 
-// 本地开发：URL 带 TOY=1 时模拟 B站 Toy 容器（便于 localhost 测试生存排行等）
 install_mock_toy_if_requested()
 
 actor
@@ -23,7 +22,6 @@ actor
   .add(UIActionEnum.LinkTo, (_, url) => window.open(url))
   .add(UIActionEnum.Exit, () => {
     if (!window.confirm("确定退出?")) return
-    // B站 App 内用 Toy SDK 关闭容器；其它环境回退到 window.close()
     close_browser().then(ok => {
       if (!ok) window.close()
     })

@@ -47,7 +47,7 @@ export class UINode implements IDebugging {
   protected _outlineAlpha: number | undefined;
   protected _callbacks = new Callbacks<IUICallback>();
   protected _pointer_over: 0 | 1 = 0;
-  protected _pointer_down: 0 | 1 = 0;
+  protected _pointer_down: (0 | 1)[] = [];
   protected _click_flag: 0 | 1 = 0;
   protected _update_times = new Times(0, Number.MAX_SAFE_INTEGER);
   protected _components_updating: boolean = false;
@@ -72,7 +72,7 @@ export class UINode implements IDebugging {
   protected _visible = true;
   protected _disabled = false;
   protected _clip_children = false;
-  protected _touchable?: boolean;
+  protected _touchable: boolean | null = null;
   protected _esc_through = false;
   protected _opacity = 1;
 
@@ -107,6 +107,7 @@ export class UINode implements IDebugging {
   protected _backgroundAlpha: number | null = null;
   protected _foreground: string | null = null;
   protected _foregroundAlpha: number | null = null;
+  protected _is_local: boolean | null = null;
 
   get cross(): Readonly<ICrossInfo> {
     if (this._cache_cross) return this._cache_cross;
@@ -211,11 +212,7 @@ export class UINode implements IDebugging {
   get self_visible() {
     return this._visible
   }
-  /**
-   * 是否裁剪子节点（overflow:hidden）
-   *
-   * 开启后，本节点矩形之外的子节点不再绘制、也不再响应指针。
-   */
+
   get clip_children(): boolean {
     return this._clip_children;
   }
@@ -224,15 +221,20 @@ export class UINode implements IDebugging {
   }
 
   get touchable(): boolean { return this._touchable ?? this._parent?.touchable ?? true; }
-  set touchable(v: boolean | undefined) { this._touchable = v; }
+  set touchable(v: boolean | undefined | null) { this._touchable = v ?? null; }
   get esc_through(): boolean { return this._esc_through; }
   set esc_through(v: boolean) { this._esc_through = v; }
+  get is_local(): boolean { return this._is_local ?? this._parent?._is_local ?? true; }
+  set is_local(v: boolean | undefined | null) { this._is_local = v ?? null; }
+
+
+
   /**
    * 当前节点是否可见
    * 
    * @description 
-   *    要注意，当任意一个祖先节点visible为false时，
-   *    即使设置当前节点为visible为true，visible属性仍将返回false
+   *    要注意，当任意一个祖先节点 visible 为 false 时，
+   *    即使设置当前节点为 visible 为 true，visible 属性仍将返回 false
    *
    * @type {boolean}
    */
@@ -329,7 +331,7 @@ export class UINode implements IDebugging {
   /** 光标是否在本节点上 */
   get pointer_over() { return this._pointer_over }
   /** 光标是否在本节点中按下 */
-  get pointer_down() { return this._pointer_down }
+  is_pointer_down(button: number) { return !!this._pointer_down[button] }
   get click_flag() { return this._click_flag }
   get lifetime() { return this._update_times.value }
   set_visible(v: boolean): this {
@@ -520,7 +522,7 @@ export class UINode implements IDebugging {
     return l <= x && t <= y && l + w >= x && t + h >= y;
   }
   on_pointer_down(e: LFWPointerEvent) {
-    this._pointer_down = 1;
+    this._pointer_down[e.button] = 1;
     this._click_flag = 1;
     for (const c of this.components)
       c.on_pointer_down?.(e);
@@ -532,13 +534,13 @@ export class UINode implements IDebugging {
     this.callbacks.call('on_pointer_move', e, this);
   }
   on_pointer_up(e: LFWPointerEvent) {
-    this._pointer_down = 0
+    this._pointer_down[e.button] = 0;
     for (const c of this.components)
       c.on_pointer_up?.(e);
     this.callbacks.call('on_pointer_up', e, this);
   }
   on_pointer_cancel(e: LFWPointerEvent) {
-    this._pointer_down = 0
+    this._pointer_down[e.button] = 0
     for (const c of this.components)
       c.on_pointer_cancel?.(e);
     this.callbacks.call('on_pointer_cancel', e, this);

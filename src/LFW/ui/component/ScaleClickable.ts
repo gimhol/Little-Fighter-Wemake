@@ -22,8 +22,8 @@ export class ScaleClickable extends UIComponent {
   override update(dt: number): void {
     const watching = this._p ? this.node.parent! : this.node;
 
-    this.anim.set_val_1(watching.pointer_down ? this.press_scale : this.normal_scale);
-    const reverse = (!watching.pointer_over && !watching.focused) || !!watching.pointer_down;
+    this.anim.set_val_1(watching.is_pointer_down(0) ? this.press_scale : this.normal_scale);
+    const reverse = (!watching.pointer_over && !watching.focused) || !!watching.is_pointer_down(0);
     const { value } = this.anim.auto_trip(reverse, dt)
     this.node.set_scale(value, value, value);
   }

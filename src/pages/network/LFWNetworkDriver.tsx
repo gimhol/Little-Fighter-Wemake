@@ -275,7 +275,7 @@ export abstract class LFWNetworkDriver {
     if (this.debugging) this._snapshot1?.capture(lfw.world.entities)
     for (const req of reqs) {
       const { cmds } = req;
-      if (cmds?.length) cmds.forEach(cmd => lfw.push_cmd(cmd));
+      if (cmds?.length) cmds.forEach(cmd => lfw.push_cmd(cmd, "--me=" + this.conn?.client?.id));
     }
   };
   protected apply_bot_events(resp: IRespTick | IRespKeyTick) {

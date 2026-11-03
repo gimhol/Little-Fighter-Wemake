@@ -44,7 +44,7 @@ export class LabelButton extends UIComponent<ILabelButtonProps> {
   override update(dt: number): void {
     const { responser } = this;
     const reverse = null == this.checked ?
-      (!responser.pointer_over && !responser.focused) || !!responser.pointer_down :
+      (!responser.pointer_over && !responser.focused) || !!responser.is_pointer_down(0) :
       !this.checked
 
     this.props.hover_label?.set_opacity(this.anim.auto_trip(reverse, dt).value);

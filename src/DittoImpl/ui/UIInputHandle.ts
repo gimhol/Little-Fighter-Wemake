@@ -143,9 +143,7 @@ export class UIInputHandle implements IUIInputHandle {
     for (const t of temp) {
       const ui = t.object.userData.owner;
       if (!(ui instanceof UINode)) continue;
-      if (!ui.visible || ui.disabled) continue;
-      if (ui.touchable) continue;
-      // overflow:hidden 裁剪：命中点落在祖先视口矩形之外的部分不响应指针
+      if (!ui.visible || ui.disabled || !ui.touchable) continue;
       const clip = (ui.renderer as UINodeRenderer).effective_clip_rect(true);
       if (clip) {
         const { x: px, y: py } = t.point;

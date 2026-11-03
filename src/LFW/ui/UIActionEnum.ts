@@ -13,11 +13,4 @@ export enum UIActionEnum {
   DestoryStage = 'destory_stage',
   RemoveAllEntities = 'remove_all_entities',
   Exit = 'exit',
-
-  /** @deprecated 旧写法，仍兼容；改用 SetPage/PushPage/PopPage */
-  SetUI = 'set_ui',
-  /** @deprecated 旧写法，仍兼容；改用 SetPage/PushPage/PopPage */
-  PushUI = 'push_ui',
-  /** @deprecated 旧写法，仍兼容；改用 SetPage/PushPage/PopPage */
-  PopUI = 'pop_ui',
 }
