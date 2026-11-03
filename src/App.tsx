@@ -72,9 +72,9 @@ import "./init";
 import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
-import { NetworkLogic } from "./pages/network_test/NetworkLogic";
-import { ChatLogic } from "./pages/network_test/ChatLogic";
-import { useCallbacks } from "./pages/network_test/useCallbacks";
+import { NetworkLogic } from "./pages/network/NetworkLogic";
+import { ChatLogic } from "./pages/network/ChatLogic";
+import { useCallbacks } from "./pages/network/useCallbacks";
 import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { is_toy_env } from "./toy_sdk";
 

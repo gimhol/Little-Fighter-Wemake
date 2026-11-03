@@ -1,6 +1,6 @@
 import { LFW } from "@/LFW";
 import type { IZip } from "@/LFW/ditto";
-import { useCallbacks } from "@/pages/network_test/useCallbacks";
+import { useCallbacks } from "@/pages/network/useCallbacks";
 import { useEffect, useRef, useState } from "react";
 
 export interface IUseLFWOptions {

@@ -8,7 +8,7 @@ import { SyncRenderEnum } from "./LFW/defines/SyncRenderEnum";
 import { Defines } from "./LFW/defines/defines";
 import { NICKNAME_MAX_LENGTH } from "./Net";
 import { current_connection } from "./Net/current_connection";
-import { useNickname } from "./pages/network_test/nickname_store";
+import { useNickname } from "./pages/network/nickname_store";
 import csses from "./NetSettings.module.scss";
 
 const PLAYER_IDS = ["1", "2", "3", "4"];

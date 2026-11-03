@@ -3,7 +3,7 @@ import csses from "./BgScrollerView.module.scss";
 import { Button } from "./Component/Buttons/Button";
 import { CMD, floor, LFW, max, min } from "./LFW";
 import { Defines } from "./LFW/defines/defines";
-import { useCallbacks } from "./pages/network_test/useCallbacks";
+import { useCallbacks } from "./pages/network/useCallbacks";
 
 function to_world_cam_x(screen_x: number, lfw: LFW, canvas: HTMLCanvasElement) {
   const { left, width } = canvas.getBoundingClientRect();

@@ -18,7 +18,7 @@ import { is_bot_ctrl } from "./LFW/entity/type_check";
 import { LFW } from "./LFW";
 
 import { PlayerInfo } from "./LFW/PlayerInfo";
-import { useCallbacks } from "./pages/network_test/useCallbacks";
+import { useCallbacks } from "./pages/network/useCallbacks";
 const key_names: Record<GameKey, string> = {
   U: "上", D: "下", L: "左", R: "右", a: "攻", j: "跳", d: "防",
 };

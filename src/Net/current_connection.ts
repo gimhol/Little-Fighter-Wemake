@@ -1,6 +1,6 @@
-import type { Connection } from "@/pages/network_test/Connection";
-import type { LFWNetworkDriver } from "@/pages/network_test/LFWNetworkDriver";
-import type { NetworkLogic } from "@/pages/network_test/NetworkLogic";
+import type { Connection } from "@/pages/network/Connection";
+import type { LFWNetworkDriver } from "@/pages/network/LFWNetworkDriver";
+import type { NetworkLogic } from "@/pages/network/NetworkLogic";
 
 /**
  * 当前联机连接与驱动器。

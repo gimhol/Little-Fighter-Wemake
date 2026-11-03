@@ -72,7 +72,7 @@ export class UINode implements IDebugging {
   protected _visible = true;
   protected _disabled = false;
   protected _clip_children = false;
-  protected _pointer_through = false;
+  protected _touchable?: boolean;
   protected _esc_through = false;
   protected _opacity = 1;
 
@@ -222,14 +222,9 @@ export class UINode implements IDebugging {
   set clip_children(v: boolean) {
     this._clip_children = v;
   }
-  /**
-   * 本节点自身是否让指针穿过
-   *
-   * 为 true 时该节点不产生指针命中（不影响子节点），常用于“整页容器”：
-   * 容器本身不该吞点击，只有里面真正的控件才响应
-   */
-  get pointer_through(): boolean { return this._pointer_through; }
-  set pointer_through(v: boolean) { this._pointer_through = v; }
+
+  get touchable(): boolean { return this._touchable ?? this._parent?.touchable ?? true; }
+  set touchable(v: boolean | undefined) { this._touchable = v; }
   get esc_through(): boolean { return this._esc_through; }
   set esc_through(v: boolean) { this._esc_through = v; }
   /**
