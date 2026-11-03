@@ -275,7 +275,8 @@ function App() {
     on_broadcast: (message, lfw) => {
       switch (message) {
         case 'network_game':
-          if (lfw.layers.at(1)?.ui?.id !== 'network_page') lfw.layers.push_page({ id: 'network_page' }, 1)
+          if (lfw.layers.at(1)?.ui?.id !== 'network_modal') 
+            lfw.layers.push_page({ id: 'network_modal' }, 1)
           break;
         case 'select_extra_data':
         case 'select_mods':
@@ -765,11 +766,11 @@ function App() {
               return;
             }
             // 联机页有活连接：设置页只叠在它上面，且不暂停世界，避免影响对局
-            const has_network_page = lfw.layers.all.some(layer => layer.pages.some(p => p.id === 'network_page'));
+            const has_network_page = lfw.layers.all.some(layer => layer.pages.some(p => p.id === 'network_modal'));
             if (!has_network_page) lfw.push_cmd(CMD.F2);
             if (lfw.ui?.id == 'settings') {
               lfw.ui.layer?.pop();
-            } else if (lfw.ui?.id === 'network_page') {
+            } else if (lfw.ui?.id === 'network_modal') {
               lfw.layers.push_page({ id: "settings" }, 1);
             } else {
               lfw.layers.set_page({ id: "settings" }, 1);

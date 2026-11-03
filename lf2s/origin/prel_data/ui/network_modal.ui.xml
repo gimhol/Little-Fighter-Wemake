@@ -1,4 +1,4 @@
-<node id="network_page" name="页面：联网游戏" local_only="true">
+<node id="network_modal" name="弹窗：联网游戏" local_only="true">
   <component cls="NetworkLogic"/>
 
   <node id="network_bg" pos="0,0,-450">

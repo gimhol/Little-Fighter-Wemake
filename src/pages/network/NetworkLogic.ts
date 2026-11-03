@@ -45,7 +45,7 @@ const ROOM_PAGE_SIZE = 5;
 const ROOM_ROW_STEP = 56;
 /** 顶栏右侧按钮的右边缘（留出外壳窗口按钮的位置） */
 const TOPBAR_RIGHT = 620;
-const CONNECT_PAGE_ID = 'network_page';
+const CONNECT_PAGE_ID = 'network_modal';
 const ROOMS_PAGE_ID = 'network_rooms_page';
 const ROOM_PAGE_ID = 'network_room_page';
 const OVERLAY_PAGE_ID = 'network_overlay_page';
