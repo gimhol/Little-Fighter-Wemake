@@ -188,6 +188,8 @@ export class UINode implements IDebugging {
    * 同一次输入可能触发多次（典型例子：两个玩家的「跳跃」键位设成同一个按键，
    * 每个玩家各自的处理器都会跑一遍），直接 pop 的话第二次会连下面那一页一起弹掉。
    *
+   * 弹窗节点调用时只会关闭弹窗自身，不会连下面那一页一起弹掉。
+   *
    * 注意与 `UILayers.pop_page(opts, index)` 区分：那个是按层号弹，这里是弹自己这一页。
    *
    * @returns 是否真的弹了
@@ -195,7 +197,9 @@ export class UINode implements IDebugging {
   pop_page(opts?: IPopPageOpts): boolean {
     const root = this._root;
     const layer = root._layer;
-    if (!layer || layer.ui !== root) return false;
+    if (!layer) return false;
+    if (layer.modal === root) return layer.close_modal({ id: root.id });
+    if (layer.ui !== root) return false;
     layer.pop(opts);
     return true;
   }

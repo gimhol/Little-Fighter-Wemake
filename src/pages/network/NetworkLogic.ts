@@ -49,8 +49,8 @@ const CONNECT_PAGE_ID = 'network_modal';
 const ROOMS_PAGE_ID = 'network_rooms_page';
 const ROOM_PAGE_ID = 'network_room_page';
 const OVERLAY_PAGE_ID = 'network_overlay_page';
-/** 连接弹窗所在层（0 = 整页，1 = 弹窗/浮层，2 = 聊天） */
-const CONNECT_LAYER = 1;
+/** 连接弹窗盖在 layer 0 的当前页面上（换页时弹窗自动关闭） */
+const CONNECT_LAYER = 0;
 const OVERLAY_LAYER = 1;
 const PLAYER_ROW_STEP = 32;
 const COUNTDOWN_MS = 5000;
@@ -532,12 +532,12 @@ export class NetworkLogic extends UIComponent {
     this.btn_continue_game = q('network_btn_continue_game');
   }
 
-  /** 连接页是浮在上层的弹窗；房间列表 / 房间内是 layer 0 的整页 */
+  /** 连接页是浮在整页之上的弹窗；房间列表 / 房间内是 layer 0 的整页 */
   private sync_pages(mode: TMode): void {
     if (this._syncing_page) return;
     if (mode === 'started') return;
     const layers = this.lfw.layers;
-    const current = layers.at(0)?.ui?.id;
+    const current = layers.at(0)?.page?.id;
     const want = mode === 'room' ? ROOM_PAGE_ID : mode === 'rooms' ? ROOMS_PAGE_ID : void 0;
     this._syncing_page = true;
     try {
@@ -553,16 +553,15 @@ export class NetworkLogic extends UIComponent {
     }
   }
 
-  /** 连接页以弹窗形式浮在最上层（保留原来的观感） */
+  /** 连接页以弹窗形式浮在当前页面上 */
   private open_connect_popup(): void {
     if (this.connect_page) return;
-    this.lfw.layers.push_page({ id: CONNECT_PAGE_ID }, CONNECT_LAYER);
+    this.lfw.layers.open_modal({ id: CONNECT_PAGE_ID }, CONNECT_LAYER);
   }
 
   private close_connect_popup(): void {
     if (!this.connect_page) return;
-    const layer = this.lfw.layers.at(CONNECT_LAYER);
-    if (layer?.ui?.id === CONNECT_PAGE_ID) layer.pop();
+    this.lfw.layers.close_modal({ id: CONNECT_PAGE_ID }, CONNECT_LAYER);
   }
 
   /** 暂停/重连浮层单独一层，盖在游戏之上 */

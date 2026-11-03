@@ -533,9 +533,14 @@ export class World {
     const { layers } = this.lfw;
     const uidt = round_float(16.66666 * this.dataset.atom_time);
     for (let i = layers.length - 1; i >= 0; i--) {
-      const ui = layers.at(i)?.ui;
-      if (!ui || ui.disabled) continue;
-      ui.update(uidt);
+      const layer = layers.at(i);
+      if (!layer) continue;
+      const n = layer.live_count;
+      for (let j = 0; j < n; j++) {
+        const ui = layer.live_at(j);
+        if (!ui || ui.disabled) continue;
+        ui.update(uidt);
+      }
     }
     this.lfw.host_node.update(uidt);
   }

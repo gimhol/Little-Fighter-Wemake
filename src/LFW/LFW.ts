@@ -430,6 +430,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       on_set: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
       on_push: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
       on_pop: (curr, poppeds) => this.callbacks.call("on_ui_changed", curr, poppeds[0]),
+      on_modal_open: (curr, prev) => this.callbacks.call("on_ui_changed", curr, prev),
+      on_modal_close: (curr, closed) => this.callbacks.call("on_ui_changed", curr, closed[0]),
     })
 
     this._i18n.add({

@@ -542,6 +542,8 @@
         "set_page",
         "push_page",
         "pop_page",
+        "open_modal",
+        "close_modal",
         "loop_img",
         "loop_txt",
         "load_data",

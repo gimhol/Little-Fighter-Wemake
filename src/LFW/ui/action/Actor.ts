@@ -22,6 +22,12 @@ class UIActor {
     [UIActionEnum.PopPage, (n) => {
       n.pop_page({ min_pages: 1 })
     }],
+    [UIActionEnum.OpenModal, (n, id) => {
+      n.layer?.open_modal({ id })
+    }],
+    [UIActionEnum.CloseModal, (n, id) => {
+      n.layer?.close_modal({ id })
+    }],
     [UIActionEnum.LoadData, ({ lfw }, url) => {
       lfw.load(...(url ? [url] : LFW.ZIPS.slice(1)))
         .catch(e => Ditto.warn('Failed to load, reason', e))
