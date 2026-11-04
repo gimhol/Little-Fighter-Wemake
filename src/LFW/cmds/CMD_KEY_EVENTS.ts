@@ -6,7 +6,18 @@ import { CMDS } from "./CMDS";
 
 const help = `Usage: KEY_EVENT --p=<player_id> --s=<0|1> --c=<key_code> --n=<game_key>
 
-Replay one local keyboard event: the UI layers see it first (from the top layer down, the first enabled one takes it), then every mounted key state gets it, and finally it reaches the given player's human controller (skipped while the stage disables control) / 重放一次本地键盘事件：先自顶向下派发给 UI 层（第一个未禁用的层生效），再派发给所有已挂载的按键状态，最后交给该玩家的真人控制器（关卡禁用操作时跳过）
+Replay one local keyboard event: 
+the UI layers see it first 
+(from the top layer down, the first enabled one takes it; pages declaring no key input are skipped), 
+then every mounted key state gets it, 
+and finally it reaches the given player's human controller 
+(skipped while the stage disables control) 
+
+重放一次本地键盘事件：先自顶向下派发给 UI 层
+（第一个未禁用的层生效，不接收按键的页跳过），
+再派发给所有已挂载的按键状态，
+最后交给该玩家的真人控制器
+（关卡禁用操作时跳过）
 
 Options:
   --p    player id (required) / 玩家 id（必填）
@@ -33,7 +44,7 @@ CMDS.register(CMD.KEY_EVENT, help, (c) => {
   const e = new LFWKeyEvent(pid, state == 1, key_name as GK, key_code)
   for (let i = layers.length - 1; i >= 0; i--) {
     const ui = layers.at(i)?.ui;
-    if (!ui || ui.disabled) continue;
+    if (!ui || ui.disabled || ui.ignore_key) continue;
     if (e.pressed) ui.on_key_down(e)
     else ui.on_key_up(e)
     break;

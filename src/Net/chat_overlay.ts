@@ -41,17 +41,23 @@ export function toggle_chat(lfw: LFW): void {
   close_chat(lfw);
 }
 
+let escape_in_input: (() => void) | undefined;
+
+export function set_chat_escape_handler(fn: (() => void) | undefined): void {
+  escape_in_input = fn;
+}
+
 const installed = new WeakSet<LFW>();
 
 export function install_chat_hotkey(lfw: LFW): void {
   if (installed.has(lfw)) return;
   installed.add(lfw);
-  // 输入状态下的 Esc 只收起输入框（由 ChatLogic 处理），列表展示状态下才直接关闭
   window.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !is_chat_open(lfw) || !chat_store.peek) return;
+    if (e.key !== "Escape" || !is_chat_open(lfw)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    close_chat(lfw);
+    if (!chat_store.peek && escape_in_input) escape_in_input();
+    else close_chat(lfw);
   }, true);
   const key: IKeyboardCallback = {
     on_key_down: (e) => {

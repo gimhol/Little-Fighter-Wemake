@@ -4,6 +4,7 @@ import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import type { IUIKeyEvent } from "@/LFW/ui/IUIKeyEvent";
 import type { UINode } from "@/LFW/ui/UINode";
 import { chat_store, type TChatItem, type TChatTarget } from "@/Net/chat_store";
+import { set_chat_escape_handler } from "@/Net/chat_overlay";
 
 const PEEK_HOLD_MS = 10000;
 const PEEK_FADE_MS = 1500;
@@ -72,6 +73,7 @@ export class ChatLogic extends UIComponent {
       this._input.on_submit = () => this.send();
       this._input.on_cancel = () => this.exit_input();
     }
+    set_chat_escape_handler(() => this.exit_input());
 
     q("chat_close")?.callbacks.add({ on_click: () => this.close() });
     q("chat_send")?.callbacks.add({ on_click: () => this.send() });
@@ -119,6 +121,7 @@ export class ChatLogic extends UIComponent {
   }
 
   override on_stop(): void {
+    set_chat_escape_handler(void 0);
     this.blur_input();
     chat_store.peek = false;
     this._closing = true;
@@ -283,6 +286,7 @@ export class ChatLogic extends UIComponent {
   private render(): void {
     const items = chat_store.items;
     const typing = !chat_store.peek;
+    this.node.ignore_key = !typing;
     let used = 0;
     let slot = this._rows.length - 1;
     for (let i = items.length - 1; i >= 0 && slot >= 0; i--) {
