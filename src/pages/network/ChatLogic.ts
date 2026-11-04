@@ -70,7 +70,7 @@ export class ChatLogic extends UIComponent {
     this._input = this._input_node?.find_component(TextInput) ?? undefined;
     if (this._input) {
       this._input.on_submit = () => this.send();
-      this._input.on_cancel = () => this.close();
+      this._input.on_cancel = () => this.exit_input();
     }
 
     q("chat_close")?.callbacks.add({ on_click: () => this.close() });
@@ -114,7 +114,7 @@ export class ChatLogic extends UIComponent {
 
   override on_key_down(e: IUIKeyEvent): void {
     if (e.key !== "escape" || chat_store.peek) return;
-    this.close();
+    this.exit_input();
     e.stop_immediate_propagation();
   }
 
@@ -145,6 +145,18 @@ export class ChatLogic extends UIComponent {
     this._focus_pending = true;
     this._focus_frames = 0;
     this.input_renderer()?.focus_input?.();
+  }
+
+  /** Esc 退出输入：收起输入框，列表像收到消息那样停留一段时间后再淡出关闭 */
+  exit_input(): void {
+    if (this._closing || chat_store.peek) return;
+    this._locked = false;
+    chat_store.peek = true;
+    this._hold = PEEK_HOLD_MS;
+    this._alpha = 1;
+    this.node.set_opacity(1);
+    this.set_input_visible(false);
+    this.render();
   }
 
   close(): void {

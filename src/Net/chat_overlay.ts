@@ -46,8 +46,9 @@ const installed = new WeakSet<LFW>();
 export function install_chat_hotkey(lfw: LFW): void {
   if (installed.has(lfw)) return;
   installed.add(lfw);
+  // 输入状态下的 Esc 只收起输入框（由 ChatLogic 处理），列表展示状态下才直接关闭
   window.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !is_chat_open(lfw)) return;
+    if (e.key !== "Escape" || !is_chat_open(lfw) || !chat_store.peek) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     close_chat(lfw);
