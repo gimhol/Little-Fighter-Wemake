@@ -11,6 +11,7 @@ CMDS.register(CMD.F4, help, (c) => {
     const layer = all[i];
     if (!layer) continue;
     const { length } = layer.pages;
+    if (!length) continue;
     if (length <= 1 && i == 0) continue;
     if (layer.ui?.ignore_esc) continue;
     layer.pop();
