@@ -60,5 +60,8 @@
     </node>
   </node>
 
-
+  <!-- 参考启动页右下角的加载动画，连接过程中显示 -->
+  <node id="network_loading_anim" pos="760,428" visible="false">
+    <node template="builtin_data/launch/loading_anim.ui.json"/>
+  </node>
 </node>

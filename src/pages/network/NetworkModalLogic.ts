@@ -15,6 +15,14 @@ export class NetworkModalLogic extends UIComponent {
   private ui_hints: UINode | undefined;
   private ipt_address: TextInput | undefined;
   private ipt_nickname: TextInput | undefined;
+  private loading_anim: UINode | undefined;
+
+  /** 连接中：右下角显示加载动画，并禁用连接/取消按钮 */
+  private set_connecting(connecting: boolean): void {
+    this.loading_anim?.set_visible(connecting);
+    this.btn_connect?.set_disabled(connecting);
+    this.btn_cancel?.set_disabled(connecting);
+  }
 
   readonly callbacks_networking: INetworkingCallbacks = {
     on_register: () => {
@@ -22,17 +30,16 @@ export class NetworkModalLogic extends UIComponent {
         this.lfw.save_string(NetworkModalLogic.LFW_SERVER_ADDRESS_KEY, this.ipt_address.text);
       if (this.ipt_nickname)
         this.lfw.save_string(NetworkModalLogic.LFW_CLIENT_NICKNAME_KEY, this.ipt_nickname.text);
+      this.set_connecting(false);
       this.lfw.layers.push_page({ id: NetworkModalLogic.ROOMS_PAGE_ID }, 0)
     },
     on_error: (error) => {
       this.ui_hints?.set_text(error.error ?? error.message)
-      this.btn_connect?.set_disabled(false);
-      this.btn_cancel?.set_disabled(false);
+      this.set_connecting(false);
     },
     on_close: (reason) => {
       this.ui_hints?.set_text(reason)
-      this.btn_connect?.set_disabled(false);
-      this.btn_cancel?.set_disabled(false);
+      this.set_connecting(false);
     },
   }
 
@@ -43,9 +50,8 @@ export class NetworkModalLogic extends UIComponent {
       if (!address) this.ipt_address?.set_text(address = "lfj.gim.ink");
       let nickname = this.ipt_nickname?.text.trim();
       if (!nickname) this.ipt_address?.set_text(nickname = pick_default_nickname(this.lfw.canonical_lang()));
+      this.set_connecting(true);
       Ditto.Networking.open({ address, nickname });
-      this.btn_connect?.set_disabled(true);
-      this.btn_cancel?.set_disabled(true);
     }
   }
 
@@ -88,6 +94,7 @@ export class NetworkModalLogic extends UIComponent {
 
     this.btn_connect = this.node.search_node('network_btn_connect');
     this.btn_cancel = this.node.search_node('network_btn_connect_cancel');
+    this.loading_anim = this.node.search_node('network_loading_anim');
 
     this.btn_connect?.callbacks.add(this.callbacks_btn_connect);
     this.btn_cancel?.callbacks.add(this.callbacks_btn_cancel);
