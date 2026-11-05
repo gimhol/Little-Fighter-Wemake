@@ -21,6 +21,7 @@ import type { IXML } from './xml/IXML';
 import type { IDownloadedZip } from './zip/IDownloadedZip';
 import type { IZip } from './zip/IZip';
 import type { IZipDownloadOpts } from './zip/IZipDownloadOpts';
+import type { INetworking } from "./networking";
 
 export interface IJSON5 {
   parse<T = any>(text: string): T;
@@ -64,6 +65,7 @@ export interface IDittoPack {
   UINodeRenderer: new (uinode: UINode) => IUINodeRenderer;
   ImageMgr: new (lfw: LFW) => IImageMgr;
   UIInputHandle: new (lfw: LFW) => IUIInputHandle;
+  Networking: new () => INetworking;
   XML: IXML;
   warn(...args: any[]): unknown;
   error(...args: any[]): unknown;

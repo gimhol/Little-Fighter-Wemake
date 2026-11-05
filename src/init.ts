@@ -12,6 +12,7 @@ import { is_extension_page } from './Utils/environment';
 import { ewents } from './Utils/ewents';
 import './i18n';
 import { install_mock_toy_if_requested } from "./mock_toy";
+import { Connection } from "./pages/network/Connection";
 import { close_browser, enable_immersive_landscape } from "./toy_sdk";
 import { ui_test_run } from "./ui_test";
 
@@ -58,7 +59,8 @@ Ditto.setup({
   DEV,
   IsDesktop: !!window.runtime,
   alert: (msg) => window.alert(msg),
-  print: Log.print
+  print: Log.print,
+  Networking: Connection,
 });
 if (HEADLESS_UI) {
   Object.assign(window, {

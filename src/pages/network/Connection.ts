@@ -1,6 +1,6 @@
 import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
-import type { INetworking } from "../../LFW/ditto/networking/INetworking";
+import type { IConnectServerOpts, INetworking } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
   clamp_nickname,
@@ -60,6 +60,14 @@ export class Connection implements INetworking {
   constructor(nickname: string = '') {
     this._nickname = clamp_nickname(nickname);
   }
+  open(opts: IConnectServerOpts): void {
+    const { nickname = '', address = '' } = opts;
+    this._nickname = clamp_nickname(nickname)
+    this._open(address)
+  }
+  close() {
+    this._close();
+  }
   set_nickname(nickname: string): void {
     this._nickname = clamp_nickname(nickname);
     if (this.opened) this._submit_client();
@@ -77,7 +85,7 @@ export class Connection implements INetworking {
     }).then((resp) => {
       this._client = resp.client;
     }).catch((e) => {
-      this.close();
+      this._close();
       throw e;
     })
   }
@@ -97,7 +105,7 @@ export class Connection implements INetworking {
       this.callbacks.call('on_register', resp, this)
       if (this._reconnecting) this._submit_rejoin();
     }).catch((e) => {
-      this.close();
+      this._close();
       throw e;
     })
 
@@ -185,7 +193,7 @@ export class Connection implements INetworking {
     } catch (e) {
       console.warn(`[${Connection.TAG}::give_up]`, e)
     } finally {
-      this.close();
+      this._close();
     }
   }
   protected _cancel_reconnect(): void {
@@ -268,7 +276,7 @@ export class Connection implements INetworking {
     return resps;
   }
 
-  open(url: string): void {
+  _open(url: string): void {
     url = url.trim()
     this._dead = false;
     switch (this._ws?.readyState) {
@@ -277,7 +285,7 @@ export class Connection implements INetworking {
       case WebSocket.CLOSING:
         this._ws.close();
         if (this._reopen) this._ws.removeEventListener('close', this._reopen);
-        this._reopen = () => this.open(url)
+        this._reopen = () => this._open(url)
         this._ws.addEventListener('close', this._reopen, { once: true });
         return;
     }
@@ -303,7 +311,7 @@ export class Connection implements INetworking {
     }
   }
 
-  close() {
+  _close() {
     this._cancel_reconnect();
     this._rejoin_provider = void 0;
     const ws = this._ws;

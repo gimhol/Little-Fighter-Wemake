@@ -3,6 +3,7 @@ import { LFW } from "@/LFW";
 import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IWorldCallbacks } from "@/LFW/IWorldCallbacks";
 import type { IStyle } from "@/LFW/defines/IStyle";
+import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
 import { Style } from "@/LFW/ui/Style";
 import type { UINode } from "@/LFW/ui/UINode";
 import { TextInput } from "@/LFW/ui/component/TextInput";
@@ -14,7 +15,6 @@ import {
   recommend_sync,
   type IRespChat,
   type IRespRoomStart,
-  type IRoomInfo,
   type NetSyncMode,
   type RoomSyncMode,
   type TResp,
@@ -89,7 +89,6 @@ export class NetworkLogic extends UIComponent {
   private busy = false;
   private connecting = false;
   private address = '';
-  private status = '';
   private rtts: Record<string, number> = {};
   private leavers: TLeaver[] = [];
   private reconnecting = 0;
@@ -103,13 +102,11 @@ export class NetworkLogic extends UIComponent {
   private room_page: UINode | undefined;
   private connect_page: UINode | undefined;
   private overlay_page: UINode | undefined;
-  private _page_id: string | undefined;
   private _syncing_page = false;
   private _syncing_overlay = false;
   private bg: UINode | undefined;
   private dim: UINode | undefined;
   private topbar: UINode | undefined;
-  private top_title: UINode | undefined;
   private top_sub: UINode | undefined;
   private account_chip_bg: UINode | undefined;
   private account_chip: UINode | undefined;
@@ -214,15 +211,12 @@ export class NetworkLogic extends UIComponent {
   override on_link(node: UINode): void {
     switch (node.id) {
       case CONNECT_PAGE_ID:
-        this._page_id = CONNECT_PAGE_ID;
         this.bind_connect_page(node);
         break;
       case ROOMS_PAGE_ID:
-        this._page_id = ROOMS_PAGE_ID;
         this.bind_rooms_page(node);
         break;
       case ROOM_PAGE_ID:
-        this._page_id = ROOM_PAGE_ID;
         this.bind_room_page(node);
         break;
       case OVERLAY_PAGE_ID:
@@ -329,7 +323,6 @@ export class NetworkLogic extends UIComponent {
     const q = (id: string) => node.search_node(id) ?? undefined;
     this.rooms_page = node;
     this.topbar = q('network_topbar');
-    this.top_title = q('network_top_title');
     this.top_sub = q('network_top_sub');
     this.account_chip_bg = q('network_account_chip_bg');
     this.account_chip = q('network_account_chip');
@@ -374,7 +367,6 @@ export class NetworkLogic extends UIComponent {
     if (this.rooms_page !== node) return;
     this.rooms_page = undefined;
     this.topbar = void 0;
-    this.top_title = void 0;
     this.top_sub = void 0;
     this.account_chip_bg = void 0;
     this.account_chip = void 0;
@@ -398,7 +390,6 @@ export class NetworkLogic extends UIComponent {
     const q = (id: string) => node.search_node(id) ?? undefined;
     this.room_page = node;
     this.topbar = q('network_topbar');
-    this.top_title = q('network_top_title');
     this.top_sub = q('network_top_sub');
     this.account_chip_bg = q('network_account_chip_bg');
     this.account_chip = q('network_account_chip');
@@ -460,7 +451,6 @@ export class NetworkLogic extends UIComponent {
     if (this.room_page !== node) return;
     this.room_page = undefined;
     this.topbar = void 0;
-    this.top_title = void 0;
     this.top_sub = void 0;
     this.account_chip_bg = void 0;
     this.account_chip = void 0;
@@ -603,7 +593,7 @@ export class NetworkLogic extends UIComponent {
     if (current_connection.conn === conn) current_connection.conn = null;
     if (conn) {
       conn.disable_rejoin();
-      conn.close();
+      conn._close();
     }
     this.room_rows.length = 0;
     this.player_rows.length = 0;
@@ -940,7 +930,7 @@ export class NetworkLogic extends UIComponent {
         this.update_overlay();
       },
     });
-    conn.open(address);
+    conn._open(address);
   }
 
   private cancel_connect(): void {
@@ -961,7 +951,7 @@ export class NetworkLogic extends UIComponent {
     this.reset_connection();
     if (conn) {
       conn.disable_rejoin();
-      conn.close();
+      conn._close();
     }
   }
 
@@ -1441,7 +1431,6 @@ export class NetworkLogic extends UIComponent {
   }
 
   private set_status(text: string): void {
-    this.status = text;
     if (this.mode === 'connect') {
       this.set_text(this.connect_status, this.fit(text, 370, this.connect_status));
       this.set_text(this.rooms_status, '');
@@ -1459,7 +1448,6 @@ export class NetworkLogic extends UIComponent {
   }
 
   private clear_status(): void {
-    this.status = '';
     this.set_text(this.connect_status, '');
     this.set_text(this.rooms_status, '');
     this.set_text(this.room_status, '');
