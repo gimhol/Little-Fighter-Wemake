@@ -26,6 +26,13 @@ export class NetworkModalLogic extends UIComponent {
     },
     on_error: (error) => {
       this.ui_hints?.set_text(error.error ?? error.message)
+      this.btn_connect?.set_disabled(false);
+      this.btn_cancel?.set_disabled(false);
+    },
+    on_close: (reason) => {
+      this.ui_hints?.set_text(reason)
+      this.btn_connect?.set_disabled(false);
+      this.btn_cancel?.set_disabled(false);
     },
   }
 

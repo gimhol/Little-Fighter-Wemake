@@ -139,8 +139,11 @@ export class Connection implements INetworking {
       // TODO
     }
   }
+  protected _on_error = (e: Event) => {
+    console.log(`[${Connection.TAG}::_on_error]`, e);
+  }
   protected _on_close = (e: CloseEvent) => {
-    console.log(`[${Connection.TAG}::_on_close]`);
+    console.log(`[${Connection.TAG}::_on_close]`, e);
     this.stop_ping();
     this._ws = null;
     if (this._urls.length) {
@@ -154,7 +157,6 @@ export class Connection implements INetworking {
     }
     this._teardown(e.reason);
   }
-
   enable_rejoin(provider: () => number): void {
     this._rejoin_provider = provider;
   }
@@ -303,6 +305,7 @@ export class Connection implements INetworking {
       this._ws.addEventListener('message', this._on_message);
       this._ws.addEventListener('open', this._on_open);
       this._ws.addEventListener('close', this._on_close);
+      this._ws.addEventListener('error', this._on_error);
     } catch (e) {
       console.error(`[${Connection.TAG}] error:`, e)
     }
