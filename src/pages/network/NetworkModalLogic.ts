@@ -1,4 +1,4 @@
-import { Ditto, type INetworkingCallbacks, TextInput, UIComponent, UINode } from "@/LFW";
+import { Ditto, type INetworkingCallbacks, type IUICallback, TextInput, UIComponent, UINode } from "@/LFW";
 import { clamp_nickname } from "@/Net/nickname";
 import { pick_default_nickname } from "./default_nicknames";
 
@@ -9,59 +9,80 @@ export class NetworkModalLogic extends UIComponent {
   static readonly LFW_SERVER_ADDRESS_DEFAULT_VALUE = "wss://lfj.gim.ink";
   static readonly LFW_SERVER_ADDRESS_KEY = "lfw_server_address";
   static readonly LFW_CLIENT_NICKNAME_KEY = "lfw_client_nickname";
-
+  static readonly ROOMS_PAGE_ID = 'network_rooms_page';
   static override readonly TAGS: string[] = ["NetworkModalLogic"];
-  connect_status: UINode | undefined;
-  address_input: TextInput | undefined;
-  nickname_input: TextInput | undefined;
-  readonly networking_callbacks: INetworkingCallbacks = {
-    on_open: () => {
-      if (this.address_input)
-        this.lfw.save_string(NetworkModalLogic.LFW_SERVER_ADDRESS_KEY, this.address_input.text);
-      if (this.nickname_input)
-        this.lfw.save_string(NetworkModalLogic.LFW_CLIENT_NICKNAME_KEY, this.nickname_input.text);
+
+  private ui_hints: UINode | undefined;
+  private ipt_address: TextInput | undefined;
+  private ipt_nickname: TextInput | undefined;
+
+  readonly callbacks_networking: INetworkingCallbacks = {
+    on_register: () => {
+      if (this.ipt_address)
+        this.lfw.save_string(NetworkModalLogic.LFW_SERVER_ADDRESS_KEY, this.ipt_address.text);
+      if (this.ipt_nickname)
+        this.lfw.save_string(NetworkModalLogic.LFW_CLIENT_NICKNAME_KEY, this.ipt_nickname.text);
+      this.lfw.layers.push_page({ id: NetworkModalLogic.ROOMS_PAGE_ID }, 0)
+    },
+    on_error: (error) => {
+      this.ui_hints?.set_text(error.error ?? error.message)
+    },
+  }
+
+  private btn_connect: UINode | undefined;
+  private callbacks_btn_connect: IUICallback = {
+    on_click: () => {
+      let address = this.ipt_address?.text.trim();
+      if (!address) this.ipt_address?.set_text(address = "lfj.gim.ink");
+      let nickname = this.ipt_nickname?.text.trim();
+      if (!nickname) this.ipt_address?.set_text(nickname = pick_default_nickname(this.lfw.canonical_lang()));
+      Ditto.Networking.open({ address, nickname });
+      this.btn_connect?.set_disabled(true);
+      this.btn_cancel?.set_disabled(true);
     }
   }
+
+  private btn_cancel: UINode | undefined;
+  private callbacks_btn_cancel: IUICallback = {
+    on_click: () => {
+      this.lfw.layers.close_modal({ id: this.node.root.id }, 0);
+    }
+  }
+
   override on_stop(): void {
     super.on_stop?.();
-    Ditto.Networking.callbacks.del(this.networking_callbacks);
+    Ditto.Networking.callbacks.del(this.callbacks_networking);
+    this.btn_connect?.callbacks.del(this.callbacks_btn_connect);
+    this.btn_cancel?.callbacks.del(this.callbacks_btn_cancel);
   }
+
   override on_start(): void {
     super.on_start?.();
-    Ditto.Networking.callbacks.add(this.networking_callbacks);
-    this.connect_status = this.node.search_node('network_connect_status');
-    this.address_input = this.node.search_node('network_address_input')?.search_component(TextInput);
-    this.nickname_input = this.node.search_node('network_nickname_input')?.search_component(TextInput);
+
+    Ditto.Networking.callbacks.add(this.callbacks_networking);
+    this.ui_hints = this.node.search_node('network_connect_status');
+    this.ipt_address = this.node.search_node('network_address_input')?.search_component(TextInput);
+    this.ipt_nickname = this.node.search_node('network_nickname_input')?.search_component(TextInput);
+    this.ui_hints?.set_text("")
 
     this.lfw.load_string(NetworkModalLogic.LFW_SERVER_ADDRESS_KEY).then(text => {
       text ||= NetworkModalLogic.LFW_SERVER_ADDRESS_DEFAULT_VALUE;
-      this.address_input?.set_text(text);
+      this.ipt_address?.set_text(text);
     }).catch(e => {
       Ditto.warn(`[${NetworkModalLogic.TAG}::on_start]`, e)
     })
 
     this.lfw.load_string(NetworkModalLogic.LFW_CLIENT_NICKNAME_KEY).then(text => {
       text ||= pick_default_nickname(this.lfw.canonical_lang());
-      this.nickname_input?.set_text(clamp_nickname(text));
+      this.ipt_nickname?.set_text(clamp_nickname(text));
     }).catch(e => {
       Ditto.warn(`[${NetworkModalLogic.TAG}::on_start]`, e)
     })
 
-    this.node.search_node('network_btn_connect')?.callbacks.add({
-      on_click: () => {
-        let address = this.address_input?.text.trim();
-        if (!address) this.address_input?.set_text(address = "lfj.gim.ink");
+    this.btn_connect = this.node.search_node('network_btn_connect');
+    this.btn_cancel = this.node.search_node('network_btn_connect_cancel');
 
-        const nickname = this.nickname_input?.text.trim();
-        if (!nickname) {
-          this.connect_status?.set_text(this.lfw.string('network.nickname_hints'))
-          return;
-        }
-        Ditto.Networking.open({ address, nickname });
-      }
-    });
-    this.node.search_node('network_btn_connect_cancel')?.callbacks.add({
-      on_click: () => { }
-    });
+    this.btn_connect?.callbacks.add(this.callbacks_btn_connect);
+    this.btn_cancel?.callbacks.add(this.callbacks_btn_cancel);
   }
 }

@@ -45,7 +45,7 @@ export class UINode implements IDebugging {
   protected _outlineColor: string | undefined;
   protected _outlineWidth: number | undefined;
   protected _outlineAlpha: number | undefined;
-  protected _callbacks = new Callbacks<IUICallback>();
+  readonly callbacks = new Callbacks<IUICallback>();
   protected _pointer_over: 0 | 1 = 0;
   protected _pointer_down: (0 | 1)[] = [];
   protected _click_flag: 0 | 1 = 0;
@@ -53,9 +53,6 @@ export class UINode implements IDebugging {
   protected _components_updating: boolean = false;
   protected _del_components: UIComponent[] = [];
 
-  get callbacks() {
-    return this._callbacks;
-  }
   /**
    * 根节点
    *
@@ -169,13 +166,13 @@ export class UINode implements IDebugging {
     this._root._focused_node = val;
     if (old) {
       old.on_blur();
-      old._callbacks.call("on_foucs_changed", old);
+      old.callbacks.call("on_foucs_changed", old);
     }
     if (val) {
       val.on_foucs();
-      val._callbacks.call("on_foucs_changed", val);
+      val.callbacks.call("on_foucs_changed", val);
     }
-    this._root._callbacks.call("on_foucs_item_changed", val, old);
+    this._root.callbacks.call("on_foucs_item_changed", val, old);
   }
 
   get id(): string | undefined { return this.data.id }
@@ -631,7 +628,7 @@ export class UINode implements IDebugging {
 
   on_show() {
     for (const c of this.components) c.on_show?.();
-    this._callbacks.call("on_show", this);
+    this.callbacks.call("on_show", this);
     if (this.data.auto_focus && !this.disabled && !this.focused_node) {
       this.focused_node = this;
     }
@@ -641,7 +638,7 @@ export class UINode implements IDebugging {
   on_hide() {
     if (this.focused_node === this) this.focused_node = void 0;
     for (const c of this.components) c.on_hide?.();
-    this._callbacks.call("on_hide", this);
+    this.callbacks.call("on_hide", this);
     this.renderer.on_hide?.();
   }
 
@@ -683,7 +680,7 @@ export class UINode implements IDebugging {
         continue;
       this._components.push(component)
       component.on_add?.()
-      this._callbacks.call('on_component_add', component, this)
+      this.callbacks.call('on_component_add', component, this)
     }
   }
   del_components(...components: UIComponent[]) {
@@ -696,7 +693,7 @@ export class UINode implements IDebugging {
       if (idx < 0) continue;
       this._components.splice(idx, 1)
       component.on_del?.()
-      this._callbacks.call('on_component_del', component, this)
+      this.callbacks.call('on_component_del', component, this)
     }
   }
 

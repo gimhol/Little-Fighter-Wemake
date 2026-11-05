@@ -64,7 +64,7 @@ const PLAYER_RTT = 2;
 const PLAYER_STATE = 3;
 const PLAYER_KICK = 4;
 
-
+/** TODO: 该死的,都写一块去简直就是找抽 -Gim */
 export class NetworkLogic extends UIComponent {
   static override readonly TAGS: string[] = ["NetworkLogic"];
   static override readonly SINGLETON: boolean = true;
