@@ -1606,7 +1606,7 @@ export class NetworkLogic extends UIComponent {
     if (this.btn_leave) this.btn_leave.visible = true;
     if (this.btn_ready) {
       this.btn_ready.visible = !!me;
-      this.set_text(this.btn_ready, this.fit(this.t(me?.ready ? 'network.cancel_ready' : 'network.ready'), 100, this.btn_ready));
+      this.set_text(this.btn_ready, this.fit(this.t(me?.ready ? 'network.btn_cancel_ready' : 'network.ready'), 100, this.btn_ready));
     }
     const all_ready = clients.length >= (room.min_players ?? 1) && clients.length > 0 && clients.every(v => !!v.ready);
     if (all_ready !== this.all_ready) {
