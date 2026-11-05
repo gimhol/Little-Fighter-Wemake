@@ -28,6 +28,7 @@ import { array_del } from './utils/array/array_del';
 import { loop_offset } from './utils/container_help/loop_offset';
 import { MersenneTwister } from './utils/math/MersenneTwister';
 import { is_str } from './utils/type_check/is_str';
+import { decodeUTF8, encodeUTF8 } from './utils/utf8';
 import { World } from "./World";
 import { ZipMgr, type ILoadedZip } from "./ZipMgr";
 
@@ -817,6 +818,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
   string(name: string): string { return this._i18n.string(name) }
   strings(name: string): string[] { return this._i18n.strings(name) }
+  string_with_args(name: string, ...args: string[]): string {
+    let ret = this.string(name);
+    for (let i = 0; i < args.length; i++)
+      ret = ret.split(`%${i + 1}`).join(`${args[i]}`);
+    return ret;
+  }
+
 
   protected async load_builtin_ui(): Promise<UI.ICookedUIInfo[]> {
     const check = this.dispose_guard('load_builtin_ui');
@@ -936,6 +944,19 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   recycle_collision(c: Collision) {
     return this._collision_graves.add(c);
+  }
+
+  async save_string(key: string, value: string): Promise<void> {
+    await I.Ditto.Cache.put({
+      type: 'string',
+      version: 0,
+      name: "saved_string_" + key,
+      data: encodeUTF8(value)
+    });
+  }
+  async load_string(key: string): Promise<string | undefined> {
+    const r = await I.Ditto.Cache.get("saved_string_" + key);
+    return r ? I.read_cache_string(r) : void 0;
   }
 }
 

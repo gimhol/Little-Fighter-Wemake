@@ -1,3 +1,4 @@
+import { decodeUTF8 } from "../../utils/utf8";
 import type { IBlob } from "../IBlob";
 
 /**
@@ -60,4 +61,14 @@ export interface ICacheData {
    * @memberof ICacheData
    */
   create_date: number;
+}
+export async function read_cache_string(cache: ICacheData): Promise<string | undefined> {
+  let { data } = cache;
+  const { blob } = cache;
+  if (!data && blob) {
+    const buf = await blob.arrayBuffer()
+    data = new Uint8Array(buf)
+  }
+  if (!data) return void 0;
+  return decodeUTF8(data);
 }

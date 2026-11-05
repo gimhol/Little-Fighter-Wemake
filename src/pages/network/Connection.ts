@@ -1,30 +1,25 @@
 import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
-import type { IConnectServerOpts, INetworking } from "../../LFW/ditto/networking/INetworking";
+import type { IConnectServerOpts, INetworking, INetworkingCallbacks } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
   clamp_nickname,
-  type IConnError, type IJob, type IMsgReqMap, type IMsgRespMap,
+  type INetworkingError as INetworkingError, type IJob, type IMsgReqMap, type IMsgRespMap,
   type IReq, type IResp,
-  type IRespClientInfo, type IRespRejoin, type IRespRejoinFrames, type ISendOpts, MsgEnum, req_timeout_error,
+  type IRespRejoin, type IRespRejoinFrames, type ISendOpts, MsgEnum, req_timeout_error,
   req_unknown_error, resp_error, type TInfo,
   type TRejoinTick,
   type TReq, type TResp
 } from "../../Net";
 
-export interface IConnectionCallbacks {
-  once?: boolean;
-  on_open?(conn: Connection): void;
-  on_close?(e: CloseEvent, conn: Connection): void;
-  on_register?(resp: IRespClientInfo, conn: Connection): void;
-  on_error?(error: IConnError, conn: Connection): void;
-  on_message?(resp: TResp, conn: Connection): void;
-  on_room_change?(room: IRoomInfo | undefined, conn: Connection): void;
-  on_rooms_change?(rooms: IRoomInfo[], conn: Connection): void;
-  on_ping?(resp: IMsgRespMap[MsgEnum.Ping], conn: Connection): void;
-  on_reconnecting?(attempt: number, conn: Connection): void;
-  on_rejoin?(resp: IRespRejoin, conn: Connection): void;
-  on_rejoin_failed?(reason: 'rejected' | 'timeout', conn: Connection): void;
+export interface IConnectionCallbacks extends INetworkingCallbacks {
+
+  on_ping?(resp: IMsgRespMap[MsgEnum.Ping], conn: INetworking): void;
+  on_reconnecting?(attempt: number, conn: INetworking): void;
+
+  on_rejoin?(resp: IRespRejoin, conn: INetworking): void;
+  on_rejoin_failed?(reason: 'rejected' | 'timeout', conn: INetworking): void;
+  on_message?(resp: TResp, conn: INetworking): void;
 }
 
 export class Connection implements INetworking {
@@ -100,9 +95,11 @@ export class Connection implements INetworking {
       timeout: 1000
     }).then((resp) => {
       this.start_ping();
-      this._client = resp.client;
-      if (!this._reconnecting) this._secret = resp.secret ?? this._secret;
-      this.callbacks.call('on_register', resp, this)
+      const { client, secret } = resp;
+      this._client = client;
+      if (!this._client) throw new Error(`client got ${client}`)
+      if (!this._reconnecting) this._secret = secret ?? this._secret;
+      this.callbacks.call('on_register', this._client, this)
       if (this._reconnecting) this._submit_rejoin();
     }).catch((e) => {
       this._close();
@@ -155,7 +152,7 @@ export class Connection implements INetworking {
       this._schedule_reconnect();
       return;
     }
-    this._teardown(e);
+    this._teardown(e.reason);
   }
 
   enable_rejoin(provider: () => number): void {
@@ -164,7 +161,7 @@ export class Connection implements INetworking {
   disable_rejoin(): void {
     this._rejoin_provider = void 0;
   }
-  protected _teardown(e?: CloseEvent): void {
+  protected _teardown(reason: string = 'closed'): void {
     if (this._dead) return;
     this._dead = true;
     this._cancel_reconnect();
@@ -174,7 +171,7 @@ export class Connection implements INetworking {
       this.callbacks.call('on_room_change', this.room = void 0, this)
     if (this.rooms.length)
       this.callbacks.call('on_rooms_change', this.rooms = [], this)
-    this.callbacks.call('on_close', e as CloseEvent, this)
+    this.callbacks.call('on_close', reason, this)
   }
   async abandon(): Promise<void> {
     const roomid = this.room?.id;
@@ -249,7 +246,7 @@ export class Connection implements INetworking {
         this.callbacks.call('on_rejoin', { ...resp, resps }, this);
       })
       .catch((e) => {
-        const code = (e as IConnError)?.lfw?.code;
+        const code = (e as INetworkingError)?.code;
         if (typeof code === 'number') {
           this._cancel_reconnect();
           this._rejoin_provider = void 0;

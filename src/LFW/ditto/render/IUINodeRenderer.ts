@@ -20,4 +20,9 @@ export interface IUINodeRenderer {
   on_stop?(): void;
   on_foucs?(): void;
   on_blur?(): void;
+
+  /* TODO */
+  get_input_value?(): string;
+  set_input_value?(value: string): void;
+  set_input_placeholder?(value: string): void;
 }

@@ -65,7 +65,7 @@ export interface IDittoPack {
   UINodeRenderer: new (uinode: UINode) => IUINodeRenderer;
   ImageMgr: new (lfw: LFW) => IImageMgr;
   UIInputHandle: new (lfw: LFW) => IUIInputHandle;
-  Networking: new () => INetworking;
+  Networking: INetworking;
   XML: IXML;
   warn(...args: any[]): unknown;
   error(...args: any[]): unknown;

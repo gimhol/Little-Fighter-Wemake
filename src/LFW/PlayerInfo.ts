@@ -3,13 +3,13 @@ import { CtrlDevice } from "./defines/CtrlDevice";
 import { Defines } from "./defines/defines";
 import { type GameKey } from './defines/GameKey';
 import type { IPurePlayerInfo } from "./defines/IPurePlayerInfo";
-import type { ICacheData } from "./ditto/cache/ICacheData";
+import { read_cache_string, type ICacheData } from "./ditto/cache/ICacheData";
 import { Ditto } from './ditto/Instance';
 import type { Entity } from './entity/Entity';
 import type { IPlayerInfoCallback } from "./IPlayerInfoCallback";
 import { is_str } from './utils/type_check/is_str';
 import type { Unsafe } from "./utils/type_check/Unsafe";
-import { decodeUTF8, encodeUTF8 } from "./utils/utf8";
+import { encodeUTF8 } from "./utils/utf8";
 
 export class PlayerInfo {
   static readonly TAG = "PlayerInfo";
@@ -64,26 +64,10 @@ export class PlayerInfo {
       Ditto.warn("[PlayerInfo::load] failed to load, reason", e);
       return false
     }
-    let { data } = cache;
-
-    if (!data) {
-      const { blob } = cache;
-      if (!blob) {
-        Ditto.warn("[PlayerInfo::load] no data");
-        return false;
-      }
-      try {
-        const buf = await blob.arrayBuffer()
-        data = new Uint8Array(buf)
-      } catch (e) {
-        Ditto.warn("[PlayerInfo::load] read blob failed, reason: ", e);
-        return false
-      }
-    }
 
     try {
-      const raw_text = decodeUTF8(data);
-      const raw_info = Ditto.JSON5.parse<Partial<IPurePlayerInfo>>(raw_text);
+      const raw_text = await read_cache_string(cache);
+      const raw_info = Ditto.JSON5.parse<Partial<IPurePlayerInfo>>(raw_text!);
       const { name, keys, ctrl = this.ctrl, version } = raw_info;
       if (version !== this._info.version) {
         Ditto.warn("[PlayerInfo::load] version changed");

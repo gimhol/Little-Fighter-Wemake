@@ -31,6 +31,8 @@ actor
 const DEV = window.location.href.includes('DEV=1')
 // ?headless_ui=1：把 UI 渲染器换成不画东西的实现，只记录节点树快照（验证模型/渲染分层用）
 const HEADLESS_UI = new URLSearchParams(window.location.search).has('headless_ui')
+
+let __Networking: Connection | undefined;
 Ditto.setup({
   Timeout: dom.__Timeout,
   Interval: dom.__Interval,
@@ -60,8 +62,11 @@ Ditto.setup({
   IsDesktop: !!window.runtime,
   alert: (msg) => window.alert(msg),
   print: Log.print,
-  Networking: Connection,
+  get Networking(): Connection {
+    return __Networking ?? (__Networking = new Connection())
+  }
 });
+
 if (HEADLESS_UI) {
   Object.assign(window, {
     ui_snapshot: () => ({

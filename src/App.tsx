@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useLFW } from "@/hooks/useLFW";
 import { useShortcut } from "@/hooks/useShortcut";
 import classNames from "classnames";
@@ -73,12 +74,14 @@ import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
 import { NetworkLogic } from "./pages/network/NetworkLogic";
+import { NetworkModalLogic } from "./pages/network/NetworkModalLogic";
 import { ChatLogic } from "./pages/network/ChatLogic";
 import { useCallbacks } from "./pages/network/useCallbacks";
 import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { is_toy_env } from "./toy_sdk";
 
 Factory.register_component(NetworkLogic);
+Factory.register_component(NetworkModalLogic);
 Factory.register_component(ChatLogic);
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"
@@ -183,6 +186,7 @@ function App() {
   >([null, null, null, null])
 
   const [loading, set_loading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loaded, set_loaded] = useState(false);
   const [paused, _set_paused] = useState(false);
   const [bg_id, _set_bg_id] = useState(Defines.VOID_BG.id);

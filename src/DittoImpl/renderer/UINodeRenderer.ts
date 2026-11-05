@@ -38,7 +38,11 @@ export class UINodeRenderer implements IUINodeRenderer {
   protected _ui_img?: IUIImgInfo;
   protected _geo = get_static_plane_geometry(0, 0, 0, 0, 0);
   protected _color: string | null = null;
-  protected _input: HTMLInputElement | undefined;
+
+  protected _input: {
+    dom: HTMLInputElement;
+    component: TextInput;
+  } | undefined;
   protected _txt: TextInfo<any> | null = null;
   protected _img: ImageInfo<T.Texture> | null = null;
   protected _text_renderer: UITextRenderer | undefined;
@@ -81,7 +85,7 @@ export class UINodeRenderer implements IUINodeRenderer {
   protected release_dom() {
     if (!this._css_obj) return;
     this.mesh.remove(this._css_obj);
-    this._input?.remove();
+    this._input?.dom?.remove();
     delete this._css_obj;
     delete this._dom;
     delete this._input
@@ -127,67 +131,71 @@ export class UINodeRenderer implements IUINodeRenderer {
   del_self() {
     this.mesh.removeFromParent();
   }
+  private check_text_input() {
+    const component = this.ui.find_component(TextInput)
+    if (!component) return;
+    const dom = document.createElement('input');
+    this._input = { dom, component }
+    dom.id = this.ui.id ? `text_input_${this.ui.id}` : "text_input"
+    const { maxLength, defaultValue, text = '', placeholder } = component.props
+    if (is_num(maxLength)) dom.maxLength = maxLength
+    else dom.removeAttribute('maxLength')
+    if (is_str(defaultValue)) dom.defaultValue = defaultValue
+    else dom.removeAttribute('defaultValue')
+    if (is_str(placeholder)) dom.placeholder = placeholder
+    dom.value = text
+    dom.style.textAlign = component.node.style.text_align || 'left'
+    dom.style.padding = '0 6px'
+    dom.style.boxSizing = 'border-box'
+    dom.onchange = () => component.text = dom.value
+    dom.onkeydown = (e) => {
+      if (e.key === 'Escape') {
+        // Esc 退出输入：把键盘交还给游戏
+        dom.blur();
+        component.on_cancel?.();
+        e.preventDefault();
+        return;
+      }
+      if (e.key !== 'Enter') return;
+      component.text = dom.value;
+      component.on_submit?.();
+      e.preventDefault();
+    }
+    dom.onfocus = () => component.node.focused = true
+    dom.onblur = () => component.node.focused = false
+    this.dom.appendChild(dom)
+
+  }
   on_resume(): void {
     if (this.ui.root === this.ui) this.attach_ui_layer();
-    const text_input = this.ui.find_component(TextInput)
-    if (text_input) {
-      const ele_input = this._input = document.createElement('input');
-      ele_input.id = this.ui.id ? `text_input_${this.ui.id}` : "text_input"
-      const { maxLength, defaultValue, text, placeholder } = text_input
-      if (is_num(maxLength)) ele_input.maxLength = maxLength
-      else ele_input.removeAttribute('maxLength')
-      if (is_str(defaultValue)) ele_input.defaultValue = defaultValue
-      else ele_input.removeAttribute('defaultValue')
-      if (is_str(placeholder)) ele_input.placeholder = placeholder
-      ele_input.value = text
-      ele_input.style.textAlign = text_input.node.style.text_align || 'left'
-      ele_input.style.padding = '0 6px'
-      ele_input.style.boxSizing = 'border-box'
-      ele_input.onchange = () => text_input.text = ele_input.value
-      ele_input.onkeydown = (e) => {
-        if (e.key === 'Escape') {
-          // Esc 退出输入：把键盘交还给游戏
-          ele_input.blur();
-          text_input.on_cancel?.();
-          e.preventDefault();
-          return;
-        }
-        if (e.key !== 'Enter') return;
-        text_input.text = ele_input.value;
-        text_input.on_submit?.();
-        e.preventDefault();
-      }
-      ele_input.onfocus = () => text_input.node.focused = true
-      ele_input.onblur = () => text_input.node.focused = false
-      this.dom.appendChild(ele_input)
-    }
+    this.check_text_input()
   }
 
   get_input_value(): string {
-    if (this._input) return this._input.value;
+    if (this._input) return this._input.dom.value;
     return this.ui.find_component(TextInput)?.text ?? '';
   }
 
   set_input_value(value: string): void {
     const text_input = this.ui.find_component(TextInput);
     if (text_input) text_input.text = value;
-    if (this._input) this._input.value = value;
+    if (this._input) this._input.dom.value = value;
   }
 
   set_input_placeholder(value: string): void {
-    if (this._input) this._input.placeholder = value;
+    if (this._input) this._input.dom.placeholder = value;
   }
 
   focus_input(): void {
-    this._input?.focus();
+    this._input?.dom?.focus();
   }
 
   has_focus(): boolean {
-    return !!this._input && document.activeElement === this._input;
+    return !!this._input?.dom && document.activeElement === this._input.dom;
   }
 
   blur_input(): void {
-    this._input?.blur();
+    this._input?.dom?.blur();
   }
 
   on_pause(): void {
@@ -599,15 +607,15 @@ export class UINodeRenderer implements IUINodeRenderer {
     if (this._dom) {
       this._dom.style.opacity = '' + this.mesh.material.alpha
       if (this._input) {
-        const font_size = this.ui.find_component(TextInput)?.fontSize;
-        const font_family = this.ui.find_component(TextInput)?.fontFamily;
-        if (is_str(font_family)) this._input.style.fontFamily = font_family;
-        if (is_num(font_size)) {
-          this._input.style.fontSize = `${font_size}px`;
-          this._input.style.lineHeight = 'normal';
+        const { dom, component } = this._input;
+        const { fontSize, fontFamily } = component.props;
+        if (is_str(fontFamily)) dom.style.fontFamily = fontFamily;
+        if (is_num(fontSize)) {
+          dom.style.fontSize = `${fontSize}px`;
+          dom.style.lineHeight = 'normal';
         } else {
-          this._input.style.fontSize = this._dom.style.height;
-          this._input.style.lineHeight = this._dom.style.height;
+          dom.style.fontSize = this._dom.style.height;
+          dom.style.lineHeight = this._dom.style.height;
         }
       }
     }

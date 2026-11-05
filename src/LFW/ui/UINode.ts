@@ -476,6 +476,7 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   set_text(text: string, style?: IStyle | null): this {
+    if (!style && text == this.text?.text) return this;
     this.text = new TextInfo({ text, style: style ?? this.style });
     return this;
   }

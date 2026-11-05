@@ -1,5 +1,5 @@
 <node id="network_modal" name="弹窗：联网游戏" local_only="true">
-  <component cls="NetworkLogic"/>
+  <component cls="NetworkModalLogic"/>
 
   <node id="network_bg" pos="0,0,-450">
     <node ref="builtin_data/launch/bg.ui.json"/>
@@ -54,11 +54,15 @@
           </component>
         </node>
       </node>
-      <node id="network_btn_connect" i18n="network.connect" center="0.5,0.5" pos="160,221">
-        <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+      <node id="network_btn_connect" template="builtin_data/launch/menu_text_button.ui.json" center="0.5,0.5" pos="160,221">
+        <values>
+          <value name="text" type="string" value="network.connect" />
+        </values>
       </node>
-      <node id="network_btn_connect_cancel" i18n="network.cancel" center="0.5,0.5" pos="240,221">
-        <style font="15px Arial" fill_style="#a8b9ff" text_align="center"/>
+      <node id="network_btn_connect_cancel" template="builtin_data/launch/menu_text_button.ui.json" center="0.5,0.5" pos="240,221">
+        <values>
+          <value name="text" type="string" value="network.cancel" />
+        </values>
       </node>
     </node>
 

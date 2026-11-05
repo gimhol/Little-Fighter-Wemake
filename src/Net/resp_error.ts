@@ -1,15 +1,16 @@
-import type { IConnError } from "./IConnError";
 import { ErrCode } from "./ErrCode";
+import { new_networking_error, type INetworkingError } from "./IConnError";
 import type { IResp } from "./_Base";
 
-export function resp_error(resp: IResp): IConnError {
+export function resp_error(resp: IResp): INetworkingError {
   const code = resp.code ?? ErrCode.Unknown;
   const info = resp.error ?? 'unknown error';
-  return Object.assign(new Error(`[${code}]${info}`), {
-    lfw: {
-      type: resp.type ?? 'unknown',
-      code: code,
-      error: info
-    }
-  });
+  return new_networking_error({
+    name: 'RespError',
+    message: `[${code}]${info}`,
+    type: resp.type ?? 'unknown',
+    pid: '',
+    code: resp.code ?? ErrCode.Unknown,
+    error: info,
+  })
 }

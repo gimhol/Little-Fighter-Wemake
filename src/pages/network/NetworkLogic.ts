@@ -1,4 +1,4 @@
-import type { IPlayerInfoCallback } from "@/LFW";
+import type { IPlayerInfoCallback, IUINodeRenderer } from "@/LFW";
 import { LFW } from "@/LFW";
 import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IWorldCallbacks } from "@/LFW/IWorldCallbacks";
@@ -36,11 +36,6 @@ type TMode = 'connect' | 'rooms' | 'room' | 'started';
 type TConnectMode = 'guest' | 'account';
 type TAccountState = 'out' | 'pending' | 'in';
 type TLeaver = { id: string; name: string; left: boolean };
-type TInputRenderer = {
-  get_input_value?(): string;
-  set_input_value?(value: string): void;
-  set_input_placeholder?(value: string): void;
-};
 
 const ROOM_PAGE_SIZE = 5;
 const ROOM_ROW_STEP = 56;
@@ -68,6 +63,7 @@ const PLAYER_TAGS = 1;
 const PLAYER_RTT = 2;
 const PLAYER_STATE = 3;
 const PLAYER_KICK = 4;
+
 
 export class NetworkLogic extends UIComponent {
   static override readonly TAGS: string[] = ["NetworkLogic"];
@@ -740,7 +736,7 @@ export class NetworkLogic extends UIComponent {
 
   private input_value(node: UINode | undefined): string {
     if (!node) return '';
-    const renderer = node.renderer as TInputRenderer;
+    const renderer = node.renderer as IUINodeRenderer;
     const value = renderer.get_input_value?.();
     if (typeof value === 'string') return value;
     return node.find_component(TextInput)?.text ?? '';
@@ -750,12 +746,12 @@ export class NetworkLogic extends UIComponent {
     if (!node) return;
     const text_input = node.find_component(TextInput);
     if (text_input) text_input.text = value;
-    const renderer = node.renderer as TInputRenderer;
+    const renderer = node.renderer as IUINodeRenderer;
     renderer.set_input_value?.(value);
   }
 
   private set_placeholder(node: UINode | undefined, value: string): void {
-    const renderer = node?.renderer as TInputRenderer | undefined;
+    const renderer = node?.renderer as IUINodeRenderer | undefined;
     renderer?.set_input_placeholder?.(value);
   }
 
@@ -889,7 +885,7 @@ export class NetworkLogic extends UIComponent {
       },
       on_error: (e) => {
         if (this.conn !== conn) return;
-        const code = e?.lfw?.code;
+        const code = e?.code;
         if (code === ErrCode.ChatTooFrequent || code === ErrCode.ChatMsgEmpty) return;
         this.set_status(this.error_text(e));
       },
