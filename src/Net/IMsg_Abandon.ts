@@ -1,5 +1,5 @@
+import type { IClientInfo } from '../LFW/ditto/networking/IClientInfo';
 import type { IReq, IResp } from './_Base';
-import type { IClientInfo } from './IClientInfo';
 import type { MsgEnum } from './MsgEnum';
 
 export interface IReqAbandon extends IReq<MsgEnum.Abandon> {

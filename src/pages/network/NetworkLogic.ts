@@ -1,14 +1,12 @@
-import localforage from "localforage";
+import type { IPlayerInfoCallback } from "@/LFW";
 import { LFW } from "@/LFW";
 import type { ILFWCallback } from "@/LFW/ILFWCallback";
-import type { IPlayerInfoCallback } from "@/LFW";
 import type { IWorldCallbacks } from "@/LFW/IWorldCallbacks";
 import type { IStyle } from "@/LFW/defines/IStyle";
-import { TextInput } from "@/LFW/ui/component/TextInput";
-import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import { Style } from "@/LFW/ui/Style";
 import type { UINode } from "@/LFW/ui/UINode";
-import { is_editing_element } from "@/Utils/is_editing_element";
+import { TextInput } from "@/LFW/ui/component/TextInput";
+import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import {
   ErrCode,
   MsgEnum,
@@ -21,11 +19,13 @@ import {
   type RoomSyncMode,
   type TResp,
 } from "@/Net";
-import { Connection } from "./Connection";
-import { current_connection } from "@/Net/current_connection";
-import { chat_store } from "@/Net/chat_store";
 import { SystemPlayerInfo } from "@/Net/SystemPlayerInfo";
 import { peek_chat } from "@/Net/chat_overlay";
+import { chat_store } from "@/Net/chat_store";
+import { current_connection } from "@/Net/current_connection";
+import { is_editing_element } from "@/Utils/is_editing_element";
+import localforage from "localforage";
+import { Connection } from "./Connection";
 import { DelayNetworkDriver } from "./DelayNetworkDriver";
 import { LFWNetworkDriver } from "./LFWNetworkDriver";
 import { LockstepNetworkDriver } from "./LockstepNetworkDriver";
@@ -44,13 +44,11 @@ type TInputRenderer = {
 
 const ROOM_PAGE_SIZE = 5;
 const ROOM_ROW_STEP = 56;
-/** 顶栏右侧按钮的右边缘（留出外壳窗口按钮的位置） */
 const TOPBAR_RIGHT = 620;
 const CONNECT_PAGE_ID = 'network_modal';
 const ROOMS_PAGE_ID = 'network_rooms_page';
 const ROOM_PAGE_ID = 'network_room_page';
 const OVERLAY_PAGE_ID = 'network_overlay_page';
-/** 连接弹窗盖在 layer 0 的当前页面上（换页时弹窗自动关闭） */
 const CONNECT_LAYER = 0;
 const OVERLAY_LAYER = 1;
 const PLAYER_ROW_STEP = 32;
@@ -73,7 +71,6 @@ const PLAYER_KICK = 4;
 
 export class NetworkLogic extends UIComponent {
   static override readonly TAGS: string[] = ["NetworkLogic"];
-  /** 整个 LFW 只有一个实例：连接页 / 房间列表页 / 房间内页 / 浮层页 都只是把节点接上来 */
   static override readonly SINGLETON: boolean = true;
 
   private mode: TMode = 'connect';
@@ -106,7 +103,6 @@ export class NetworkLogic extends UIComponent {
   private room_page: UINode | undefined;
   private connect_page: UINode | undefined;
   private overlay_page: UINode | undefined;
-  /** 当前展示的联机页面 id（避免重复 set_page 造成递归） */
   private _page_id: string | undefined;
   private _syncing_page = false;
   private _syncing_overlay = false;

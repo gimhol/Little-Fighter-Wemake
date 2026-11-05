@@ -5,9 +5,7 @@ export type TResp = IMsgRespMap[keyof IMsgRespMap]
 export type TInfo<T> = Omit<T, 'pid' | 'type' | 'is_resp' | 'is_req'>
 export * from "./_Base";
 export * from "./ErrCode";
-export * from "./IClientInfo";
 export * from "./IConnError";
-export * from "./IDataInfo";
 export * from "./IJob";
 export * from "./IMsg_Chat";
 export * from "./IMsg_ClientInfo";
@@ -26,7 +24,6 @@ export * from "./IMsg_RoomStart";
 export * from "./IMsg_RoomSync";
 export * from "./IMsg_Tick";
 export * from "./IMsgMap";
-export * from "./IRoomInfo";
 export * from "./ISendOpts";
 export * from "./MsgEnum";
 export * from "./net_sync";

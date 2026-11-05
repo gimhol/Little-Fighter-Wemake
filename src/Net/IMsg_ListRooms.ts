@@ -1,5 +1,5 @@
+import type { IRoomInfo } from '../LFW/ditto/networking/IRoomInfo';
 import type { IReq, IResp } from "./_Base";
-import type { IRoomInfo } from "./IRoomInfo";
 import type { MsgEnum } from "./MsgEnum";
 
 /**

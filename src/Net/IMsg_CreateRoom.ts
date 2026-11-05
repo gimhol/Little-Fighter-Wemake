@@ -1,7 +1,7 @@
+import type { IDataInfo } from '../LFW/defines/IDataInfo';
+import type { IClientInfo } from '../LFW/ditto/networking/IClientInfo';
+import type { IRoomInfo } from '../LFW/ditto/networking/IRoomInfo';
 import type { IReq, IResp } from './_Base';
-import type { IClientInfo } from './IClientInfo';
-import type { IDataInfo } from './IDataInfo';
-import type { IRoomInfo } from './IRoomInfo';
 import type { MsgEnum } from './MsgEnum';
 import type { RoomSyncMode } from './net_sync';
 

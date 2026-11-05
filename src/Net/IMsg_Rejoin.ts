@@ -1,7 +1,7 @@
+import type { IClientInfo } from "../LFW/ditto/networking/IClientInfo";
+import type { IRoomInfo } from '../LFW/ditto/networking/IRoomInfo';
 import type { IReq, IResp } from './_Base';
-import type { IClientInfo } from './IClientInfo';
 import type { IRespTick } from './IMsg_Tick';
-import type { IRoomInfo } from './IRoomInfo';
 import type { MsgEnum } from './MsgEnum';
 
 export type TRejoinTick = Omit<IRespTick, 'pid' | 'type' | 'is_resp' | 'is_req'>;

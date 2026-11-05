@@ -1,11 +1,15 @@
 import { Callbacks } from "@/LFW/base";
+import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
+import type { INetworking } from "../../LFW/ditto/networking/INetworking";
+import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
   clamp_nickname,
-  type IClientInfo,
   type IConnError, type IJob, type IMsgReqMap, type IMsgRespMap,
   type IReq, type IResp,
-  type IRespClientInfo, type IRespRejoin, type IRespRejoinFrames, type IRoomInfo, type ISendOpts, MsgEnum, req_timeout_error,
-  req_unknown_error, resp_error, type TInfo, type TReq, type TResp, type TRejoinTick
+  type IRespClientInfo, type IRespRejoin, type IRespRejoinFrames, type ISendOpts, MsgEnum, req_timeout_error,
+  req_unknown_error, resp_error, type TInfo,
+  type TRejoinTick,
+  type TReq, type TResp
 } from "../../Net";
 
 export interface IConnectionCallbacks {
@@ -23,7 +27,7 @@ export interface IConnectionCallbacks {
   on_rejoin_failed?(reason: 'rejected' | 'timeout', conn: Connection): void;
 }
 
-export class Connection {
+export class Connection implements INetworking {
   static TAG: string = 'Connection';
   readonly callbacks = new Callbacks<IConnectionCallbacks>()
   protected _pid = 1;
@@ -48,7 +52,7 @@ export class Connection {
   get client(): IClientInfo | undefined { return this._client }
   get nickname(): string { return this._nickname }
   get reconnecting() { return this._reconnecting }
-  room?: IRoomInfo;
+  room: IRoomInfo | undefined;
   rooms: IRoomInfo[] = [];
   get url() { return this._ws?.url }
   get opened() { return this._ws?.readyState === 1 }

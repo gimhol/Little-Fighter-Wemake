@@ -1,11 +1,9 @@
+import type { IClientInfo } from '../LFW/ditto/networking/IClientInfo';
+import type { IRoomInfo } from '../LFW/ditto/networking/IRoomInfo';
 import type { IReq, IResp } from './_Base';
-import type { IClientInfo } from "./IClientInfo";
-import type { IRoomInfo } from './IRoomInfo';
 import type { MsgEnum } from "./MsgEnum";
 
-export interface IReqExitRoom extends IReq<MsgEnum.ExitRoom> {
-
-}
+export type IReqExitRoom = IReq<MsgEnum.ExitRoom> 
 export interface IRespExitRoom extends IResp<MsgEnum.ExitRoom> {
   client?: IClientInfo;
   room?: IRoomInfo;

@@ -1,9 +1,11 @@
+import http from 'node:http';
+import net from 'node:net';
 import type { RawData, WebSocket } from 'ws';
+import type { IClientInfo } from '../../src/LFW/ditto/networking/IClientInfo';
 import type { Context } from './Context';
 import {
   clamp_nickname,
   ErrCode,
-  IClientInfo,
   IJob,
   IMsgReqMap, IMsgRespMap,
   IReq, IResp, ISendOpts,
@@ -18,8 +20,6 @@ import { ensure_room_owner } from './ensure_room_owner';
 import { handle_req_chat } from './handle_req_chat';
 import { handle_req_tick } from './handle_req_tick';
 import { random_str } from './random_str';
-import http from 'node:http';
-import net from 'node:net';
 
 export class Client {
   static readonly TAG = 'Client'
@@ -103,7 +103,7 @@ export class Client {
       const _resp: IResp = { pid, type, is_resp: true, ...resp };
       delete (_resp as any).is_req;
       this.ws.send(JSON.stringify(_resp), (err) => {
-        err ? reject(err) : resolve()
+        if (err) reject(err); else resolve()
       });
     })
   }
@@ -134,8 +134,10 @@ export class Client {
     const { room } = this
     if (room?.owner === this && !room.started) {
       room.close(this);
-      ctx.room_mgr.del(room)    } else if (room?.started) {
-      room.disconnect(this)    } else {
+      ctx.room_mgr.del(room)
+    } else if (room?.started) {
+      room.disconnect(this)
+    } else {
       room?.exit(this);
     }
   }
@@ -151,6 +153,7 @@ export class Client {
           id: this.id,
           name: name || `${this.id}`,
           players: req.players ?? [],
+          ready: false,
         }
         this.resp(req.type, req.pid, { client: client_info, secret: this.secret }).catch(() => void 0);
         if (this.room) this.room.broadcast(MsgEnum.ClientInfo, { client: client_info }, this)

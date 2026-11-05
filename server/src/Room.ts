@@ -1,9 +1,12 @@
+import type { IClientInfo } from '../../src/LFW/ditto/networking/IClientInfo';
+import type { IRoomInfo } from '../../src/LFW/ditto/networking/IRoomInfo';
+import type { IDataInfo } from '../../src/LFW/defines/IDataInfo';
 import type { Client } from './Client';
 import type { Context } from "./Context";
+import { next_msg_seq } from './handle_req_chat';
 import {
   ErrCode,
   IBotEvent,
-  IClientInfo,
   IMsgRespMap,
   IReqAbandon,
   IReqClientReady,
@@ -13,8 +16,8 @@ import {
   IReqRejoin,
   IReqRejoinFrames,
   IReqRoomPwd,
-  IReqRoomSync,
   IReqRoomStart,
+  IReqRoomSync,
   IReqTick,
   IResp,
   IRespAbandon,
@@ -24,15 +27,13 @@ import {
   IRespJoinRoom, IRespKick,
   IRespRejoin,
   IRespRejoinFrames,
-  IRespRoomSync,
   IRespRoomStart,
+  IRespRoomSync,
   IRespTick,
-  IDataInfo, IRoomInfo, MsgEnum, NetSyncMode, RoomSyncMode, SystemPlayerInfo, TInfo,
+  MsgEnum, NetSyncMode, RoomSyncMode, SystemPlayerInfo, TInfo,
   resolve_sync
 } from "./Net";
 import { random_str } from './random_str';
-import { next_msg_seq } from './handle_req_chat';
-
 let room_id = 0;
 
 const MAX_PIPELINE = 16;
@@ -491,9 +492,13 @@ export class Room {
   }
 
   broadcast<T extends MsgEnum, Resp extends IResp = IMsgRespMap[T]>(type: T, resp: TInfo<Resp>, ...excludes: Client[]) {
-    for (const c of this.clients)
-      if (!excludes.some(v => v === c))
-        c.resp(type, '', resp).catch(e => { })
+    for (const c of this.clients) {
+      if (!excludes.some(v => v === c)) {
+        c.resp(type, '', resp).catch(e => {
+          console.warn(`[${Room.TAG}::broadcast] err:`, e)
+        })
+      }
+    }
   }
 
   tick(client: Client, req: IReqTick) {
