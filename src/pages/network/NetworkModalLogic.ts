@@ -35,7 +35,6 @@ export class NetworkModalLogic extends UIComponent {
     },
     on_error: (error) => {
       this.ui_hints?.set_text(error.error ?? error.message)
-      this.set_connecting(false);
     },
     on_close: (reason) => {
       this.ui_hints?.set_text(reason)
