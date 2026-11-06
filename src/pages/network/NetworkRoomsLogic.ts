@@ -1,4 +1,4 @@
-import type { IUINodeRenderer } from "@/LFW";
+import type { INetworkingCallbacks, IUINodeRenderer } from "@/LFW";
 import { Ditto, LFW } from "@/LFW";
 import { LabelButton } from "@/LFW/ui/component/LabelButton";
 import { TextInput } from "@/LFW/ui/component/TextInput";
@@ -8,7 +8,6 @@ import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
 import type { RoomSyncMode } from "@/Net";
 import { chat_store } from "@/Net/chat_store";
-import type { IConnectionCallbacks } from "./Connection";
 import { fit_text, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
@@ -52,7 +51,7 @@ export class NetworkRoomsLogic extends UIComponent {
     on_lang_changed: () => this.refresh_texts(),
   };
 
-  private readonly net_cb: IConnectionCallbacks = {
+  private readonly net_cb: INetworkingCallbacks = {
     on_register: () => {
       this.busy = false;
       this.clear_status();

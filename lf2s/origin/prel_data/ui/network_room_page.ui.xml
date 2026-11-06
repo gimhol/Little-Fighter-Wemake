@@ -1,5 +1,5 @@
 <node id="network_room_page" name="页面：房间" local_only="true">
-  <component cls="NetworkLogic"/>
+  <component cls="NetworkRoomLogic"/>
 
   <node id="network_bg" pos="0,0,-450">
     <node ref="builtin_data/launch/bg.ui.json"/>
@@ -28,11 +28,25 @@
     <node id="network_btn_logout" i18n="network.logout" center="0.5,0.5" pos="430,20" visible="false">
       <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
     </node>
-    <node id="network_btn_room_refresh" i18n="network.refresh" center="0.5,0.5" pos="640,20" visible="false">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_btn_room_refresh" pos="640,20" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.refresh</string>
+        <style name="style_normal" font="12px Arial" fill_style="#a8b9ff"/>
+        <style name="style_hover" font="12px Arial" fill_style="#eaf1ff" underline_color="#ffffff" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="ok"/>
+      </actions>
     </node>
-    <node id="network_btn_leave_top" i18n="network.leave" center="0.5,0.5" pos="735,20" visible="false">
-      <style font="12px Arial" fill_style="#ff9b9b" text_align="center"/>
+    <node id="network_btn_leave_top" pos="735,20" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.leave</string>
+        <style name="style_normal" font="12px Arial" fill_style="#ff9b9b"/>
+        <style name="style_hover" font="12px Arial" fill_style="#ffd0d0" underline_color="#ffd0d0" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="cancel"/>
+      </actions>
     </node>
   </node>
 
@@ -42,14 +56,35 @@
     <node id="network_sync_label" i18n="network.sync_mode" center="0,0.5" pos="16,58">
       <style font="12px Arial" fill_style="#9b9bff"/>
     </node>
-    <node id="network_sync_auto" i18n="network.sync_auto" center="0.5,0.5" pos="118,58">
-      <style font="12px Arial" fill_style="#ffffff" text_align="center" underline_color="#ffffff" underline_width="1"/>
+    <node id="network_sync_auto" pos="118,58" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.sync_auto</string>
+        <style name="style_normal" font="12px Arial" fill_style="#a8b9ff"/>
+        <style name="style_hover" font="12px Arial" fill_style="#eaf1ff" underline_color="#ffffff" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="ok"/>
+      </actions>
     </node>
-    <node id="network_sync_lockstep" i18n="network.sync_lockstep" center="0.5,0.5" pos="180,58">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_sync_lockstep" pos="180,58" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.sync_lockstep</string>
+        <style name="style_normal" font="12px Arial" fill_style="#a8b9ff"/>
+        <style name="style_hover" font="12px Arial" fill_style="#eaf1ff" underline_color="#ffffff" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="ok"/>
+      </actions>
     </node>
-    <node id="network_sync_delay" i18n="network.sync_delay" center="0.5,0.5" pos="242,58">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_sync_delay" pos="242,58" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.sync_delay</string>
+        <style name="style_normal" font="12px Arial" fill_style="#a8b9ff"/>
+        <style name="style_hover" font="12px Arial" fill_style="#eaf1ff" underline_color="#ffffff" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="ok"/>
+      </actions>
     </node>
     <node id="network_recommend" center="1,0.5" pos="778,58" opacity="0.58">
       <style font="11px Arial" fill_style="#ffffff" text_align="right"/>
@@ -99,8 +134,15 @@
         <node id="network_player_state" center="0,0.5" pos="470,16">
           <style font="12px Arial" fill_style="#9b9bff" text_align="center"/>
         </node>
-        <node id="network_player_kick" i18n="network.kick" center="1,0.5" pos="750,16">
-          <style font="12px Arial" fill_style="#ff9b9b" text_align="right"/>
+        <node id="network_player_kick" pos="740,16" template="builtin_data/launch/main_text_button.ui.json">
+          <values>
+            <string name="text">network.kick</string>
+            <style name="style_normal" font="12px Arial" fill_style="#ff9b9b"/>
+            <style name="style_hover" font="12px Arial" fill_style="#ffd0d0" underline_color="#ffd0d0" underline_width="2"/>
+          </values>
+          <actions>
+            <click action="sound" args="cancel"/>
+          </actions>
         </node>
       </node>
     </node>
@@ -121,11 +163,25 @@
     <node id="network_version" i18n="VERSION_NAME" center="0,0.5" pos="16,424" opacity="0.45">
       <style font="10px Arial" fill_style="#ffffff"/>
     </node>
-    <node id="network_btn_leave" i18n="network.leave" center="0.5,0.5" pos="351,424">
-      <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_btn_leave" pos="351,424" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.leave</string>
+        <style name="style_normal" font="14px Arial" fill_style="#a8b9ff"/>
+        <style name="style_hover" font="14px Arial" fill_style="#eaf1ff" underline_color="#ffffff" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="cancel"/>
+      </actions>
     </node>
-    <node id="network_btn_ready" i18n="network.ready" center="0.5,0.5" pos="443,424">
-      <style font="14px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_btn_ready" pos="443,424" template="builtin_data/launch/main_text_button.ui.json">
+      <values>
+        <string name="text">network.ready</string>
+        <style name="style_normal" font="14px Arial" fill_style="#a8b9ff"/>
+        <style name="style_hover" font="14px Arial" fill_style="#eaf1ff" underline_color="#ffffff" underline_width="2"/>
+      </values>
+      <actions>
+        <click action="sound" args="ok"/>
+      </actions>
     </node>
   </node>
 </node>

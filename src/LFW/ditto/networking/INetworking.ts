@@ -7,6 +7,7 @@ export interface IConnectServerOpts {
   nickname?: string;
 }
 export type TNetworkingChatTarget = 'global' | 'room' | 'private';
+export type TNetworkingSyncMode = 'auto' | 'lockstep' | 'delay';
 export interface ICreateRoomOpts {
   title?: string;
   min_players?: number;
@@ -42,6 +43,7 @@ export interface INetworkingCallbacks {
   on_room_leaved?(conn: INetworking): void;
   on_room_create_failed?(error: unknown, conn: INetworking): void;
   on_room_join_failed?(error: unknown, conn: INetworking): void;
+  on_ping?(client_id: string | undefined, rtt: number | undefined, conn: INetworking): void;
   on_rooms_change?(rooms: IRoomInfo[], conn: INetworking): void;
 }
 
@@ -64,5 +66,11 @@ export interface INetworking {
   refresh_rooms(page: number): void;
   create_room(opts?: ICreateRoomOpts): void;
   join_room(opts: IJoinRoomOpts): void;
+  leave_room(): void;
+  start_room(): void;
+  set_ready(ready: boolean): void;
+  set_room_pwd(pwd: string): void;
+  set_room_sync(mode: TNetworkingSyncMode): void;
+  kick(client_id: string): void;
   send_chat(text: string, target?: TNetworkingChatTarget): Promise<void>;
 }

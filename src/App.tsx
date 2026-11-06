@@ -75,6 +75,7 @@ import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
 import { NetworkLogic } from "./pages/network/NetworkLogic";
 import { NetworkModalLogic } from "./pages/network/NetworkModalLogic";
+import { NetworkRoomLogic } from "./pages/network/NetworkRoomLogic";
 import { NetworkRoomsLogic } from "./pages/network/NetworkRoomsLogic";
 import { ChatLogic } from "./pages/network/ChatLogic";
 import { useCallbacks } from "./pages/network/useCallbacks";
@@ -84,6 +85,7 @@ import { is_toy_env } from "./toy_sdk";
 Factory.register_component(NetworkLogic);
 Factory.register_component(NetworkModalLogic);
 Factory.register_component(NetworkRoomsLogic);
+Factory.register_component(NetworkRoomLogic);
 Factory.register_component(ChatLogic);
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"

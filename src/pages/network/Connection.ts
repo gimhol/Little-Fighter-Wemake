@@ -2,7 +2,7 @@ import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
 import type {
   IConnectServerOpts, ICreateRoomOpts, IJoinRoomOpts, INetworking, INetworkingCallbacks,
-  TNetworkingChatTarget
+  TNetworkingChatTarget, TNetworkingSyncMode
 } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
@@ -17,7 +17,6 @@ import {
 
 export interface IConnectionCallbacks extends INetworkingCallbacks {
 
-  on_ping?(resp: IMsgRespMap[MsgEnum.Ping], conn: INetworking): void;
   on_reconnecting?(attempt: number, conn: INetworking): void;
 
   on_rejoin?(resp: IRespRejoin, conn: INetworking): void;
@@ -75,6 +74,24 @@ export class Connection implements INetworking {
   join_room(opts: IJoinRoomOpts): void {
     this.send(MsgEnum.JoinRoom, { ...opts })
       .catch((error) => this.callbacks.call('on_room_join_failed', error, this));
+  }
+  leave_room(): void {
+    this.send(MsgEnum.ExitRoom, {}).catch(() => void 0);
+  }
+  start_room(): void {
+    this.send(MsgEnum.RoomStart, {}).catch(() => void 0);
+  }
+  set_ready(ready: boolean): void {
+    this.send(MsgEnum.ClientReady, { ready }).catch(() => void 0);
+  }
+  set_room_pwd(pwd: string): void {
+    this.send(MsgEnum.RoomPwd, { pwd }).catch(() => void 0);
+  }
+  set_room_sync(mode: TNetworkingSyncMode): void {
+    this.send(MsgEnum.RoomSync, { sync_mode: mode }).catch(() => void 0);
+  }
+  kick(client_id: string): void {
+    this.send(MsgEnum.Kick, { client_id }).catch(() => void 0);
   }
   async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
     await this.send(MsgEnum.Chat, { target, text });
@@ -468,7 +485,7 @@ export class Connection implements INetworking {
         this._sync_players();
         if (resp.client === this._client?.id)
           this._rtt = Date.now() - resp.time;
-        this.callbacks.call("on_ping", resp, this);
+        this.callbacks.call("on_ping", resp.client, resp.rtt, this);
         break;
       }
     }

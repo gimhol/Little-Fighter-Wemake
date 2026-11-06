@@ -798,9 +798,9 @@ export class NetworkLogic extends UIComponent {
         if (this.conn !== conn) return;
         this.on_room_change(room);
       },
-      on_ping: (resp) => {
+      on_ping: (client_id, rtt) => {
         if (this.conn !== conn) return;
-        this.on_ping(resp, conn);
+        this.on_ping(client_id, rtt, conn);
       },
       on_reconnecting: (attempt) => {
         if (this.conn !== conn) return;
@@ -1119,12 +1119,12 @@ export class NetworkLogic extends UIComponent {
     conn.set_players(names);
   }
 
-  private on_ping(resp: { client?: string; rtt?: number }, conn: Connection): void {
-    const id = resp.client;
+  private on_ping(client_id: string | undefined, rtt: number | undefined, conn: Connection): void {
+    const id = client_id;
     if (!id) return;
-    const rtt = id === conn.client?.id ? conn.rtt : resp.rtt;
-    if (!rtt || this.rtts[id] === rtt) return;
-    this.rtts[id] = rtt;
+    const value = id === conn.client?.id ? conn.rtt : rtt;
+    if (!value || this.rtts[id] === value) return;
+    this.rtts[id] = value;
     this.update_topbar();
     if (this.mode === 'room') {
       this.render_room_players();
