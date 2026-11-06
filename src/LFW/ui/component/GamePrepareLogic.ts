@@ -230,7 +230,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       const cell = (idx: number) => cells[idx]
       if (empty) {
         for (let c = 0; c < cells.length; c++) cell(c)?.set_text("", cell(c)?.text?.style)
-        cell(1)?.set_text(this.lfw.string('survival.board_empty'), cell(1)?.text?.style)
+        cell(1)?.set_text(this.lfw.t('survival.board_empty'), cell(1)?.text?.style)
         continue
       }
       const v = entries[i]!
@@ -238,11 +238,11 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       cell(1)?.set_text([v.nickname, v.player2].filter(Boolean).join(' & '), cell(1)?.text?.style)
       const fighters = [v.fighter, v.fighter2]
         .filter((x): x is string => !!x)
-        .map(x => this.lfw.string(x))
+        .map(x => this.lfw.t(x))
         .filter(Boolean)
       cell(2)?.set_text(fighters.join(' & '), cell(2)?.text?.style)
       cell(3)?.set_text(
-        i18n_fmt(this.lfw.string('survival.floor_reached'), v.score),
+        i18n_fmt(this.lfw.t('survival.floor_reached'), v.score),
         cell(3)?.text?.style,
       )
     }
@@ -251,11 +251,11 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       my_node.set_text(
         this._rank_mine
           ? i18n_fmt(
-            this.lfw.string('survival.my_rank_ranked'),
+            this.lfw.t('survival.my_rank_ranked'),
             this._rank_mine.rank,
-            i18n_fmt(this.lfw.string('survival.floor_reached'), this._rank_mine.score),
+            i18n_fmt(this.lfw.t('survival.floor_reached'), this._rank_mine.score),
           )
-          : this.lfw.string('survival.my_rank_unranked'),
+          : this.lfw.t('survival.my_rank_unranked'),
         my_node.text?.style,
       )
     }
@@ -278,7 +278,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       const selected = p === this.rank_period
       const style = node.style
       style.fill_style = selected ? '#ffffff' : '#9b9bff'
-      const txt = this.lfw.string(`survival.rank_period_${p}`)
+      const txt = this.lfw.t(`survival.rank_period_${p}`)
       node.set_text(txt, style)
       node.set_opacity(selected ? 1 : 0.5)
       if (!selected) continue

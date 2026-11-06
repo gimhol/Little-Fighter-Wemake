@@ -121,7 +121,7 @@ export class MoveTableLogic extends UIComponent {
     const zips = LFW.ZIPS.slice(1);
     if (!zips.length) return;
     this._loading = true;
-    this._char_label?.set_text(this.lfw.string("now_loading"));
+    this._char_label?.set_text(this.lfw.t("now_loading"));
     this.lfw.load(...zips).then(
       () => {
         this._loading = false;
@@ -239,13 +239,13 @@ export class MoveTableLogic extends UIComponent {
   private set_move_keys(node: UINode | null, move: IMoveInfo | undefined): void {
     if (!node) return;
     const key = move?.keys;
-    node.set_text(key ? this.lfw.string(key) : "");
+    node.set_text(key ? this.lfw.t(key) : "");
   }
 
   private set_move_name(node: UINode | null, move: IMoveInfo | undefined, prefix = ""): void {
     if (!node) return;
     const key = move?.name;
-    node.set_text(key ? prefix + this.lfw.string(key) : "");
+    node.set_text(key ? prefix + this.lfw.t(key) : "");
   }
 
   private update_move_labels(list: IMoveListData, move: IMoveInfo | undefined): void {
@@ -253,9 +253,9 @@ export class MoveTableLogic extends UIComponent {
     this.set_move_keys(this._keys_label, move);
     this._desc_label?.set_text(
       move?.desc
-        ? this.lfw.string(move.desc)
+        ? this.lfw.t(move.desc)
         : move?.mp
-          ? `${this.lfw.string("move_table.mp")}: ${move.mp}`
+          ? `${this.lfw.t("move_table.mp")}: ${move.mp}`
           : "",
     );
     const moves = list.moves;

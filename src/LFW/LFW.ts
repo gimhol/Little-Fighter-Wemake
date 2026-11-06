@@ -189,7 +189,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     for (const { node, key, resolved } of recs) {
       if (resolved) {
         const style = node.text?.style;
-        node.text = this.images.measure_text(this.string(key), style);
+        node.text = this.images.measure_text(this.t(key), style);
       } else {
         node.set_text(key, node.text?.style);
       }
@@ -816,15 +816,13 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.callbacks.call("on_enter_next_stage");
   }
 
-  string(name: string): string { return this._i18n.string(name) }
-  strings(name: string): string[] { return this._i18n.strings(name) }
-  string_with_args(name: string, ...args: string[]): string {
-    let ret = this.string(name);
+  t(name: string, ...args: string[]): string {
+    let ret = this._i18n.string(name)
     for (let i = 0; i < args.length; i++)
       ret = ret.split(`%${i + 1}`).join(`${args[i]}`);
     return ret;
   }
-
+  strings(name: string): string[] { return this._i18n.strings(name) }
 
   protected async load_builtin_ui(): Promise<UI.ICookedUIInfo[]> {
     const check = this.dispose_guard('load_builtin_ui');

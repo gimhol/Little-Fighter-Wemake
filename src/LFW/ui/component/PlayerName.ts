@@ -39,7 +39,7 @@ export class PlayerName extends UIComponent<IPlayerNameProps> {
     this._com = com;
     this._decided = true;
     this.node.text = new TextInfo({
-      text: prefix ? `${this.lfw.string(prefix)}${text}` : text,
+      text: prefix ? `${this.lfw.t(prefix)}${text}` : text,
       style: this.make_style(com),
     });
     this.node.visible = true
@@ -48,7 +48,7 @@ export class PlayerName extends UIComponent<IPlayerNameProps> {
   quit() {
     this._decided = void 0;
     this._com = void 0;
-    const text = this.lfw.string("char_menu.join_q")
+    const text = this.lfw.t("char_menu.join_q")
     this.node.text = new TextInfo({
       text,
       style: this.make_style(false),

@@ -52,7 +52,7 @@ export class UITextRenderer {
     const txt = ui.text;
 
     // 通过 lf2.string() 解析 i18n 文本
-    const text = txt?.text ? ui.lfw.string(txt.text) : '';
+    const text = txt?.text ? ui.lfw.t(txt.text) : '';
 
     const style = txt ? Style.from(txt.style) : void 0;
     if (text !== this._last_text || this._is_style_changed(style)) {

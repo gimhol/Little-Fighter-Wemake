@@ -173,7 +173,7 @@ export class NetworkSessionLogic extends UIComponent {
       return;
     }
     const address = conn.url || "";
-    const info = `${this.lfw.string("network.guest")}\u3000·\u3000${address}\u3000·\u3000${conn.rtt}ms`;
+    const info = `${this.lfw.t("network.guest")}\u3000·\u3000${address}\u3000·\u3000${conn.rtt}ms`;
     sub.set_text(fit_text(info, 300, sub));
   }
 }

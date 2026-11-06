@@ -122,7 +122,7 @@ export class NetworkRoomsLogic extends UIComponent {
     try {
       const version = { lfw_version: LFW.VERSION_NAME, data_infos: await LFW.collect_data_infos() };
       await conn.create_room({ min_players: 1, max_players: 4, ...version });
-      this.add_notice(this.lfw.string_with_args("network.sys_room_created", conn.room?.code || ""));
+      this.add_notice(this.lfw.t("network.sys_room_created", conn.room?.code || ""));
       this.clear_status();
     } catch (e) {
       this.set_status(this.error_text(e));
@@ -138,14 +138,14 @@ export class NetworkRoomsLogic extends UIComponent {
     const row = this.room_rows[index];
     const pwd = this.input_value(row?.children[ROOM_PWD_BG]?.children[0]).trim();
     if (room.need_pwd && !pwd) {
-      this.set_status(this.lfw.string("network.enter_pwd"));
+      this.set_status(this.lfw.t("network.enter_pwd"));
       return;
     }
     this.busy = true;
     try {
       const version = { lfw_version: LFW.VERSION_NAME, data_infos: await LFW.collect_data_infos() };
       await conn.join_room({ roomid: room.id, pwd: pwd || undefined, ...version });
-      this.add_notice(this.lfw.string_with_args("network.sys_room_joined", room.code || room.id));
+      this.add_notice(this.lfw.t("network.sys_room_joined", room.code || room.id));
       this.clear_status();
     } catch (e) {
       this.set_status(this.error_text(e));
@@ -188,16 +188,16 @@ export class NetworkRoomsLogic extends UIComponent {
   }
 
   private sync_label(mode?: RoomSyncMode): string {
-    if (mode === "lockstep") return this.lfw.string("network.sync_lockstep");
-    if (mode === "delay") return this.lfw.string("network.sync_delay");
-    return this.lfw.string("network.sync_auto");
+    if (mode === "lockstep") return this.lfw.t("network.sync_lockstep");
+    if (mode === "delay") return this.lfw.t("network.sync_delay");
+    return this.lfw.t("network.sync_auto");
   }
 
   private render_rooms(): void {
     const page_count = Math.max(1, Math.ceil(this.rooms.length / ROOM_PAGE_SIZE));
     if (this.page > page_count - 1) this.page = page_count - 1;
     const rooms = this.page_rooms();
-    this.rooms_total?.set_text(fit_text(this.lfw.string_with_args("network.rooms_total", String(this.rooms.length)), 168, this.rooms_total));
+    this.rooms_total?.set_text(fit_text(this.lfw.t("network.rooms_total", String(this.rooms.length)), 168, this.rooms_total));
     this.page_label?.set_text(`${this.page + 1} / ${page_count}`);
     if (this.no_rooms) this.no_rooms.visible = this.rooms.length === 0;
     if (this.btn_prev) {
@@ -215,11 +215,11 @@ export class NetworkRoomsLogic extends UIComponent {
       const room = rooms[i];
       row.visible = !!room;
       if (!room) continue;
-      row.children[ROOM_NAME]?.set_text(fit_text(room.title || `${this.lfw.string("network.room")} ${room.code ?? ""}`, 296, row.children[ROOM_NAME]));
+      row.children[ROOM_NAME]?.set_text(fit_text(room.title || `${this.lfw.t("network.room")} ${room.code ?? ""}`, 296, row.children[ROOM_NAME]));
       row.children[ROOM_CODE]?.set_text(fit_text(room.code ? `#${room.code}` : "", 92, row.children[ROOM_CODE]));
       const badge_bg = row.children[ROOM_BADGE_BG];
       const badge = badge_bg?.children[0];
-      badge?.set_text(fit_text(room.started ? this.lfw.string("network.running") : this.lfw.string("network.waiting"), 44, badge));
+      badge?.set_text(fit_text(room.started ? this.lfw.t("network.running") : this.lfw.t("network.waiting"), 44, badge));
       if (badge_bg) badge_bg.color = room.started ? "#4ade8033" : "#ffffff1f";
       if (badge) paint(badge, { fill_style: room.started ? "#86efac" : "#ffffffc7" });
       const lock_bg = row.children[ROOM_LOCK_BG];
@@ -228,12 +228,12 @@ export class NetworkRoomsLogic extends UIComponent {
       if (pwd_bg) pwd_bg.visible = !!room.need_pwd;
       const join = row.children[ROOM_JOIN];
       if (join) join.visible = !room.started;
-      row.children[ROOM_OWNER]?.set_text(fit_text(`${this.lfw.string("network.owner")} ${room.owner?.name || "-"}`, 144, row.children[ROOM_OWNER]));
+      row.children[ROOM_OWNER]?.set_text(fit_text(`${this.lfw.t("network.owner")} ${room.owner?.name || "-"}`, 144, row.children[ROOM_OWNER]));
       const meta = [
-        `${this.lfw.string("network.player_count")} ${this.room_count_text(room)}`,
+        `${this.lfw.t("network.player_count")} ${this.room_count_text(room)}`,
         this.sync_label(room.sync_mode),
         room.lfw_version ? `LFW ${this.version_short(room.lfw_version)}` : "",
-        room.data_infos?.length ? `${this.lfw.string("network.data_package")}×${room.data_infos.length}` : "",
+        room.data_infos?.length ? `${this.lfw.t("network.data_package")}×${room.data_infos.length}` : "",
       ].filter(Boolean).join("\u3000·\u3000");
       row.children[ROOM_META]?.set_text(fit_text(meta, 560, row.children[ROOM_META]));
     }
@@ -249,7 +249,7 @@ export class NetworkRoomsLogic extends UIComponent {
     for (const row of this.room_rows) {
       const input = row.children[ROOM_PWD_BG]?.children[0];
       const renderer = input?.renderer as IUINodeRenderer | undefined;
-      renderer?.set_input_placeholder?.(this.lfw.string("network.pwd_hint"));
+      renderer?.set_input_placeholder?.(this.lfw.t("network.pwd_hint"));
     }
   }
 

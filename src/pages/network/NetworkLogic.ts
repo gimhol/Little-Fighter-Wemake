@@ -617,7 +617,7 @@ export class NetworkLogic extends UIComponent {
   }
 
   private t(key: string, ...args: (string | number)[]): string {
-    let text = this.lfw.string(key);
+    let text = this.lfw.t(key);
     for (let i = 0; i < args.length; i++) text = text.split(`%${i + 1}`).join(`${args[i]}`);
     return text;
   }

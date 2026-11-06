@@ -10,9 +10,9 @@ export class ExtraZipText extends UIComponent {
     on_lang_changed: (_lang, _prev, lfw) => this.render(lfw),
   };
   protected render(lfw: LFW): void {
-    const extra_zips = lfw.string('DATA_LIST')
+    const extra_zips = lfw.t('DATA_LIST')
     if (extra_zips) {
-      const text = lfw.string('extra_data') + ':\n' + extra_zips
+      const text = lfw.t('extra_data') + ':\n' + extra_zips
       this.node.set_text(text)
     } else {
       this.node.set_text(' ')

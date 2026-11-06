@@ -189,7 +189,7 @@ export class ChatLogic extends UIComponent {
 
   private channel_label(target: TChatTarget): string {
     const key = target === "room" ? "network.room_chat" : "network.global";
-    return `[${this.lfw.string(key)}]`;
+    return `[${this.lfw.t(key)}]`;
   }
 
   private set_input_visible(visible: boolean): void {

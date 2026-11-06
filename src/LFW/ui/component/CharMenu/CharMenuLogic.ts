@@ -227,13 +227,13 @@ export class CharMenuLogic extends UIComponent<ICharMenuLogicProps> {
       }
       if (fighter_name) {
         const decided = state.step > SlotStep.FighterSel
-        if (state.random && !random_confirm) fighter_name.join(this.lfw.string('Random'), is_com, decided)
-        else if (state.fighter) fighter_name.join(this.lfw.string(state.fighter.base.name) || "noname", is_com, decided)
+        if (state.random && !random_confirm) fighter_name.join(this.lfw.t('Random'), is_com, decided)
+        else if (state.fighter) fighter_name.join(this.lfw.t(state.fighter.base.name) || "noname", is_com, decided)
       }
       if (team_name) {
         if (state.step >= SlotStep.TeamSel) {
           const team_info = Defines.TeamInfoMap[state.team]
-          const team_txt = this.lfw.string(team_info?.i18n ?? state.team)
+          const team_txt = this.lfw.t(team_info?.i18n ?? state.team)
           team_name.join(team_txt, is_com, state.step > SlotStep.TeamSel)
         } else {
           team_name.quit()

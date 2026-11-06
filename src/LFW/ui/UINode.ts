@@ -499,7 +499,7 @@ export class UINode implements IDebugging {
    * 若运行中切换了语言，新建/重开页面时会用当前语言重新测量（语言未变时直接复用原 txt_info）。
    */
   protected make_i18n_text(baked: TextInfo, key: string): TextInfo {
-    const resolved = this.lfw.string(key);
+    const resolved = this.lfw.t(key);
     if (resolved === baked.text) return baked;
     return this.lfw.images.measure_text(resolved, baked.style ?? this.data.style ?? void 0);
   }
@@ -534,7 +534,7 @@ export class UINode implements IDebugging {
     this._auto_size_key = key;
     const ti = (v.w && v.h)
       ? v
-      : this.lfw.images.measure_text(this.lfw.string(v.text), v.style);
+      : this.lfw.images.measure_text(this.lfw.t(v.text), v.style);
     this.resize((ti.w || 0) / (ti.scale || 1), (ti.h || 0) / (ti.scale || 1));
   }
 
@@ -548,7 +548,7 @@ export class UINode implements IDebugging {
    */
   protected _text_size_key(v: TextInfo): string {
     const s = v.style;
-    const text = this.lfw.string(v.text);
+    const text = this.lfw.t(v.text);
     return s instanceof Style
       ? `${text}\u0000v${s.version}`
       : `${text}\u0000${JSON.stringify(s ?? {})}`;

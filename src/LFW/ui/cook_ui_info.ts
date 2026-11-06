@@ -269,7 +269,7 @@ export async function cook_ui_info(
     ret.img = img
   }
   if (ret.img) ret.img_info = await ui_load_img(lfw, ret.img);
-  if (ret.i18n) ret.txt_info = lfw.images.measure_text(lfw.string(ret.i18n), ret.style)
+  if (ret.i18n) ret.txt_info = lfw.images.measure_text(lfw.t(ret.i18n), ret.style)
 
   const img = ret.img_info || ret.txt_info;
   if (raw.size) {

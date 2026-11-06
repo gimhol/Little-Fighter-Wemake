@@ -211,13 +211,13 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
             className={classNames(csses.tab, { [csses.active]: tab === "ctrl" })}
             onClick={() => { set_tab("ctrl"); set_editing(void 0); }}
           >
-            {lfw.string("ctrl_settings")}
+            {lfw.t("ctrl_settings")}
           </button>
           <button
             className={classNames(csses.tab, { [csses.active]: tab === "misc" })}
             onClick={() => { set_tab("misc"); set_editing(void 0); }}
           >
-            {lfw.string("misc_settings")}
+            {lfw.t("misc_settings")}
           </button>
           <button className={csses.close} onClick={on_close}>✕</button>
         </div>
@@ -263,7 +263,7 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
           })}
           {KEY_ROWS.map((gk) => (
             <Fragment key={gk}>
-              <div className={csses.label}>{lfw.string(KEY_I18N[gk])}</div>
+              <div className={csses.label}>{lfw.t(KEY_I18N[gk])}</div>
               {PLAYER_IDS.map((pid) => {
                 const player = lfw.players.get(pid);
                 const text = key_text(player, gk);
@@ -293,7 +293,7 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
         {tab === "misc" && (
         <>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("nickname")}</div>
+            <div className={csses.misc_label}>{lfw.t("nickname")}</div>
             <input
               className={classNames(csses.name_input, csses.misc_input)}
               value={nickname}
@@ -311,39 +311,39 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
             />
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("language")}</div>
+            <div className={csses.misc_label}>{lfw.t("language")}</div>
             <div className={csses.switcher}>
               <button className={csses.arrow} onClick={() => step_lang(-1)}>◀</button>
-              <div className={csses.switcher_label}>{lfw.string(LANG_ITEMS[lang_index])}</div>
+              <div className={csses.switcher_label}>{lfw.t(LANG_ITEMS[lang_index])}</div>
               <button className={csses.arrow} onClick={() => step_lang(1)}>▶</button>
             </div>
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("main_volume")}</div>
+            <div className={csses.misc_label}>{lfw.t("main_volume")}</div>
             <HSlider value={lfw.sounds.volume()} onChange={(v) => lfw.sounds.set_volume(v)} />
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("bgm")}</div>
+            <div className={csses.misc_label}>{lfw.t("bgm")}</div>
             <div className={csses.toggle_cell} onClick={() => lfw.sounds.set_bgm_muted(!lfw.sounds.bgm_muted())}>
-              {lfw.string(lfw.sounds.bgm_muted() ? "disable" : "enable")}
+              {lfw.t(lfw.sounds.bgm_muted() ? "disable" : "enable")}
             </div>
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("bgm_volume")}</div>
+            <div className={csses.misc_label}>{lfw.t("bgm_volume")}</div>
             <HSlider value={lfw.sounds.bgm_volume()} onChange={(v) => lfw.sounds.set_bgm_volume(v)} />
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("sfx")}</div>
+            <div className={csses.misc_label}>{lfw.t("sfx")}</div>
             <div className={csses.toggle_cell} onClick={() => lfw.sounds.set_sound_muted(!lfw.sounds.sound_muted())}>
-              {lfw.string(lfw.sounds.sound_muted() ? "disable" : "enable")}
+              {lfw.t(lfw.sounds.sound_muted() ? "disable" : "enable")}
             </div>
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("sfx_volume")}</div>
+            <div className={csses.misc_label}>{lfw.t("sfx_volume")}</div>
             <HSlider value={lfw.sounds.sound_volume()} onChange={(v) => lfw.sounds.set_sound_volume(v)} />
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("team_outline")}</div>
+            <div className={csses.misc_label}>{lfw.t("team_outline")}</div>
             <div
               className={classNames(csses.toggle_cell, { [csses.disabled]: !owner })}
               onClick={() => {
@@ -351,24 +351,24 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
                 toggle_team_outline(lfw);
               }}
             >
-              {lfw.string(lfw.world.dataset.outline_enabled ? "enable" : "disable")}
+              {lfw.t(lfw.world.dataset.outline_enabled ? "enable" : "disable")}
             </div>
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("render_fps")}</div>
+            <div className={csses.misc_label}>{lfw.t("render_fps")}</div>
             <div className={csses.switcher}>
               <button className={csses.arrow} onClick={() => step_render(-1)}>◀</button>
-              <div className={csses.switcher_label}>{lfw.string(RENDER_RATE_ITEMS[render_index])}</div>
+              <div className={csses.switcher_label}>{lfw.t(RENDER_RATE_ITEMS[render_index])}</div>
               <button className={csses.arrow} onClick={() => step_render(1)}>▶</button>
             </div>
           </div>
           <div className={csses.misc_row}>
-            <div className={csses.misc_label}>{lfw.string("stats_visible")}</div>
+            <div className={csses.misc_label}>{lfw.t("stats_visible")}</div>
             <div
               className={csses.toggle_cell}
               onClick={() => lfw.broadcast("stats_visible_set:" + (stats_visible ? 0 : 1))}
             >
-              {lfw.string(stats_visible ? "enable" : "disable")}
+              {lfw.t(stats_visible ? "enable" : "disable")}
             </div>
           </div>
         </>
