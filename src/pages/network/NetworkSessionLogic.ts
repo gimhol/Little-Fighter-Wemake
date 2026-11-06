@@ -6,7 +6,7 @@ import { peek_chat } from "@/Net/chat_overlay";
 import { chat_store } from "@/Net/chat_store";
 import { SystemPlayerInfo } from "@/Net/SystemPlayerInfo";
 import type { IConnectionCallbacks } from "./Connection";
-import { bind_button, fit_text, net_connection } from "./ui_helpers";
+import { fit_text, net_connection } from "./ui_helpers";
 
 const ROOM_PAGE_ID = "network_room_page";
 const CONNECT_PAGE_ID = "network_modal";
@@ -55,7 +55,7 @@ export class NetworkSessionLogic extends UIComponent {
   override on_start(): void {
     Ditto.Networking.callbacks.add(this.net_cb);
     this.top_sub = this.node.search_node("network_top_sub") ?? undefined;
-    bind_button(this.lfw, this.node.search_node("network_btn_disconnect") ?? undefined, () => this.disconnect(), "cancel");
+    this.node.search_node("network_btn_disconnect")?.callbacks.add({ on_click: () => this.disconnect() });
     chat_store.set_in_room(false);
 
     const conn = net_connection();

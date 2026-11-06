@@ -1,4 +1,4 @@
-import { Ditto, type INetworking, type IStyle, type LFW } from "@/LFW";
+import { Ditto, type INetworking, type IStyle } from "@/LFW";
 import { Style } from "@/LFW/ui/Style";
 import type { UINode } from "@/LFW/ui/UINode";
 
@@ -45,78 +45,4 @@ export function paint(node: UINode | undefined, patch: Partial<IStyle>): void {
   if (!(node.text.style instanceof Style)) style.assign(src);
   style.assign(patch);
   node.set_text(node.text.text, style);
-}
-
-/** 按钮的 hover / press / click 反馈 */
-export function bind_button(
-  lfw: LFW,
-  node: UINode | undefined,
-  fn: () => void,
-  sound: "ok" | "cancel" = "ok",
-): void {
-  if (!node) return;
-  const hover_fill = "#eaf1ff";
-  const hover_underline_color = "#ffffff";
-  let hovered = false;
-  let pressed = false;
-  let fill: string | undefined;
-  let underline_color: string | undefined;
-  let underline_width: number | undefined;
-  let sx = 1;
-  let sy = 1;
-  let sz = 1;
-  const capture = (): void => {
-    const style = node.text?.style;
-    fill = style?.fill_style;
-    underline_color = style?.underline_color;
-    underline_width = style?.underline_width;
-  };
-  const restore = (): void => {
-    if (!hovered) return;
-    hovered = false;
-    pressed = false;
-    paint(node, { fill_style: fill, underline_color, underline_width });
-    node.set_scale(sx, sy, sz);
-  };
-  node.callbacks.add({
-    on_pointer_enter: () => {
-      if (node.disabled || hovered) return;
-      hovered = true;
-      capture();
-      sx = node.scale.x;
-      sy = node.scale.y;
-      sz = node.scale.z;
-      paint(node, {
-        fill_style: hover_fill,
-        underline_color: hover_underline_color,
-        underline_width: 2,
-      });
-      node.set_scale(sx * 1.06, sy * 1.06, sz);
-    },
-    on_pointer_leave: restore,
-    on_hide: restore,
-    on_pointer_cancel: restore,
-    on_pointer_down: () => {
-      if (node.disabled) return;
-      pressed = true;
-      node.set_scale(sx * 0.96, sy * 0.96, sz);
-    },
-    on_pointer_up: () => {
-      if (!pressed) return;
-      pressed = false;
-      node.set_scale(hovered ? sx * 1.06 : sx, hovered ? sy * 1.06 : sy, sz);
-    },
-    on_click: () => {
-      if (node.disabled) return;
-      lfw.sounds.play_preset(sound);
-      fn();
-      if (!hovered) return;
-      const style = node.text?.style;
-      if (style?.fill_style !== hover_fill) fill = style?.fill_style;
-      if (style?.underline_color !== hover_underline_color || style?.underline_width !== 2) {
-        underline_color = style?.underline_color;
-        underline_width = style?.underline_width;
-      }
-    },
-  });
 }

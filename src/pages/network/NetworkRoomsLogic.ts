@@ -1,5 +1,6 @@
 import type { INetworkingCallbacks, IUINodeRenderer } from "@/LFW";
 import { Ditto, LFW } from "@/LFW";
+import { LabelButton } from "@/LFW/ui/component/LabelButton";
 import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import type { UINode } from "@/LFW/ui/UINode";
@@ -7,7 +8,7 @@ import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
 import type { RoomSyncMode } from "@/Net";
 import { chat_store } from "@/Net/chat_store";
-import { bind_button, fit_text, net_connection, paint } from "./ui_helpers";
+import { fit_text, net_connection, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
 
@@ -32,6 +33,7 @@ export class NetworkRoomsLogic extends UIComponent {
   private bound = false;
 
   private btn_auto: UINode | undefined;
+  private btn_auto_label: UINode | undefined;
   private rooms_total: UINode | undefined;
   private room_rows: UINode[] = [];
   private no_rooms: UINode | undefined;
@@ -57,6 +59,7 @@ export class NetworkRoomsLogic extends UIComponent {
     const q = (id: string) => this.node.search_node(id) ?? undefined;
     this.bound = true;
     this.btn_auto = q("network_btn_auto");
+    this.btn_auto_label = this.btn_auto?.find_component(LabelButton)?.props.back_label;
     this.rooms_total = q("network_rooms_total");
     this.no_rooms = q("network_no_rooms");
     this.btn_prev = q("network_btn_prev");
@@ -67,16 +70,16 @@ export class NetworkRoomsLogic extends UIComponent {
 
     for (let i = 0; i < this.room_rows.length; i++) {
       const row = this.room_rows[i];
-      bind_button(this.lfw, row.children[ROOM_JOIN], () => void this.join_room(i));
+      row.children[ROOM_JOIN]?.callbacks.add({ on_click: () => void this.join_room(i) });
       const input = row.children[ROOM_PWD_BG]?.children[0]?.find_component(TextInput);
       if (input) input.on_submit = () => void this.join_room(i);
     }
 
-    bind_button(this.lfw, q("network_btn_create"), () => void this.create_room());
-    bind_button(this.lfw, q("network_btn_refresh"), () => this.request_rooms());
-    bind_button(this.lfw, this.btn_auto, () => this.toggle_auto_refresh());
-    bind_button(this.lfw, this.btn_prev, () => this.goto_page(this.page - 1));
-    bind_button(this.lfw, this.btn_next, () => this.goto_page(this.page + 1));
+    q("network_btn_create")?.callbacks.add({ on_click: () => void this.create_room() });
+    q("network_btn_refresh")?.callbacks.add({ on_click: () => this.request_rooms() });
+    this.btn_auto?.callbacks.add({ on_click: () => this.toggle_auto_refresh() });
+    this.btn_prev?.callbacks.add({ on_click: () => this.goto_page(this.page - 1) });
+    this.btn_next?.callbacks.add({ on_click: () => this.goto_page(this.page + 1) });
 
     Ditto.Networking.callbacks.add(this.net_cb);
     this.rooms = [...Ditto.Networking.rooms];
@@ -95,6 +98,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.stop_auto_refresh();
     Ditto.Networking.callbacks.del(this.net_cb);
     this.btn_auto = undefined;
+    this.btn_auto_label = undefined;
     this.rooms_total = undefined;
     this.room_rows = [];
     this.no_rooms = undefined;
@@ -281,7 +285,7 @@ export class NetworkRoomsLogic extends UIComponent {
   }
 
   private update_auto_button(): void {
-    paint(this.btn_auto, {
+    paint(this.btn_auto_label, {
       fill_style: this.auto_refresh ? "#ffffff" : "#a8b9ff",
       underline_color: this.auto_refresh ? "#ffffff" : undefined,
       underline_width: this.auto_refresh ? 1 : 0,
