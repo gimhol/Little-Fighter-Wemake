@@ -28,7 +28,7 @@ import { array_del } from './utils/array/array_del';
 import { loop_offset } from './utils/container_help/loop_offset';
 import { MersenneTwister } from './utils/math/MersenneTwister';
 import { is_str } from './utils/type_check/is_str';
-import { decodeUTF8, encodeUTF8 } from './utils/utf8';
+import { encodeUTF8 } from './utils/utf8';
 import { World } from "./World";
 import { ZipMgr, type ILoadedZip } from "./ZipMgr";
 

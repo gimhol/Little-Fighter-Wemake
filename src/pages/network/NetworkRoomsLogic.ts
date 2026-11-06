@@ -11,6 +11,7 @@ import { chat_store } from "@/Net/chat_store";
 import { fit_text, net_connection, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
+const AUTO_REFRESH_MS = 3000;
 
 const ROOM_NAME = 0;
 const ROOM_CODE = 1;
@@ -28,7 +29,7 @@ export class NetworkRoomsLogic extends UIComponent {
   private rooms: IRoomInfo[] = [];
   private page = 0;
   private auto_refresh = true;
-  private auto_timer = 0;
+  private auto_elapsed = 0;
   private busy = false;
   private bound = false;
 
@@ -86,7 +87,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.apply_placeholders();
     this.update_auto_button();
     this.render_rooms();
-    this.start_auto_refresh();
+    this.request_rooms();
   }
 
   override on_resume(): void {
@@ -95,7 +96,6 @@ export class NetworkRoomsLogic extends UIComponent {
 
   override on_stop(): void {
     this.bound = false;
-    this.stop_auto_refresh();
     Ditto.Networking.callbacks.del(this.net_cb);
     this.btn_auto = undefined;
     this.btn_auto_label = undefined;
@@ -163,20 +163,16 @@ export class NetworkRoomsLogic extends UIComponent {
   private toggle_auto_refresh(): void {
     this.auto_refresh = !this.auto_refresh;
     this.update_auto_button();
-    this.start_auto_refresh();
+    this.auto_elapsed = 0;
+    if (this.auto_refresh) this.request_rooms();
   }
 
-  private start_auto_refresh(): void {
-    this.stop_auto_refresh();
+  override update(dt: number): void {
     if (!this.auto_refresh || !this.bound) return;
-    void this.request_rooms();
-    this.auto_timer = window.setInterval(() => void this.request_rooms(), 3000);
-  }
-
-  private stop_auto_refresh(): void {
-    if (!this.auto_timer) return;
-    clearInterval(this.auto_timer);
-    this.auto_timer = 0;
+    this.auto_elapsed += dt;
+    if (this.auto_elapsed < AUTO_REFRESH_MS) return;
+    this.auto_elapsed = 0;
+    this.request_rooms();
   }
 
   private page_rooms(): IRoomInfo[] {
