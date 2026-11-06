@@ -1,4 +1,5 @@
 import type { IStyle } from "../defines/IStyle";
+import type { IFlexStyleData } from "./flex_style";
 import type { IComponentInfo } from "./IComponentInfo";
 import type { IUIAction } from "./IUIAction";
 import type { IUIImgInfo } from "./IUIImgInfo.dat";
@@ -35,6 +36,20 @@ export interface IUIInfo {
   name?: string;
 
   pos?: number[] | string;
+  /**
+   * flex 布局声明（子项属性与容器属性共用）
+   *
+   * 支持对象，或 CSS 声明风格的字符串：`"display:flex; direction:column; gap:6"`。
+   * 未声明 `display: flex` 时节点保持原有的绝对定位行为。
+   *
+   * XML 里也可以拆成属性写：
+   * `<node id="menu" size="200,120" flex="display:flex; direction:column; gap:6; align:center">`
+   * 或 `<node id="menu" size="200,120" display="flex" direction="column" gap="6" align="center">`
+   *
+   * @type {(IFlexStyleData | string)}
+   * @memberof IUIInfo
+   */
+  flex?: IFlexStyleData | string;
   opacity?: number | string;
   center?: number[] | string;
   scale?: number[] | string;

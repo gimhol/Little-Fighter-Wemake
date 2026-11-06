@@ -8,6 +8,8 @@ import { round_float } from '../utils/math/round_float';
 import { is_num } from '../utils/type_check/is_num';
 import type { ICookedUIInfo } from "./ICookedUIInfo";
 import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
+import { apply_flex_layout } from "./flex_layout";
+import { FlexStyle } from "./flex_style";
 import type { IUICallback } from "./IUICallback";
 import type { IUIInfo } from "./IUIInfo.dat";
 import type { IUIKeyEvent } from "./IUIKeyEvent";
@@ -331,6 +333,31 @@ export class UINode implements IDebugging {
     for (const c of this._linked_singletons) c.on_link?.(this);
   }
 
+  get is_flex(): boolean { return this.flex.display === "flex"; }
+
+  invalidate_flex(): void {
+    if (this._flex_dirty) return;
+    this._flex_dirty = true;
+    this._parent?.invalidate_flex();
+  }
+
+  flush_flex(): void {
+    if (!this._flex_dirty) return;
+    this._flex_dirty = false;
+    if (this.is_flex) {
+      this._applying_flex = true;
+      apply_flex_layout(this);
+      this._applying_flex = false;
+      this._flex_dirty = false;
+    }
+    for (const child of this._children) child.flush_flex();
+  }
+
+  private on_flex_change(): void {
+    if (this.is_flex) this._flex_dirty = true;
+    this._parent?.invalidate_flex();
+  }
+
   /** 光标是否在本节点上 */
   get pointer_over() { return this._pointer_over }
   /** 光标是否在本节点中按下 */
@@ -340,7 +367,10 @@ export class UINode implements IDebugging {
   set_visible(v: boolean): this {
     const prev = this.visible;
     this._visible = v;
-    if (prev !== this.visible) this.invoke_all_visible()
+    if (prev !== this.visible) {
+      this.invoke_all_visible();
+      this._parent?.invalidate_flex();
+    }
     if (!v && !this.focused_node?.visible) this.focused_node = void 0
     return this;
   }
@@ -364,6 +394,8 @@ export class UINode implements IDebugging {
     this._cache_rect = void 0;
     this._cache_geo = void 0;
     this._cache_global_pos = void 0;
+    if (this.is_flex) this._flex_dirty = true;
+    if (!this._parent?._applying_flex) this._parent?.invalidate_flex();
     return this;
   }
   set_x(v: number): this { return this.move_to(v); }
@@ -399,6 +431,7 @@ export class UINode implements IDebugging {
     this._cache_rect = void 0;
     this._cache_geo = void 0;
     this._cache_global_pos = void 0;
+    this._parent?.invalidate_flex();
     return this;
   }
 
@@ -418,6 +451,9 @@ export class UINode implements IDebugging {
 
 
   renderer: IUINodeRenderer;
+  readonly flex: FlexStyle;
+  protected _flex_dirty: boolean = false;
+  protected _applying_flex: boolean = false;
 
   constructor(lfw: LFW, data: ICookedUIInfo, parent?: UINode, layer?: UILayer) {
     this.lfw = lfw;
@@ -436,6 +472,9 @@ export class UINode implements IDebugging {
     this.pos.set(...this.data.pos);
     this.size.set(...this.data.size);
     this.scale.set(...this.data.scale);
+    this.flex = new FlexStyle(this.data.flex);
+    this.flex.on_change = () => this.on_flex_change();
+    this._flex_dirty = this.is_flex;
     const txt_info = this.data.txt_info;
     this.text = txt_info && this.data.i18n
       ? this.make_i18n_text(txt_info, this.data.i18n)
@@ -524,8 +563,7 @@ export class UINode implements IDebugging {
     const { x: dw, y: dh } = this.size;
     const l = px - round(cx * dw);
     const t = py - round(cy * dh);
-    const [w, h] = this.data.size;
-    return l <= x && t <= y && l + w >= x && t + h >= y;
+    return l <= x && t <= y && l + dw >= x && t + dh >= y;
   }
   on_pointer_down(e: LFWPointerEvent) {
     this._pointer_down[e.button] = 1;
@@ -592,6 +630,7 @@ export class UINode implements IDebugging {
   }
 
   on_resume() {
+    this.flush_flex();
     if (!this.parent) {
       this.focused_node = this._state.focused_node;
       if (this._visible) this.invoke_all_visible();
@@ -662,11 +701,13 @@ export class UINode implements IDebugging {
     for (const component of ret._components)
       component.on_add?.();
     ret.fire_singleton_links();
+    ret.flush_flex();
     return ret;
   }
 
   add_child(node: UINode): this {
     this._children.push(node);
+    this.invalidate_flex();
     return this;
   }
 
@@ -747,6 +788,7 @@ export class UINode implements IDebugging {
   }
 
   update(dt: number) {
+    this.flush_flex();
     if (
       this._prev_size.x !== this.size.x ||
       this._prev_size.y !== this.size.y ||
@@ -780,7 +822,10 @@ export class UINode implements IDebugging {
       this._del_components.length = 0;
     }
 
-    for (const i of this.children) if (!i.disabled) i.update(dt);
+    for (const i of this.children) {
+      i.flush_flex();
+      if (!i.disabled) i.update(dt);
+    }
   }
 
   on_key_down(e: IUIKeyEvent) {

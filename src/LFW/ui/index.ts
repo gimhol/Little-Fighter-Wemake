@@ -16,6 +16,8 @@ export * from "./UIEvent";
 export * from "./UIImgLoader";
 export * from "./UINode";
 export * from "./UILayer";
+export * from "./flex_layout";
+export * from "./flex_style";
 export * from "./cook_ui_info";
 export * from "./read_info_value";
 export * from "./ui_load_img";

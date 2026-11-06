@@ -7,6 +7,7 @@ import { is_num_arr } from '../utils/type_check/is_num';
 import { is_str } from '../utils/type_check/is_str';
 import type { Unsafe } from "../utils/type_check/Unsafe";
 import type { IComponentInfo } from "./IComponentInfo";
+import { normalize_flex_style } from "./flex_style";
 import type { ICookedUIInfo } from "./ICookedUIInfo";
 import type { IUIAction } from "./IUIAction";
 import type { INinePatch, IUIImgInfo } from "./IUIImgInfo.dat";
@@ -179,6 +180,7 @@ export async function cook_ui_info(
     if (is_num_arr(v)) return v;
     return parse_ui_value(ret, null, v)
   }
+  ret.flex            /**/ = normalize_flex_style(raw.flex);
   ret.pos             /**/ = read_nums(parse_nums(raw.pos), 3)
   ret.scale           /**/ = read_nums(parse_nums(raw.scale), 3, 1)
   ret.center          /**/ = read_nums(parse_nums(raw.center), 3)

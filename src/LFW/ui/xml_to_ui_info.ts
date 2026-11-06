@@ -5,6 +5,23 @@ import type { IUIInfo, TComponentInfo } from "./IUIInfo.dat";
 
 const ACTION_PLACES = new Set(['click', 'resume', 'pause', 'start', 'stop']);
 
+/** `flex="..."` 之外的简写属性，避免在 XML 里写一长串声明 */
+const FLEX_ATTRS = [
+  'display', 'direction', 'wrap', 'justify', 'align', 'align_content', 'align_self',
+  'gap', 'row_gap', 'col_gap', 'padding', 'grow', 'shrink', 'basis', 'order',
+] as const;
+
+function parse_flex_attrs(el: IXMLElement): string | Record<string, string> | undefined {
+  const inline = el.attr('flex');
+  if (inline != null) return inline;
+  const flex: Record<string, string> = {};
+  for (const name of FLEX_ATTRS) {
+    const value = el.attr(name);
+    if (value != null) flex[name] = value;
+  }
+  return Object.keys(flex).length ? flex : void 0;
+}
+
 function parse_action_children(place: IXMLElement): string | string[] {
   const actions = place.children.filter(c => c.tag === 'action');
   if (actions.length) {
@@ -48,6 +65,7 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   ret.outlineColor = el.attr('outlineColor');
   ret.template = el.attr('template');
   ret.auto_focus = el.attr('auto_focus') === 'true' ? true : void 0;
+  ret.flex = parse_flex_attrs(el);
 
   // number arrays (comma-separated)
   ret.pos = el.nums_attr('pos');
