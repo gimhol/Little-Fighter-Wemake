@@ -6,7 +6,7 @@ import { peek_chat } from "@/Net/chat_overlay";
 import { chat_store } from "@/Net/chat_store";
 import { SystemPlayerInfo } from "@/Net/SystemPlayerInfo";
 import type { IConnectionCallbacks } from "./Connection";
-import { fit_text, net_connection } from "./ui_helpers";
+import { fit_text } from "./ui_helpers";
 
 const ROOM_PAGE_ID = "network_room_page";
 const CONNECT_PAGE_ID = "network_modal";
@@ -29,8 +29,8 @@ export class NetworkSessionLogic extends UIComponent {
 
   private readonly net_cb: INetworkingCallbacks = {
     on_register: () => {
-      const conn = net_connection();
-      if (conn && conn !== this.conn) this.adopt_connection(conn);
+      const conn = Ditto.Networking;
+      if (conn !== this.conn) this.adopt_connection(conn);
     },
   };
 
@@ -39,10 +39,8 @@ export class NetworkSessionLogic extends UIComponent {
       const active = this.conn;
       if (active && conn === active) this.on_close(reason, active);
     },
-    on_room_change: (room, conn) => {
-      if (conn !== this.conn || !room) return;
-      this.lfw.layers.set_page({ id: ROOM_PAGE_ID }, 0);
-    },
+    on_room_created: (_room, conn) => this.enter_room(conn),
+    on_room_joined: (_room, conn) => this.enter_room(conn),
     on_message: (resp, conn) => {
       const active = this.conn;
       if (active && conn === active) this.on_message(resp, active);
@@ -58,8 +56,8 @@ export class NetworkSessionLogic extends UIComponent {
     this.node.search_node("network_btn_disconnect")?.callbacks.add({ on_click: () => this.disconnect() });
     chat_store.set_in_room(false);
 
-    const conn = net_connection();
-    if (!conn) {
+    const conn = Ditto.Networking;
+    if (!conn.opened) {
       Ditto.warn(`[${NetworkSessionLogic.TAG}::on_start] no active connection`);
       this.show_connect_modal("连接已断开，请重新连接。");
       return;
@@ -76,6 +74,11 @@ export class NetworkSessionLogic extends UIComponent {
     this.detach_connection();
     this.unwatch_player_names();
     this.top_sub = undefined;
+  }
+
+  private enter_room(conn: INetworking): void {
+    if (conn !== this.conn) return;
+    this.lfw.layers.set_page({ id: ROOM_PAGE_ID }, 0);
   }
 
   private adopt_connection(conn: INetworking): void {

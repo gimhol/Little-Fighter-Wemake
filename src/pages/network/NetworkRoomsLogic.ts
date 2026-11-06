@@ -8,7 +8,7 @@ import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
 import type { RoomSyncMode } from "@/Net";
 import { chat_store } from "@/Net/chat_store";
-import { fit_text, net_connection, paint } from "./ui_helpers";
+import { fit_text, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
 const AUTO_REFRESH_MS = 3000;
@@ -53,6 +53,11 @@ export class NetworkRoomsLogic extends UIComponent {
       this.rooms = [...rooms];
       this.render_rooms();
     },
+    on_room_failed: (error) => {
+      if (!this.bound) return;
+      this.busy = false;
+      this.set_status(this.error_text(error));
+    },
   };
 
   override on_start(): void {
@@ -76,8 +81,8 @@ export class NetworkRoomsLogic extends UIComponent {
       if (input) input.on_submit = () => void this.join_room(i);
     }
 
-    q("network_btn_create")?.callbacks.add({ on_click: () => void this.create_room() });
-    q("network_btn_refresh")?.callbacks.add({ on_click: () => this.request_rooms() });
+    q("network_btn_create")?.callbacks.add({ on_click: () => this.create_room() });
+    q("network_btn_refresh")?.callbacks.add({ on_click: () => Ditto.Networking.refresh_rooms(this.page) });
     this.btn_auto?.callbacks.add({ on_click: () => this.toggle_auto_refresh() });
     this.btn_prev?.callbacks.add({ on_click: () => this.goto_page(this.page - 1) });
     this.btn_next?.callbacks.add({ on_click: () => this.goto_page(this.page + 1) });
@@ -87,7 +92,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.apply_placeholders();
     this.update_auto_button();
     this.render_rooms();
-    this.request_rooms();
+    Ditto.Networking.refresh_rooms(this.page);
   }
 
   override on_resume(): void {
@@ -109,32 +114,30 @@ export class NetworkRoomsLogic extends UIComponent {
     this.lfw.callbacks.del(this.lfw_cb);
   }
 
-  private request_rooms(): void {
-    const conn = net_connection();
-    if (!conn || conn.room || !this.bound) return;
-    conn.refresh_rooms(this.page);
-  }
-
-  private async create_room(): Promise<void> {
-    const conn = net_connection();
-    if (!conn || this.busy) return;
+  private create_room(): void {
+    if (this.busy) return;
     this.busy = true;
-    try {
-      const version = { lfw_version: LFW.VERSION_NAME, data_infos: await LFW.collect_data_infos() };
-      await conn.create_room({ min_players: 1, max_players: 4, ...version });
-      this.add_notice(this.lfw.t("network.sys_room_created", conn.room?.code || ""));
-      this.clear_status();
-    } catch (e) {
-      this.set_status(this.error_text(e));
-    } finally {
-      this.busy = false;
-    }
+    void LFW.collect_data_infos()
+      .then((data_infos) => {
+        Ditto.Networking.create_room(
+          { min_players: 1, max_players: 4, lfw_version: LFW.VERSION_NAME, data_infos },
+          (room) => {
+            this.busy = false;
+            this.add_notice(this.lfw.t("network.sys_room_created", room?.code || ""));
+            this.clear_status();
+          },
+        );
+      })
+      .catch((e) => {
+        this.busy = false;
+        this.set_status(this.error_text(e));
+      });
   }
 
   private async join_room(index: number): Promise<void> {
-    const conn = net_connection();
+    const conn = Ditto.Networking;
     const room = this.page_rooms()[index];
-    if (!conn || !room?.id || this.busy) return;
+    if (!conn.opened || !room?.id || this.busy) return;
     const row = this.room_rows[index];
     const pwd = this.input_value(row?.children[ROOM_PWD_BG]?.children[0]).trim();
     if (room.need_pwd && !pwd) {
@@ -147,8 +150,8 @@ export class NetworkRoomsLogic extends UIComponent {
       await conn.join_room({ roomid: room.id, pwd: pwd || undefined, ...version });
       this.add_notice(this.lfw.t("network.sys_room_joined", room.code || room.id));
       this.clear_status();
-    } catch (e) {
-      this.set_status(this.error_text(e));
+    } catch {
+      // 失败提示统一走 on_room_failed
     } finally {
       this.busy = false;
     }
@@ -164,7 +167,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.auto_refresh = !this.auto_refresh;
     this.update_auto_button();
     this.auto_elapsed = 0;
-    if (this.auto_refresh) this.request_rooms();
+    if (this.auto_refresh) Ditto.Networking.refresh_rooms(this.page);
   }
 
   override update(dt: number): void {
@@ -172,7 +175,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.auto_elapsed += dt;
     if (this.auto_elapsed < AUTO_REFRESH_MS) return;
     this.auto_elapsed = 0;
-    this.request_rooms();
+    Ditto.Networking.refresh_rooms(this.page);
   }
 
   private page_rooms(): IRoomInfo[] {

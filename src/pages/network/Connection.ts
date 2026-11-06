@@ -2,7 +2,7 @@ import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
 import type {
   IConnectServerOpts, ICreateRoomOpts, IJoinRoomOpts, INetworking, INetworkingCallbacks,
-  TNetworkingChatTarget
+  TCreateRoomCallback, TNetworkingChatTarget
 } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
@@ -66,13 +66,19 @@ export class Connection implements INetworking {
     const offset = page_index * limit;
     this.send(MsgEnum.ListRooms, { offset, limit }, { loose: true }).catch(() => void 0);
   }
-  async create_room(opts: ICreateRoomOpts = {}): Promise<IRoomInfo | undefined> {
-    const resp = await this.send(MsgEnum.CreateRoom, { ...opts });
-    return resp.room;
+  create_room(opts: ICreateRoomOpts = {}, callback?: TCreateRoomCallback): void {
+    this.send(MsgEnum.CreateRoom, { ...opts })
+      .then((resp) => callback?.(resp.room))
+      .catch((error) => this.callbacks.call('on_room_failed', error, this));
   }
   async join_room(opts: IJoinRoomOpts): Promise<IRoomInfo | undefined> {
-    const resp = await this.send(MsgEnum.JoinRoom, { ...opts });
-    return resp.room;
+    try {
+      const resp = await this.send(MsgEnum.JoinRoom, { ...opts });
+      return resp.room;
+    } catch (error) {
+      this.callbacks.call('on_room_failed', error, this);
+      throw error;
+    }
   }
   async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
     await this.send(MsgEnum.Chat, { target, text });
@@ -191,8 +197,10 @@ export class Connection implements INetworking {
     this._cancel_reconnect();
     this._rejoin_provider = void 0;
     this._resume_client_id = void 0;
-    if (this.room)
+    if (this.room) {
       this.callbacks.call('on_room_change', this.room = void 0, this)
+      this.callbacks.call('on_room_leaved', this)
+    }
     if (this.rooms.length)
       this.callbacks.call('on_rooms_change', this.rooms = [], this)
     this.callbacks.call('on_close', reason, this)
@@ -396,10 +404,16 @@ export class Connection implements INetworking {
   handle_resp(resp: TResp) {
     this.callbacks.call('on_message', resp, this)
     switch (resp.type) {
-      case MsgEnum.JoinRoom:
       case MsgEnum.CreateRoom:
-        this.callbacks.call('on_room_change', this.room = resp.room, this)
+      case MsgEnum.JoinRoom: {
+        const room = (this.room = resp.room)
+        this.callbacks.call('on_room_change', room, this)
+        if (room) {
+          if (resp.type === MsgEnum.CreateRoom) this.callbacks.call('on_room_created', room, this)
+          else this.callbacks.call('on_room_joined', room, this)
+        }
         break;
+      }
       case MsgEnum.RoomSync:
         this.callbacks.call('on_room_change', this.room = resp.room, this)
         break;
@@ -409,11 +423,13 @@ export class Connection implements INetworking {
         break;
       case MsgEnum.CloseRoom:
         this.callbacks.call('on_room_change', this.room = void 0, this)
+        this.callbacks.call('on_room_leaved', this)
         break;
       case MsgEnum.ExitRoom:
       case MsgEnum.Kick: {
-        const room = resp.client?.id === this._client?.id ? void 0 : resp.room
-        this.callbacks.call('on_room_change', this.room = room, this)
+        const self = resp.client?.id === this._client?.id
+        this.callbacks.call('on_room_change', this.room = self ? void 0 : resp.room, this)
+        if (self) this.callbacks.call('on_room_leaved', this)
         break;
       }
       case MsgEnum.ClientReady: {
