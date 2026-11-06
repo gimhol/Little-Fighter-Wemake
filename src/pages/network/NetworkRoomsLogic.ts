@@ -1,18 +1,15 @@
-import type { IUINodeRenderer } from "@/LFW";
-import { LFW } from "@/LFW";
+import type { INetworkingCallbacks, IUINodeRenderer } from "@/LFW";
+import { Ditto, LFW } from "@/LFW";
 import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import type { UINode } from "@/LFW/ui/UINode";
 import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
-import { MsgEnum, type RoomSyncMode } from "@/Net";
+import type { RoomSyncMode } from "@/Net";
 import { chat_store } from "@/Net/chat_store";
-import { current_connection } from "@/Net/current_connection";
-import { bind_button, fit_text, paint } from "./ui_helpers";
+import { bind_button, fit_text, net_connection, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
-const ROOM_ROW_STEP = 56;
-const TOPBAR_RIGHT = 620;
 
 const ROOM_NAME = 0;
 const ROOM_CODE = 1;
@@ -34,11 +31,7 @@ export class NetworkRoomsLogic extends UIComponent {
   private busy = false;
   private bound = false;
 
-  private btn_create: UINode | undefined;
-  private btn_refresh: UINode | undefined;
   private btn_auto: UINode | undefined;
-  /** 断开连接由 NetworkSessionLogic 处理，这里只参与顶栏排版 */
-  private btn_disconnect: UINode | undefined;
   private rooms_total: UINode | undefined;
   private room_rows: UINode[] = [];
   private no_rooms: UINode | undefined;
@@ -49,6 +42,14 @@ export class NetworkRoomsLogic extends UIComponent {
 
   private readonly lfw_cb: ILFWCallback = {
     on_lang_changed: () => this.refresh_texts(),
+  };
+
+  private readonly net_cb: INetworkingCallbacks = {
+    on_rooms_change: (rooms) => {
+      if (!this.bound) return;
+      this.rooms = [...rooms];
+      this.render_rooms();
+    },
   };
 
   override on_start(): void {
@@ -68,10 +69,7 @@ export class NetworkRoomsLogic extends UIComponent {
   private bind_rooms_page(node: UINode): void {
     const q = (id: string) => node.search_node(id) ?? undefined;
     this.bound = true;
-    this.btn_create = q("network_btn_create");
-    this.btn_refresh = q("network_btn_refresh");
     this.btn_auto = q("network_btn_auto");
-    this.btn_disconnect = q("network_btn_disconnect");
     this.rooms_total = q("network_rooms_total");
     this.no_rooms = q("network_no_rooms");
     this.btn_prev = q("network_btn_prev");
@@ -82,19 +80,19 @@ export class NetworkRoomsLogic extends UIComponent {
 
     for (let i = 0; i < this.room_rows.length; i++) {
       const row = this.room_rows[i];
-      row.move_to(0, i * ROOM_ROW_STEP, 0);
       bind_button(this.lfw, row.children[ROOM_JOIN], () => void this.join_room(i));
       const input = row.children[ROOM_PWD_BG]?.children[0]?.find_component(TextInput);
       if (input) input.on_submit = () => void this.join_room(i);
     }
 
-    bind_button(this.lfw, this.btn_create, () => void this.create_room());
-    bind_button(this.lfw, this.btn_refresh, () => void this.request_rooms());
+    bind_button(this.lfw, q("network_btn_create"), () => void this.create_room());
+    bind_button(this.lfw, q("network_btn_refresh"), () => this.request_rooms());
     bind_button(this.lfw, this.btn_auto, () => this.toggle_auto_refresh());
     bind_button(this.lfw, this.btn_prev, () => this.goto_page(this.page - 1));
     bind_button(this.lfw, this.btn_next, () => this.goto_page(this.page + 1));
 
-    this.rooms = [...(current_connection.conn?.rooms ?? [])];
+    Ditto.Networking.callbacks.add(this.net_cb);
+    this.rooms = [...Ditto.Networking.rooms];
     this.apply_placeholders();
     this.update_auto_button();
     this.render_rooms();
@@ -104,10 +102,8 @@ export class NetworkRoomsLogic extends UIComponent {
   private unbind_rooms_page(): void {
     this.bound = false;
     this.stop_auto_refresh();
-    this.btn_create = undefined;
-    this.btn_refresh = undefined;
+    Ditto.Networking.callbacks.del(this.net_cb);
     this.btn_auto = undefined;
-    this.btn_disconnect = undefined;
     this.rooms_total = undefined;
     this.room_rows = [];
     this.no_rooms = undefined;
@@ -117,26 +113,19 @@ export class NetworkRoomsLogic extends UIComponent {
     this.rooms_status = undefined;
   }
 
-  private async request_rooms(): Promise<void> {
-    const conn = current_connection.conn;
+  private request_rooms(): void {
+    const conn = net_connection();
     if (!conn || conn.room || !this.bound) return;
-    try {
-      const resp = await conn.send(MsgEnum.ListRooms, {}, { loose: true });
-      if (!this.bound) return;
-      this.rooms = resp.rooms ?? conn.rooms;
-      this.render_rooms();
-    } catch {
-      /* 刷新失败时保留上一份列表，等下次刷新 */
-    }
+    conn.refresh_rooms(this.page);
   }
 
   private async create_room(): Promise<void> {
-    const conn = current_connection.conn;
+    const conn = net_connection();
     if (!conn || this.busy) return;
     this.busy = true;
     try {
       const version = { lfw_version: LFW.VERSION_NAME, data_infos: await LFW.collect_data_infos() };
-      await conn.send(MsgEnum.CreateRoom, { min_players: 1, max_players: 4, ...version });
+      await conn.create_room({ min_players: 1, max_players: 4, ...version });
       this.add_notice(this.t("network.sys_room_created", conn.room?.code || ""));
       this.clear_status();
     } catch (e) {
@@ -147,7 +136,7 @@ export class NetworkRoomsLogic extends UIComponent {
   }
 
   private async join_room(index: number): Promise<void> {
-    const conn = current_connection.conn;
+    const conn = net_connection();
     const room = this.page_rooms()[index];
     if (!conn || !room?.id || this.busy) return;
     const row = this.room_rows[index];
@@ -159,7 +148,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.busy = true;
     try {
       const version = { lfw_version: LFW.VERSION_NAME, data_infos: await LFW.collect_data_infos() };
-      await conn.send(MsgEnum.JoinRoom, { roomid: room.id, pwd: pwd || undefined, ...version });
+      await conn.join_room({ roomid: room.id, pwd: pwd || undefined, ...version });
       this.add_notice(this.t("network.sys_room_joined", room.code || room.id));
       this.clear_status();
     } catch (e) {
@@ -256,7 +245,6 @@ export class NetworkRoomsLogic extends UIComponent {
       ].filter(Boolean).join("\u3000·\u3000");
       this.set_text(row.children[ROOM_META], fit_text(meta, 560, row.children[ROOM_META]));
     }
-    this.layout_rows();
   }
 
   private refresh_texts(): void {
@@ -306,40 +294,6 @@ export class NetworkRoomsLogic extends UIComponent {
       underline_color: this.auto_refresh ? "#ffffff" : undefined,
       underline_width: this.auto_refresh ? 1 : 0,
     });
-    this.layout_rows();
-  }
-
-  private center_row(nodes: (UINode | undefined)[], center_x: number, gap: number): void {
-    const items = nodes.filter((node): node is UINode => !!node && node.visible);
-    if (!items.length) return;
-    const widths = items.map(node => node.w + (node.text ? 4 : 0));
-    const total = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
-    let x = center_x - total / 2;
-    for (let i = 0; i < items.length; i++) {
-      const node = items[i];
-      const pad = node.text ? 2 : 0;
-      node.move_to(x + pad + node.center.x * node.w, node.y, node.z);
-      x += widths[i] + gap;
-    }
-  }
-
-  private right_row(nodes: (UINode | undefined)[], right_x: number, gap: number): void {
-    const items = nodes.filter((node): node is UINode => !!node && node.visible);
-    if (!items.length) return;
-    const widths = items.map(node => node.w + (node.text ? 4 : 0));
-    const total = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
-    let x = right_x - total;
-    for (let i = 0; i < items.length; i++) {
-      const node = items[i];
-      const pad = node.text ? 2 : 0;
-      node.move_to(x + pad + node.center.x * node.w, node.y, node.z);
-      x += widths[i] + gap;
-    }
-  }
-
-  private layout_rows(): void {
-    this.center_row([this.btn_prev, this.page_label, this.btn_next], 397, 16);
-    this.right_row([this.btn_create, this.btn_refresh, this.btn_auto, this.btn_disconnect], TOPBAR_RIGHT, 20);
   }
 
   private t(key: string, ...args: (string | number)[]): string {

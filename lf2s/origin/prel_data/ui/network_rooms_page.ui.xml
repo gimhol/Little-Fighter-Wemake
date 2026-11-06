@@ -21,23 +21,25 @@
     <node id="network_btn_logout" i18n="network.logout" center="0.5,0.5" pos="430,20" visible="false">
       <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
     </node>
-    <node id="network_btn_create" i18n="network.create_room" center="0.5,0.5" pos="512,20">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
-    </node>
-    <node id="network_btn_refresh" i18n="network.refresh" center="0.5,0.5" pos="588,20">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
-    </node>
-    <node id="network_btn_auto" i18n="network.auto_refresh" center="0.5,0.5" pos="668,20">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
-    </node>
-    <node id="network_btn_disconnect" i18n="network.disconnect" center="0.5,0.5" pos="750,20">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_top_actions" center="1,0.5" pos="620,20" flex="display:flex; direction:row; align:center; gap:20; fit:true">
+      <node id="network_btn_create" i18n="network.create_room" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
+      <node id="network_btn_refresh" i18n="network.refresh" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
+      <node id="network_btn_auto" i18n="network.auto_refresh" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
+      <node id="network_btn_disconnect" i18n="network.disconnect" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
     </node>
   </node>
 
   <node id="network_rooms_panel" size="794,450" center="0,0" pos="0,0,1" clips="true">
     <node id="network_rooms_divider" size="762,1" center="0,0" pos="16,40" color="#ffffff29"/>
-    <node id="network_room_rows" size="762,330" pos="16,48" clips="true">
+    <node id="network_room_rows" size="762,330" pos="16,48" clips="true" flex="display:flex; direction:column; align:start">
       <node id="network_room_row" count="5" size="762,56" center="0,0" pos="0,0">
         <node id="network_room_name" center="0,0.5" pos="12,14">
           <style font="bold 15px Arial" fill_style="#ffffff"/>
@@ -91,14 +93,16 @@
     <node id="network_version" i18n="VERSION_NAME" center="0,0.5" pos="16,424" opacity="0.45">
       <style font="10px Arial" fill_style="#ffffff"/>
     </node>
-    <node id="network_btn_prev" i18n="network.prev_page" center="0.5,0.5" pos="351,424">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
-    </node>
-    <node id="network_page_label" center="0.5,0.5" pos="397,424">
-      <style font="12px Arial" fill_style="#ffffff" text_align="center"/>
-    </node>
-    <node id="network_btn_next" i18n="network.next_page" center="0.5,0.5" pos="443,424">
-      <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+    <node id="network_pager" center="0.5,0.5" pos="397,424" flex="display:flex; direction:row; justify:center; align:center; gap:16; fit:true">
+      <node id="network_btn_prev" i18n="network.prev_page" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
+      <node id="network_page_label" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#ffffff" text_align="center"/>
+      </node>
+      <node id="network_btn_next" i18n="network.next_page" center="0.5,0.5">
+        <style font="12px Arial" fill_style="#a8b9ff" text_align="center"/>
+      </node>
     </node>
   </node>
 </node>

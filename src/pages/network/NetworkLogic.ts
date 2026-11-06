@@ -430,7 +430,7 @@ export class NetworkLogic extends UIComponent {
         if (current !== want) layers.set_page({ id: want }, 0);
         this.close_connect_popup();
       } else {
-        if (current === ROOMS_PAGE_ID || current === ROOM_PAGE_ID) layers.set_page({ id: 'entry' }, 0);
+        if (current === ROOM_PAGE_ID) layers.set_page({ id: 'entry' }, 0);
         this.open_connect_popup();
       }
     } finally {

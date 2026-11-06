@@ -30,6 +30,10 @@ export class NetworkModalLogic extends UIComponent {
       if (this.ipt_nickname)
         this.lfw.save_string(NetworkModalLogic.LFW_CLIENT_NICKNAME_KEY, this.ipt_nickname.text);
       this.set_connecting(false);
+      if (this.lfw.layers.at(0)?.page?.id === NetworkModalLogic.ROOMS_PAGE_ID) {
+        this.lfw.layers.close_modal({ id: this.node.root.id }, 0);
+        return;
+      }
       this.lfw.layers.push_page({ id: NetworkModalLogic.ROOMS_PAGE_ID }, 0)
     },
     on_error: (error) => {

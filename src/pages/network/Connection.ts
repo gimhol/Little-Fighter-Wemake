@@ -1,6 +1,9 @@
 import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
-import type { IConnectServerOpts, INetworking, INetworkingCallbacks } from "../../LFW/ditto/networking/INetworking";
+import type {
+  IConnectServerOpts, ICreateRoomOpts, IJoinRoomOpts, INetworking, INetworkingCallbacks,
+  TNetworkingChatTarget
+} from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
   clamp_nickname,
@@ -24,6 +27,7 @@ export interface IConnectionCallbacks extends INetworkingCallbacks {
 
 export class Connection implements INetworking {
   static TAG: string = 'Connection';
+  static readonly ROOMS_PAGE_SIZE = 5;
   readonly callbacks = new Callbacks<IConnectionCallbacks>()
   protected _pid = 1;
   protected _reopen?: () => void;
@@ -54,6 +58,24 @@ export class Connection implements INetworking {
 
   constructor(nickname: string = '') {
     this._nickname = clamp_nickname(nickname);
+  }
+  refresh_rooms(page: number): void {
+    if (!this.opened || this.room) return;
+    const page_index = Math.max(0, Math.floor(page) || 0);
+    const limit = Connection.ROOMS_PAGE_SIZE;
+    const offset = page_index * limit;
+    this.send(MsgEnum.ListRooms, { offset, limit }, { loose: true }).catch(() => void 0);
+  }
+  async create_room(opts: ICreateRoomOpts = {}): Promise<IRoomInfo | undefined> {
+    const resp = await this.send(MsgEnum.CreateRoom, { ...opts });
+    return resp.room;
+  }
+  async join_room(opts: IJoinRoomOpts): Promise<IRoomInfo | undefined> {
+    const resp = await this.send(MsgEnum.JoinRoom, { ...opts });
+    return resp.room;
+  }
+  async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
+    await this.send(MsgEnum.Chat, { target, text });
   }
   open(opts: IConnectServerOpts): void {
     const { nickname = '', address = '' } = opts;

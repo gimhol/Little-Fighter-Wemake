@@ -1,8 +1,14 @@
-import type { IStyle, LFW } from "@/LFW";
+import { Ditto, type INetworking, type IStyle, type LFW } from "@/LFW";
 import { Style } from "@/LFW/ui/Style";
 import type { UINode } from "@/LFW/ui/UINode";
 
 let measure_ctx: CanvasRenderingContext2D | undefined;
+
+/** 当前联机连接；未连接（含断开后）返回 undefined */
+export function net_connection(): INetworking | undefined {
+  const conn = Ditto.Networking;
+  return conn.opened ? conn : undefined;
+}
 
 /** 按节点字体测量文本像素宽度 */
 export function measure_text_width(text: string, node?: UINode): number {

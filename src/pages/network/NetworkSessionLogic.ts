@@ -1,16 +1,14 @@
-import { Ditto, type IPlayerInfoCallback } from "@/LFW";
+import { Ditto, type INetworking, type INetworkingCallbacks, type IPlayerInfoCallback } from "@/LFW";
 import type { UINode } from "@/LFW/ui/UINode";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import { MsgEnum, type TResp } from "@/Net";
 import { peek_chat } from "@/Net/chat_overlay";
 import { chat_store } from "@/Net/chat_store";
-import { current_connection } from "@/Net/current_connection";
 import { SystemPlayerInfo } from "@/Net/SystemPlayerInfo";
-import type { Connection, IConnectionCallbacks } from "./Connection";
-import { bind_button, fit_text } from "./ui_helpers";
+import type { IConnectionCallbacks } from "./Connection";
+import { bind_button, fit_text, net_connection } from "./ui_helpers";
 
 const ROOM_PAGE_ID = "network_room_page";
-const ENTRY_PAGE_ID = "entry";
 const CONNECT_PAGE_ID = "network_modal";
 
 /**
@@ -20,7 +18,7 @@ const CONNECT_PAGE_ID = "network_modal";
 export class NetworkSessionLogic extends UIComponent {
   static override readonly TAGS: string[] = ["NetworkSessionLogic"];
 
-  private conn: Connection | null = null;
+  private conn: INetworking | null = null;
   private callbacks_attached = false;
   private top_sub: UINode | undefined;
 
@@ -28,6 +26,13 @@ export class NetworkSessionLogic extends UIComponent {
     player: { callbacks: { del(cb: IPlayerInfoCallback): void } };
     cb: IPlayerInfoCallback;
   }[] = [];
+
+  private readonly net_cb: INetworkingCallbacks = {
+    on_register: () => {
+      const conn = net_connection();
+      if (conn && conn !== this.conn) this.adopt_connection(conn);
+    },
+  };
 
   private readonly conn_cb: IConnectionCallbacks = {
     on_close: (reason, conn) => {
@@ -48,10 +53,12 @@ export class NetworkSessionLogic extends UIComponent {
   };
 
   override on_start(): void {
+    Ditto.Networking.callbacks.add(this.net_cb);
     this.bind_page(this.node);
   }
 
   override on_stop(): void {
+    Ditto.Networking.callbacks.del(this.net_cb);
     this.unbind_page();
   }
 
@@ -64,12 +71,16 @@ export class NetworkSessionLogic extends UIComponent {
     bind_button(this.lfw, node.search_node("network_btn_disconnect") ?? undefined, () => this.disconnect(), "cancel");
     chat_store.set_in_room(false);
 
-    const conn = current_connection.conn;
+    const conn = net_connection();
     if (!conn) {
       Ditto.warn(`[${NetworkSessionLogic.TAG}::bind_page] no active connection`);
-      this.open_connect_modal("连接已断开，请重新连接。");
+      this.show_connect_modal("连接已断开，请重新连接。");
       return;
     }
+    this.adopt_connection(conn);
+  }
+
+  private adopt_connection(conn: INetworking): void {
     this.attach_connection(conn);
     conn.set_players(this.player_names());
     this.update_topbar();
@@ -81,7 +92,7 @@ export class NetworkSessionLogic extends UIComponent {
     this.top_sub = undefined;
   }
 
-  private attach_connection(conn: Connection): void {
+  private attach_connection(conn: INetworking): void {
     if (this.conn !== conn) {
       this.detach_connection();
       this.unwatch_player_names();
@@ -92,7 +103,7 @@ export class NetworkSessionLogic extends UIComponent {
     this.callbacks_attached = true;
     this.watch_player_names(conn);
     chat_store.set_sender((text, target) => {
-      this.conn?.send(MsgEnum.Chat, { target, text }).catch(() => void 0);
+      this.conn?.send_chat(text, target).catch(() => void 0);
     });
   }
 
@@ -101,18 +112,17 @@ export class NetworkSessionLogic extends UIComponent {
     this.callbacks_attached = false;
   }
 
-  private on_close(reason: string, conn: Connection): void {
+  private on_close(reason: string, conn: INetworking): void {
     if (conn !== this.conn) return;
     this.detach_connection();
     this.unwatch_player_names();
     this.conn = null;
-    if (current_connection.conn === conn) current_connection.conn = null;
-    this.open_connect_modal(reason || "连接已断开，请重新连接。");
+    this.update_topbar();
+    this.show_connect_modal(reason || "连接已断开，请重新连接。");
   }
 
-  /** 断开后回到入口页并弹回连接弹窗 */
-  private open_connect_modal(status: string): void {
-    this.lfw.layers.set_page({ id: ENTRY_PAGE_ID }, 0);
+  /** 在当前页面上弹出连接弹窗，不切换页面 */
+  private show_connect_modal(status: string): void {
     const modal = this.lfw.layers.open_modal({ id: CONNECT_PAGE_ID }, 0);
     modal?.search_node("network_connect_status")?.set_text(status);
   }
@@ -123,19 +133,18 @@ export class NetworkSessionLogic extends UIComponent {
     this.detach_connection();
     this.unwatch_player_names();
     this.conn = null;
-    if (current_connection.conn === conn) current_connection.conn = null;
-    conn.disable_rejoin();
+    this.update_topbar();
     conn.close();
-    this.open_connect_modal("");
+    this.show_connect_modal("");
   }
 
-  private on_message(resp: TResp, conn: Connection): void {
+  private on_message(resp: TResp, conn: INetworking): void {
     if (conn !== this.conn || resp.type !== MsgEnum.Chat || resp.target === "room") return;
     chat_store.push({ kind: "msg", msg: resp });
     if (resp.sender?.id !== SystemPlayerInfo.id) peek_chat(this.lfw);
   }
 
-  private watch_player_names(conn: Connection): void {
+  private watch_player_names(conn: INetworking): void {
     this.unwatch_player_names();
     const cb: IPlayerInfoCallback = {
       on_name_changed: () => {
