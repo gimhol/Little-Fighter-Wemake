@@ -197,8 +197,8 @@ export class NetworkRoomsLogic extends UIComponent {
     const page_count = Math.max(1, Math.ceil(this.rooms.length / ROOM_PAGE_SIZE));
     if (this.page > page_count - 1) this.page = page_count - 1;
     const rooms = this.page_rooms();
-    this.set_text(this.rooms_total, fit_text(this.t("network.rooms_total", this.rooms.length), 168, this.rooms_total));
-    this.set_text(this.page_label, `${this.page + 1} / ${page_count}`);
+    this.rooms_total?.set_text(fit_text(this.t("network.rooms_total", this.rooms.length), 168, this.rooms_total));
+    this.page_label?.set_text(`${this.page + 1} / ${page_count}`);
     if (this.no_rooms) this.no_rooms.visible = this.rooms.length === 0;
     if (this.btn_prev) {
       this.btn_prev.visible = true;
@@ -215,11 +215,11 @@ export class NetworkRoomsLogic extends UIComponent {
       const room = rooms[i];
       row.visible = !!room;
       if (!room) continue;
-      this.set_text(row.children[ROOM_NAME], fit_text(room.title || `${this.t("network.room")} ${room.code ?? ""}`, 296, row.children[ROOM_NAME]));
-      this.set_text(row.children[ROOM_CODE], fit_text(room.code ? `#${room.code}` : "", 92, row.children[ROOM_CODE]));
+      row.children[ROOM_NAME]?.set_text(fit_text(room.title || `${this.t("network.room")} ${room.code ?? ""}`, 296, row.children[ROOM_NAME]));
+      row.children[ROOM_CODE]?.set_text(fit_text(room.code ? `#${room.code}` : "", 92, row.children[ROOM_CODE]));
       const badge_bg = row.children[ROOM_BADGE_BG];
       const badge = badge_bg?.children[0];
-      this.set_text(badge, fit_text(room.started ? this.t("network.running") : this.t("network.waiting"), 44, badge));
+      badge?.set_text(fit_text(room.started ? this.t("network.running") : this.t("network.waiting"), 44, badge));
       if (badge_bg) badge_bg.color = room.started ? "#4ade8033" : "#ffffff1f";
       if (badge) paint(badge, { fill_style: room.started ? "#86efac" : "#ffffffc7" });
       const lock_bg = row.children[ROOM_LOCK_BG];
@@ -228,14 +228,14 @@ export class NetworkRoomsLogic extends UIComponent {
       if (pwd_bg) pwd_bg.visible = !!room.need_pwd;
       const join = row.children[ROOM_JOIN];
       if (join) join.visible = !room.started;
-      this.set_text(row.children[ROOM_OWNER], fit_text(`${this.t("network.owner")} ${room.owner?.name || "-"}`, 144, row.children[ROOM_OWNER]));
+      row.children[ROOM_OWNER]?.set_text(fit_text(`${this.t("network.owner")} ${room.owner?.name || "-"}`, 144, row.children[ROOM_OWNER]));
       const meta = [
         `${this.t("network.player_count")} ${this.room_count_text(room)}`,
         this.sync_label(room.sync_mode),
         room.lfw_version ? `LFW ${this.version_short(room.lfw_version)}` : "",
         room.data_infos?.length ? `${this.t("network.data_package")}×${room.data_infos.length}` : "",
       ].filter(Boolean).join("\u3000·\u3000");
-      this.set_text(row.children[ROOM_META], fit_text(meta, 560, row.children[ROOM_META]));
+      row.children[ROOM_META]?.set_text(fit_text(meta, 560, row.children[ROOM_META]));
     }
   }
 
@@ -254,7 +254,7 @@ export class NetworkRoomsLogic extends UIComponent {
   }
 
   private set_status(text: string): void {
-    this.set_text(this.rooms_status, fit_text(text, 440, this.rooms_status));
+    this.rooms_status?.set_text(fit_text(text, 440, this.rooms_status));
     if (this.rooms_status) this.rooms_status.visible = !!text;
   }
 
@@ -292,10 +292,6 @@ export class NetworkRoomsLogic extends UIComponent {
     let text = this.lfw.string(key);
     for (let i = 0; i < args.length; i++) text = text.split(`%${i + 1}`).join(`${args[i]}`);
     return text;
-  }
-
-  private set_text(node: UINode | undefined, text: string): void {
-    if (node?.text?.text !== text) node?.set_text(text);
   }
 
   private truncate(text: string, max: number): string {

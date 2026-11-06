@@ -165,19 +165,16 @@ export class NetworkSessionLogic extends UIComponent {
   }
 
   private update_topbar(): void {
-    if (!this.top_sub) return;
+    const sub = this.top_sub;
+    if (!sub) return;
     const conn = this.conn;
     if (!conn) {
-      this.set_text(this.top_sub, "");
+      sub.set_text("");
       return;
     }
     const address = conn.url || "";
     const info = `${this.t("network.guest")}\u3000·\u3000${address}\u3000·\u3000${conn.rtt}ms`;
-    this.set_text(this.top_sub, fit_text(info, 300, this.top_sub));
-  }
-
-  private set_text(node: UINode | undefined, text: string): void {
-    if (node?.text?.text !== text) node?.set_text(text);
+    sub.set_text(fit_text(info, 300, sub));
   }
 
   private t(key: string, ...args: (string | number)[]): string {
