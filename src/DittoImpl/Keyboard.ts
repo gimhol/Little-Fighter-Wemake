@@ -1,4 +1,5 @@
 import { CMD } from "@/LFW/defines/CMD";
+import { CtrlDevice } from "@/LFW/defines/CtrlDevice";
 import { LFW } from "../LFW";
 import { Callbacks } from "../LFW/base/Callbacks";
 import { NoEmitCallbacks } from "../LFW/base/NoEmitCallbacks";
@@ -93,6 +94,18 @@ export class __Keyboard implements IKeyboard {
     window.addEventListener("focusin", this._on_focus_in);
     this.gamepad_timer = setInterval(this.scan_gamepad_buttons.bind(this), 1000 / 60)
   }
+
+  protected is_gamepad_in_use(index: number): boolean {
+    const device = CtrlDevice.Gamepad_1 + index;
+    if (device > CtrlDevice.Gamepad_4) return false;
+    const prefix = `${index + 1}: `;
+    for (const [, player] of this.lfw.players) {
+      if (!player.mine) continue;
+      if (player.ctrl === device) return true;
+      if (Object.values(player.keys).some((key) => key?.startsWith(prefix))) return true;
+    }
+    return false;
+  }
   protected scan_gamepad_buttons() {
     const gamepads = this.gamepads = navigator.getGamepads()
     if (!gamepads?.length) return;
@@ -109,8 +122,8 @@ export class __Keyboard implements IKeyboard {
         if (!changed) continue;
         if (!pressed) continue;
         switch (btn_code) {
-          case GPBtnCode.Start: this.lfw.push_cmd(CMD.F1); break;
-          case GPBtnCode.Back: this.lfw.push_cmd(CMD.F4); break;
+          case GPBtnCode.Start: if (this.is_gamepad_in_use(index)) this.lfw.push_cmd(CMD.F1); break;
+          case GPBtnCode.Back: if (this.is_gamepad_in_use(index)) this.lfw.push_cmd(CMD.F4); break;
         }
       }
 
