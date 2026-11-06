@@ -6,10 +6,8 @@ import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import type { UINode } from "@/LFW/ui/UINode";
 import { recommend_sync, type RoomSyncMode } from "@/Net";
-import { chat_store } from "@/Net/chat_store";
 import { fit_text, paint } from "./ui_helpers";
 
-const ROOMS_PAGE_ID = "network_rooms_page";
 const PLAYER_ROW_STEP = 32;
 const COUNTDOWN_SEC = 5;
 
@@ -199,7 +197,6 @@ export class NetworkRoomLogic extends UIComponent {
   private set_sync(mode: RoomSyncMode): void {
     if (!this.is_owner() || this.room?.started) return;
     Ditto.Networking.set_room_sync(mode);
-    this.add_notice(this.lfw.t("network.sys_sync_changed", this.sync_label(mode)));
   }
 
   private kick(index: number): void {
@@ -210,7 +207,7 @@ export class NetworkRoomLogic extends UIComponent {
 
   private back_to_rooms(): void {
     if (!this.bound) return;
-    this.lfw.layers.set_page({ id: ROOMS_PAGE_ID }, 0);
+    this.node.layer?.pop({});
   }
 
   private render_room(): void {
@@ -344,12 +341,6 @@ export class NetworkRoomLogic extends UIComponent {
     return !!id && this.room?.owner?.id === id;
   }
 
-  private sync_label(mode?: RoomSyncMode): string {
-    if (mode === "lockstep") return this.lfw.t("network.sync_lockstep");
-    if (mode === "delay") return this.lfw.t("network.sync_delay");
-    return this.lfw.t("network.sync_auto");
-  }
-
   private version_short(version: string): string {
     return version.split(" ")[0];
   }
@@ -361,10 +352,6 @@ export class NetworkRoomLogic extends UIComponent {
     const version = typeof info.version === "number" ? ` v${info.version}` : "";
     const md5 = info.md5 ? ` · ${info.md5.slice(0, 8)}` : "";
     return this.truncate(`${type}${name}${version}${md5}`, 52);
-  }
-
-  private add_notice(text: string): void {
-    if (text) chat_store.push_sys(text);
   }
 
   private set_status(text: string): void {

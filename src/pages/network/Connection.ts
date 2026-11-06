@@ -5,15 +5,19 @@ import type {
   TNetworkingChatTarget, TNetworkingSyncMode
 } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
+import type { LFW } from "../../LFW/LFW";
 import {
   clamp_nickname,
   type INetworkingError as INetworkingError, type IJob, type IMsgReqMap, type IMsgRespMap,
   type IReq, type IResp,
-  type IRespRejoin, type IRespRejoinFrames, type ISendOpts, MsgEnum, req_timeout_error,
+  type IRespRejoin, type IRespRejoinFrames, type IRespRoomStart, type ISendOpts, MsgEnum, req_timeout_error,
   req_unknown_error, resp_error, type TInfo,
   type TRejoinTick,
   type TReq, type TResp
 } from "../../Net";
+import { DelayNetworkDriver } from "./DelayNetworkDriver";
+import type { LFWNetworkDriver } from "./LFWNetworkDriver";
+import { LockstepNetworkDriver } from "./LockstepNetworkDriver";
 
 export interface IConnectionCallbacks extends INetworkingCallbacks {
 
@@ -54,6 +58,8 @@ export class Connection implements INetworking {
   get reconnecting() { return this._reconnecting }
   room: IRoomInfo | undefined;
   rooms: IRoomInfo[] = [];
+  /** 对局驱动器：开局后由连接自己建立并转发对局消息，脱离房间页存活 */
+  driver: LFWNetworkDriver | null = null;
   get url() { return this._ws?.url }
   get opened() { return this._ws?.readyState === 1 }
 
@@ -92,6 +98,19 @@ export class Connection implements INetworking {
   }
   kick(client_id: string): void {
     this.send(MsgEnum.Kick, { client_id }).catch(() => void 0);
+  }
+  /** 开局：按服务端指定的同步模式建立驱动器，后续对局消息都转给它 */
+  protected _start_driver(resp: IRespRoomStart): void {
+    const lfw = (window as { lfw?: LFW }).lfw;
+    if (!lfw) return;
+    const driver = resp.sync_mode === 'delay'
+      ? new DelayNetworkDriver(resp.input_delay ?? 2)
+      : new LockstepNetworkDriver();
+    driver.conn = this;
+    driver.lfw = lfw;
+    this.driver = driver;
+    this.enable_rejoin(() => driver.rejoin_seq);
+    driver.on_room_start(resp);
   }
   async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
     await this.send(MsgEnum.Chat, { target, text });
@@ -465,6 +484,7 @@ export class Connection implements INetworking {
         break;
       }
       case MsgEnum.ClientInfo: {
+        this.driver?.update_client(resp)
         const prev = this.room
         if (!prev) break;
         const room = { ...prev }
@@ -477,6 +497,16 @@ export class Connection implements INetworking {
         this.callbacks.call('on_room_change', this.room = room, this)
         break;
       }
+      case MsgEnum.RoomStart:
+        this._start_driver(resp)
+        break;
+      case MsgEnum.Dataset:
+        this.driver?.update_dataset(resp)
+        break;
+      case MsgEnum.Tick:
+      case MsgEnum.KeyTick:
+        this.driver?.on_tick(resp)
+        break;
       case MsgEnum.ListRooms: {
         this.callbacks.call('on_rooms_change', this.rooms = resp.rooms ?? [], this)
         break;

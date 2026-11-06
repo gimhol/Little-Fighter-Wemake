@@ -7,7 +7,6 @@ import type { UINode } from "@/LFW/ui/UINode";
 import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
 import type { RoomSyncMode } from "@/Net";
-import { chat_store } from "@/Net/chat_store";
 import { fit_text, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
@@ -34,7 +33,6 @@ export class NetworkRoomsLogic extends UIComponent {
   private auto_elapsed = 0;
   private busy = false;
   private bound = false;
-  private manual_close = false;
 
   private btn_auto: UINode | undefined;
   private btn_auto_label: UINode | undefined;
@@ -61,8 +59,7 @@ export class NetworkRoomsLogic extends UIComponent {
     on_close: (reason) => {
       this.busy = false;
       this.update_topbar();
-      this.show_connect_modal(this.manual_close ? "" : reason || "连接已断开，请重新连接。");
-      this.manual_close = false;
+      this.show_connect_modal(reason || "连接已断开，请重新连接。");
     },
     on_ping: () => this.update_topbar(),
     on_rooms_change: (rooms) => {
@@ -70,8 +67,8 @@ export class NetworkRoomsLogic extends UIComponent {
       this.rooms = [...rooms];
       this.render_rooms();
     },
-    on_room_created: (room) => this.enter_room(this.lfw.t("network.sys_room_created", room.code || "")),
-    on_room_joined: (room) => this.enter_room(this.lfw.t("network.sys_room_joined", room.code || room.id || "")),
+    on_room_created: () => this.enter_room(),
+    on_room_joined: () => this.enter_room(),
     on_room_create_failed: (error) => this.room_failed(error),
     on_room_join_failed: (error) => this.room_failed(error),
   };
@@ -173,7 +170,7 @@ export class NetworkRoomsLogic extends UIComponent {
   }
 
   private disconnect(): void {
-    this.manual_close = true;
+    this.node.layer?.pop({});
     Ditto.Networking.close();
   }
 
@@ -183,12 +180,11 @@ export class NetworkRoomsLogic extends UIComponent {
     modal?.search_node("network_connect_status")?.set_text(status);
   }
 
-  private enter_room(notice: string): void {
+  private enter_room(): void {
     if (!this.bound) return;
     this.busy = false;
-    this.add_notice(notice);
     this.clear_status();
-    this.lfw.layers.set_page({ id: ROOM_PAGE_ID }, 0);
+    this.lfw.layers.push_page({ id: ROOM_PAGE_ID }, 0);
   }
 
   private update_topbar(): void {
@@ -322,10 +318,6 @@ export class NetworkRoomsLogic extends UIComponent {
     const err = e as { lfw?: { error?: string }; message?: string };
     const text = err?.lfw?.error || err?.message || String(e ?? "");
     return this.truncate(text, 64);
-  }
-
-  private add_notice(text: string): void {
-    if (text) chat_store.push_sys(text);
   }
 
   private input_value(node: UINode | undefined): string {
