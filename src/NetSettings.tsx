@@ -1,13 +1,12 @@
 import classNames from "classnames";
 import { Fragment, useEffect, useRef, useState } from "react";
-import type { LFW } from "./LFW";
+import { Ditto, type LFW } from "./LFW";
 import type { PlayerInfo } from "./LFW/PlayerInfo";
 import { CtrlDevice } from "./LFW/defines/CtrlDevice";
 import { GameKey } from "./LFW/defines/GameKey";
 import { SyncRenderEnum } from "./LFW/defines/SyncRenderEnum";
 import { Defines } from "./LFW/defines/defines";
 import { NICKNAME_MAX_LENGTH } from "./Net";
-import { current_connection } from "./Net/current_connection";
 import { useNickname } from "./pages/network/nickname_store";
 import csses from "./NetSettings.module.scss";
 
@@ -192,7 +191,8 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
 
   const lang_index = Math.max(0, LANG_CODES.indexOf(lfw.canonical_lang()));
   const render_index = Math.max(0, RENDER_RATE_OPTIONS.indexOf(lfw.world.dataset.sync_render));
-  const owner = !current_connection.driver || current_connection.driver.is_owner();
+  const conn = Ditto.Networking;
+  const owner = !conn.room || conn.room.owner?.id === conn.client?.id;
 
   const step_lang = (dir: -1 | 1) =>
     lfw.set_lang(LANG_CODES[(lang_index + dir + LANG_CODES.length) % LANG_CODES.length]);
@@ -300,7 +300,7 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
               maxLength={NICKNAME_MAX_LENGTH}
               onChange={(e) => set_nickname(e.target.value)}
               onBlur={() => {
-                const conn = current_connection.conn;
+                const conn = Ditto.Networking;
                 if (conn && conn.nickname !== nickname) conn.set_nickname(nickname);
               }}
               onKeyDown={(e) => {

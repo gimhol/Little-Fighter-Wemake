@@ -1,9 +1,14 @@
+import { Ditto } from "@/LFW/ditto";
+import type { INetworkingCallbacks, TNetworkingChatItem } from "@/LFW/ditto/networking/INetworking";
 import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import type { IUIKeyEvent } from "@/LFW/ui/IUIKeyEvent";
 import type { UINode } from "@/LFW/ui/UINode";
-import { chat_store, type TChatItem, type TChatTarget } from "@/Net/chat_store";
-import { set_chat_escape_handler } from "@/Net/chat_overlay";
+import { is_chat_peek, set_chat_escape_handler, set_chat_peek } from "@/Net/chat_overlay";
+
+/** 聊天频道：私聊不参与频道标签 */
+type TChatTarget = "room" | "global";
+type TChatItem = TNetworkingChatItem;
 
 const PEEK_HOLD_MS = 10000;
 const PEEK_FADE_MS = 1500;
@@ -51,15 +56,29 @@ export class ChatLogic extends UIComponent {
   private _hold = 0;
   private _alpha = 1;
   private _closing = false;
-  private _seen = -1;
-  private _target: TChatTarget | undefined;
   private _focus_pending = false;
   private _focus_frames = 0;
   private _locked = false;
 
+  private get conn() { return Ditto.Networking; }
+  private get channel(): TChatTarget { return this.conn.room ? "room" : "global"; }
+
+  private readonly _net_cb: INetworkingCallbacks = {
+    on_messages_change: () => this.on_messages_changed(),
+    on_room_change: () => { if (!this._closing) this.render(); },
+  };
+
+  private on_messages_changed(): void {
+    if (this._closing) return;
+    this._hold = PEEK_HOLD_MS;
+    this._alpha = 1;
+    this.node.set_opacity(1);
+    this.render();
+  }
+
   override on_start(): void {
     this._closing = false;
-    this._locked = !chat_store.peek;
+    this._locked = !is_chat_peek();
     const q = (id: string) => this.node.search_node(id) ?? undefined;
     this._list = q("chat_rows");
     this._rows = (this._list?.children ?? []).map((row) => ({
@@ -73,37 +92,28 @@ export class ChatLogic extends UIComponent {
       this._input.on_cancel = () => this.exit_input();
     }
     set_chat_escape_handler(() => this.exit_input());
+    this.conn.callbacks.add(this._net_cb);
 
     q("chat_close")?.callbacks.add({ on_click: () => this.close() });
     q("chat_send")?.callbacks.add({ on_click: () => this.send() });
     q("chat_input_bg")?.callbacks.add({ on_click: () => this.focus_input() });
 
-    this._hold = chat_store.peek ? PEEK_HOLD_MS : 0;
-    this.set_input_visible(!chat_store.peek);
-    this._seen = chat_store.items.length;
+    this._hold = is_chat_peek() ? PEEK_HOLD_MS : 0;
+    this.set_input_visible(!is_chat_peek());
     this.render();
-    this._focus_pending = !chat_store.peek;
+    this._focus_pending = !is_chat_peek();
     this._focus_frames = 0;
   }
 
   override update(dt: number): void {
     if (this._closing) return;
-    if (this._locked) chat_store.peek = false;
+    if (this._locked) set_chat_peek(false);
     if (this._focus_pending) {
       const focused = this.input_renderer()?.has_focus?.() ?? !!this._input?.node.focused;
       if (focused || ++this._focus_frames > 30) this._focus_pending = false;
       else this.input_renderer()?.focus_input?.();
     }
-    if (chat_store.items.length !== this._seen) {
-      this._seen = chat_store.items.length;
-      this._hold = PEEK_HOLD_MS;
-      this._alpha = 1;
-      this.node.set_opacity(1);
-      this.render();
-    } else if (chat_store.target !== this._target) {
-      this.render();
-    }
-    if (!chat_store.peek) return;
+    if (!is_chat_peek()) return;
     if (this._hold > 0) {
       this._hold -= dt;
       return;
@@ -114,30 +124,32 @@ export class ChatLogic extends UIComponent {
   }
 
   override on_key_down(e: IUIKeyEvent): void {
-    if (e.key !== "escape" || chat_store.peek) return;
+    if (e.key !== "escape" || is_chat_peek()) return;
     this.exit_input();
     e.stop_immediate_propagation();
   }
 
   override on_stop(): void {
+    this.conn.callbacks.del(this._net_cb);
     set_chat_escape_handler(void 0);
     this.blur_input();
-    chat_store.peek = false;
+    set_chat_peek(false);
     this._closing = true;
   }
 
   send(): void {
     if (!this._input) return;
     const renderer = this.input_renderer();
-    const text = renderer?.get_input_value?.() ?? this._input.text;
-    if (!chat_store.send(text)) return;
+    const text = (renderer?.get_input_value?.() ?? this._input.text).trim();
+    if (!text || !this.conn.opened) return;
+    this.conn.send_chat(text).catch(() => void 0);
     this._locked = true;
     this._input.text = "";
     renderer?.set_input_value?.("");
     this._hold = 0;
     this._alpha = 1;
     this.node.set_opacity(1);
-    chat_store.peek = false;
+    set_chat_peek(false);
     this.set_input_visible(true);
     this.render();
     this.keep_focus();
@@ -151,9 +163,9 @@ export class ChatLogic extends UIComponent {
 
   /** Esc 退出输入：收起输入框，列表像收到消息那样停留一段时间后再淡出关闭 */
   exit_input(): void {
-    if (this._closing || chat_store.peek) return;
+    if (this._closing || is_chat_peek()) return;
     this._locked = false;
-    chat_store.peek = true;
+    set_chat_peek(true);
     this._hold = PEEK_HOLD_MS;
     this._alpha = 1;
     this.node.set_opacity(1);
@@ -171,8 +183,8 @@ export class ChatLogic extends UIComponent {
 
   focus_input(): void {
     this._locked = true;
-    if (chat_store.peek) {
-      chat_store.peek = false;
+    if (is_chat_peek()) {
+      set_chat_peek(false);
       this._hold = 0;
       this._alpha = 1;
       this.node.set_opacity(1);
@@ -199,7 +211,7 @@ export class ChatLogic extends UIComponent {
     this.node.search_node("chat_input_bg")?.set_visible(visible);
     this.node.search_node("chat_input_divider")?.set_visible(visible);
     if (!visible) this.blur_input();
-    else if (changed && !chat_store.peek) this._focus_pending = true;
+    else if (changed && !is_chat_peek()) this._focus_pending = true;
   }
 
   private blur_input(): void {
@@ -283,8 +295,8 @@ export class ChatLogic extends UIComponent {
   }
 
   private render(): void {
-    const items = chat_store.items;
-    const typing = !chat_store.peek;
+    const items = this.conn.messages;
+    const typing = !is_chat_peek();
     this.node.ignore_key = !typing;
     let used = 0;
     let slot = this._rows.length - 1;
@@ -302,8 +314,7 @@ export class ChatLogic extends UIComponent {
     this._list?.resize(ROW_W, used).move_to(LIST_LEFT, typing ? LIST_BOTTOM_TYPING : LIST_BOTTOM_PEEK);
     if (typing) this.node.search_node("chat_bg")?.resize(BG_W, used + BG_EXTRA_H);
 
-    const target = chat_store.target;
-    this._target = target;
+    const target = this.channel;
     const tag = this.node.search_node("chat_target");
     if (tag) {
       const color = CHANNEL_COLOR[target];

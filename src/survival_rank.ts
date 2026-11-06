@@ -1,5 +1,4 @@
-import { GameMode, type LFW, type SurvivalRankItem, type SurvivalRankPeriod } from "./LFW";
-import { current_connection } from "./Net/current_connection";
+import { Ditto, GameMode, type LFW, type SurvivalRankItem, type SurvivalRankPeriod } from "./LFW";
 import {
   get_my_rank as get_my_rank_api,
   get_rank_list as get_rank_list_api,
@@ -120,8 +119,8 @@ function apply_bili_player_name(lfw: LFW) {
 
 /** 联机时只有房主负责提交排行（不在房间里则自己提交） */
 function rank_is_host(): boolean {
-  const { conn } = current_connection
-  if (!conn?.room) return true
+  const conn = Ditto.Networking
+  if (!conn.room) return true
   return conn.room.owner?.id === conn.client?.id
 }
 

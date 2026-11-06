@@ -18,8 +18,8 @@ const PLAYER_STATE = 3;
 const PLAYER_KICK = 4;
 
 /** 房间内页逻辑：房间信息、成员列表、同步模式、准备与离开 */
-export class NetworkRoomLogic extends UIComponent {
-  static override readonly TAGS: string[] = ["NetworkRoomLogic"];
+export class RoomLogic extends UIComponent {
+  static override readonly TAGS: string[] = ["RoomLogic"];
 
   private bound = false;
   private room: IRoomInfo | undefined;

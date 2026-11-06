@@ -65,7 +65,6 @@ import img_btn_3_3 from "./assets/btn_3_3.png";
 import img_btn_4_3 from "./assets/btn_4_3.png";
 import { install_danmu_bridge_if_requested } from "./danmu_bridge";
 import { install_chat_hotkey } from "./Net/chat_overlay";
-import { current_connection } from "./Net/current_connection";
 import { load_desktop_mods } from "./desktop_mods";
 import { useForage } from "./hooks/useForage";
 import i18n, { react_lang_code } from "./i18n";
@@ -73,19 +72,17 @@ import "./init";
 import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
-import { NetworkLogic } from "./pages/network/NetworkLogic";
 import { NetworkModalLogic } from "./pages/network/NetworkModalLogic";
-import { NetworkRoomLogic } from "./pages/network/NetworkRoomLogic";
-import { NetworkRoomsLogic } from "./pages/network/NetworkRoomsLogic";
+import { RoomLogic } from "./pages/network/RoomLogic";
+import { RoomsLogic } from "./pages/network/RoomsLogic";
 import { ChatLogic } from "./pages/network/ChatLogic";
 import { useCallbacks } from "./pages/network/useCallbacks";
 import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { is_toy_env } from "./toy_sdk";
 
-Factory.register_component(NetworkLogic);
 Factory.register_component(NetworkModalLogic);
-Factory.register_component(NetworkRoomsLogic);
-Factory.register_component(NetworkRoomLogic);
+Factory.register_component(RoomsLogic);
+Factory.register_component(RoomLogic);
 Factory.register_component(ChatLogic);
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"
@@ -768,7 +765,7 @@ function App() {
           onClick={() => {
             if (!lfw) return;
             // 联机中（有活连接）：打开 DOM 设置浮层，不改动 LFW 页面栈、不暂停世界
-            if (current_connection.conn) {
+            if (Ditto.Networking.opened) {
               set_net_settings_open(v => !v);
               return;
             }

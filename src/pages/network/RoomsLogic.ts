@@ -24,8 +24,8 @@ const ROOM_OWNER = 6;
 const ROOM_META = 7;
 
 /** 房间列表页逻辑：只负责房间列表的请求、分页与渲染 */
-export class NetworkRoomsLogic extends UIComponent {
-  static override readonly TAGS: string[] = ["NetworkRoomsLogic"];
+export class RoomsLogic extends UIComponent {
+  static override readonly TAGS: string[] = ["RoomsLogic"];
 
   private rooms: IRoomInfo[] = [];
   private page = 0;

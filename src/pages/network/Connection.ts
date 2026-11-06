@@ -2,7 +2,7 @@ import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
 import type {
   IConnectServerOpts, ICreateRoomOpts, IJoinRoomOpts, INetworking, INetworkingCallbacks,
-  TNetworkingChatTarget, TNetworkingSyncMode
+  TNetworkingChatItem, TNetworkingChatTarget, TNetworkingSyncMode
 } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import type { ILFWCallback } from "../../LFW/ILFWCallback";
@@ -33,6 +33,8 @@ export interface IConnectionCallbacks extends INetworkingCallbacks {
 export class Connection implements INetworking {
   static TAG: string = 'Connection';
   static readonly ROOMS_PAGE_SIZE = 5;
+  /** 消息列表最多保留的条数 */
+  static readonly MAX_MESSAGES = 100;
   /** 本地玩家名来源；应用层注入（见 init.ts），连接自己负责把这些名字同步给服务器 */
   static local_player_names: () => string[] = () => [];
   readonly callbacks = new Callbacks<IConnectionCallbacks>()
@@ -55,11 +57,14 @@ export class Connection implements INetworking {
   protected _last_url = '';
   protected _dead = false;
   get rtt() { return this._rtt; }
+  get lead() { return this.driver?.lead }
   get client(): IClientInfo | undefined { return this._client }
   get nickname(): string { return this._nickname }
   get reconnecting() { return this._reconnecting }
   room: IRoomInfo | undefined;
   rooms: IRoomInfo[] = [];
+  protected _messages: TNetworkingChatItem[] = [];
+  get messages(): readonly TNetworkingChatItem[] { return this._messages; }
   /** 对局驱动器：开局后由连接自己建立并转发对局消息，脱离房间页存活 */
   driver: LFWNetworkDriver | null = null;
   get url() { return this._ws?.url }
@@ -128,8 +133,28 @@ export class Connection implements INetworking {
     lfw.world.callbacks.add(this._driver_world_cb);
     driver.on_room_start(resp);
   }
-  async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
-    await this.send(MsgEnum.Chat, { target, text });
+  async send_chat(text: string, target?: TNetworkingChatTarget, to?: string): Promise<void> {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    await this.send(MsgEnum.Chat, {
+      target: target ?? (this.room ? 'room' : 'global'),
+      text: trimmed,
+      to,
+    });
+  }
+  add_notice(text: string): void {
+    this._push_message({ kind: 'sys', text });
+  }
+  clear_messages(): void {
+    if (!this._messages.length) return;
+    this._messages = [];
+    this.callbacks.call('on_messages_change', this._messages, this);
+  }
+  protected _push_message(item: TNetworkingChatItem): void {
+    this._messages = [...this._messages, item];
+    if (this._messages.length > Connection.MAX_MESSAGES)
+      this._messages = this._messages.slice(-Connection.MAX_MESSAGES);
+    this.callbacks.call('on_messages_change', this._messages, this);
   }
   open(opts: IConnectServerOpts): void {
     const { nickname = '', address = '' } = opts;
@@ -523,6 +548,20 @@ export class Connection implements INetworking {
       case MsgEnum.KeyTick:
         this.driver?.on_tick(resp)
         break;
+      case MsgEnum.Chat: {
+        this._push_message({
+          kind: 'msg',
+          msg: {
+            seq: resp.seq,
+            date: resp.date ?? Date.now(),
+            sender: resp.sender,
+            target: resp.target ?? 'global',
+            to: resp.to,
+            text: resp.text ?? '',
+          },
+        });
+        break;
+      }
       case MsgEnum.ListRooms: {
         this.callbacks.call('on_rooms_change', this.rooms = resp.rooms ?? [], this)
         break;

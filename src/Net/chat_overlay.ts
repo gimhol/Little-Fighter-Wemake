@@ -1,10 +1,20 @@
-import type { LFW } from "@/LFW";
+import { Ditto } from "@/LFW/ditto";
+import type { LFW } from "@/LFW/LFW";
 import type { IKeyboardCallback } from "@/LFW/ditto/keyboard/IKeyboardCallback";
-import { chat_store } from "./chat_store";
-import { current_connection } from "./current_connection";
 
 /** 聊天浮层独占的 UI 层，压在其他页面之上但不挤掉任何页面 */
 export const CHAT_LAYER = 2;
+
+/** 只读浏览模式：不显示输入框，一段时间后自动淡出关闭 */
+let peeking = false;
+
+export function is_chat_peek(): boolean {
+  return peeking;
+}
+
+export function set_chat_peek(v: boolean): void {
+  peeking = v;
+}
 
 export function is_chat_open(lfw: LFW): boolean {
   const layer = lfw.layers.at(CHAT_LAYER);
@@ -13,13 +23,13 @@ export function is_chat_open(lfw: LFW): boolean {
 
 export function open_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
-  chat_store.peek = false;
+  set_chat_peek(false);
   lfw.layers.push_page({ id: "chat" }, CHAT_LAYER);
 }
 
 export function peek_chat(lfw: LFW): void {
   if (is_chat_open(lfw)) return;
-  chat_store.peek = true;
+  set_chat_peek(true);
   lfw.layers.push_page({ id: "chat" }, CHAT_LAYER);
 }
 
@@ -33,7 +43,7 @@ export function toggle_chat(lfw: LFW): void {
     open_chat(lfw);
     return;
   }
-  if (chat_store.peek) {
+  if (is_chat_peek()) {
     close_chat(lfw);
     open_chat(lfw);
     return;
@@ -56,7 +66,7 @@ export function install_chat_hotkey(lfw: LFW): void {
     if (e.key !== "Escape" || !is_chat_open(lfw)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    if (!chat_store.peek && escape_in_input) escape_in_input();
+    if (!is_chat_peek() && escape_in_input) escape_in_input();
     else close_chat(lfw);
   }, true);
   const key: IKeyboardCallback = {
@@ -64,12 +74,12 @@ export function install_chat_hotkey(lfw: LFW): void {
       const native = e.native;
       const is_t = !native?.ctrlKey && !native?.metaKey && (e.key === "t" || native?.code === "KeyT");
       if (!is_t) return;
-      if (chat_store.peek || is_chat_open(lfw)) {
+      if (is_chat_peek() || is_chat_open(lfw)) {
         toggle_chat(lfw);
         e.interrupt();
         return;
       }
-      if (!current_connection.conn) return;
+      if (!Ditto.Networking.opened) return;
       open_chat(lfw);
       e.interrupt();
     },

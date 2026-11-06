@@ -1,5 +1,5 @@
 import { get_pointer_cursors, type IPointerCursor } from "@/LFW/cmds/CMD_POINTER_EVENTS";
-import { current_connection } from "@/Net/current_connection";
+import { Ditto } from "@/LFW/ditto";
 import { CanvasTexture, Object3D, OrthographicCamera, Scene, Sprite, SpriteMaterial, WebGLRenderer } from "../_t";
 import type { WorldRenderer } from "./WorldRenderer";
 import csses from "./styles.module.scss";
@@ -106,10 +106,10 @@ export class CursorRender {
   }
   protected name_of(from: string): string {
     if (!from) {
-      const me = current_connection.conn?.client;
+      const me = Ditto.Networking.client;
       return me?.name || me?.id || "";
     }
-    const clients = current_connection.conn?.room?.clients;
+    const clients = Ditto.Networking.room?.clients;
     if (clients) {
       for (let i = 0; i < clients.length; i++) {
         const client = clients[i];

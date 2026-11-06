@@ -1,5 +1,5 @@
 <node id="network_room_page" name="页面：房间" local_only="true">
-  <component cls="NetworkRoomLogic"/>
+  <component cls="RoomLogic"/>
 
   <node id="network_bg" pos="0,0,-450">
     <node ref="builtin_data/launch/bg.ui.json"/>

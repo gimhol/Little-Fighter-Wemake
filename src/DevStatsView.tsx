@@ -1,8 +1,7 @@
 import { useMemo, useRef } from "react";
 import csses from "./DevStatsView.module.scss";
-import type { ILFWCallback, IWorldCallbacks, LFW } from "./LFW";
+import { Ditto, type ILFWCallback, type IWorldCallbacks, type LFW } from "./LFW";
 import { useCallbacks } from "./pages/network/useCallbacks";
-import { current_connection } from "./Net/current_connection";
 
 export interface IDevStatsViewProps {
   lfw?: LFW | null;
@@ -44,9 +43,9 @@ export function DevStatsView(props: IDevStatsViewProps) {
         ref_coll.current!.innerText = "COLL:" + world.collisions.size;
         ref_rnd.current!.innerText = "RND:" + world.render_cost.toFixed(2) + "ms";
         ref_span.current!.innerText = "SPAN:" + (world.ticker?.span ?? 1).toFixed(2);
-        const rtt = current_connection.conn?.rtt;
+        const rtt = Ditto.Networking.rtt;
         ref_rtt.current!.innerText = "RTT:" + (rtt ? rtt + "ms" : "--");
-        const k = current_connection.driver?.lead;
+        const k = Ditto.Networking.lead;
         ref_k.current!.innerText = "K:" + (k ?? "--");
       }
     }), [])

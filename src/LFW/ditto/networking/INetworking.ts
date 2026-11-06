@@ -8,6 +8,17 @@ export interface IConnectServerOpts {
 }
 export type TNetworkingChatTarget = 'global' | 'room' | 'private';
 export type TNetworkingSyncMode = 'auto' | 'lockstep' | 'delay';
+export interface INetworkingChatMessage {
+  seq?: number;
+  date: number;
+  sender?: IClientInfo;
+  target: TNetworkingChatTarget;
+  to?: string;
+  text: string;
+}
+export type TNetworkingChatItem =
+  | { kind: 'msg'; msg: INetworkingChatMessage }
+  | { kind: 'sys'; text: string };
 export interface ICreateRoomOpts {
   title?: string;
   min_players?: number;
@@ -45,15 +56,18 @@ export interface INetworkingCallbacks {
   on_room_join_failed?(error: unknown, conn: INetworking): void;
   on_ping?(client_id: string | undefined, rtt: number | undefined, conn: INetworking): void;
   on_rooms_change?(rooms: IRoomInfo[], conn: INetworking): void;
+  on_messages_change?(messages: readonly TNetworkingChatItem[], conn: INetworking): void;
 }
 
 export interface INetworking {
   readonly callbacks: NoEmitCallbacks<INetworkingCallbacks>
 
   get rtt(): number;
+  get lead(): number | undefined;
   get nickname(): string;
   get room(): IRoomInfo | undefined;
   get rooms(): IRoomInfo[];
+  get messages(): readonly TNetworkingChatItem[];
   get client(): IClientInfo | undefined;
   get url(): string | undefined;
   get opened(): boolean;
@@ -72,5 +86,7 @@ export interface INetworking {
   set_room_pwd(pwd: string): void;
   set_room_sync(mode: TNetworkingSyncMode): void;
   kick(client_id: string): void;
-  send_chat(text: string, target?: TNetworkingChatTarget): Promise<void>;
+  send_chat(text: string, target?: TNetworkingChatTarget, to?: string): Promise<void>;
+  add_notice(text: string): void;
+  clear_messages(): void;
 }
