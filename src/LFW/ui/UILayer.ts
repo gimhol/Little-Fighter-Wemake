@@ -359,9 +359,9 @@ export class UILayers {
   set_page(opts: IPushPageOpts, index: number): void {
     this.ensure(index).set(opts)
   }
-  
-  reset_page(opts: IPushPageOpts = {}): void {
-    this.ensure(0).reset(opts)
+
+  reset_page(opts: IPushPageOpts = {}, index: number = 0): void {
+    this.at(index)?.reset(opts)
   }
   pop_page(opts: IPopPageOpts, index: number): void {
     this.at(index)?.pop(opts)
