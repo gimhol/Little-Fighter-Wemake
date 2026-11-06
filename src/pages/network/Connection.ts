@@ -2,7 +2,7 @@ import { Callbacks } from "@/LFW/base";
 import type { IClientInfo } from "../../LFW/ditto/networking/IClientInfo";
 import type {
   IConnectServerOpts, ICreateRoomOpts, IJoinRoomOpts, INetworking, INetworkingCallbacks,
-  TCreateRoomCallback, TNetworkingChatTarget
+  TNetworkingChatTarget
 } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import {
@@ -66,19 +66,13 @@ export class Connection implements INetworking {
     const offset = page_index * limit;
     this.send(MsgEnum.ListRooms, { offset, limit }, { loose: true }).catch(() => void 0);
   }
-  create_room(opts: ICreateRoomOpts = {}, callback?: TCreateRoomCallback): void {
+  create_room(opts: ICreateRoomOpts = {}): void {
     this.send(MsgEnum.CreateRoom, { ...opts })
-      .then((resp) => callback?.(resp.room))
-      .catch((error) => this.callbacks.call('on_room_failed', error, this));
+      .catch((error) => this.callbacks.call('on_room_create_failed', error, this));
   }
-  async join_room(opts: IJoinRoomOpts): Promise<IRoomInfo | undefined> {
-    try {
-      const resp = await this.send(MsgEnum.JoinRoom, { ...opts });
-      return resp.room;
-    } catch (error) {
-      this.callbacks.call('on_room_failed', error, this);
-      throw error;
-    }
+  join_room(opts: IJoinRoomOpts): void {
+    this.send(MsgEnum.JoinRoom, { ...opts })
+      .catch((error) => this.callbacks.call('on_room_join_failed', error, this));
   }
   async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
     await this.send(MsgEnum.Chat, { target, text });

@@ -53,11 +53,20 @@ export class NetworkRoomsLogic extends UIComponent {
       this.rooms = [...rooms];
       this.render_rooms();
     },
-    on_room_failed: (error) => {
+    on_room_created: (room) => {
       if (!this.bound) return;
       this.busy = false;
-      this.set_status(this.error_text(error));
+      this.add_notice(this.lfw.t("network.sys_room_created", room.code || ""));
+      this.clear_status();
     },
+    on_room_joined: (room) => {
+      if (!this.bound) return;
+      this.busy = false;
+      this.add_notice(this.lfw.t("network.sys_room_joined", room.code || room.id || ""));
+      this.clear_status();
+    },
+    on_room_create_failed: (error) => this.room_failed(error),
+    on_room_join_failed: (error) => this.room_failed(error),
   };
 
   override on_start(): void {
@@ -119,14 +128,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.busy = true;
     void LFW.collect_data_infos()
       .then((data_infos) => {
-        Ditto.Networking.create_room(
-          { min_players: 1, max_players: 4, lfw_version: LFW.VERSION_NAME, data_infos },
-          (room) => {
-            this.busy = false;
-            this.add_notice(this.lfw.t("network.sys_room_created", room?.code || ""));
-            this.clear_status();
-          },
-        );
+        Ditto.Networking.create_room({ min_players: 1, max_players: 4, lfw_version: LFW.VERSION_NAME, data_infos });
       })
       .catch((e) => {
         this.busy = false;
@@ -134,10 +136,10 @@ export class NetworkRoomsLogic extends UIComponent {
       });
   }
 
-  private async join_room(index: number): Promise<void> {
-    const conn = Ditto.Networking;
+  private join_room(index: number): void {
     const room = this.page_rooms()[index];
-    if (!conn.opened || !room?.id || this.busy) return;
+    if (!Ditto.Networking.opened || !room?.id || this.busy) return;
+    const room_id = room.id;
     const row = this.room_rows[index];
     const pwd = this.input_value(row?.children[ROOM_PWD_BG]?.children[0]).trim();
     if (room.need_pwd && !pwd) {
@@ -145,16 +147,20 @@ export class NetworkRoomsLogic extends UIComponent {
       return;
     }
     this.busy = true;
-    try {
-      const version = { lfw_version: LFW.VERSION_NAME, data_infos: await LFW.collect_data_infos() };
-      await conn.join_room({ roomid: room.id, pwd: pwd || undefined, ...version });
-      this.add_notice(this.lfw.t("network.sys_room_joined", room.code || room.id));
-      this.clear_status();
-    } catch {
-      // 失败提示统一走 on_room_failed
-    } finally {
-      this.busy = false;
-    }
+    void LFW.collect_data_infos()
+      .then((data_infos) => {
+        Ditto.Networking.join_room({ roomid: room_id, pwd: pwd || undefined, lfw_version: LFW.VERSION_NAME, data_infos });
+      })
+      .catch((e) => {
+        this.busy = false;
+        this.set_status(this.error_text(e));
+      });
+  }
+
+  private room_failed(error: unknown): void {
+    if (!this.bound) return;
+    this.busy = false;
+    this.set_status(this.error_text(error));
   }
 
   private goto_page(page: number): void {

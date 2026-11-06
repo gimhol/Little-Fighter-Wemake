@@ -21,7 +21,6 @@ export interface IJoinRoomOpts {
   lfw_version?: string;
   data_infos?: IDataInfo[];
 }
-export type TCreateRoomCallback = (room: IRoomInfo | undefined) => void;
 export interface INetworkingError {
   readonly __is_networking_error__: true;
   name: string;
@@ -41,7 +40,8 @@ export interface INetworkingCallbacks {
   on_room_created?(room: IRoomInfo, conn: INetworking): void;
   on_room_joined?(room: IRoomInfo, conn: INetworking): void;
   on_room_leaved?(conn: INetworking): void;
-  on_room_failed?(error: unknown, conn: INetworking): void;
+  on_room_create_failed?(error: unknown, conn: INetworking): void;
+  on_room_join_failed?(error: unknown, conn: INetworking): void;
   on_rooms_change?(rooms: IRoomInfo[], conn: INetworking): void;
 }
 
@@ -62,7 +62,7 @@ export interface INetworking {
   close(): void;
 
   refresh_rooms(page: number): void;
-  create_room(opts?: ICreateRoomOpts, callback?: TCreateRoomCallback): void;
-  join_room(opts: IJoinRoomOpts): Promise<IRoomInfo | undefined>;
+  create_room(opts?: ICreateRoomOpts): void;
+  join_room(opts: IJoinRoomOpts): void;
   send_chat(text: string, target?: TNetworkingChatTarget): Promise<void>;
 }
