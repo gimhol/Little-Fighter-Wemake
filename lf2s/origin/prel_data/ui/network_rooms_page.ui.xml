@@ -1,6 +1,5 @@
 <node id="network_rooms_page" name="页面：房间列表" local_only="true">
   <component cls="NetworkRoomsLogic"/>
-  <component cls="NetworkSessionLogic"/>
 
   <node id="network_bg" pos="0,0,-450">
     <node ref="builtin_data/launch/bg.ui.json"/>

@@ -1,4 +1,4 @@
-import type { INetworkingCallbacks, IUINodeRenderer } from "@/LFW";
+import type { IUINodeRenderer } from "@/LFW";
 import { Ditto, LFW } from "@/LFW";
 import { LabelButton } from "@/LFW/ui/component/LabelButton";
 import { TextInput } from "@/LFW/ui/component/TextInput";
@@ -8,10 +8,13 @@ import type { ILFWCallback } from "@/LFW/ILFWCallback";
 import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
 import type { RoomSyncMode } from "@/Net";
 import { chat_store } from "@/Net/chat_store";
+import type { IConnectionCallbacks } from "./Connection";
 import { fit_text, paint } from "./ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
 const AUTO_REFRESH_MS = 3000;
+const ROOM_PAGE_ID = "network_room_page";
+const CONNECT_PAGE_ID = "network_modal";
 
 const ROOM_NAME = 0;
 const ROOM_CODE = 1;
@@ -32,6 +35,7 @@ export class NetworkRoomsLogic extends UIComponent {
   private auto_elapsed = 0;
   private busy = false;
   private bound = false;
+  private manual_close = false;
 
   private btn_auto: UINode | undefined;
   private btn_auto_label: UINode | undefined;
@@ -42,29 +46,33 @@ export class NetworkRoomsLogic extends UIComponent {
   private btn_next: UINode | undefined;
   private page_label: UINode | undefined;
   private rooms_status: UINode | undefined;
+  private top_sub: UINode | undefined;
 
   private readonly lfw_cb: ILFWCallback = {
     on_lang_changed: () => this.refresh_texts(),
   };
 
-  private readonly net_cb: INetworkingCallbacks = {
+  private readonly net_cb: IConnectionCallbacks = {
+    on_register: () => {
+      this.busy = false;
+      this.clear_status();
+      this.update_topbar();
+      Ditto.Networking.refresh_rooms(this.page);
+    },
+    on_close: (reason) => {
+      this.busy = false;
+      this.update_topbar();
+      this.show_connect_modal(this.manual_close ? "" : reason || "连接已断开，请重新连接。");
+      this.manual_close = false;
+    },
+    on_ping: () => this.update_topbar(),
     on_rooms_change: (rooms) => {
       if (!this.bound) return;
       this.rooms = [...rooms];
       this.render_rooms();
     },
-    on_room_created: (room) => {
-      if (!this.bound) return;
-      this.busy = false;
-      this.add_notice(this.lfw.t("network.sys_room_created", room.code || ""));
-      this.clear_status();
-    },
-    on_room_joined: (room) => {
-      if (!this.bound) return;
-      this.busy = false;
-      this.add_notice(this.lfw.t("network.sys_room_joined", room.code || room.id || ""));
-      this.clear_status();
-    },
+    on_room_created: (room) => this.enter_room(this.lfw.t("network.sys_room_created", room.code || "")),
+    on_room_joined: (room) => this.enter_room(this.lfw.t("network.sys_room_joined", room.code || room.id || "")),
     on_room_create_failed: (error) => this.room_failed(error),
     on_room_join_failed: (error) => this.room_failed(error),
   };
@@ -81,6 +89,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.btn_next = q("network_btn_next");
     this.page_label = q("network_page_label");
     this.rooms_status = q("network_rooms_status");
+    this.top_sub = q("network_top_sub");
     this.room_rows = q("network_room_rows")?.children.slice() ?? [];
 
     for (let i = 0; i < this.room_rows.length; i++) {
@@ -90,6 +99,7 @@ export class NetworkRoomsLogic extends UIComponent {
       if (input) input.on_submit = () => void this.join_room(i);
     }
 
+    q("network_btn_disconnect")?.callbacks.add({ on_click: () => this.disconnect() });
     q("network_btn_create")?.callbacks.add({ on_click: () => this.create_room() });
     q("network_btn_refresh")?.callbacks.add({ on_click: () => Ditto.Networking.refresh_rooms(this.page) });
     this.btn_auto?.callbacks.add({ on_click: () => this.toggle_auto_refresh() });
@@ -100,7 +110,12 @@ export class NetworkRoomsLogic extends UIComponent {
     this.rooms = [...Ditto.Networking.rooms];
     this.apply_placeholders();
     this.update_auto_button();
+    this.update_topbar();
     this.render_rooms();
+    if (!Ditto.Networking.opened) {
+      this.show_connect_modal("连接已断开，请重新连接。");
+      return;
+    }
     Ditto.Networking.refresh_rooms(this.page);
   }
 
@@ -120,6 +135,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.btn_next = undefined;
     this.page_label = undefined;
     this.rooms_status = undefined;
+    this.top_sub = undefined;
     this.lfw.callbacks.del(this.lfw_cb);
   }
 
@@ -155,6 +171,37 @@ export class NetworkRoomsLogic extends UIComponent {
         this.busy = false;
         this.set_status(this.error_text(e));
       });
+  }
+
+  private disconnect(): void {
+    this.manual_close = true;
+    Ditto.Networking.close();
+  }
+
+  /** 在当前页面上弹出连接弹窗，不切换页面 */
+  private show_connect_modal(status: string): void {
+    const modal = this.lfw.layers.open_modal({ id: CONNECT_PAGE_ID }, 0);
+    modal?.search_node("network_connect_status")?.set_text(status);
+  }
+
+  private enter_room(notice: string): void {
+    if (!this.bound) return;
+    this.busy = false;
+    this.add_notice(notice);
+    this.clear_status();
+    this.lfw.layers.set_page({ id: ROOM_PAGE_ID }, 0);
+  }
+
+  private update_topbar(): void {
+    const sub = this.top_sub;
+    if (!sub) return;
+    const conn = Ditto.Networking;
+    if (!conn.opened) {
+      sub.set_text("");
+      return;
+    }
+    const info = `${this.lfw.t("network.guest")}\u3000·\u3000${conn.url || ""}\u3000·\u3000${conn.rtt}ms`;
+    sub.set_text(fit_text(info, 300, sub));
   }
 
   private room_failed(error: unknown): void {
@@ -251,6 +298,7 @@ export class NetworkRoomsLogic extends UIComponent {
   private refresh_texts(): void {
     this.apply_placeholders();
     this.update_auto_button();
+    this.update_topbar();
     this.render_rooms();
   }
 

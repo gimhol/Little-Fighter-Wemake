@@ -28,6 +28,8 @@ export interface IConnectionCallbacks extends INetworkingCallbacks {
 export class Connection implements INetworking {
   static TAG: string = 'Connection';
   static readonly ROOMS_PAGE_SIZE = 5;
+  /** 本地玩家名来源；应用层注入（见 init.ts），连接自己负责把这些名字同步给服务器 */
+  static local_player_names: () => string[] = () => [];
   readonly callbacks = new Callbacks<IConnectionCallbacks>()
   protected _pid = 1;
   protected _reopen?: () => void;
@@ -93,6 +95,11 @@ export class Connection implements INetworking {
     this._players = [...players];
     if (this.opened) this._submit_client();
   }
+  protected _sync_players(): void {
+    const players = Connection.local_player_names().slice(0, 8);
+    if (players.length === this._players.length && players.every((name, i) => name === this._players[i])) return;
+    this.set_players(players);
+  }
   protected _submit_client(): void {
     this.send(MsgEnum.ClientInfo, {
       name: this._nickname,
@@ -109,6 +116,7 @@ export class Connection implements INetworking {
   protected _on_open = () => {
     console.log(`[${Connection.TAG}::_on_open]`);
     this._urls.length = 0;
+    this._players = Connection.local_player_names().slice(0, 8);
     this.callbacks.call('on_open', this)
     this.send(MsgEnum.ClientInfo, {
       name: this._nickname,
@@ -457,6 +465,7 @@ export class Connection implements INetworking {
         break;
       }
       case MsgEnum.Ping: {
+        this._sync_players();
         if (resp.client === this._client?.id)
           this._rtt = Date.now() - resp.time;
         this.callbacks.call("on_ping", resp, this);

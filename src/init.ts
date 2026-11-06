@@ -67,6 +67,17 @@ Ditto.setup({
   }
 });
 
+Connection.local_player_names = () => {
+  const lfw = (window as { lfw?: LFW }).lfw;
+  if (!lfw) return [];
+  const names: string[] = [];
+  for (const player of lfw.players.values()) {
+    if (names.length >= 8) break;
+    names.push(player.name);
+  }
+  return names;
+};
+
 if (HEADLESS_UI) {
   Object.assign(window, {
     ui_snapshot: () => ({
