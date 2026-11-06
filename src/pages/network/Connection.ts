@@ -5,6 +5,8 @@ import type {
   TNetworkingChatTarget, TNetworkingSyncMode
 } from "../../LFW/ditto/networking/INetworking";
 import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
+import type { ILFWCallback } from "../../LFW/ILFWCallback";
+import type { IWorldCallbacks } from "../../LFW/IWorldCallbacks";
 import type { LFW } from "../../LFW/LFW";
 import {
   clamp_nickname,
@@ -99,6 +101,18 @@ export class Connection implements INetworking {
   kick(client_id: string): void {
     this.send(MsgEnum.Kick, { client_id }).catch(() => void 0);
   }
+  /** 数据包加载完成：发起第一帧请求，进入锁步循环 */
+  protected readonly _driver_lfw_cb: ILFWCallback = {
+    on_loading_end: () => {
+      const lfw = (window as { lfw?: LFW }).lfw;
+      if (!this.driver || !lfw || lfw.zips.zips.length < 1) return;
+      this.send_nowait(MsgEnum.Tick, { seq: 0 });
+    },
+  };
+  /** 世界数据集变化：房主广播，其他人回滚本地改动 */
+  protected readonly _driver_world_cb: IWorldCallbacks = {
+    on_dataset_change: (key, value, prev) => this.driver?.on_dataset_change(key, value, prev),
+  };
   /** 开局：按服务端指定的同步模式建立驱动器，后续对局消息都转给它 */
   protected _start_driver(resp: IRespRoomStart): void {
     const lfw = (window as { lfw?: LFW }).lfw;
@@ -110,6 +124,8 @@ export class Connection implements INetworking {
     driver.lfw = lfw;
     this.driver = driver;
     this.enable_rejoin(() => driver.rejoin_seq);
+    lfw.callbacks.add(this._driver_lfw_cb);
+    lfw.world.callbacks.add(this._driver_world_cb);
     driver.on_room_start(resp);
   }
   async send_chat(text: string, target?: TNetworkingChatTarget): Promise<void> {
