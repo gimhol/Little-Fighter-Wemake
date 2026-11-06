@@ -94,8 +94,8 @@ export class ChatLogic extends UIComponent {
     set_chat_escape_handler(() => this.exit_input());
     this.conn.callbacks.add(this._net_cb);
 
-    q("chat_close")?.callbacks.add({ on_click: () => this.close() });
-    q("chat_send")?.callbacks.add({ on_click: () => this.send() });
+    // 整页与消息列表是否吃指针由 ui 数据控制（chat_page.ui.xml 的 touchable），
+    // 交互节点只有输入条
     q("chat_input_bg")?.callbacks.add({ on_click: () => this.focus_input() });
 
     this._hold = is_chat_peek() ? PEEK_HOLD_MS : 0;

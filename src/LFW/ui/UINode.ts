@@ -470,6 +470,7 @@ export class UINode implements IDebugging {
     this._clip_children = this.data.clips == true
     this.local_only = this.data.local_only
     this.ignore_esc = this.data.ignore_esc == true
+    this.touchable = this.data.touchable
     this._opacity = this.data.opacity ?? 1
     this.center.set(...this.data.center);
     this.pos.set(...this.data.pos);

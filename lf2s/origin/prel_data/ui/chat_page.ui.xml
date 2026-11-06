@@ -1,4 +1,4 @@
-<node id="chat" size="794,450" center="0,0" pos="0,0" local_only="true" ignore_esc="true">
+<node id="chat" size="794,450" center="0,0" pos="0,0" local_only="true" ignore_esc="true" touchable="false">
   <component cls="ChatLogic"/>
 
   <node id="chat_bg" size="640,150" center="0,1" pos="0,423" color="#00000066" visible="false"/>
@@ -16,7 +16,7 @@
 
   <node id="chat_input_divider" size="640,1" center="0,0" pos="0,423" color="#ffffff2e" visible="false"/>
 
-  <node id="chat_input_bg" size="640,26" center="0,0" pos="0,424" color="#00000066" visible="false">
+  <node id="chat_input_bg" size="640,26" center="0,0" pos="0,424" color="#00000066" visible="false" touchable="true">
     <node id="chat_target" center="1,0.5" pos="628,13">
       <style font="bold 12px Consolas, monospace" fill_style="#7fc4ff" shadow_color="#000000" shadow_blur="2"/>
     </node>

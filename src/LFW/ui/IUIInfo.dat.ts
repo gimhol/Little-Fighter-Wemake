@@ -68,6 +68,16 @@ export interface IUIInfo {
    */
   local_only?: boolean | string;
   ignore_esc?: boolean | string;
+
+  /**
+   * 是否参与指针命中测试
+   *
+   * 默认为 `true`（未显式设置时跟随父节点）；设为 `false` 时指针事件会穿透到下层（页面/HUD 用）
+   *
+   * @type {(boolean | string)}
+   * @memberof IUIInfo
+   */
+  touchable?: boolean | string;
   color?: string;
   background?: string;
   backgroundAlpha?: number | string;
