@@ -17,7 +17,6 @@ export class NetworkModalLogic extends UIComponent {
   private ipt_nickname: TextInput | undefined;
   private loading_anim: UINode | undefined;
 
-  /** 连接中：右下角显示加载动画，并禁用连接/取消按钮 */
   private set_connecting(connecting: boolean): void {
     this.loading_anim?.set_visible(connecting);
     this.btn_connect?.set_disabled(connecting);
@@ -34,6 +33,7 @@ export class NetworkModalLogic extends UIComponent {
       this.lfw.layers.push_page({ id: NetworkModalLogic.ROOMS_PAGE_ID }, 0)
     },
     on_error: (error) => {
+      this.set_connecting(false);
       this.ui_hints?.set_text(error.error ?? error.message)
     },
     on_close: (reason) => {
