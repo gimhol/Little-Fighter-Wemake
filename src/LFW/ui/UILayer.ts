@@ -359,9 +359,9 @@ export class UILayers {
   set_page(opts: IPushPageOpts, index: number): void {
     this.ensure(index).set(opts)
   }
-  /** 替换整层页面栈（只留这一页，不能再 pop 回去） */
-  reset_page(opts: IPushPageOpts, index: number): void {
-    this.ensure(index).reset(opts)
+  
+  reset_page(opts: IPushPageOpts = {}): void {
+    this.ensure(0).reset(opts)
   }
   pop_page(opts: IPopPageOpts, index: number): void {
     this.at(index)?.pop(opts)
