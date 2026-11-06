@@ -41,7 +41,7 @@ export class LoadingContentText extends UIComponent {
     this.failed_reason = null;
     const page = this.str(0)
     if (page) this.node.layer?.set({ id: page })
-    else this.on_progress("waiting_others_players", 0)
+    else this.on_progress(this.lfw.t("waiting_others_players"), 0)
   }
 
   on_progress(text: string, progress: number) {

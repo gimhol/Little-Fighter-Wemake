@@ -144,8 +144,8 @@ export abstract class LFWNetworkDriver {
     lfw.world.dataset.double_click_interval = double_click_interval_arr[v];
     lfw.world.dataset.key_hit_duration = key_hit_duration_arr[v];
 
+    lfw.layers.reset_page({ id: "network_loading" }, 0);
     lfw.load(...LFW.ZIPS);
-    lfw.layers.set_page({ id: "network_loading" }, 0);
     lfw.pointings.enabled = false;
     lfw.keyboard.enabled = false;
     lfw.mt.reset(resp.seed ?? 0, this.debugging);
@@ -200,7 +200,8 @@ export abstract class LFWNetworkDriver {
     lfw.world.after_update = this.after_update;
     lfw.world.before_update = this.before_update;
     lfw.world.reset_game_time();
-    lfw.layers.set_page({ id: "main_page" }, 0);
+    // 开局后只剩主页：加载页/房间页都要丢掉，避免 pop 回到联机界面
+    lfw.layers.reset_page({ id: "main_page" }, 0);
     this.on_start();
   }
   protected run_tick(seq: number, resp: IRespTick | IRespKeyTick): void {

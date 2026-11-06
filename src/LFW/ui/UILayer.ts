@@ -184,7 +184,24 @@ export class UILayer {
     if (curr || prev) this.callback.call('on_set', curr, prev, this)
   }
 
-  /** 压入新页面（本层弹窗随之关闭） */
+  reset(opts: IPushPageOpts = {}): void {
+    this.close_modals();
+    const prev = this.pages[this.pages.length - 1];
+    const poppeds = this.pages.splice(0, this.pages.length);
+    for (let i = poppeds.length - 1; i >= 0; i--) {
+      const popped = poppeds[i];
+      if (i === poppeds.length - 1) popped.on_pause();
+      popped.on_stop();
+    }
+    const curr = this._create(opts.id);
+    if (curr) {
+      this.pages.push(curr);
+      curr.on_start();
+      curr.on_resume();
+    }
+    if (curr || prev) this.callback.call('on_set', curr, prev, this)
+  }
+
   push(opts: IPushPageOpts = {}): void {
     const { id } = opts
     this.close_modals();
@@ -341,6 +358,10 @@ export class UILayers {
   }
   set_page(opts: IPushPageOpts, index: number): void {
     this.ensure(index).set(opts)
+  }
+  /** 替换整层页面栈（只留这一页，不能再 pop 回去） */
+  reset_page(opts: IPushPageOpts, index: number): void {
+    this.ensure(index).reset(opts)
   }
   pop_page(opts: IPopPageOpts, index: number): void {
     this.at(index)?.pop(opts)
