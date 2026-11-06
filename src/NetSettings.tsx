@@ -299,10 +299,6 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
               value={nickname}
               maxLength={NICKNAME_MAX_LENGTH}
               onChange={(e) => set_nickname(e.target.value)}
-              onBlur={() => {
-                const conn = Ditto.Networking;
-                if (conn && conn.nickname !== nickname) conn.set_nickname(nickname);
-              }}
               onKeyDown={(e) => {
                 e.stopPropagation();
                 if (e.key === "Enter") e.currentTarget.blur();

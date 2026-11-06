@@ -57,6 +57,7 @@ export interface INetworkingCallbacks {
   on_ping?(client_id: string | undefined, rtt: number | undefined, conn: INetworking): void;
   on_rooms_change?(rooms: IRoomInfo[], conn: INetworking): void;
   on_messages_change?(messages: readonly TNetworkingChatItem[], conn: INetworking): void;
+  on_nickname_change?(nickname: string, conn: INetworking): void;
 }
 
 export interface INetworking {

@@ -1,56 +1,38 @@
-import localforage from "localforage";
-import { useEffect, useState } from "react";
-import { clamp_nickname } from "../../LFW/ditto/networking/nickname";
+import { useSyncExternalStore } from "react";
+import { Ditto } from "../../LFW/ditto/Instance";
+import type { INetworkingCallbacks } from "../../LFW/ditto/networking/INetworking";
 
-const FORAGE_KEY = "nickname";
+/**
+ * 昵称以 `Ditto.Networking` 为唯一真源：这里只订阅变化、转发写入，
+ * 持久化与上报（ClientInfo）都由连接自己防抖完成。
+ */
+const listeners = new Set<() => void>();
+let attached = false;
 
-type TListener = (value: string) => void;
+const net_cb: INetworkingCallbacks = {
+  on_nickname_change: () => {
+    for (const listener of [...listeners]) listener();
+  },
+};
 
-const listeners = new Set<TListener>();
-let current = "";
-let ready = false;
-let touched = false;
-let loading: Promise<void> | undefined;
-
-function emit(): void {
-  for (const listener of [...listeners]) listener(current);
+function subscribe(listener: () => void): () => void {
+  if (!attached) {
+    attached = true;
+    Ditto.Networking.callbacks.add(net_cb);
+  }
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
+
+const get_snapshot = (): string => Ditto.Networking.nickname;
 
 export function set_nickname(next: string): void {
-  const value = clamp_nickname(next);
-  touched = true;
-  if (value === current) return;
-  current = value;
-  localforage.setItem(FORAGE_KEY, value).catch(() => void 0);
-  emit();
+  Ditto.Networking.set_nickname(next);
 }
 
-function load_nickname(): Promise<void> {
-  if (!loading) {
-    loading = (async () => {
-      try {
-        const stored = await localforage.getItem<string>(FORAGE_KEY);
-        if (!touched && typeof stored === "string") current = clamp_nickname(stored);
-      } catch { }
-      ready = true;
-      emit();
-    })();
-  }
-  return loading;
-}
-
-export function useNickname(): [string, (next: string) => void, boolean] {
-  const [value, set_value] = useState(current);
-  const [is_ready, set_is_ready] = useState(ready);
-  useEffect(() => {
-    set_value(current);
-    set_is_ready(ready);
-    const listener: TListener = (v) => set_value(v);
-    listeners.add(listener);
-    load_nickname().then(() => set_is_ready(true)).catch(() => void 0);
-    return () => {
-      listeners.delete(listener);
-    };
-  }, []);
-  return [value, set_nickname, is_ready];
+export function useNickname(): [string, (next: string) => void] {
+  const nickname = useSyncExternalStore(subscribe, get_snapshot, get_snapshot);
+  return [nickname, set_nickname];
 }

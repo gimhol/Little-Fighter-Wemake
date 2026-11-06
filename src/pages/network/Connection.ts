@@ -9,6 +9,7 @@ import type { ILFWCallback } from "../../LFW/ILFWCallback";
 import type { IWorldCallbacks } from "../../LFW/IWorldCallbacks";
 import type { LFW } from "../../LFW/LFW";
 import { clamp_nickname } from "../../LFW/ditto/networking/nickname";
+import { Ditto } from "../../LFW/ditto/Instance";
 import {
   type INetworkingError as INetworkingError, type IJob, type IMsgReqMap, type IMsgRespMap,
   type IReq, type IResp,
@@ -35,6 +36,10 @@ export class Connection implements INetworking {
   static readonly ROOMS_PAGE_SIZE = 5;
   /** 消息列表最多保留的条数 */
   static readonly MAX_MESSAGES = 100;
+  /** 昵称落盘/上报的防抖时间 */
+  static readonly NICKNAME_COMMIT_MS = 300;
+  /** 昵称在本地缓存里的 key */
+  static readonly NICKNAME_STORAGE_KEY = 'client_nickname';
   /** 本地玩家名来源；应用层注入（见 init.ts），连接自己负责把这些名字同步给服务器 */
   static local_player_names: () => string[] = () => [];
   readonly callbacks = new Callbacks<IConnectionCallbacks>()
@@ -45,6 +50,11 @@ export class Connection implements INetworking {
   protected _client?: IClientInfo;
   protected _players: string[] = []
   protected _nickname: string;
+  /** 已落盘的昵称（避免重复写缓存） */
+  protected _nickname_saved = '';
+  /** 已上报给服务器的昵称（避免重复提交 ClientInfo） */
+  protected _nickname_sent = '';
+  protected _nickname_timer = 0;
   protected _urls: string[] = []
   protected _rtt: number = 0;
   protected _ping_job_timer: number = 0;
@@ -71,7 +81,44 @@ export class Connection implements INetworking {
   get opened() { return this._ws?.readyState === 1 }
 
   constructor(nickname: string = '') {
-    this._nickname = clamp_nickname(nickname);
+    this._nickname = this._nickname_saved = this._nickname_sent = clamp_nickname(nickname);
+    if (!this._nickname) void this._restore_nickname();
+  }
+  /** 从本地缓存恢复昵称（只在用户还没设过时生效） */
+  protected async _restore_nickname(): Promise<void> {
+    const lfw = (window as { lfw?: LFW }).lfw;
+    if (!lfw) return;
+    try {
+      const stored = await lfw.load_string(Connection.NICKNAME_STORAGE_KEY);
+      if (!stored) return;
+      const nickname = clamp_nickname(stored);
+      if (!nickname || nickname === this._nickname) return;
+      this._nickname = this._nickname_saved = nickname;
+      this.callbacks.call('on_nickname_change', nickname, this);
+    } catch (e) {
+      Ditto.warn(`[${Connection.TAG}::_restore_nickname]`, e);
+    }
+  }
+  /** 昵称改动频繁（逐键输入），落盘与上报都走防抖 */
+  protected _schedule_nickname_commit(): void {
+    if (this._nickname_timer) clearTimeout(this._nickname_timer);
+    this._nickname_timer = window.setTimeout(() => {
+      this._nickname_timer = 0;
+      this._commit_nickname();
+    }, Connection.NICKNAME_COMMIT_MS);
+  }
+  protected _commit_nickname(): void {
+    if (this._nickname_timer) {
+      clearTimeout(this._nickname_timer);
+      this._nickname_timer = 0;
+    }
+    if (this._nickname !== this._nickname_saved) {
+      this._nickname_saved = this._nickname;
+      const lfw = (window as { lfw?: LFW }).lfw;
+      lfw?.save_string(Connection.NICKNAME_STORAGE_KEY, this._nickname)
+        .catch((e) => Ditto.warn(`[${Connection.TAG}::_commit_nickname]`, e));
+    }
+    if (this.opened && this._nickname !== this._nickname_sent) this._submit_client();
   }
   refresh_rooms(page: number): void {
     if (!this.opened || this.room) return;
@@ -158,15 +205,24 @@ export class Connection implements INetworking {
   }
   open(opts: IConnectServerOpts): void {
     const { nickname = '', address = '' } = opts;
-    this._nickname = clamp_nickname(nickname)
+    const next = clamp_nickname(nickname);
+    if (next && next !== this._nickname) {
+      this._nickname = next;
+      this.callbacks.call('on_nickname_change', next, this);
+    }
+    this._schedule_nickname_commit();
     this._open(address)
   }
   close() {
+    this._commit_nickname();
     this._close();
   }
   set_nickname(nickname: string): void {
-    this._nickname = clamp_nickname(nickname);
-    if (this.opened) this._submit_client();
+    const next = clamp_nickname(nickname);
+    if (next === this._nickname) return;
+    this._nickname = next;
+    this.callbacks.call('on_nickname_change', next, this);
+    this._schedule_nickname_commit();
   }
   set_players(players: string[]): void {
     this._players = [...players];
@@ -178,6 +234,7 @@ export class Connection implements INetworking {
     this.set_players(players);
   }
   protected _submit_client(): void {
+    this._nickname_sent = this._nickname;
     this.send(MsgEnum.ClientInfo, {
       name: this._nickname,
       players: this._players,
@@ -194,6 +251,7 @@ export class Connection implements INetworking {
     console.log(`[${Connection.TAG}::_on_open]`);
     this._urls.length = 0;
     this._players = Connection.local_player_names().slice(0, 8);
+    this._nickname_sent = this._nickname;
     this.callbacks.call('on_open', this)
     this.send(MsgEnum.ClientInfo, {
       name: this._nickname,
