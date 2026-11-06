@@ -54,20 +54,7 @@ export class NetworkRoomsLogic extends UIComponent {
 
   override on_start(): void {
     this.lfw.callbacks.add(this.lfw_cb);
-    this.bind_rooms_page(this.node);
-  }
-
-  override on_stop(): void {
-    this.unbind_rooms_page();
-    this.lfw.callbacks.del(this.lfw_cb);
-  }
-
-  override on_resume(): void {
-    this.refresh_texts();
-  }
-
-  private bind_rooms_page(node: UINode): void {
-    const q = (id: string) => node.search_node(id) ?? undefined;
+    const q = (id: string) => this.node.search_node(id) ?? undefined;
     this.bound = true;
     this.btn_auto = q("network_btn_auto");
     this.rooms_total = q("network_rooms_total");
@@ -99,7 +86,11 @@ export class NetworkRoomsLogic extends UIComponent {
     this.start_auto_refresh();
   }
 
-  private unbind_rooms_page(): void {
+  override on_resume(): void {
+    this.refresh_texts();
+  }
+
+  override on_stop(): void {
     this.bound = false;
     this.stop_auto_refresh();
     Ditto.Networking.callbacks.del(this.net_cb);
@@ -111,6 +102,7 @@ export class NetworkRoomsLogic extends UIComponent {
     this.btn_next = undefined;
     this.page_label = undefined;
     this.rooms_status = undefined;
+    this.lfw.callbacks.del(this.lfw_cb);
   }
 
   private request_rooms(): void {

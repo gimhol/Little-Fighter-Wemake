@@ -54,42 +54,34 @@ export class NetworkSessionLogic extends UIComponent {
 
   override on_start(): void {
     Ditto.Networking.callbacks.add(this.net_cb);
-    this.bind_page(this.node);
-  }
-
-  override on_stop(): void {
-    Ditto.Networking.callbacks.del(this.net_cb);
-    this.unbind_page();
-  }
-
-  override on_resume(): void {
-    this.update_topbar();
-  }
-
-  private bind_page(node: UINode): void {
-    this.top_sub = node.search_node("network_top_sub") ?? undefined;
-    bind_button(this.lfw, node.search_node("network_btn_disconnect") ?? undefined, () => this.disconnect(), "cancel");
+    this.top_sub = this.node.search_node("network_top_sub") ?? undefined;
+    bind_button(this.lfw, this.node.search_node("network_btn_disconnect") ?? undefined, () => this.disconnect(), "cancel");
     chat_store.set_in_room(false);
 
     const conn = net_connection();
     if (!conn) {
-      Ditto.warn(`[${NetworkSessionLogic.TAG}::bind_page] no active connection`);
+      Ditto.warn(`[${NetworkSessionLogic.TAG}::on_start] no active connection`);
       this.show_connect_modal("连接已断开，请重新连接。");
       return;
     }
     this.adopt_connection(conn);
   }
 
+  override on_resume(): void {
+    this.update_topbar();
+  }
+
+  override on_stop(): void {
+    Ditto.Networking.callbacks.del(this.net_cb);
+    this.detach_connection();
+    this.unwatch_player_names();
+    this.top_sub = undefined;
+  }
+
   private adopt_connection(conn: INetworking): void {
     this.attach_connection(conn);
     conn.set_players(this.player_names());
     this.update_topbar();
-  }
-
-  private unbind_page(): void {
-    this.detach_connection();
-    this.unwatch_player_names();
-    this.top_sub = undefined;
   }
 
   private attach_connection(conn: INetworking): void {
