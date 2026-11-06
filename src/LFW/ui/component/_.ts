@@ -27,8 +27,6 @@ export const regist_components = () => {
     _.FighterStatBar,
     _.FighterThumb,
     _.FitChildren,
-    _.Flex,
-    _.FlexItem,
     _.FnKeysCounts,
     _.FocusBehavior,
     _.GamePrepareLogic,

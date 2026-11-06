@@ -51,14 +51,16 @@ function stub_container(over: {
   cy?: number;
   children?: TStubChild[];
 }): UINode {
-  return {
+  const node = {
     flex: new FlexStyle(over.flex),
     w: over.w ?? 300,
     h: over.h ?? 100,
     cx: over.cx ?? 0,
     cy: over.cy ?? 0,
     children: over.children ?? [],
-  } as unknown as UINode;
+    resize(w: number, h: number) { node.w = w; node.h = h; },
+  };
+  return node as unknown as UINode;
 }
 
 function item(over: Partial<IFlexItemInput> = {}): IFlexItemInput {
@@ -245,6 +247,26 @@ describe("compute_flex_layout", () => {
   test("空子项返回空结果", () => {
     expect(compute_flex_layout(container(), [])).toEqual([]);
   });
+
+  test("入口页主菜单列布局", () => {
+    const items = Array.from({ length: 5 }, (_, i) =>
+      item({ key: i, width: 200, height: 22 })
+    );
+    const out = compute_flex_layout(
+      container({
+        width: 200,
+        height: 130,
+        direction: "column",
+        justify: "center",
+        align: "center",
+        row_gap: 5,
+        col_gap: 5,
+      }),
+      items
+    );
+    expect(out.map(v => v.y)).toEqual([0, 27, 54, 81, 108]);
+    expect(out.every(v => v.x === 0 && v.width === 200 && v.height === 22)).toBe(true);
+  });
 });
 
 describe("apply_flex_layout", () => {
@@ -306,6 +328,37 @@ describe("apply_flex_layout", () => {
     apply_flex_layout(container);
     expect(hidden.x).toBe(0);
     expect(shown.x).toBe(0);
+  });
+
+  test("fit 收缩到内容尺寸", () => {
+    const a = stub_child({ w: 100, h: 20 });
+    const b = stub_child({ w: 80, h: 30 });
+    const container = stub_container({
+      flex: "display:flex; fit:true; gap:5",
+      w: 500,
+      h: 200,
+      children: [a, b],
+    });
+    apply_flex_layout(container);
+    expect(container.w).toBeCloseTo(185);
+    expect(container.h).toBeCloseTo(30);
+    expect(b.x).toBeCloseTo(105);
+  });
+
+  test("fit 子项不会被 stretch 拉伸", () => {
+    const child = stub_child({ h: 20 });
+    child.flex.fit_h = true;
+    const container = stub_container({ flex: "display:flex; align:stretch", children: [child] });
+    apply_flex_layout(container);
+    expect(child.h).toBe(20);
+  });
+
+  test("stretch_force 强制拉伸显式尺寸的子项", () => {
+    const child = stub_child({ h: 20, raw: { size: [100, 20, 0] } });
+    child.flex.stretch_force = true;
+    const container = stub_container({ flex: "display:flex; align:stretch", children: [child] });
+    apply_flex_layout(container);
+    expect(child.h).toBeCloseTo(100);
   });
 
   test("grow 参与真实节点换算", () => {
@@ -381,6 +434,17 @@ describe("flex 声明解析", () => {
     expect(style.direction).toBe("row-reverse");
     expect(style.justify).toBe("space-between");
     expect(style.align).toBe("flex-end");
+  });
+
+  test("fit 声明", () => {
+    const both = new FlexStyle("fit:true");
+    expect(both.fit).toBe(true);
+    expect(both.fit_w).toBe(true);
+    expect(both.fit_h).toBe(true);
+
+    const only_w = new FlexStyle("fit_w:1");
+    expect(only_w.fit_w).toBe(true);
+    expect(only_w.fit_h).toBe(false);
   });
 
   test("缺省值对齐 CSS", () => {

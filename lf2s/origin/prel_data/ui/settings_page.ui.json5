@@ -21,17 +21,7 @@
     {
       pos: "394,30",
       center: "0.5,0",
-      component: [
-        {
-          cls: "Flex",
-          properties: {
-            direction: "column",
-            fit: true,
-            gap: 10,
-            align: "center",
-          },
-        },
-      ],
+      flex: "display:flex; direction:column; fit:true; gap:10; align:center",
       items: [
         {
           items: [
@@ -60,16 +50,7 @@
               },
             },
           ],
-          component: [
-            {
-              cls: "Flex",
-              properties: { direction: "row", fit: true, gap: 20 },
-            },
-            {
-              cls: "FlexItem",
-              properties: { align: "center" },
-            },
-          ],
+          flex: "display:flex; direction:row; fit:true; gap:20; align:start",
         },
         { id: "misc_settings_node", template: "ui/settings_misc.ui.json5" },
         { id: "ctrl_settings_node", template: "ui/settings_ctrl.ui.json5", visible: false },

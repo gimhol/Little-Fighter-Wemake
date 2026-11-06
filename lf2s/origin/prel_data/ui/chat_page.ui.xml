@@ -3,36 +3,12 @@
 
   <node id="chat_bg" size="640,150" center="0,1" pos="0,423" color="#00000066" visible="false"/>
 
-  <node id="chat_rows" size="442,0" center="0,1" pos="10,446" clips="false">
-    <component cls="Flex">
-      <properties>
-        <string name="direction">column</string>
-        <number name="gap">1</number>
-        <array name="padding">
-          <number>0</number>
-          <number>0</number>
-          <number>0</number>
-          <number>0</number>
-        </array>
-      </properties>
-    </component>
-    <node id="chat_row" count="12" size="442,18" center="0,0" pos="0,0">
-      <component cls="Flex">
-        <properties>
-          <string name="direction">row</string>
-          <number name="gap">4</number>
-          <array name="padding">
-            <number>0</number>
-            <number>0</number>
-            <number>0</number>
-            <number>0</number>
-          </array>
-        </properties>
-      </component>
-      <node id="chat_row_name" center="0,0" pos="0,0">
+  <node id="chat_rows" size="442,0" center="0,1" pos="10,446" clips="false" flex="display:flex; direction:column; align:start; gap:1">
+    <node id="chat_row" count="12" size="442,18" center="0,0" pos="0,0" flex="display:flex; direction:row; align:start; gap:4; shrink:0">
+      <node id="chat_row_name" center="0,0" pos="0,0" flex="shrink:0">
         <style font="bold 12.5px Consolas, monospace" fill_style="#7fc4ff" shadow_color="#000000" shadow_blur="2"/>
       </node>
-      <node id="chat_row_body" center="0,0" pos="0,0">
+      <node id="chat_row_body" center="0,0" pos="0,0" flex="shrink:0">
         <style font="12.5px Consolas, monospace" fill_style="#f4f4f4" shadow_color="#000000" shadow_blur="2"/>
       </node>
     </node>

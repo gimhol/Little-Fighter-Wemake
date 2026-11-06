@@ -10,16 +10,7 @@
     <img path="!sprite/MENU_CLIP.png" x="0" y="41" w="496" h="80"/>
   </node>
 
-  <node id="entry_menu" center="0.5,0.5" pos="397,270">
-    <component cls="Flex">
-      <properties>
-        <string name="direction">column</string>
-        <string name="align">center</string>
-        <boolean name="fit">true</boolean>
-        <number name="gap">5</number>
-      </properties>
-    </component>
-
+  <node id="entry_menu" size="200,130" center="0.5,0.5" pos="397,270" flex="display:flex; direction:column; justify:center; align:center; gap:5">
     <node id="btn_game_start" size="200,22" center="0.5,0.5" auto_focus="true" template="builtin_data/launch/main_text_button.ui.json">
       <Reachable args="main"/>
       <values>

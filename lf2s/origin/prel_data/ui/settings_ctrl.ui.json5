@@ -4,23 +4,7 @@
   templates: {
     suffixies: {
       center: "0,0",
-      component: [
-        {
-          cls: "Flex",
-          properties: {
-            direction: "column",
-            gap: 3,
-            fit: true,
-            align: "end",
-          },
-        },
-        {
-          cls: "FlexItem",
-          properties: {
-            align: "end",
-          },
-        },
-      ],
+      flex: "display:flex; direction:column; gap:3; align:end; fit:true",
       items: [
         // 行高与 `player_set` 逐行对齐（玩家名 26 / 控制方式 106 / 七个键位 26，gap 3）；
         // 容器宽度取 0、文字 `center: "1,0.5"` ⇒ 右边缘与「上下左右攻跳防」齐平。
@@ -155,12 +139,7 @@
       ],
     },
     player_set: {
-      component: [
-        {
-          cls: "Flex",
-          properties: { direction: "column", gap: 3, fit: true },
-        },
-      ],
+      flex: "display:flex; direction:column; gap:3; align:start; fit:true",
       items: [
         {
           size: "106, 26",
@@ -245,12 +224,7 @@
       ],
     },
   },
-  component: [
-    {
-      cls: "Flex",
-      properties: { direction: "row", gap: 20, fit: true },
-    },
-  ],
+  flex: "display:flex; direction:row; gap:20; align:start; fit:true",
   items: [
     {
       template: "suffixies",

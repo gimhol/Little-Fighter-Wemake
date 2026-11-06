@@ -1,6 +1,5 @@
 /*** AUTO EXPORT START ***/
 export * from "./ComponentFSMState";
-export * from "./FlexAlign";
 export * from "./IFighterSumInfo";
 export * from "./IPlayable";
 export * from "./ISumInfo";
@@ -29,8 +28,6 @@ export * from "./FadeOutOpacity";
 export * from "./FighterName";
 export * from "./FighterStatBar";
 export * from "./FitChildren";
-export * from "./Flex";
-export * from "./FlexItem";
 export * from "./FnKeysCounts";
 export * from "./FocusBehavior";
 export * from "./GamePrepareLogic";

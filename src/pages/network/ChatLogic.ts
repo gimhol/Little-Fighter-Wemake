@@ -1,4 +1,3 @@
-import { Flex } from "@/LFW/ui/component/Flex";
 import { TextInput } from "@/LFW/ui/component/TextInput";
 import { UIComponent } from "@/LFW/ui/component/UIComponent";
 import type { IUIKeyEvent } from "@/LFW/ui/IUIKeyEvent";
@@ -311,13 +310,5 @@ export class ChatLogic extends UIComponent {
       if (tag.style.fill_style !== color) tag.style.fill_style = color;
       tag.set_text(this.channel_label(target));
     }
-    this.layout();
-  }
-
-  private layout(): void {
-    const list = this._list;
-    if (!list) return;
-    for (const row of list.children) if (row.visible) row.find_component(Flex)?.apply();
-    list.find_component(Flex)?.apply();
   }
 }

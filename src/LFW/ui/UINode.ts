@@ -345,10 +345,13 @@ export class UINode implements IDebugging {
     if (!this._flex_dirty) return;
     this._flex_dirty = false;
     if (this.is_flex) {
+      const w = this.w;
+      const h = this.h;
       this._applying_flex = true;
       apply_flex_layout(this);
       this._applying_flex = false;
       this._flex_dirty = false;
+      if (this.w !== w || this.h !== h) this._parent?.invalidate_flex();
     }
     for (const child of this._children) child.flush_flex();
   }

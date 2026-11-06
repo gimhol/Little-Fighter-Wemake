@@ -1,20 +1,11 @@
 {
   id: "settings_misc",
   name: "settings_misc",
+  flex: "display:flex; direction:row; align:center; gap:5; fit:true",
   component: [
     "ReachableGroup(misc_settings,ud)",
     {
       cls: "MiscSettingsLogic",
-    },
-    {
-      cls: "Flex",
-      properties: {
-        direction: "row",
-        align: "center",
-        gap: 5,
-        padding: "0,0,0,0",
-        fit: true,
-      },
     },
   ],
 
@@ -36,18 +27,7 @@
       items: [
         {
           id: "settings_list",
-          component: [
-            {
-              cls: "Flex",
-              properties: {
-                direction: "column",
-                align: "center",
-                gap: 5,
-                padding: "0,0,0,0",
-                fit: true,
-              },
-            },
-          ],
+          flex: "display:flex; direction:column; align:center; gap:5; fit:true",
           items: [
         {
           id: "language_row",

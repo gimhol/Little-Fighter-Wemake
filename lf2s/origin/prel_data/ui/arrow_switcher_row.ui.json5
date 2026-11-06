@@ -3,14 +3,8 @@
   name: "arrow_switcher_row",
   size: "700,36",
   center: "0.5,0.5",
+  flex: "display:flex; direction:row; align:center",
   component: [
-    {
-      cls: "Flex",
-      properties: {
-        direction: "row",
-        align: "center",
-      },
-    },
     {
       cls: "FocusBehavior",
     },

@@ -8,10 +8,8 @@
       font: "12px Arial"
     },
   },
+  flex: "display:flex; align:start",
   component: [
-    {
-      cls: "Flex",
-    },
     {
       cls: "FnKeysCounts",
       properties: {
@@ -38,11 +36,7 @@
     {
       visible: false,
       id: "fn_key_counts",
-      component: [
-        {
-          cls: "Flex",
-        },
-      ],
+      flex: "display:flex; align:start",
       items: [
         {
           i18n: "Fn Keys Useds, F6: ",

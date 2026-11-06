@@ -219,8 +219,10 @@ function is_stretchable(node: UINode): boolean {
 export function apply_flex_layout(node: UINode): void {
   const targets: UINode[] = [];
   const items: IFlexItemInput[] = [];
+  const is_row = node.flex.direction === "row" || node.flex.direction === "row-reverse";
   for (const child of node.children) {
     if (!child.self_visible) continue;
+    const fits_cross = is_row ? child.flex.fit_h : child.flex.fit_w;
     items.push({
       key: targets.length,
       width: child.w,
@@ -230,13 +232,32 @@ export function apply_flex_layout(node: UINode): void {
       basis: child.flex.basis,
       align_self: child.flex.align_self,
       order: child.flex.order,
-      stretchable: is_stretchable(child),
+      stretchable: (is_stretchable(child) || child.flex.stretch_force) && !fits_cross,
     });
     targets.push(child);
   }
   if (!items.length) return;
 
   const flex = node.flex;
+  if ((flex.fit_w || flex.fit_h) && flex.wrap === "nowrap") {
+    const is_row = flex.direction === "row" || flex.direction === "row-reverse";
+    const main_gap = Math.max(0, is_row ? flex.col_gap : flex.row_gap);
+    let main_sum = 0;
+    let cross_max = 0;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const main = item.basis === "auto" ? (is_row ? item.width : item.height) : item.basis;
+      const cross = is_row ? item.height : item.width;
+      main_sum += main + (i ? main_gap : 0);
+      cross_max = Math.max(cross_max, cross);
+    }
+    const w = (is_row ? main_sum : cross_max) + flex.padding[3] + flex.padding[1];
+    const h = (is_row ? cross_max : main_sum) + flex.padding[0] + flex.padding[2];
+    const target_w = flex.fit_w ? w : node.w;
+    const target_h = flex.fit_h ? h : node.h;
+    if (node.w !== target_w || node.h !== target_h) node.resize(target_w, target_h);
+  }
+
   const result = compute_flex_layout({
     width: node.w,
     height: node.h,

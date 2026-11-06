@@ -3,12 +3,12 @@ import { Animation } from "../../animation/Animation";
 import { Sine } from "../../animation/Sine";
 import { Ditto } from "../../ditto";
 import { LFWPointerEvent } from "../LFWPointerEvent";
-import { Flex } from "./Flex";
 import type { IUICompnentCallbacks } from "./IUICompnentCallbacks";
+import { UIComponent } from "./UIComponent";
 export interface IJalousieCallbacks extends IUICompnentCallbacks {
   on_anim_end?(v: Jalousie): void;
 }
-export class Jalousie extends Flex<IJalousieCallbacks> {
+export class Jalousie extends UIComponent<unknown, IJalousieCallbacks> {
   static override readonly TAGS: string[] = ["Jalousie"];
   protected _anim: Animation = new Sequence(
     new Easing(0, 0).set_duration(250),
@@ -17,18 +17,35 @@ export class Jalousie extends Flex<IJalousieCallbacks> {
   )
   get anim(): Animation { return this._anim }
   get click_test(): boolean { return this.props_holder.bool('click_test') === true; }
+  get direction(): "row" | "column" {
+    return this.props_holder.str('direction', ['row', 'column']) === 'column' ? 'column' : 'row';
+  }
 
   override on_start() {
-    super.on_start?.();
     this.sync_screen_rect();
+    this.apply_layout();
     const open = this.props_holder.bool('open') ?? this.bool(1);
     const end = this.props_holder.bool('end') ?? this.bool(2);
     if (end) this._anim.end(open)
     else this._anim.start(open)
   }
   override on_resume(): void {
-    super.on_resume?.();
     this.sync_screen_rect();
+    this.apply_layout();
+  }
+  protected apply_layout(): void {
+    const flex = this.node.flex;
+    flex.display = "flex";
+    flex.direction = this.direction;
+    flex.align = "stretch";
+    flex.row_gap = 0;
+    flex.col_gap = 0;
+    for (const child of this.node.children) {
+      child.flex.shrink = 0;
+      child.flex.stretch_force = true;
+    }
+    this.node.invalidate_flex();
+    this.node.flush_flex();
   }
   protected sync_screen_rect(): void {
     const root = this.node.root;
@@ -59,7 +76,6 @@ export class Jalousie extends Flex<IJalousieCallbacks> {
   }
 
   override update(dt: number): void {
-    super.update(dt);
     if (this._anim.done) return;
     this._anim.update(dt);
     this.update_children();

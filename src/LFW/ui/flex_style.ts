@@ -44,6 +44,9 @@ export interface IFlexStyleData {
   shrink?: number | string;
   basis?: TNodeFlexBasis | string;
   order?: number | string;
+  fit?: boolean | string;
+  fit_w?: boolean | string;
+  fit_h?: boolean | string;
 }
 
 const KEY_ALIAS: Record<string, string> = {
@@ -128,6 +131,13 @@ function norm<T extends string>(value: unknown, table: Record<string, T>, fallba
   return table[key] ?? fallback;
 }
 
+function bool(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") return value === "true" || value === "1";
+  return false;
+}
+
 function num(value: unknown, fallback: number): number {
   if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
   if (typeof value !== "string" || !value.trim()) return fallback;
@@ -192,6 +202,9 @@ export function normalize_flex_style(
     shrink: Math.max(0, num(raw.shrink, 1)),
     basis: basis == null || basis === "" || basis === "auto" ? "auto" : num(basis, 0),
     order: num(raw.order, 0),
+    fit: bool(raw.fit),
+    fit_w: bool(raw.fit_w ?? raw.fit),
+    fit_h: bool(raw.fit_h ?? raw.fit),
   };
 }
 
@@ -213,6 +226,9 @@ export class FlexStyle {
   private _shrink = 1;
   private _basis: TNodeFlexBasis = "auto";
   private _order = 0;
+  private _fit_w = false;
+  private _fit_h = false;
+  private _stretch_force = false;
 
   constructor(data?: string | IFlexStyleData | null) {
     this.assign(data);
@@ -236,6 +252,8 @@ export class FlexStyle {
     this._shrink = v.shrink as number;
     this._basis = v.basis as TNodeFlexBasis;
     this._order = v.order as number;
+    this._fit_w = v.fit_w as boolean;
+    this._fit_h = v.fit_h as boolean;
     this._notify();
     return this;
   }
@@ -357,6 +375,30 @@ export class FlexStyle {
     const n = num(v, 0);
     if (n === this._order) return;
     this._order = n;
+    this._notify();
+  }
+
+  get fit(): boolean { return this._fit_w && this._fit_h; }
+  set fit(v: boolean) { this._set_fit(bool(v), bool(v)); }
+
+  get fit_w(): boolean { return this._fit_w; }
+  set fit_w(v: boolean) { this._set_fit(bool(v), this._fit_h); }
+
+  get fit_h(): boolean { return this._fit_h; }
+  set fit_h(v: boolean) { this._set_fit(this._fit_w, bool(v)); }
+
+  get stretch_force(): boolean { return this._stretch_force; }
+  set stretch_force(v: boolean) {
+    const n = bool(v);
+    if (n === this._stretch_force) return;
+    this._stretch_force = n;
+    this._notify();
+  }
+
+  private _set_fit(w: boolean, h: boolean): void {
+    if (w === this._fit_w && h === this._fit_h) return;
+    this._fit_w = w;
+    this._fit_h = h;
     this._notify();
   }
 
