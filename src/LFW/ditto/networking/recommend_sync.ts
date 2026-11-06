@@ -1,6 +1,7 @@
-import type { NetSyncMode } from "./IMsg_RoomStart";
+import type { TNetworkingSyncMode } from "./INetworking";
 
-export type RoomSyncMode = NetSyncMode | 'auto';
+/** 实际下发用的同步模式（不含 auto） */
+export type TConcreteSyncMode = 'lockstep' | 'delay';
 
 export const NET_UPS = 60;
 export const LOCKSTEP_RTT_RATIO = 1.25;
@@ -16,7 +17,7 @@ function delay_lead(max_rtt: number, ups: number): number {
   return Math.min(MAX_LEAD, Math.max(MIN_LEAD, lead));
 }
 
-export function recommend_sync(max_rtt: number, ups: number = NET_UPS): { sync_mode: NetSyncMode, input_delay: number } {
+export function recommend_sync(max_rtt: number, ups: number = NET_UPS): { sync_mode: TConcreteSyncMode, input_delay: number } {
   const tick_ms = 1000 / ups;
   const rtt = max_rtt || UNKNOWN_RTT;
   if (rtt <= tick_ms * LOCKSTEP_RTT_RATIO)
@@ -24,7 +25,7 @@ export function recommend_sync(max_rtt: number, ups: number = NET_UPS): { sync_m
   return { sync_mode: 'delay', input_delay: delay_lead(max_rtt, ups) };
 }
 
-export function resolve_sync(choice: RoomSyncMode, max_rtt: number, ups: number = NET_UPS): { sync_mode: NetSyncMode, input_delay: number } {
+export function resolve_sync(choice: TNetworkingSyncMode, max_rtt: number, ups: number = NET_UPS): { sync_mode: TConcreteSyncMode, input_delay: number } {
   if (choice === 'lockstep') return { sync_mode: 'lockstep', input_delay: 1 };
   if (choice === 'delay') return { sync_mode: 'delay', input_delay: delay_lead(max_rtt, ups) };
   return recommend_sync(max_rtt, ups);

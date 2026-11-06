@@ -1,10 +1,10 @@
-import { Ditto } from "@/LFW/ditto";
-import type { INetworkingCallbacks, TNetworkingChatItem } from "@/LFW/ditto/networking/INetworking";
-import { TextInput } from "@/LFW/ui/component/TextInput";
-import { UIComponent } from "@/LFW/ui/component/UIComponent";
-import type { IUIKeyEvent } from "@/LFW/ui/IUIKeyEvent";
-import type { UINode } from "@/LFW/ui/UINode";
-import { is_chat_peek, set_chat_escape_handler, set_chat_peek } from "@/Net/chat_overlay";
+import { Ditto } from "../../../ditto/Instance";
+import type { INetworkingCallbacks, TNetworkingChatItem } from "../../../ditto/networking/INetworking";
+import { TextInput } from "../TextInput";
+import { UIComponent } from "../UIComponent";
+import type { IUIKeyEvent } from "../../IUIKeyEvent";
+import type { UINode } from "../../UINode";
+import { is_chat_peek, set_chat_escape_handler, set_chat_peek } from "../../chat_overlay";
 
 /** 聊天频道：私聊不参与频道标签 */
 type TChatTarget = "room" | "global";

@@ -1,6 +1,6 @@
 import localforage from "localforage";
 import { useEffect, useState } from "react";
-import { clamp_nickname } from "../../Net";
+import { clamp_nickname } from "../../LFW/ditto/networking/nickname";
 
 const FORAGE_KEY = "nickname";
 

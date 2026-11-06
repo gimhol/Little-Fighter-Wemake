@@ -8,8 +8,8 @@ import type { IRoomInfo } from '../../LFW/ditto/networking/IRoomInfo';
 import type { ILFWCallback } from "../../LFW/ILFWCallback";
 import type { IWorldCallbacks } from "../../LFW/IWorldCallbacks";
 import type { LFW } from "../../LFW/LFW";
+import { clamp_nickname } from "../../LFW/ditto/networking/nickname";
 import {
-  clamp_nickname,
   type INetworkingError as INetworkingError, type IJob, type IMsgReqMap, type IMsgRespMap,
   type IReq, type IResp,
   type IRespRejoin, type IRespRejoinFrames, type IRespRoomStart, type ISendOpts, MsgEnum, req_timeout_error,

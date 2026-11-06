@@ -1,17 +1,14 @@
-import type { IStyle } from "@/LFW";
-import { Style } from "@/LFW/ui/Style";
-import type { UINode } from "@/LFW/ui/UINode";
+import type { IStyle } from "../defines/IStyle";
+import { Style } from "./Style";
+import type { UINode } from "./UINode";
 
-let measure_ctx: CanvasRenderingContext2D | undefined;
-
-/** 按节点字体测量文本像素宽度 */
+/** 按节点样式测量文本像素宽度（走注入的 ImageMgr，不直接碰宿主 DOM） */
 export function measure_text_width(text: string, node?: UINode): number {
-  if (!text) return 0;
-  const ctx = (measure_ctx ??= document.createElement("canvas").getContext("2d")!);
-  ctx.font = node?.style.font ?? "normal 9px system-ui";
+  if (!text || !node) return 0;
   let width = 0;
-  for (const line of text.split("\n")) width = Math.max(width, ctx.measureText(line).width);
-  return width + 4;
+  for (const line of text.split("\n"))
+    width = Math.max(width, node.lfw.images.measure_text(line, node.style).w ?? 0);
+  return width;
 }
 
 /** 超出宽度时按像素截断并补省略号 */

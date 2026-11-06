@@ -1,4 +1,4 @@
-import { NICKNAME_MAX_LENGTH } from "../../Net";
+import { NICKNAME_MAX_LENGTH } from "../../../ditto/networking/nickname";
 
 const EN_ADJECTIVES: readonly string[] = [
   "Swift", "Shadow", "Iron", "Frost", "Blaze", "Silent", "Golden", "Crimson",

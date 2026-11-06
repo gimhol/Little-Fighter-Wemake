@@ -1,12 +1,14 @@
-import { Ditto, type INetworkingCallbacks } from "@/LFW";
-import type { ILFWCallback } from "@/LFW/ILFWCallback";
-import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
-import { LabelButton } from "@/LFW/ui/component/LabelButton";
-import { TextInput } from "@/LFW/ui/component/TextInput";
-import { UIComponent } from "@/LFW/ui/component/UIComponent";
-import type { UINode } from "@/LFW/ui/UINode";
-import { recommend_sync, type RoomSyncMode } from "@/Net";
-import { fit_text, paint } from "./ui_helpers";
+import { Ditto } from "../../../ditto/Instance";
+import type { INetworkingCallbacks } from "../../../ditto/networking/INetworking";
+import type { ILFWCallback } from "../../../ILFWCallback";
+import type { IRoomInfo } from "../../../ditto/networking/IRoomInfo";
+import { LabelButton } from "../LabelButton";
+import { TextInput } from "../TextInput";
+import { UIComponent } from "../UIComponent";
+import type { UINode } from "../../UINode";
+import { recommend_sync } from "../../../ditto/networking/recommend_sync";
+import type { TNetworkingSyncMode } from "../../../ditto/networking/INetworking";
+import { fit_text, paint } from "../../ui_helpers";
 
 const PLAYER_ROW_STEP = 32;
 const COUNTDOWN_SEC = 5;
@@ -49,7 +51,7 @@ export class RoomLogic extends UIComponent {
   private btn_ready: UINode | undefined;
   private btn_ready_label: UINode | undefined;
   private player_rows: UINode[] = [];
-  private sync_buttons: { mode: RoomSyncMode; node?: UINode; label?: UINode }[] = [];
+  private sync_buttons: { mode: TNetworkingSyncMode; node?: UINode; label?: UINode }[] = [];
 
   private readonly lfw_cb: ILFWCallback = {
     on_lang_changed: () => this.render_room(),
@@ -194,7 +196,7 @@ export class RoomLogic extends UIComponent {
     this.set_input(this.pwd_input, "");
   }
 
-  private set_sync(mode: RoomSyncMode): void {
+  private set_sync(mode: TNetworkingSyncMode): void {
     if (!this.is_owner() || this.room?.started) return;
     Ditto.Networking.set_room_sync(mode);
   }
@@ -237,7 +239,7 @@ export class RoomLogic extends UIComponent {
     this.render_recommend();
   }
 
-  private render_sync(mode: RoomSyncMode): void {
+  private render_sync(mode: TNetworkingSyncMode): void {
     for (const { mode: m, label } of this.sync_buttons) {
       paint(label, {
         fill_style: m === mode ? "#ffffff" : "#a8b9ff",

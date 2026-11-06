@@ -6,7 +6,7 @@ import { CtrlDevice } from "./LFW/defines/CtrlDevice";
 import { GameKey } from "./LFW/defines/GameKey";
 import { SyncRenderEnum } from "./LFW/defines/SyncRenderEnum";
 import { Defines } from "./LFW/defines/defines";
-import { NICKNAME_MAX_LENGTH } from "./Net";
+import { NICKNAME_MAX_LENGTH } from "./LFW/ditto/networking/nickname";
 import { useNickname } from "./pages/network/nickname_store";
 import csses from "./NetSettings.module.scss";
 

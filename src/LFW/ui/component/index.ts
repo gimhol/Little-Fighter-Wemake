@@ -91,4 +91,5 @@ export * from "./CharMenu";
 export * from "./Slider";
 export * from "./Tests";
 export * from "./WeaponRain";
+export * from "./network";
 /*** AUTO EXPORT END ***/

@@ -1,5 +1,10 @@
-import { Ditto, type INetworkingCallbacks, type IUICallback, TextInput, UIComponent, UINode } from "@/LFW";
-import { clamp_nickname } from "@/Net/nickname";
+import { Ditto } from "../../../ditto/Instance";
+import type { INetworkingCallbacks } from "../../../ditto/networking/INetworking";
+import { clamp_nickname } from "../../../ditto/networking/nickname";
+import type { IUICallback } from "../../IUICallback";
+import { TextInput } from "../TextInput";
+import { UIComponent } from "../UIComponent";
+import type { UINode } from "../../UINode";
 import { pick_default_nickname } from "./default_nicknames";
 
 /**

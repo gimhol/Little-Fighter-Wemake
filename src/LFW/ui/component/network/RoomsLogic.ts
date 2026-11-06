@@ -1,13 +1,15 @@
-import type { INetworkingCallbacks, IUINodeRenderer } from "@/LFW";
-import { Ditto, LFW } from "@/LFW";
-import { LabelButton } from "@/LFW/ui/component/LabelButton";
-import { TextInput } from "@/LFW/ui/component/TextInput";
-import { UIComponent } from "@/LFW/ui/component/UIComponent";
-import type { UINode } from "@/LFW/ui/UINode";
-import type { ILFWCallback } from "@/LFW/ILFWCallback";
-import type { IRoomInfo } from "@/LFW/ditto/networking/IRoomInfo";
-import type { RoomSyncMode } from "@/Net";
-import { fit_text, paint } from "./ui_helpers";
+import { Ditto } from "../../../ditto/Instance";
+import type { INetworkingCallbacks } from "../../../ditto/networking/INetworking";
+import type { IRoomInfo } from "../../../ditto/networking/IRoomInfo";
+import type { TNetworkingSyncMode } from "../../../ditto/networking/INetworking";
+import type { IUINodeRenderer } from "../../../ditto/render/IUINodeRenderer";
+import type { ILFWCallback } from "../../../ILFWCallback";
+import { LFW } from "../../../LFW";
+import { LabelButton } from "../LabelButton";
+import { TextInput } from "../TextInput";
+import { UIComponent } from "../UIComponent";
+import type { UINode } from "../../UINode";
+import { fit_text, paint } from "../../ui_helpers";
 
 const ROOM_PAGE_SIZE = 5;
 const AUTO_REFRESH_MS = 3000;
@@ -238,7 +240,7 @@ export class RoomsLogic extends UIComponent {
     return version.split(" ")[0];
   }
 
-  private sync_label(mode?: RoomSyncMode): string {
+  private sync_label(mode?: TNetworkingSyncMode): string {
     if (mode === "lockstep") return this.lfw.t("network.sync_lockstep");
     if (mode === "delay") return this.lfw.t("network.sync_delay");
     return this.lfw.t("network.sync_auto");

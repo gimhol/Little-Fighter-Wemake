@@ -64,7 +64,7 @@ import img_btn_3_2 from "./assets/btn_3_2.png";
 import img_btn_3_3 from "./assets/btn_3_3.png";
 import img_btn_4_3 from "./assets/btn_4_3.png";
 import { install_danmu_bridge_if_requested } from "./danmu_bridge";
-import { install_chat_hotkey } from "./Net/chat_overlay";
+import { install_chat_hotkey } from "./Net/chat_hotkey";
 import { load_desktop_mods } from "./desktop_mods";
 import { useForage } from "./hooks/useForage";
 import i18n, { react_lang_code } from "./i18n";
@@ -72,18 +72,9 @@ import "./init";
 import { install_mock_danmu_if_requested } from "./mock_danmu";
 import { DatViewer } from "./pages/dat_viewer/DatViewer";
 import { useWorkspaces } from "./pages/dat_viewer/useWorkspaces";
-import { NetworkModalLogic } from "./pages/network/NetworkModalLogic";
-import { RoomLogic } from "./pages/network/RoomLogic";
-import { RoomsLogic } from "./pages/network/RoomsLogic";
-import { ChatLogic } from "./pages/network/ChatLogic";
 import { useCallbacks } from "./pages/network/useCallbacks";
 import { fetch_survival_rank, init_survival_rank } from "./survival_rank";
 import { is_toy_env } from "./toy_sdk";
-
-Factory.register_component(NetworkModalLogic);
-Factory.register_component(RoomsLogic);
-Factory.register_component(RoomLogic);
-Factory.register_component(ChatLogic);
 
 type render_size_mode = "fixed" | "fill" | "cover" | "contain"
 type debug_ui_pos = "left" | "right" | "top" | "bottom"

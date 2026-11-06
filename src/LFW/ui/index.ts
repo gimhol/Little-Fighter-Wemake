@@ -27,4 +27,6 @@ export * from "./LFWPointerEvent";
 export * from "./action";
 export * from "./component";
 export * from "./utils";
+export * from "./chat_overlay";
+export * from "./ui_helpers";
 /*** AUTO EXPORT END ***/
