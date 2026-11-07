@@ -1,10 +1,24 @@
+import type { IPropsMeta } from "../../defines";
 import type { UINode } from "../UINode";
 import { parse_call_func_expression } from "../utils";
 import { FadeOutOpacity } from "./FadeOutOpacity";
 import { UIComponent } from "./UIComponent";
 
-export class LoadingContentText extends UIComponent {
+export interface ILoadingContentTextProps {
+  /**
+   * 加载结束后（且未配置跳转页）替换显示的文案（i18n key）。
+   *
+   * 只有真的还要等别人时才配，比如联网加载页的 `waiting_others_players`；
+   * 不配则保持最后一条进度文案，由淡出自行消失。
+   */
+  waiting_text?: string;
+}
+
+export class LoadingContentText extends UIComponent<ILoadingContentTextProps> {
   static override readonly TAGS: string[] = ["LoadingContentText"]
+  static override readonly PROPS: IPropsMeta<ILoadingContentTextProps> = {
+    waiting_text: { type: String, nullable: true },
+  };
   get fade_out_duration() { return this.num(1) ?? 0 };
   get fade_out_delay() { return this.num(2) ?? 0 }
   protected fadeout?: FadeOutOpacity;
@@ -60,8 +74,12 @@ export class LoadingContentText extends UIComponent {
   on_loading_end() {
     this.failed_reason = null;
     const page = this.str(0)
-    if (page) this.node.layer?.set({ id: page })
-    else this.on_progress(this.lfw.t("waiting_others_players"), 0)
+    if (page) {
+      this.node.layer?.set({ id: page })
+      return
+    }
+    const waiting_text = this.props.waiting_text
+    if (waiting_text) this.on_progress(this.lfw.t(waiting_text), 0);
   }
 
   on_progress(text: string, progress: number) {

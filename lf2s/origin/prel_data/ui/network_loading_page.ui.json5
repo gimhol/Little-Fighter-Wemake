@@ -48,7 +48,12 @@
         },
         {
           id: "txt_loading_content",
-          component: ["LoadingContentText()"],
+          component: [{
+            cls: "LoadingContentText",
+            properties: {
+              waiting_text: "waiting_others_players",
+            },
+          }],
           i18n: "",
           style: {
             font: "16px Arial",
