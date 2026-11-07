@@ -207,16 +207,29 @@
       "pos": "760, 430"
     },
     {
-      "id": "txt_loading_content",
-      "component": [
-        "LoadingContentText(,1000,1000)"
-      ],
+      "id": "loading_content_row",
+      "flex": "display:flex; direction:row; align:center; gap:3; fit:true",
       "pos": "0,0",
       "center": "0,0",
-      "i18n": "",
-      "style": {
-        "font": "12px Arial"
-      }
+      "items": [
+        {
+          "id": "loading_content_prefix",
+          "i18n": "loading:",
+          "style": {
+            "font": "12px Arial"
+          }
+        },
+        {
+          "id": "txt_loading_content",
+          "component": [
+            "LoadingContentText(,1000,1000)"
+          ],
+          "i18n": "",
+          "style": {
+            "font": "12px Arial"
+          }
+        }
+      ]
     },
     {
       "id": "desktop_hint",

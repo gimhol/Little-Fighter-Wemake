@@ -1,3 +1,4 @@
+import type { UINode } from "../UINode";
 import { parse_call_func_expression } from "../utils";
 import { FadeOutOpacity } from "./FadeOutOpacity";
 import { UIComponent } from "./UIComponent";
@@ -9,6 +10,15 @@ export class LoadingContentText extends UIComponent {
   protected fadeout?: FadeOutOpacity;
   protected failed_reason: string | null = null;
 
+  /**
+   * 加载内容区：UI 把前缀（如 `loading:`）与本节点放进同一个 flex 行时，整行算作内容区，
+   * 淡出与失败提示都作用于整行；否则只作用于本节点。
+   */
+  protected get area(): UINode {
+    const parent = this.node.parent;
+    return parent && parent.is_flex ? parent : this.node;
+  }
+
   override init(): this {
     if (this.fade_out_duration) {
       const expression = FadeOutOpacity.expression(
@@ -18,8 +28,9 @@ export class LoadingContentText extends UIComponent {
       // TODO: fix it.
       const pr = parse_call_func_expression(expression);
       if (pr) {
-        this.fadeout = this.lfw.factory.create_components(this.node, [{ ...pr, cls: pr.name }])[0] as FadeOutOpacity
-        this.node.add_components(this.fadeout)
+        const area = this.area;
+        this.fadeout = this.lfw.factory.create_components(area, [{ ...pr, cls: pr.name }])[0] as FadeOutOpacity
+        area.add_components(this.fadeout)
       }
     }
     return this;
@@ -33,8 +44,17 @@ export class LoadingContentText extends UIComponent {
     this.lfw.callbacks.del(this);
   }
 
+  /** 失败提示会顶替整行内容，所以同行里的前缀（由 UI 配置）要一起让位/复位 */
+  protected set_area_prefix_visible(visible: boolean) {
+    const area = this.area;
+    if (area === this.node) return;
+    for (const child of area.children)
+      if (child !== this.node) child.set_visible(visible);
+  }
+
   on_loading_start() {
     this.failed_reason = null;
+    this.set_area_prefix_visible(true);
   }
 
   on_loading_end() {
@@ -47,16 +67,16 @@ export class LoadingContentText extends UIComponent {
   on_progress(text: string, progress: number) {
     if (this.failed_reason != null) return;
     this.fadeout?.start();
-    const str = progress ? `loading: ${text}(${progress}%)` : ` loading: ${text}`;
-    this.node.set_text(str)
+    this.node.set_text(progress ? `${text}(${progress}%)` : text)
   }
 
   on_loading_failed(reason: any) {
     this.failed_reason = format_reason(reason);
     if (this.fadeout) {
       this.fadeout.enabled = false;
-      this.node.set_opacity(1);
+      this.area.set_opacity(1);
     }
+    this.set_area_prefix_visible(false);
     this.node.set_text(`loading failed: ${this.failed_reason}`)
   }
 }

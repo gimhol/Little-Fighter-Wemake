@@ -35,15 +35,28 @@
       opacity: 0.3,
     },
     {
-      id: "txt_loading_content",
-      component: [ "LoadingContentText(demo_mode_page)" ],
+      id: "loading_content_row",
+      flex: "display:flex; direction:row; align:center; gap:4; fit:true",
       pos: "10,420",
       center: "0,0",
-      i18n: "",
-      style: {
-        font: "16px Arial",
-        disposable: true,
-      },
+      items: [
+        {
+          id: "loading_content_prefix",
+          i18n: "loading:",
+          style: {
+            font: "16px Arial",
+          },
+        },
+        {
+          id: "txt_loading_content",
+          component: [ "LoadingContentText(demo_mode_page)" ],
+          i18n: "",
+          style: {
+            font: "16px Arial",
+            disposable: true,
+          },
+        },
+      ],
     },
     {
       id: "stage_transition",
