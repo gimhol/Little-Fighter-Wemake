@@ -234,7 +234,10 @@ export class RoomLogic extends UIComponent {
       this.empty_slot.move_to(397, 178 + clients.length * PLAYER_ROW_STEP + PLAYER_ROW_STEP / 2, 0);
     }
     if (this.btn_ready) this.btn_ready.visible = !!me;
-    this.set_text(this.btn_ready_label, fit_text(this.lfw.t(me?.ready ? "network.btn_cancel_ready" : "network.ready"), 100, this.btn_ready_label));
+    this.set_text(
+      this.btn_ready_label, 
+      fit_text(this.lfw.t(me?.ready ? "network.btn_cancel_ready" : "network.ready"), 100, this.btn_ready_label)
+    );
     this.render_countdown();
     this.render_recommend();
   }
