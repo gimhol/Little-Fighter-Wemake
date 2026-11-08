@@ -38,8 +38,19 @@ export class LabelButton extends UIComponent<ILabelButtonProps> {
     return this.props.back_label?.text?.text ?? '';
   }
   set text(v: string) {
-    this.props.back_label?.set_text(v);
-    this.props.hover_label?.set_text(v);
+    this.set_text(v);
+  }
+  /**
+   * 设置按钮文字
+   *
+   * @param {string} text 文本内容
+   * @return {this}
+   * @memberof LabelButton
+   */
+  set_text(text: string): this {
+    this.props.back_label?.set_text(text);
+    this.props.hover_label?.set_text(text);
+    return this;
   }
   override update(dt: number): void {
     const { responser } = this;

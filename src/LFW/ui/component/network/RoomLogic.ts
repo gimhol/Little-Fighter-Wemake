@@ -49,7 +49,7 @@ export class RoomLogic extends UIComponent {
   private countdown: UINode | undefined;
   private room_status: UINode | undefined;
   private btn_ready: UINode | undefined;
-  private btn_ready_label: UINode | undefined;
+  private btn_ready_btn: LabelButton | undefined;
   private player_rows: UINode[] = [];
   private sync_buttons: { mode: TNetworkingSyncMode; node?: UINode; label?: UINode }[] = [];
 
@@ -88,7 +88,7 @@ export class RoomLogic extends UIComponent {
     this.countdown = q("network_countdown");
     this.room_status = q("network_room_status");
     this.btn_ready = q("network_btn_ready");
-    this.btn_ready_label = this.btn_ready?.find_component(LabelButton)?.props.back_label;
+    this.btn_ready_btn = this.btn_ready?.find_component(LabelButton);
     this.player_rows = q("network_player_rows")?.children.slice() ?? [];
 
     for (let i = 0; i < this.player_rows.length; i++) {
@@ -140,7 +140,7 @@ export class RoomLogic extends UIComponent {
     this.countdown = undefined;
     this.room_status = undefined;
     this.btn_ready = undefined;
-    this.btn_ready_label = undefined;
+    this.btn_ready_btn = undefined;
   }
 
   override update(dt: number): void {
@@ -234,10 +234,10 @@ export class RoomLogic extends UIComponent {
       this.empty_slot.move_to(397, 178 + clients.length * PLAYER_ROW_STEP + PLAYER_ROW_STEP / 2, 0);
     }
     if (this.btn_ready) this.btn_ready.visible = !!me;
-    this.set_text(
-      this.btn_ready_label, 
-      fit_text(this.lfw.t(me?.ready ? "network.btn_cancel_ready" : "network.ready"), 100, this.btn_ready_label)
-    );
+    if (this.btn_ready_btn) {
+      const text = this.lfw.t(me?.ready ? "network.btn_cancel_ready" : "network.ready");
+      this.btn_ready_btn.set_text(fit_text(text, 100, this.btn_ready_btn.props.back_label));
+    }
     this.render_countdown();
     this.render_recommend();
   }
