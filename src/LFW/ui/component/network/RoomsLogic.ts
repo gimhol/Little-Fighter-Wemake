@@ -80,7 +80,7 @@ export class RoomsLogic extends UIComponent {
     const q = (id: string) => this.node.search_node(id) ?? undefined;
     this.bound = true;
     this.btn_auto = q("network_btn_auto");
-    this.btn_auto_label = this.btn_auto?.find_component(LabelButton)?.props.back_label;
+    this.btn_auto_label = this.btn_auto?.find_component(LabelButton)?.back_label;
     this.rooms_total = q("network_rooms_total");
     this.no_rooms = q("network_no_rooms");
     this.btn_prev = q("network_btn_prev");

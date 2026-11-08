@@ -1,6 +1,7 @@
 import type { IStyle } from "../defines";
 import { Ditto } from "../ditto";
 import { ImportError } from "../ditto/importer/ImportError";
+import { Factory } from "../Factory";
 import { LFW } from "../LFW";
 import { floor } from '../utils/math/base';
 import { is_num_arr } from '../utils/type_check/is_num';
@@ -143,6 +144,16 @@ export async function cook_ui_info(
     }
     return ret;
   }).sort((a, b) => (b.weight || 0) - (a.weight || 0)) ?? [];
+
+  const component_items: IUIInfo[] = [];
+  for (const info of components) {
+    const Cls = Factory.components.get(info.cls);
+    if (!Cls?.ITEMS?.length) continue;
+    for (const item of Cls.ITEMS) {
+      if (item.id && info.properties && item.id in info.properties) continue;
+      component_items.push(item);
+    }
+  }
 
   const { actions: raw_actions, ...rest_raw } = raw;
 
@@ -308,9 +319,11 @@ export async function cook_ui_info(
   if (raw_items && !Array.isArray(raw_items)) {
     Ditto.warn(`[cook_ui_info] items must be array, but got`, raw_items);
   }
-  if (raw_items?.length) {
+
+  const items = [...component_items, ...(Array.isArray(raw_items) ? raw_items : [])];
+  if (items.length) {
     ret.items = [];
-    for (const raw_item of raw_items) {
+    for (const raw_item of items) {
       const item = await cook_ui_info(lfw, raw_item, ret);
       ret.items.push(item);
     }

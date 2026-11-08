@@ -5,6 +5,7 @@ import type { IPropsMeta, IVector3 } from "../../defines";
 import { Ditto } from "../../ditto";
 import { is_num } from '../../utils/type_check/is_num';
 import type { IComponentInfo } from "../IComponentInfo";
+import type { IUIInfo } from "../IUIInfo.dat";
 import type { IUIKeyEvent } from "../IUIKeyEvent";
 import { LFWPointerEvent } from "../LFWPointerEvent";
 import type { UINode } from "../UINode";
@@ -25,6 +26,7 @@ export class UIComponent<
   static readonly TAGS: string[] = ["UIComponent"]
   static readonly PROPS: IPropsMeta = {}
   static readonly SINGLETON: boolean = false;
+  static readonly ITEMS: readonly IUIInfo[] = [];
   readonly node: UINode;
   readonly f_name: string;
   readonly callbacks = new Callbacks<C>()

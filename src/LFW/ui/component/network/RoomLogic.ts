@@ -103,7 +103,7 @@ export class RoomLogic extends UIComponent {
     this.sync_buttons = (["auto", "lockstep", "delay"] as const).map((mode) => {
       const node = q(`network_sync_${mode}`);
       node?.callbacks.add({ on_click: () => this.set_sync(mode) });
-      return { mode, node, label: node?.find_component(LabelButton)?.props.back_label };
+      return { mode, node, label: node?.find_component(LabelButton)?.back_label };
     });
 
     const pwd_input = this.pwd_input?.find_component(TextInput);
@@ -236,7 +236,7 @@ export class RoomLogic extends UIComponent {
     if (this.btn_ready) this.btn_ready.visible = !!me;
     if (this.btn_ready_btn) {
       const text = this.lfw.t(me?.ready ? "network.btn_cancel_ready" : "network.ready");
-      this.btn_ready_btn.set_text(fit_text(text, 100, this.btn_ready_btn.props.back_label));
+      this.btn_ready_btn.set_text(fit_text(text, 100, this.btn_ready_btn.back_label));
     }
     this.render_countdown();
     this.render_recommend();
