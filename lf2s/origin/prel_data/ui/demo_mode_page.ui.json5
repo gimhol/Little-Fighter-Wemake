@@ -74,6 +74,12 @@
       pos: "397,10",
       center: "0.5,0",
       component: ["StageTitleText()"],
+      style: {
+        fill_style: "white",
+        font: "12px Arial",
+        line_width: 1,
+        padding_t: 2,
+      },
     },
     {
       visible: true,

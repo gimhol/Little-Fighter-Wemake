@@ -77,6 +77,9 @@
           pos: "60, 177",
           center: "0.5, 0.5",
           component: ["PlayerTeamName()"],
+          style: {
+            font: "14px Arial",
+          },
         },
       ],
     },

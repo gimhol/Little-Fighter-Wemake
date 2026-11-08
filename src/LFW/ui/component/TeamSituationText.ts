@@ -1,7 +1,5 @@
 import { get_team_text_color } from "../../base/get_team_text_color";
-import type { IStyle } from "../../defines/IStyle";
 import { TeamEnum } from "../../defines/TeamEnum";
-import { TextInfo } from "../../ditto/image/TextInfo";
 import { Stage } from "../../stage";
 import { floor, max } from '../../utils/math/base';
 import type { ITeamSumInfo } from "./ITeamSumInfo";
@@ -12,13 +10,11 @@ export class TeamSituationText extends UIComponent {
   static override readonly TAGS: string[] = ["TeamSituationText"]
 
   private _team: string | null = null;
-  private _style: IStyle = {
-    fill_style: 'white',
-    font: "12px Arial",
-    line_width: 1
-  };
+  /** 队伍色随数据变化；字号、描边等静态样式在 UI 文件里 */
+  private _team_color: string = 'white';
   private _sum: ITeamSumInfo | undefined;
   private _text: string = ' ';
+  private _color?: string;
   override on_start(): void {
     super.on_start?.();
     this._team = this.str(0);
@@ -35,11 +31,7 @@ export class TeamSituationText extends UIComponent {
     }
   }
   set_team(team: string) {
-    this._style = {
-      fill_style: get_team_text_color(team, get_team_text_color(TeamEnum.Team_2)),
-      font: "12px Arial",
-      line_width: 1
-    }
+    this._team_color = get_team_text_color(team, get_team_text_color(TeamEnum.Team_2))
     this._sum = this.node.root.search_component(SummaryLogic)?.team_sum(team)
     this.rr();
   }
@@ -59,8 +51,11 @@ export class TeamSituationText extends UIComponent {
     if (!this._sum) return;
     let text = `Man: ${this._sum.lives}　HP: ${max(0, floor(this._sum.hp))}`;
     if (this._sum.reserve) text += `　Reserve: ${this._sum.reserve}`;
-    if (this._text == text) return;
+    if (this._text == text && this._color === this._team_color) return;
     this._text = text;
-    this.node.text = new TextInfo({ text, style: this._style });
+    this._color = this._team_color;
+    const style = this.node.style;
+    style.fill_style = this._team_color;
+    this.node.set_text(text, style);
   }
 }

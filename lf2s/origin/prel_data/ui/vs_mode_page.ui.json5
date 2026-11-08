@@ -24,11 +24,22 @@
       pos: "397,0",
       center: "0.5,0",
       component: ["StageTitleText()"],
+      style: {
+        fill_style: "white",
+        font: "12px Arial",
+        line_width: 1,
+        padding_t: 2,
+      },
     },
     {
       pos: "794,450",
       center: "1,1",
       component: ["PrefixAndDifficultyText(VS mode)"],
+      style: {
+        fill_style: "white",
+        font: "12px Arial",
+        line_width: 1,
+      },
     },
     {
       template: "ui/score_board.ui.json5",

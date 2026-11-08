@@ -1,7 +1,6 @@
 import type { IStagePhaseInfo } from "../../defines";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
 import type { IStageCallbacks } from "../../stage/IStageCallbacks";
-import { TextInfo } from "../../ditto/image/TextInfo";
 import { Stage } from "../../stage";
 import { UIComponent } from "./UIComponent";
 
@@ -9,12 +8,6 @@ export class StageTitleText extends UIComponent {
   static override readonly TAGS: string[] = ["StageTitleText"];
   private _title: string = '';
   private _stage: Stage | null = null;
-  private _style = {
-    fill_style: "white",
-    font: "12px Arial",
-    line_width: 1,
-    padding_t: 2
-  };
 
   private _world_cbs: IWorldCallbacks = {
     on_stage_change: (stage: Stage) => this.set_stage(stage)
@@ -33,10 +26,11 @@ export class StageTitleText extends UIComponent {
     const title = this.lfw.t(phase?.title ?? this._stage?.title ?? '')
     this.set_title(title)
   }
+  /** 文字样式由 UI 文件里的 style 决定，这里只负责内容 */
   set_title(title: string) {
     if (this._title == title) return;
     this._title = title;
-    this.node.text = new TextInfo({ text: title, style: this._style });
+    this.node.set_text(title);
   }
   override on_start(): void {
     super.on_start?.();
