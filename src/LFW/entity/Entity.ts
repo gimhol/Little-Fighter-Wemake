@@ -26,6 +26,7 @@ import {
   SpeedCtrl, SpeedMode,
   StateEnum, type TEntityEnum, type TFace, type TNextFrame,
   SE,
+  WeaponEnum,
   WpointKind
 } from "../defines";
 import type { ITerrainInfo } from "../defines/ITerrainInfo";
@@ -2079,8 +2080,10 @@ export class Entity {
     }
 
     if (wp_a.weaponact !== this.frame.id) {
-      // fallback=true 用于 还原wpoint丢失的情况
-      this.enter_frame_by_id(wp_a.weaponact, true);
+      const res = this.enter_frame_by_id(wp_a.weaponact, true);
+      if (res === EnterFrameResult.Fallback && this.base_type === WeaponEnum.Heavy) {
+        this.enter_frame_by_id(this._data.indexes?.on_hands?.[0], true);
+      }
     }
 
     const {

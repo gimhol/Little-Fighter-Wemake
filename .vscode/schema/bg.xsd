@@ -392,8 +392,14 @@
     </xs:attribute>
     <xs:attribute name="one_way" type="xs:boolean">
       <xs:annotation>
-        <xs:documentation>单向平台（可选）：四周不阻挡、允许从下方穿过，只能从上方落到顶面。</xs:documentation>
-        <xs:documentation>One-way platform (optional): no side blocking, pass through from below, land on the top only.</xs:documentation>
+        <xs:documentation>单向平台（可选）：四周不阻挡、允许从下方穿过，只能从上方落到顶面，不可向下穿过。</xs:documentation>
+        <xs:documentation>One-way platform (optional): no side blocking, pass through from below, land on the top only, cannot drop down.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="through" type="xs:boolean">
+      <xs:annotation>
+        <xs:documentation>穿透平台（可选）：四周不阻挡、可从下方穿过，也可以在顶面按住「防御+下」向下穿过。</xs:documentation>
+        <xs:documentation>Pass-through platform (optional): no side blocking, pass through from below, and drop down through it by holding defend + down on its top.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="cliff" type="xs:boolean">

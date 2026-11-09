@@ -27,6 +27,7 @@ export interface ITerrainInfo {
    * 不填等同于普通实心地形。
    */
   one_way?: boolean;
+  through?: boolean;
   /**
    * 悬崖（极低地形）
    *
@@ -49,6 +50,7 @@ export function terrain_info_new(): ITerrainInfo {
     h1: 0,
     h2: 0,
     one_way: false,
+    through: false,
     cliff: false,
   };
 }
@@ -72,6 +74,7 @@ export const terrain_info_fields = fields<ITerrainInfo>({
   h1: int,
   h2: int,
   one_way: bool,
+  through: bool,
   cliff: bool,
   cliff_frame: str,
   cliff_respawn_y: int,
@@ -98,6 +101,7 @@ export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
     h1: { type: "number", nullable: false, },
     h2: { type: "number", nullable: false, },
     one_way: { type: "boolean", nullable: true, },
+    through: { type: "boolean", nullable: true, },
     cliff: { type: "boolean", nullable: true, },
     cliff_frame: { type: "string", nullable: true, },
     cliff_respawn_y: { type: "number", nullable: true, },

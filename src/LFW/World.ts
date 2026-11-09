@@ -12,6 +12,7 @@ import {
   CheatEnum,
   Defines,
   FID,
+  GK,
   GONE_FRAME_INFO,
   type IBdyInfo, type IBgData, type IBounding, type IEntityData,
   type IFrameInfo, type IItrInfo,
@@ -506,7 +507,8 @@ export class World {
     // 下落时则允许“本帧从顶面上方跨过”的判定，避免高速下落直接穿过平台
     const rising = e.velocity.y > 0;
     const prev_y = e.prev_position.y;
-    const seg = this.ground.segment(x, z, y, rising, prev_y);
+    const drop_through = e.is_on_ground && !e.ctrl.is_end(GK.Defend) && e.ctrl.UD > 0;
+    const seg = this.ground.segment(x, z, y, rising, prev_y, drop_through);
 
     if (seg.cliff && y <= this.ground.y(seg, x, z) + this.ground.step) {
       this.apply_cliff(e, seg, x, z);
@@ -535,7 +537,7 @@ export class World {
       if (push.z < far || push.z > near || push.x < left || push.x > right)
         continue;
 
-      const seg2 = this.ground.segment(push.x, push.z, y, rising, prev_y);
+      const seg2 = this.ground.segment(push.x, push.z, y, rising, prev_y, drop_through);
       // 不能挤到其他地形中
       if (null == this.ground.enterable(seg2, push.x, y, push.z))
         continue;

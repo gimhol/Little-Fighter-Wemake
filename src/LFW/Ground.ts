@@ -56,9 +56,17 @@ export class Ground {
    * @param {number} [y] 物体当前高度
    * @param {boolean} [rising] 物体正在上升（velocity.y > 0）
    * @param {number} [prev_y] 本帧移动前的高度
+   * @param {boolean} [drop_through] 是否正按住防御+下（可穿过 through 平台向下）
    * @returns {Readonly<ITerrainInfo>} 地形信息，找不到时返回默认平台
    */
-  segment(x: number, z: number, y?: number, rising: boolean = false, prev_y?: number): Readonly<ITerrainInfo> {
+  segment(
+    x: number,
+    z: number,
+    y?: number,
+    rising: boolean = false,
+    prev_y?: number,
+    drop_through: boolean = false,
+  ): Readonly<ITerrainInfo> {
     const { terrain } = this.world.bg.data;
     if (terrain?.length) {
       let best: ITerrainInfo | undefined;
@@ -67,10 +75,12 @@ export class Ground {
         if (x < seg.x1 || x > seg.x2) continue;
         if (z < seg.z1 || z > seg.z2) continue;
         const seg_y = this.y(seg, x, z);
-        if (seg.one_way && y !== void 0) {
+        if ((seg.one_way || seg.through) && y !== void 0) {
           if (rising) {
             // 上升中：必须严格高过顶面才算它 → 一跳穿过去
             if (y <= seg_y) continue;
+          } else if (seg.through && drop_through && y <= seg_y + 0.5 && y >= seg_y - this.step) {
+            continue;
           } else if (y < seg_y - 0.5) {
             // 下落/静止：只有本帧从上方跨过顶面（prev_y >= 顶面）才算它
             if (prev_y === void 0 || prev_y < seg_y) continue;
@@ -139,7 +149,7 @@ export class Ground {
   enterable(seg: Readonly<ITerrainInfo>, x: number, y: number, z: number): number | null {
     const dist_y = this.y(seg, x, z);
     // 单向平台：物体在顶面下方时允许通过（保持当前高度，不会被抬上去）
-    if (seg.one_way && y < dist_y - this.step) return y;
+    if ((seg.one_way || seg.through) && y < dist_y - this.step) return y;
     const diff_h = dist_y - y;
 
     // 地形太高，上不去
@@ -177,7 +187,7 @@ export class Ground {
     if (seg.id == this.base.id) return this._empty;
 
     // 单向平台不产生水平推挤（四周不阻拦）
-    if (seg.one_way) return this._empty;
+    if (seg.one_way || seg.through) return this._empty;
 
     let l = seg.x1 - 1;
     let r = seg.x2 + 1;
@@ -297,7 +307,7 @@ export class Ground {
           if (hit.x >= seg.x1 && hit.x <= seg.x2 && hit.z >= seg.z1 && hit.z <= seg.z2) {
             const seg_y = this.y(seg, hit.x, hit.z);
             // 单向平台：只从上方踩得到，从下方上穿时直接穿过
-            const from_top = !seg.one_way || y1 >= seg_y - 1e-6;
+            const from_top = !(seg.one_way || seg.through) || y1 >= seg_y - 1e-6;
             if (from_top && seg_y - y1 <= this.step) {
               // 计算参数 t（交点沿线段的比例）
               const dhx = hit.x - x1;
@@ -317,7 +327,7 @@ export class Ground {
         }
 
         // 单向平台没有侧面碰撞
-        if (seg.one_way) continue;
+        if (seg.one_way || seg.through) continue;
 
         // === 垂直墙面碰撞（不影响Y，保持垂直速度） ===
         // 左墙 x = seg.x1
@@ -425,7 +435,7 @@ export class Ground {
 
     for (const seg of terrain) {
       // 单向平台不参与穿墙检测（四周不阻拦）
-      if (seg.one_way) continue;
+      if (seg.one_way || seg.through) continue;
 
       // 快速跳过：地形整体高度都不足以阻挡
       const max_h = seg.h1 > seg.h2 ? seg.h1 : seg.h2;
