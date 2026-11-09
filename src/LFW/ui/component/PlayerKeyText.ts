@@ -4,8 +4,8 @@ import { UIComponent } from "./UIComponent";
 
 export class PlayerKeyText extends UIComponent {
   static override readonly TAGS: string[] = ["PlayerKeyText"];
-  get player_id() { return this.info.args[0] || this.node.find_parent(v => v.data.values?.player_id)?.data.values?.player_id || ''; }
-  get key_name() { return this.info.args[1] || this.node.find_parent(v => v.data.values?.key_name)?.data.values?.key_name || ''; }
+  get player_id() { return this.info.args[0] || this.node.find_parent(v => v.values?.player_id)?.values?.player_id || ''; }
+  get key_name() { return this.info.args[1] || this.node.find_parent(v => v.values?.key_name)?.values?.key_name || ''; }
   get player() { return this.lfw.players.get(this.player_id); }
   get key_code() {
     const { player } = this;

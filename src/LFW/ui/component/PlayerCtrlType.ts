@@ -4,7 +4,7 @@ import { UIComponent } from "./UIComponent";
 
 export class PlayerCtrlType extends UIComponent {
   static override readonly TAGS: string[] = ["PlayerCtrlType"];
-  get player_id() { return this.info.args[0] || this.node.find_parent(v => v.data.values?.player_id)?.data.values?.player_id || ''; }
+  get player_id() { return this.info.args[0] || this.node.find_parent(v => v.values?.player_id)?.values?.player_id || ''; }
   get player() { return this.lfw.players.get(this.player_id)! }
   override on_resume(): void {
     this.player.callbacks.add(this)

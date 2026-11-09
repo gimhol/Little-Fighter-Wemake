@@ -112,7 +112,7 @@ export class UINode implements IDebugging {
   readonly ignore_esc: boolean = false;
   protected _ignore_key = false;
   protected actions: { [x in TUIActionPlace]?: IUIAction[] } = {}
-  protected values: { [x in string]?: any } = {}
+  values: { [x in string]?: any } = {}
 
   get cross(): Readonly<ICrossInfo> {
     if (this._cache_cross) return this._cache_cross;
@@ -530,7 +530,7 @@ export class UINode implements IDebugging {
    * @return {this}
    * @memberof UINode
    */
-  set_text(text: string, style: IStyle | null): this {
+  set_text(text: string, style: IStyle | null = null): this {
     if (!style && text == this.text?.text) return this;
     this.text = new TextInfo({ text, style: style ?? this.style });
     return this;
