@@ -54,8 +54,7 @@ export class TeamSituationText extends UIComponent {
     if (this._text == text && this._color === this._team_color) return;
     this._text = text;
     this._color = this._team_color;
-    const style = this.node.style;
-    style.fill_style = this._team_color;
-    this.node.set_text(text, style);
+    this.node.style.fill_style = this._team_color;
+    this.node.set_text(text);
   }
 }

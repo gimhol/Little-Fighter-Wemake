@@ -1,6 +1,5 @@
 import { Sine } from "../../animation/Sine";
 import type { IStyle } from "../../defines";
-import { TextInfo } from "../../ditto/image/TextInfo";
 import { UIComponent } from "./UIComponent";
 
 /**
@@ -17,7 +16,7 @@ export class FighterName extends UIComponent {
 
   /** 优先用 UINode（json5 里声明的 style）；没有时才用代码内置样式 */
   protected make_style(com: boolean): IStyle {
-    const node_style = this.node.style?.data;
+    const node_style = this.node.data.style;
     if (node_style && Object.keys(node_style).length)
       return { ...node_style };
     return {
@@ -29,20 +28,15 @@ export class FighterName extends UIComponent {
   join(text: string, com: boolean, decided: boolean) {
     this._decided = decided;
     this._com = com;
-    this.node.text = new TextInfo({
-      text,
-      style: this.make_style(com),
-    });
+    this.node.style.assign(this.make_style(com));
+    this.node.set_text(text);
     this.node.visible = true
   }
   quit() {
     this._com = void 0;
     this._decided = void 0;
-    const text = this.lfw.t(" ")
-    this.node.text = new TextInfo({
-      text,
-      style: this.make_style(false),
-    });
+    this.node.style.assign(this.make_style(false));
+    this.node.set_text(this.lfw.t(" "));
     this.node.visible = false
   }
   protected _opacity: Sine = new Sine(0.65, 1, 6);

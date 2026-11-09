@@ -188,10 +188,9 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
     for (const { node, key, resolved } of recs) {
       if (resolved) {
-        const style = node.text?.style;
-        node.text = this.images.measure_text(this.t(key), style);
+        node.text = this.images.measure_text(this.t(key), node.style);
       } else {
-        node.set_text(key, node.text?.style);
+        node.set_text(key);
       }
     }
 

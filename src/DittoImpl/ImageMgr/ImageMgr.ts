@@ -188,7 +188,7 @@ export class ImageMgr implements IImageMgr {
     const ctx = cvs.getContext('2d')!;
     apply_text_style(s, ctx);
     const [, w, h] = split_text_to_lines(text, ctx, s);
-    return new TextInfo({ text, style: s, w: scale * w, h: scale * h, scale });
+    return new TextInfo({ text, w: scale * w, h: scale * h, scale });
   }
 
   load_img(key: string, src: string, operations?: ImageOperation[]): Promise<RImageInfo> {

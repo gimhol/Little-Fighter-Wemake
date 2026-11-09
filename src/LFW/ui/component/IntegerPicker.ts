@@ -1,7 +1,6 @@
 import { GameKey } from "../../defines";
 import { ceil, floor, max, min, round } from '../../utils/math/base';
 import { clamp } from '../../utils/math/clamp';
-import { TextInfo } from "../../ditto/image/TextInfo";
 import type { IUIKeyEvent } from "../IUIKeyEvent";
 import type { IUIPointerEvent } from "../IUIPointerEvent";
 import type { IUICompnentCallbacks } from "./IUICompnentCallbacks";
@@ -88,6 +87,6 @@ export class IntegerPicker extends UIComponent<{}, IIntegerPickerCallbacks> {
     else v = clamp(round(v), this._min, this._max)
     const p = this._val; if (p === v) return;
     this.callbacks.call('on_val_changed', this._val = v, p, this)
-    this.node.text = new TextInfo({ text: '' + v, style: this.node.text?.style ?? {} })
+    this.node.set_text('' + v)
   }
 }

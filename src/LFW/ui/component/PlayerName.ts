@@ -1,6 +1,5 @@
 import { Sine } from "../../animation/Sine";
 import type { IPropsMeta, IStyle } from "../../defines";
-import { TextInfo } from "../../ditto/image/TextInfo";
 import { UIComponent } from "./UIComponent";
 export interface IPlayerNameProps {
   prefix?: string;
@@ -24,7 +23,7 @@ export class PlayerName extends UIComponent<IPlayerNameProps> {
   private _com?: boolean;
 
   protected make_style(com: boolean): IStyle {
-    const node_style = this.node.style?.data;
+    const node_style = this.node.data.style;
     if (node_style && Object.keys(node_style).length)
       return { ...node_style };
     return {
@@ -38,21 +37,16 @@ export class PlayerName extends UIComponent<IPlayerNameProps> {
     this._decided = decided;
     this._com = com;
     this._decided = true;
-    this.node.text = new TextInfo({
-      text: prefix ? `${this.lfw.t(prefix)}${text}` : text,
-      style: this.make_style(com),
-    });
+    this.node.style.assign(this.make_style(com));
+    this.node.set_text(prefix ? `${this.lfw.t(prefix)}${text}` : text);
     this.node.visible = true
   }
 
   quit() {
     this._decided = void 0;
     this._com = void 0;
-    const text = this.lfw.t("char_menu.join_q")
-    this.node.text = new TextInfo({
-      text,
-      style: this.make_style(false),
-    });
+    this.node.style.assign(this.make_style(false));
+    this.node.set_text(this.lfw.t("char_menu.join_q"));
     if (this.props.hide_join_q) this.node.visible = false;
   }
 

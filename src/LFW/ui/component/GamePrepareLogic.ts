@@ -277,7 +277,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       const style = node.style
       style.fill_style = selected ? '#ffffff' : '#9b9bff'
       const txt = this.lfw.t(`survival.rank_period_${p}`)
-      node.set_text(txt, style)
+      node.set_text(txt)
       node.set_opacity(selected ? 1 : 0.5)
       if (!selected) continue
       any_selected = true

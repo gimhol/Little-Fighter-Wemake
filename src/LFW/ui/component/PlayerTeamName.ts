@@ -18,14 +18,14 @@ export class PlayerTeamName extends UIComponent {
     this._decided = decided;
     this._com = com;
     this.node.style.fill_style = com ? "pink" : "white";
-    this.node.set_text(text, this.node.style);
+    this.node.set_text(text);
     this.node.visible = true
   }
   quit() {
     this._decided = void 0;
     this._com = void 0;
     this.node.style.fill_style = "white";
-    this.node.set_text(this.lfw.t(" "), this.node.style);
+    this.node.set_text(this.lfw.t(" "));
     this.node.visible = false;
   }
   protected _opacity: Sine = new Sine(0.65, 1, 3);

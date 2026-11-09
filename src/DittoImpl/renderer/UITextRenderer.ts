@@ -11,7 +11,6 @@ export class UITextRenderer {
   ui: UINode;
 
   protected _last_text: string = '';
-  protected _last_style: Style | undefined = void 0;
   protected _last_style_version: number = -1;
 
   constructor(owner: UINodeRenderer) {
@@ -27,8 +26,8 @@ export class UITextRenderer {
   }
 
   /** 归一化样式：补齐 UI 文字默认值（padding=2、HiDPI scale=2），保持旧 UITextRenderer 外观 */
-  protected _normalize_style(style: IStyle | undefined): IStyle {
-    const src = style instanceof Style ? style.data : (style ?? {});
+  protected _normalize_style(style: IStyle): IStyle {
+    const src = style instanceof Style ? style.data : style;
     return {
       font: "normal 9px system-ui",
       padding_l: 2,
@@ -40,25 +39,18 @@ export class UITextRenderer {
     };
   }
 
-  protected _is_style_changed(style: Style | undefined): boolean {
-    if (style !== this._last_style) return true;
-    if (style == null) return false;
-    return style.version !== this._last_style_version;
-  }
-
   /** 更新文字并刷新贴图 */
   update(): void {
     const { ui, mesh } = this;
-    const txt = ui.text;
+    // 文本样式只保存在节点上，TextInfo 仅保存文本与测量结果
+    const style = ui.style;
 
     // 通过 lf2.string() 解析 i18n 文本
-    const text = txt?.text ? ui.lfw.t(txt.text) : '';
+    const text = ui.text?.text ? ui.lfw.t(ui.text.text) : '';
 
-    const style = txt ? Style.from(txt.style) : void 0;
-    if (text !== this._last_text || this._is_style_changed(style)) {
+    if (text !== this._last_text || style.version !== this._last_style_version) {
       this._last_text = text;
-      this._last_style = style;
-      this._last_style_version = style ? style.version : -1;
+      this._last_style_version = style.version;
       mesh.set_style(this._normalize_style(style));
       mesh.set_text(ui.lfw, text).catch(e => console.warn(e));
     }

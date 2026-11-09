@@ -1,6 +1,6 @@
 import { LFW } from "../LFW";
 import { Callbacks, type IDebugging, make_debugging } from "../base";
-import type { IStyle, IVector3, IVector3Like } from "../defines";
+import type { IVector3, IVector3Like } from "../defines";
 import { Ditto as D, ImageInfo, type IUINodeRenderer, TextInfo } from "../ditto";
 import { Times } from '../utils/Times';
 import { round } from '../utils/math/base';
@@ -479,6 +479,7 @@ export class UINode implements IDebugging {
     this.flex = new FlexStyle(data.flex);
     this.flex.on_change = () => this.on_flex_change();
     this._flex_dirty = this.is_flex;
+    if (data.style) this.style.assign(data.style)
     const txt_info = data.txt_info;
     this.text = txt_info && data.i18n
       ? this.make_i18n_text(txt_info, data.i18n)
@@ -499,8 +500,6 @@ export class UINode implements IDebugging {
     if (typeof data.foregroundAlpha === 'number')
       this.foregroundAlpha = data.foregroundAlpha;
 
-    if (data.style) this.style.assign(data.style)
-
     if (data.actions) {
       for (const k in data.actions) {
         const key = k as keyof typeof this.actions;
@@ -517,22 +516,27 @@ export class UINode implements IDebugging {
   protected make_i18n_text(baked: TextInfo, key: string): TextInfo {
     const resolved = this.lfw.t(key);
     if (resolved === baked.text) return baked;
-    return this.lfw.images.measure_text(resolved, baked.style ?? this.style);
+    return this.lfw.images.measure_text(resolved, this.style);
   }
 
   /**
    * 设置文本
    *
    * 若原始UI数据未显式设置 size，将按文本内容动态调整节点尺寸。
+   * 文本样式不在 {@link TextInfo} 上保存，而统一由节点自身 {@link style} 决定；
+   * 需要改样式请直接修改 `node.style`。
    *
    * @param {string} text 文本内容
-   * @param {(IStyle | null)} [style] 文本样式，缺省使用节点样式
    * @return {this}
    * @memberof UINode
    */
-  set_text(text: string, style: IStyle | null = null): this {
-    if (!style && text == this.text?.text) return this;
-    this.text = new TextInfo({ text, style: style ?? this.style });
+  set_text(text: string): this {
+    const prev = this.text;
+    if (prev && prev.text === text) {
+      this.auto_size_by_text(prev);
+      return this;
+    }
+    this.text = new TextInfo({ text });
     return this;
   }
 
@@ -551,14 +555,12 @@ export class UINode implements IDebugging {
     const key = this._text_size_key(v);
     if (this._auto_size_key === key) return;
     this._auto_size_key = key;
-    const ti = (v.w && v.h)
-      ? v
-      : this.lfw.images.measure_text(this.lfw.t(v.text), v.style);
+    const ti = this.lfw.images.measure_text(this.lfw.t(v.text), this.style);
     this.resize((ti.w || 0) / (ti.scale || 1), (ti.h || 0) / (ti.scale || 1));
   }
 
   /**
-   * 生成“文本+样式”签名，用于跳过内容未变化的重复测量
+   * 生成“文本+样式版本”签名，用于跳过内容未变化的重复测量
    *
    * @protected
    * @param {TextInfo} v
@@ -566,11 +568,7 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   protected _text_size_key(v: TextInfo): string {
-    const s = v.style;
-    const text = this.lfw.t(v.text);
-    return s instanceof Style
-      ? `${text}\u0000v${s.version}`
-      : `${text}\u0000${JSON.stringify(s ?? {})}`;
+    return `${this.lfw.t(v.text)}\u0000v${this.style.version}`;
   }
 
   move_to_global(x: number, y: number, z: number): this {

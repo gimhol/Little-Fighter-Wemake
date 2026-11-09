@@ -1,5 +1,4 @@
 import { summary_mgr } from "../../entity/SummaryMgr";
-import { TextInfo } from "../../ditto/image/TextInfo";
 import { Style } from "../Style";
 import { PlayerScore } from "./PlayerScore";
 import { UIComponent } from "./UIComponent";
@@ -20,7 +19,7 @@ export class PlayerScoreCell extends UIComponent {
     if (txt === this._last_txt && style.version === this._last_style_version) return;
     this._last_txt = txt;
     this._last_style_version = style.version;
-    this.node.text = new TextInfo({ text: txt, style })
+    this.node.set_text(txt)
   }
 
   protected get_style(): Style {

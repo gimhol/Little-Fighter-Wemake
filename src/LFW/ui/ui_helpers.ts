@@ -1,5 +1,4 @@
 import type { IStyle } from "../defines/IStyle";
-import { Style } from "./Style";
 import type { UINode } from "./UINode";
 
 /** 按节点样式测量文本像素宽度（走注入的 ImageMgr，不直接碰宿主 DOM） */
@@ -27,13 +26,13 @@ export function fit_text(text: string, max_width: number, node?: UINode): string
   return chars.slice(0, lo).join("").trimEnd() + "…";
 }
 
-/** 覆盖节点文本样式（只重建发生变化的 Style） */
+/** 覆盖节点文本样式（文本样式只存在节点上，直接合并进 node.style） */
 export function paint(node: UINode | undefined, patch: Partial<IStyle>): void {
   if (!node?.text) return;
-  const src: Partial<IStyle> = node.text.style ?? {};
-  if (!Object.keys(patch).some(key => src[key as keyof IStyle] !== patch[key as keyof IStyle])) return;
-  const style = node.text.style instanceof Style ? node.text.style : new Style();
-  if (!(node.text.style instanceof Style)) style.assign(src);
+  const { style } = node;
+  const data = style.data;
+  if (!Object.keys(patch).some(key => data[key as keyof IStyle] !== patch[key as keyof IStyle])) return;
   style.assign(patch);
-  node.set_text(node.text.text, style);
+  // 样式变化可能影响文本尺寸，重新走一次文本测量/自适应
+  node.set_text(node.text.text);
 }

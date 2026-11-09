@@ -44,6 +44,7 @@ export class UINodeRenderer implements IUINodeRenderer {
     component: TextInput;
   } | undefined;
   protected _txt: TextInfo<any> | null = null;
+  protected _txt_style_version: number = -1;
   protected _img: ImageInfo<T.Texture> | null = null;
   protected _text_renderer: UITextRenderer | undefined;
   protected _uv_anim_angle: number = 0;
@@ -76,9 +77,9 @@ export class UINodeRenderer implements IUINodeRenderer {
     this._css_obj.position.set(0, 0, 0);
     this._css_obj.center.set(0, 1);
 
-    const txt = this.ui.text
-    if (txt?.style.font) this.dom.style.font = txt.style.font;
-    if (txt?.style.fill_style) this.dom.style.color = txt.style.fill_style;
+    const style = this.ui.style;
+    if (style.font) this.dom.style.font = style.font;
+    if (style.fill_style) this.dom.style.color = style.fill_style;
     this.mesh.add(this._css_obj);
     return this._dom;
   }
@@ -303,16 +304,18 @@ export class UINodeRenderer implements IUINodeRenderer {
   }
 
   update_txt() {
-    if (this._txt === this.ui.text) return;
-    this._txt = this.ui.text;
-    if (this.ui.text) {
-      if (!this._text_renderer) {
-        this._text_renderer = new UITextRenderer(this);
-        this.mesh.add(this._text_renderer.mesh);
-        this._clip_text_done = false;
-      }
-      this._text_renderer.update();
+    const text = this.ui.text;
+    const style_version = this.ui.style.version;
+    if (this._txt === text && this._txt_style_version === style_version) return;
+    this._txt = text;
+    this._txt_style_version = style_version;
+    if (!text) return;
+    if (!this._text_renderer) {
+      this._text_renderer = new UITextRenderer(this);
+      this.mesh.add(this._text_renderer.mesh);
+      this._clip_text_done = false;
     }
+    this._text_renderer.update();
   }
 
   update_img() {
@@ -597,9 +600,9 @@ export class UINodeRenderer implements IUINodeRenderer {
     this.update_txt();
     const { background, backgroundAlpha, foreground, foregroundAlpha } = ui
     this.mesh.material.bgColor = background;
-    this.mesh.material.bgAlpha = backgroundAlpha;
+    this.mesh.material.bgAlpha = backgroundAlpha ?? 0;
     this.mesh.material.fgColor = foreground;
-    this.mesh.material.fgAlpha = foregroundAlpha;
+    this.mesh.material.fgAlpha = foregroundAlpha ?? 0;
     this.mesh.material.outlineWidth = ui.outlineWidth || 0;
     this.mesh.material.outlineColor = ui.outlineColor || 0
     this.mesh.material.outlineAlpha = ui.outlineAlpha || 0
