@@ -390,6 +390,12 @@
         <xs:documentation>End height (right/near Y) (required).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="one_way" type="xs:boolean">
+      <xs:annotation>
+        <xs:documentation>单向平台（可选）：四周不阻挡、允许从下方穿过，只能从上方落到顶面。</xs:documentation>
+        <xs:documentation>One-way platform (optional): no side blocking, pass through from below, land on the top only.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <!-- ===================== <dataset> (arbitrary key/value) ===================== -->

@@ -13,6 +13,7 @@ export function xml_to_bg_terrain(el: IXMLElement): ITerrainInfo {
   ret.z2 = el.get_num('z2', ret.z2);
   ret.h1 = el.get_num('h1', ret.h1);
   ret.h2 = el.get_num('h2', ret.h2);
+  ret.one_way = el.get_bool('one_way', ret.one_way);
   reorder_fields(ret, terrain_info_fields);
   return ret;
 }

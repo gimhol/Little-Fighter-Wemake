@@ -97,7 +97,12 @@ export class Camera {
       let max_vy_ratio = 50;
       let acc_y_ratio = 1;
       const cam_y = this._dested?.y ?? this.destination.y;
-      const cam_max_y = min(-0.5 * far, height - Defines.MODERN_SCREEN_HEIGHT / (bg.zoom_y ?? 1));
+      // 高地图：纵向可移动范围 = 世界高度 - 可见高度（世界比屏幕高多少，就能往上移多少）；
+      // 普通/老地图：沿用 -0.5*far（经典数据里 far 承载了纵向范围），保持原行为
+      const view_h = Defines.MODERN_SCREEN_HEIGHT / (bg.zoom_y ?? 1);
+      const cam_max_y = height > Defines.CLASSIC_SCREEN_HEIGHT
+        ? max(0, height - view_h)
+        : min(-0.5 * far, height - view_h);
       this.destination.y = clamp(cam_y, 0, cam_max_y);
       const acc_y = min(
         atom_time * acc_y_ratio,

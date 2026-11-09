@@ -1,4 +1,4 @@
-import { fields, int, str } from "../fields";
+import { fields, bool, int, str } from "../fields";
 import { make_schema } from "../utils";
 
 export const enum TerrainEnum {
@@ -20,6 +20,13 @@ export interface ITerrainInfo {
   z2: number; // near
   h1: number; // left-y or far-y
   h2: number; // right-y or near-y
+  /**
+   * 单向平台
+   *
+   * 四周不阻挡、允许物体从其下方通过，只有从上方落下（或本来就站在顶面）时才踩在顶面上；
+   * 不填等同于普通实心地形。
+   */
+  one_way?: boolean;
 }
 
 export function terrain_info_new(): ITerrainInfo {
@@ -30,7 +37,8 @@ export function terrain_info_new(): ITerrainInfo {
     z1: 0,
     z2: 0,
     h1: 0,
-    h2: 0
+    h2: 0,
+    one_way: false,
   };
 }
 
@@ -52,6 +60,7 @@ export const terrain_info_fields = fields<ITerrainInfo>({
   z2: int,
   h1: int,
   h2: int,
+  one_way: bool,
 })
 export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
   key: "ITerrainInfo",
@@ -74,5 +83,6 @@ export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
     z2: { type: "number", nullable: false, },
     h1: { type: "number", nullable: false, },
     h2: { type: "number", nullable: false, },
+    one_way: { type: "boolean", nullable: true, },
   },
 })

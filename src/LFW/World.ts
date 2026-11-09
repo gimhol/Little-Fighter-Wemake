@@ -487,7 +487,11 @@ export class World {
     //   return this._restrict_result;
     // }
 
-    const seg = this.ground.segment(x, z);
+    // 传入 y / 是否上升 / 移动前的 y：单向平台在物体下方时不算地面，上升途中不能被接住，
+    // 下落时则允许“本帧从顶面上方跨过”的判定，避免高速下落直接穿过平台
+    const rising = e.velocity.y > 0;
+    const prev_y = e.prev_position.y;
+    const seg = this.ground.segment(x, z, y, rising, prev_y);
 
     // 可进入，直接进入
     if (null != this.ground.enterable(seg, x, y, z)) {
@@ -508,7 +512,7 @@ export class World {
       if (push.z < far || push.z > near || push.x < left || push.x > right)
         continue;
 
-      const seg2 = this.ground.segment(push.x, push.z);
+      const seg2 = this.ground.segment(push.x, push.z, y, rising, prev_y);
       // 不能挤到其他地形中
       if (null == this.ground.enterable(seg2, push.x, y, push.z))
         continue;
@@ -624,13 +628,17 @@ export class World {
     let offset = 0;
     let puppet_x_sum = 0;
     let puppet_z_sum = 0;
+    let puppet_y_sum = 0;
     let puppet_count = 0;
     let local_x_sum = 0;
     let local_z_sum = 0;
+    let local_y_sum = 0;
     let human_x_sum = 0;
     let human_z_sum = 0;
+    let human_y_sum = 0;
     let fighter_x_sum = 0;
     let fighter_z_sum = 0;
+    let fighter_y_sum = 0;
     let local_count = 0;
     let human_count = 0;
     let fighter_count = 0;
@@ -663,17 +671,21 @@ export class World {
         }
         const x = a.position.x - view_w / 2 + a.facing * lead;
         const z = a.position.z;
+        const y = a.position.y;
         fighter_x_sum += x;
         fighter_z_sum += z;
+        fighter_y_sum += y;
         fighter_count++;
         if (is_human_ctrl(a.ctrl) && a.hp > 0) {
           if (a.ctrl.player.mine) {
             local_x_sum += x;
             local_z_sum += z;
+            local_y_sum += y;
             local_count++;
           } else {
             human_x_sum += x;
             human_z_sum += z;
+            human_y_sum += y;
             human_count++;
           }
         }
@@ -681,6 +693,7 @@ export class World {
           this.puppet_teams.add(a.team)
           puppet_x_sum += x;
           puppet_z_sum += z;
+          puppet_y_sum += y;
           puppet_count++;
         }
       }
@@ -742,19 +755,35 @@ export class World {
     }
 
     // y 的偏移在写入时补（z 的采样不含半屏）；可见高度 = screen / zoom
+    // 高地图（bg.height 超过经典屏高）用“角色平均高度”驱动镜头 Y，让相机能上下跟；
+    // 普通/老地图沿用 z 深度（经典数据里 far 承载了纵向范围，保持原行为）
     const half_h = this.dataset.screen_h / (2 * (this.bg.zoom_y || 1))
+    const use_y = this.bg.height > Defines.CLASSIC_SCREEN_HEIGHT;
+    let cam_x = NaN;
+    let cam_z = 0;
+    let cam_y = 0;
     if (local_count) {
-      this.camera.destination.x = round(local_x_sum / local_count);
-      this.camera.destination.y = -0.5 * round(local_z_sum / local_count) - half_h;
+      cam_x = local_x_sum / local_count;
+      cam_z = local_z_sum / local_count;
+      cam_y = local_y_sum / local_count;
     } else if (human_count) {
-      this.camera.destination.x = round(human_x_sum / human_count);
-      this.camera.destination.y = -0.5 * round(human_z_sum / human_count) - half_h;
+      cam_x = human_x_sum / human_count;
+      cam_z = human_z_sum / human_count;
+      cam_y = human_y_sum / human_count;
     } else if (puppet_count) {
-      this.camera.destination.x = round(puppet_x_sum / puppet_count);
-      this.camera.destination.y = -0.5 * round(puppet_z_sum / puppet_count) - half_h;
+      cam_x = puppet_x_sum / puppet_count;
+      cam_z = puppet_z_sum / puppet_count;
+      cam_y = puppet_y_sum / puppet_count;
     } else if (fighter_count) {
-      this.camera.destination.x = round(fighter_x_sum / fighter_count);
-      this.camera.destination.y = -0.5 * round(fighter_z_sum / fighter_count) - half_h;
+      cam_x = fighter_x_sum / fighter_count;
+      cam_z = fighter_z_sum / fighter_count;
+      cam_y = fighter_y_sum / fighter_count;
+    }
+    if (!isNaN(cam_x)) {
+      this.camera.destination.x = round(cam_x);
+      this.camera.destination.y = use_y
+        ? round(cam_y) - half_h
+        : -0.5 * round(cam_z) - half_h;
     }
 
     this.collisions.forEach(c => collisions_keeper.handle(c));
