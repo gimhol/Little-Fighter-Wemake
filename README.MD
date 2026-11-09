@@ -6,6 +6,8 @@
 
 [玩正式版](https://lf.gim.ink/latest) | [玩预览版](https://gimhol.github.io/Little-Fighter-Wemake/) | [其他？](https://lf.gim.ink/)
 
+**由于某些特殊原因，有时我不能顺利的推至github😅，更新的源码请见：[https://git.gim.ink/gimholg/Little-Fighter-Wemake](https://git.gim.ink/gimholg/Little-Fighter-Wemake)**
+
 觉得这个项目还不错？Star 支持一下吧.
 
 **玩法、美术、音效音乐来自"Little Fighter 2", 原作：Marti Wong，Starsky Wong.**

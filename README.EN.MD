@@ -6,6 +6,8 @@
 
 [Play Release Version](https://lf.gim.ink/latest) | [Play Preview Version](https://gimhol.github.io/Little-Fighter-Wemake/) | [Others](https://lf.gim.ink/)
 
+**For some special reasons, I can't always push to GitHub smoothly😅. Please refer to the following link for the updated source code: [https://git.gim.ink/gimholg/Little-Fighter-Wemake](https://git.gim.ink/gimholg/Little-Fighter-Wemake)**
+
 Think this project is pretty good? Consider starring it!
 
 **gameplays, arts, and sounds are all from "Little Fighter 2" basically, created by Marti Wong and Starsky Wong in 1999.
