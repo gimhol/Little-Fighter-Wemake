@@ -5,9 +5,8 @@ import { Ditto as D, ImageInfo, type IUINodeRenderer, TextInfo } from "../ditto"
 import { Times } from '../utils/Times';
 import { round } from '../utils/math/base';
 import { round_float } from '../utils/math/round_float';
-import { is_num } from '../utils/type_check/is_num';
-import type { ICookedUIInfo } from "./ICookedUIInfo";
 import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
+import type { IUIImgInfo } from "./IUIImgInfo.dat";
 import { apply_flex_layout } from "./flex_layout";
 import { FlexStyle } from "./flex_style";
 import type { IUICallback } from "./IUICallback";
@@ -19,6 +18,7 @@ import type { IPopPageOpts, UILayer } from './UILayer';
 import { actor } from './action/Actor';
 import type { UIComponent } from './component/UIComponent';
 import { ui_action_clone, type IUIAction } from "./IUIAction";
+import type { IUINodeInit } from "./IUINodeInit";
 
 export class UINode implements IDebugging {
   static readonly TAG: string = 'UINode';
@@ -27,15 +27,10 @@ export class UINode implements IDebugging {
   log!: (_0: string, ..._1: any[]) => void;
   readonly lfw: LFW;
 
-  /**
-   * 原始UI数据
-   * 
-   * 对UINode的一些属性进行修改，不会影响到原始UI数据。
-   *
-   * @type {Readonly<ICookedUIInfo>}
-   * @memberof UINode
-   */
-  readonly data: Readonly<ICookedUIInfo>;
+  /** 渲染器需要的图片描述（裁剪/平铺/九宫格参数） */
+  readonly image_desc: IUIImgInfo | null;
+  /** `$val:` 查找用的模板值（cook 阶段合并出的） */
+  readonly template_values?: { [x in string]?: any };
   protected _outlineColor: string | undefined;
   protected _outlineWidth: number | undefined;
   protected _outlineAlpha: number | undefined;
@@ -454,64 +449,65 @@ export class UINode implements IDebugging {
   protected _flex_dirty: boolean = false;
   protected _applying_flex: boolean = false;
 
-  constructor(lfw: LFW, data: ICookedUIInfo, parent?: UINode, layer?: UILayer) {
+  constructor(lfw: LFW, init: IUINodeInit, parent?: UINode, layer?: UILayer) {
     this.lfw = lfw;
-    this.data = Object.freeze(data);
-    this.id = data.id;
-    this.name = data.name;
+    this.id = init.id;
+    this.name = init.name;
+    this.image_desc = init.img ?? null;
+    this.template_values = init.template_values;
     this._parent = parent;
     this._root = parent?.root ?? this;
     this._layer = layer;
-    this._disabled = data.disabled == true
-    this._visible = data.visible != false
-    this._clip_children = data.clips == true
-    this.local_only = data.local_only
-    this.ignore_esc = data.ignore_esc == true
-    this.touchable = data.touchable
-    this._opacity = data.opacity ?? 1
-    this.center.set(...data.center);
-    this.pos.set(...data.pos);
-    if (data.size) this.size.set(...data.size);
-    this.stretchable = !data.size
-    this.scale.set(...data.scale);
-    this.flex = new FlexStyle(data.flex);
+    this._disabled = init.disabled == true
+    this._visible = init.visible != false
+    this._clip_children = init.clips == true
+    this.local_only = init.local_only
+    this.ignore_esc = init.ignore_esc == true
+    this.touchable = init.touchable
+    this._opacity = init.opacity ?? 1
+    this.center.set(...(init.center ?? [0, 0, 0]));
+    this.pos.set(...(init.pos ?? [0, 0, 0]));
+    if (init.size) this.size.set(...init.size);
+    this.stretchable = !init.size
+    this.scale.set(...(init.scale ?? [1, 1, 1]));
+    this.flex = new FlexStyle(init.flex);
     this.flex.on_change = () => this.on_flex_change();
     this._flex_dirty = this.is_flex;
-    if (data.style) this.style.assign(data.style)
-    const txt_info = data.txt_info;
-    if (data.i18n) {
-      this._i18n_key = data.i18n;
+    if (init.style) this.style.assign(init.style)
+    const txt_info = init.txt_info;
+    if (init.i18n) {
+      this._i18n_key = init.i18n;
       this.text = txt_info
-        ? this.make_i18n_text(txt_info, data.i18n)
-        : this.lfw.images.measure_text(this.lfw.t(data.i18n), this.style);
+        ? this.make_i18n_text(txt_info, init.i18n)
+        : this.lfw.images.measure_text(this.lfw.t(init.i18n), this.style);
     } else {
       this.text = txt_info ?? null;
     }
-    this.image = data.img_info ?? null;
-    this.color = data.color ?? '';
+    this.image = init.img_info ?? null;
+    this.color = init.color ?? '';
     this.renderer = new D.UINodeRenderer(this);
-    this._outlineColor = data.outlineColor
-    this._outlineWidth = data.outlineWidth
-    this._outlineAlpha = data.outlineAlpha
-    this.auto_focus = data.auto_focus ?? false;
-    if (typeof data.background === 'string')
-      this.background = data.background;
-    if (typeof data.foreground === 'string')
-      this.foreground = data.foreground;
-    if (typeof data.backgroundAlpha === 'number')
-      this.backgroundAlpha = data.backgroundAlpha;
-    if (typeof data.foregroundAlpha === 'number')
-      this.foregroundAlpha = data.foregroundAlpha;
+    this._outlineColor = init.outlineColor
+    this._outlineWidth = init.outlineWidth
+    this._outlineAlpha = init.outlineAlpha
+    this.auto_focus = init.auto_focus ?? false;
+    if (typeof init.background === 'string')
+      this.background = init.background;
+    if (typeof init.foreground === 'string')
+      this.foreground = init.foreground;
+    if (typeof init.backgroundAlpha === 'number')
+      this.backgroundAlpha = init.backgroundAlpha;
+    if (typeof init.foregroundAlpha === 'number')
+      this.foregroundAlpha = init.foregroundAlpha;
 
-    if (data.actions) {
-      for (const k in data.actions) {
+    if (init.actions) {
+      for (const k in init.actions) {
         const key = k as keyof typeof this.actions;
-        const actions = data.actions[key];
+        const actions = init.actions[key];
         if (!Array.isArray(actions) || !actions.length) continue;
         this.actions[key] = actions.map(ui_action_clone);
       }
     }
-    if (data.values) Object.assign(this.values, data.values)
+    if (init.values) Object.assign(this.values, init.values)
 
     make_debugging(this)
   }
@@ -759,30 +755,6 @@ export class UINode implements IDebugging {
     this.renderer.on_hide?.();
   }
 
-  static create(lfw: LFW, info: ICookedUIInfo, parent?: UINode, layer?: UILayer): UINode {
-    const ret = new UINode(lfw, info, parent, layer);
-    const { component } = ret.data;
-    if (component)
-      for (const c of lfw.factory.create_components(ret, component))
-        ret._components.push(c);
-
-    if (info.items) {
-      for (const item_info of info.items) {
-        let count = (is_num(item_info.count) && item_info.count > 0) ? item_info.count : 1
-        while (count) {
-          const child = UINode.create(lfw, item_info, ret);
-          ret.add_child(child)
-          --count;
-        }
-      }
-    }
-    for (const component of ret._components)
-      component.on_add?.();
-    ret.fire_singleton_links();
-    ret.flush_flex();
-    return ret;
-  }
-
   add_child(node: UINode): this {
     this._children.push(node);
     this.invalidate_flex();
@@ -793,6 +765,13 @@ export class UINode implements IDebugging {
     node.forEach(l => this.add_child(l))
     return this;
   }
+  /**
+   * @internal 构造期挂载组件：由 {@link UINodeBuilder} 调用，不触发 `on_component_add` 回调
+   */
+  _attach_components(components: readonly UIComponent[]): void {
+    for (const c of components) this._components.push(c);
+  }
+
   add_components(...components: UIComponent[]) {
     for (const component of components) {
       if (this._components.some(c => c == component))

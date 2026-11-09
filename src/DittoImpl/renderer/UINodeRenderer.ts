@@ -271,8 +271,8 @@ export class UINodeRenderer implements IUINodeRenderer {
         w, h, scale,
         clip_x = 0,
         clip_y = 0,
-        clip_w = this.ui.data.img?.dw ?? w / scale,
-        clip_h = this.ui.data.img?.dh ?? h / scale
+        clip_w = this.ui.image_desc?.dw ?? w / scale,
+        clip_h = this.ui.image_desc?.dh ?? h / scale
       } = i
       m.set_origin_size(
         w,
@@ -333,7 +333,7 @@ export class UINodeRenderer implements IUINodeRenderer {
     ) return;
 
     const img = this.ui.image;
-    this._ui_img = this.ui.data.img;
+    this._ui_img = this.ui.image_desc ?? void 0;
     this._img = img;
     const rgba = parse_rgba(this.ui.color)
     if (img) {

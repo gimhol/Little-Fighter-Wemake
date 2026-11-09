@@ -36,7 +36,7 @@ export class UIProps {
     for (const key in raw) {
       const value = raw[key];
       if (typeof value === 'string' && value.startsWith(`$val:`)) {
-        raw[key] = parse_ui_value(owner.node.data, null, value) ?? value
+        raw[key] = parse_ui_value(owner.node, null, value) ?? value
       }
     }
     this.raw = { ...raw };

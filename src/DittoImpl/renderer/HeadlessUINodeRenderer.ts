@@ -112,7 +112,7 @@ export class HeadlessUINodeRenderer implements IUINodeRenderer {
       opacity: ui.global_opacity,
       color: ui.color,
       clip_children: ui.clip_children,
-      img: ui.data.img?.path ?? null,
+      img: ui.image_desc?.path ?? null,
       text: ui.text?.text ?? null,
     };
   }

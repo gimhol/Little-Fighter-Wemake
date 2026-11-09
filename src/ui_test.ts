@@ -20,7 +20,7 @@ export interface IUITestStep {
   at?: [number, number];
   /** click_id 用：节点的 data.id */
   id?: string;
-  /** 动作后期望的页面 id（`UINode.data.id`）；用于等页面切换完，避免在转场中途取样 */
+  /** 动作后期望的页面 id（`UINode.id`）；用于等页面切换完，避免在转场中途取样 */
   expect_page?: string;
   /** expect_page 的超时（默认 15s；过 loading 这种要加载数据的步骤需要放宽） */
   timeout_ms?: number;

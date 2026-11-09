@@ -2,6 +2,7 @@ import { Callbacks } from "../base";
 import { LFW } from "../LFW";
 import { is_str } from '../utils/type_check/is_str';
 import { UINode } from "./UINode";
+import { UINodeBuilder } from "./UINodeBuilder";
 
 export interface IUILayersCallback {
   on_set?(pushed: UINode | undefined, popped: UINode | undefined, layer: UILayer): void;
@@ -162,7 +163,7 @@ export class UILayer {
   protected _create(id: string | undefined): UINode | undefined {
     const info = this.lfw.uis.all?.find((v) => v.id === id)
     if (!info) return;
-    const ret = UINode.create(this.lfw, info, void 0, this);
+    const ret = UINodeBuilder.create(this.lfw, info, void 0, this);
     ret.z = ret.z + this._index;
     return ret;
   }

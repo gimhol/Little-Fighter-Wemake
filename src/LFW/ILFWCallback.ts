@@ -2,7 +2,7 @@ import type { IZip } from './ditto/zip/IZip';
 import type { LFW, SurvivalRankBoardData } from "./LFW";
 import type { PlayerInfo } from "./PlayerInfo";
 import type { UIComponent } from "./ui/component/UIComponent";
-import type { ICookedUIInfo } from "./ui/ICookedUIInfo";
+import type { ICookedUIInfo } from "./loader/ui/ICookedUIInfo";
 import type { UINode } from "./ui/UINode";
 
 export interface ILFWCallback {

@@ -1,7 +1,21 @@
 import type { Unsafe } from "../utils";
-import type { ICookedUIInfo } from "./ICookedUIInfo";
 
 type BaseType = 'string' | 'number' | 'boolean'
+
+/**
+ * `$val:` 解析所需的最小值查找作用域
+ *
+ * - `values` / `template_values`：值表
+ * - `parent`：沿父链向上查找
+ *
+ * `UINode` 与 cook 阶段的 `ICookedUIInfo` 都天然满足该结构；
+ * 解析逻辑不再依赖“已 cook 的 UI 数据”这个具体类型。
+ */
+export interface IUIValueScope {
+  values?: { [x in string]?: any };
+  template_values?: { [x in string]?: any };
+  parent?: IUIValueScope;
+}
 export type Cls<T> = new (...args: any[]) => T
 
 export interface ITypeJudger<C = unknown> {
@@ -29,8 +43,8 @@ function is_judger(v: any): v is ITypeJudger {
   return typeof v.run == 'function';
 }
 
-export function find_ui_value(ui: ICookedUIInfo, name: string): unknown | null {
-  let current: Unsafe<ICookedUIInfo> = ui;
+export function find_ui_value(ui: IUIValueScope, name: string): unknown | null {
+  let current: Unsafe<IUIValueScope> = ui;
   while (current) {
     const value = current.values?.[name];
     if (value !== null && value !== undefined) {
@@ -55,13 +69,13 @@ type AllType<T extends BaseType, C> =
   StringConstructor |
   T | Cls<C> | ITypeJudger |
   null;
-export function parse_ui_value(ui: ICookedUIInfo, type: null, value: unknown): any | null;
-export function parse_ui_value(ui: ICookedUIInfo, type: BooleanConstructor | 'boolean', value: unknown): boolean | null;
-export function parse_ui_value(ui: ICookedUIInfo, type: NumberConstructor | 'number', value: unknown): number | null;
-export function parse_ui_value(ui: ICookedUIInfo, type: StringConstructor | 'string', value: unknown): string | null;
-export function parse_ui_value<T>(ui: ICookedUIInfo, type: ITypeJudger<T>, value: unknown): T | null
-export function parse_ui_value<T extends BaseType, C>(ui: ICookedUIInfo, type: Cls<C> | null, value: unknown): C | T | null
-export function parse_ui_value<T extends BaseType, C>(ui: ICookedUIInfo, type: AllType<T, C>, value: unknown): C | T | null {
+export function parse_ui_value(ui: IUIValueScope, type: null, value: unknown): any | null;
+export function parse_ui_value(ui: IUIValueScope, type: BooleanConstructor | 'boolean', value: unknown): boolean | null;
+export function parse_ui_value(ui: IUIValueScope, type: NumberConstructor | 'number', value: unknown): number | null;
+export function parse_ui_value(ui: IUIValueScope, type: StringConstructor | 'string', value: unknown): string | null;
+export function parse_ui_value<T>(ui: IUIValueScope, type: ITypeJudger<T>, value: unknown): T | null
+export function parse_ui_value<T extends BaseType, C>(ui: IUIValueScope, type: Cls<C> | null, value: unknown): C | T | null
+export function parse_ui_value<T extends BaseType, C>(ui: IUIValueScope, type: AllType<T, C>, value: unknown): C | T | null {
   let ret: unknown = value
   if (ret === null || ret === void 0)
     return null

@@ -1,5 +1,5 @@
 import type { LFW } from "../LFW";
-import type { ICookedUIInfo } from "../ui/ICookedUIInfo";
+import type { ICookedUIInfo } from "../loader/ui/ICookedUIInfo";
 
 export class UIHelper {
   readonly lfw: LFW;

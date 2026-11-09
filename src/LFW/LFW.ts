@@ -18,6 +18,7 @@ import { Factory } from "./Factory";
 import * as Helper from "./helper";
 import { I18N } from "./I18N";
 import type { ILFWCallback } from "./ILFWCallback";
+import type { ICookedUIInfo } from './loader/ui/ICookedUIInfo';
 import { Keys } from "./Keys";
 import { DatMgr } from "./loader/DatMgr";
 import { PlayerInfo } from "./PlayerInfo";
@@ -209,7 +210,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
       pos: [0, 0, 0],
       size: [0, 0, 0],
       scale: [1, 1, 1],
-    } as unknown as UI.ICookedUIInfo);
+    });
   }
 
   get_singleton<T extends UI.UIComponent>(cls: UIComponentClass): T | undefined {
@@ -808,10 +809,10 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   }
   strings(name: string): string[] { return this._i18n.strings(name) }
 
-  protected async load_builtin_ui(): Promise<UI.ICookedUIInfo[]> {
+  protected async load_builtin_ui(): Promise<ICookedUIInfo[]> {
     const check = this.dispose_guard('load_builtin_ui');
     const { data: paths } = await this.resources.import_json<string[]>("builtin_data/launch/_index.json")
-    const ret: UI.ICookedUIInfo[] = []
+    const ret: ICookedUIInfo[] = []
     for (const path of paths) {
       const cooked_ui_info = await UI.cook_ui_info(this, path);
       check()
@@ -821,10 +822,10 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return ret
   }
 
-  async load_ui(zip: I.IZip): Promise<ReadonlyArray<UI.ICookedUIInfo>> {
+  async load_ui(zip: I.IZip): Promise<ReadonlyArray<ICookedUIInfo>> {
     const check = this.dispose_guard('load_ui');
     const files = zip.file(/^ui\/.*?\.ui\.(json5?|xml)$/)
-    const ret: UI.ICookedUIInfo[] = []
+    const ret: ICookedUIInfo[] = []
 
     for (const file of files) {
       const is_xml = file.name.endsWith('.xml');

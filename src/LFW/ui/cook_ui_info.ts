@@ -9,7 +9,7 @@ import { is_str } from '../utils/type_check/is_str';
 import type { Unsafe } from "../utils/type_check/Unsafe";
 import { normalize_flex_style } from "./flex_style";
 import type { IComponentInfo } from "./IComponentInfo";
-import type { ICookedUIInfo } from "./ICookedUIInfo";
+import type { ICookedUIInfo } from "../loader/ui/ICookedUIInfo";
 import type { IUIAction } from "./IUIAction";
 import type { INinePatch, IUIImgInfo } from "./IUIImgInfo.dat";
 import type { IUIInfo, TComponentInfo } from "./IUIInfo.dat";

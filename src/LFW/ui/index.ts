@@ -1,11 +1,11 @@
 /*** AUTO EXPORT START ***/
 export * from "./CrossInfo";
 export * from "./IComponentInfo";
-export * from "./ICookedUIInfo";
 export * from "./ICrossInfo";
 export * from "./IUIAction";
 export * from "./IUICallback";
 export * from "./IUIImgInfo.dat";
+export * from "./IUINodeInit";
 export * from "./IUIInfo.dat";
 export * from "./IUIKeyEvent";
 export * from "./IUIPointerEvent";
@@ -15,6 +15,7 @@ export * from "./UIActionEnum";
 export * from "./UIEvent";
 export * from "./UIImgLoader";
 export * from "./UINode";
+export * from "./UINodeBuilder";
 export * from "./UILayer";
 export * from "./flex_layout";
 export * from "./flex_style";
