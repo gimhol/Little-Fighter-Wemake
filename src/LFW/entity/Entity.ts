@@ -1691,6 +1691,10 @@ export class Entity {
         // 离地面太高
         this.leave_ground();
         this._state?.on_leave_ground?.(this);
+      } else if (_ground_y - this.position.y > this.world.ground.step) {
+        // 地面突然出现在上方一大截（单向平台/地形切换的意外情况），不要把人闪上去，按离地处理
+        this.leave_ground();
+        this._state?.on_leave_ground?.(this);
       } else {
         // 视为 斜坡/楼梯
         this.position.y = _ground_y;
