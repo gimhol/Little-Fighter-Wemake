@@ -18,6 +18,14 @@ enum Status {
 }
 
 /**
+ * 受伤、破防、倒地、被击飞：这些状态下不能行动，双击奔跑也不成立
+ */
+function is_hurt_like_state(state: number | undefined): boolean {
+  return state === SE.Injured || state === SE.BrokenDefend ||
+    state === SE.Lying || state === SE.Falling;
+}
+
+/**
  * @link https://www.processon.com/view/link/6765125f16640e2a68b21418?cid=6764eb96c3e02b46ac818e40
  */
 export class BaseController {
@@ -163,13 +171,17 @@ export class BaseController {
     const { time, data: [d0, d1] } = dbc;
     const ret = time > 0 && this.time - time <= this.entity.world.dataset.key_hit_duration;
     if (!ret) return false
-    if (!d0 || !d1) return true;
-    // stupid...
+    const { entity } = this;
+
     if (
-      (d0.fstate == SE.Standing || d0.fstate == SE.Walking) &&
-      (d0.fstate == SE.Standing || d0.fstate == SE.Walking)
+      !d0 || !d1 ||
+      is_hurt_like_state(d0.fstate) ||
+      is_hurt_like_state(d1.fstate) ||
+      is_hurt_like_state(entity.frame.state) ||
+      is_hurt_like_state(entity.get_prev_frame()?.state)
     ) {
-      return true;
+      dbc.step();
+      return false;
     }
     if (k === GK.L && (d0.facing !== -1 || d1.facing !== -1)) {
       dbc.step();
