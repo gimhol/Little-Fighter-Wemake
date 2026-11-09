@@ -276,8 +276,8 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       const selected = p === this.rank_period
       const style = node.style
       style.fill_style = selected ? '#ffffff' : '#9b9bff'
-      const txt = this.lfw.t(`survival.rank_period_${p}`)
-      node.set_text(txt)
+      // 绑定 i18n key，语言切换时由 set_lang 自动刷新
+      node.set_i18n(`survival.rank_period_${p}`)
       node.set_opacity(selected ? 1 : 0.5)
       if (!selected) continue
       any_selected = true

@@ -33,6 +33,6 @@ export function paint(node: UINode | undefined, patch: Partial<IStyle>): void {
   const data = style.data;
   if (!Object.keys(patch).some(key => data[key as keyof IStyle] !== patch[key as keyof IStyle])) return;
   style.assign(patch);
-  // 样式变化可能影响文本尺寸，重新走一次文本测量/自适应
-  node.set_text(node.text.text);
+  // 样式变化可能影响文本尺寸；不清除 i18n 绑定
+  node.refresh_text_layout();
 }

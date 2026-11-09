@@ -45,6 +45,7 @@ export class UINodeRenderer implements IUINodeRenderer {
   } | undefined;
   protected _txt: TextInfo<any> | null = null;
   protected _txt_style_version: number = -1;
+  protected _txt_lang_version: number = -1;
   protected _img: ImageInfo<T.Texture> | null = null;
   protected _text_renderer: UITextRenderer | undefined;
   protected _uv_anim_angle: number = 0;
@@ -306,9 +307,15 @@ export class UINodeRenderer implements IUINodeRenderer {
   update_txt() {
     const text = this.ui.text;
     const style_version = this.ui.style.version;
-    if (this._txt === text && this._txt_style_version === style_version) return;
+    const lang_version = this.lfw.lang_version;
+    if (
+      this._txt === text &&
+      this._txt_style_version === style_version &&
+      this._txt_lang_version === lang_version
+    ) return;
     this._txt = text;
     this._txt_style_version = style_version;
+    this._txt_lang_version = lang_version;
     if (!text) return;
     if (!this._text_renderer) {
       this._text_renderer = new UITextRenderer(this);

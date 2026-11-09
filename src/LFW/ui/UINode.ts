@@ -81,6 +81,13 @@ export class UINode implements IDebugging {
   readonly center: IVector3 = new D.Vector3()
 
   protected _text: TextInfo | null = null;
+  /**
+   * 文本来源的 i18n key
+   *
+   * - 非空：文本由该 key 翻译而来，切换语言时自动跟随
+   * - null：文本由代码/数据直接指定（`set_text` 会清除该绑定）
+   */
+  protected _i18n_key: string | null = null;
   /** 上次自动适配尺寸时的文本+样式签名，用于跳过内容未变化的重复测量 */
   protected _auto_size_key?: string;
   auto_focus: boolean = false;
@@ -91,6 +98,7 @@ export class UINode implements IDebugging {
     this._text = v;
     this.auto_size_by_text(v);
   }
+  get i18n_key(): string | null { return this._i18n_key; }
   image: ImageInfo | null = null
   color: string = '';
   readonly style: Style = new Style();
@@ -481,9 +489,14 @@ export class UINode implements IDebugging {
     this._flex_dirty = this.is_flex;
     if (data.style) this.style.assign(data.style)
     const txt_info = data.txt_info;
-    this.text = txt_info && data.i18n
-      ? this.make_i18n_text(txt_info, data.i18n)
-      : txt_info ?? null;
+    if (data.i18n) {
+      this._i18n_key = data.i18n;
+      this.text = txt_info
+        ? this.make_i18n_text(txt_info, data.i18n)
+        : this.lfw.images.measure_text(this.lfw.t(data.i18n), this.style);
+    } else {
+      this.text = txt_info ?? null;
+    }
     this.image = data.img_info ?? null;
     this.color = data.color ?? '';
     this.renderer = new D.UINodeRenderer(this);
@@ -508,7 +521,7 @@ export class UINode implements IDebugging {
         this.actions[key] = actions.map(ui_action_clone);
       }
     }
-    if (data.values) this.values.assign(data.values)
+    if (data.values) Object.assign(this.values, data.values)
 
     make_debugging(this)
   }
@@ -531,6 +544,8 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   set_text(text: string): this {
+    // 代码指定的文本接管显示，解除 i18n 绑定
+    this._i18n_key = null;
     const prev = this.text;
     if (prev && prev.text === text) {
       this.auto_size_by_text(prev);
@@ -538,6 +553,59 @@ export class UINode implements IDebugging {
     }
     this.text = new TextInfo({ text });
     return this;
+  }
+
+  /**
+   * 以 i18n key 设置文本
+   *
+   * 与 {@link set_text} 不同，节点会记住该 key，切换语言时自动跟随；
+   * 之后调用 {@link set_text} 会解除该绑定，由动态文本接管。
+   * 传 `null` 只解除绑定，不改变当前显示文本。
+   *
+   * @param {(string | null)} key i18n key
+   * @return {this}
+   * @memberof UINode
+   */
+  set_i18n(key: string | null): this {
+    const k = key || null;
+    this._i18n_key = k;
+    if (!k) return this;
+    const resolved = this.lfw.t(k);
+    if (this.text?.text === resolved) {
+      this.refresh_text_layout();
+      return this;
+    }
+    this.text = this.lfw.images.measure_text(resolved, this.style);
+    return this;
+  }
+
+  /** 样式变化后重新测量文本尺寸（不会解除 i18n 绑定） */
+  refresh_text_layout(): void {
+    this._auto_size_key = void 0;
+    this.auto_size_by_text(this.text);
+  }
+
+  /**
+   * 语言切换时刷新文本
+   *
+   * 有 i18n 绑定的节点重新翻译并测量；其余节点只重算自适应尺寸，
+   * 文本本身的重新解析由渲染层按 `LFW.lang_version` 处理。
+   *
+   * @memberof UINode
+   */
+  refresh_lang_text(): void {
+    const key = this._i18n_key;
+    if (key) {
+      this.text = this.lfw.images.measure_text(this.lfw.t(key), this.style);
+      return;
+    }
+    if (this.text) this.refresh_text_layout();
+  }
+
+  /** 解析节点当前应显示的文本：i18n 绑定优先，否则按文本内容解析 */
+  resolve_text(v: TextInfo | null = this.text): string {
+    const source = this._i18n_key ?? v?.text ?? '';
+    return source ? this.lfw.t(source) : '';
   }
 
   /**
@@ -555,7 +623,7 @@ export class UINode implements IDebugging {
     const key = this._text_size_key(v);
     if (this._auto_size_key === key) return;
     this._auto_size_key = key;
-    const ti = this.lfw.images.measure_text(this.lfw.t(v.text), this.style);
+    const ti = this.lfw.images.measure_text(this.resolve_text(v), this.style);
     this.resize((ti.w || 0) / (ti.scale || 1), (ti.h || 0) / (ti.scale || 1));
   }
 
@@ -568,7 +636,7 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   protected _text_size_key(v: TextInfo): string {
-    return `${this.lfw.t(v.text)}\u0000v${this.style.version}`;
+    return `${this.resolve_text(v)}\u0000v${this.style.version}`;
   }
 
   move_to_global(x: number, y: number, z: number): this {

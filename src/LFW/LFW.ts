@@ -147,6 +147,8 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
   get lang(): string { return this._i18n.lang }
   set lang(v: string) { this.set_lang(v) }
+  /** 语言版本号：每次切换语言递增，供渲染层判断是否需要重新解析/重绘文本 */
+  get lang_version(): number { return this._lang_version }
 
   /**
    * 把语言码（可为地区码/别名，如 'zh-cn'、'en-us'）解析成规范码
@@ -164,35 +166,17 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     const prev = this._i18n.lang;
     if (prev === lang) return;
 
-    const recs: { node: UI.UINode, key: string, resolved: boolean }[] = [];
-    const collect = (node: UI.UINode): void => {
-      const txt = node.text;
-      if (txt?.text && typeof txt.text === 'string') {
-        const t = txt.text;
-        const translated = this._i18n.string(t, prev);
-        if (translated !== t) {
-          recs.push({ node, key: t, resolved: false });
-        } else {
-          const key = node.data.i18n;
-          if (key && t === this._i18n.string(key, prev))
-            recs.push({ node, key, resolved: true });
-        }
-      }
-      for (const child of node.children) collect(child);
+    this._i18n.lang = lang;
+    this._lang_version++;
+
+    // 有 i18n 绑定的节点重新翻译/测量；其余文本节点由渲染层按 lang_version 重绘
+    const refresh = (node: UI.UINode): void => {
+      node.refresh_lang_text();
+      for (const child of node.children) refresh(child);
     };
     for (const layer of this.layers.all)
       for (const ui of layer.pages)
-        collect(ui);
-
-    this._i18n.lang = lang;
-
-    for (const { node, key, resolved } of recs) {
-      if (resolved) {
-        node.text = this.images.measure_text(this.t(key), node.style);
-      } else {
-        node.set_text(key);
-      }
-    }
+        refresh(ui);
 
     this.callbacks.call('on_lang_changed', lang, prev, this);
   }
@@ -251,6 +235,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
   protected _mt = new MersenneTwister(Date.now())
   protected _ui_loaded = false;
   protected _i18n = new I18N();
+  protected _lang_version: number = 0;
   protected _strings = new Map<string, { [x in string]?: string }>()
   protected _strings_list = new Map<string, { [x in string]?: string[] }>();
   protected _cheat_keys = ''

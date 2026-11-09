@@ -45,8 +45,8 @@ export class UITextRenderer {
     // 文本样式只保存在节点上，TextInfo 仅保存文本与测量结果
     const style = ui.style;
 
-    // 通过 lf2.string() 解析 i18n 文本
-    const text = ui.text?.text ? ui.lfw.t(ui.text.text) : '';
+    // 文本解析统一交给 UINode：i18n 绑定优先，否则按文本内容解析
+    const text = ui.resolve_text();
 
     if (text !== this._last_text || style.version !== this._last_style_version) {
       this._last_text = text;
