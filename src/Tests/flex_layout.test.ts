@@ -11,7 +11,7 @@ import { xml_to_ui_info } from "../LFW/ui/xml_to_ui_info";
 
 type TStubChild = {
   self_visible: boolean;
-  raw: { size?: number[] } | undefined;
+  stretchable: boolean;
   flex: FlexStyle;
   w: number;
   h: number;
@@ -27,7 +27,7 @@ type TStubChild = {
 function stub_child(over: Partial<TStubChild> = {}): TStubChild {
   const child: TStubChild = {
     self_visible: true,
-    raw: void 0,
+    stretchable: false,
     flex: new FlexStyle(),
     w: 100,
     h: 20,
@@ -307,15 +307,15 @@ describe("apply_flex_layout", () => {
     expect(child.y).toBeCloseTo(-50 + 40 + 10);
   });
 
-  test("显式声明 size 的子项不会被 stretch", () => {
-    const child = stub_child({ h: 20, raw: { size: [100, 20, 0] } });
+  test("不可拉伸的子项不会被 stretch", () => {
+    const child = stub_child({ h: 20 });
     const container = stub_container({ flex: "display:flex; align:stretch", children: [child] });
     apply_flex_layout(container);
     expect(child.h).toBe(20);
   });
 
-  test("未显式声明 size 的子项会被 stretch", () => {
-    const child = stub_child({ h: 20 });
+  test("可拉伸的子项会被 stretch", () => {
+    const child = stub_child({ h: 20, stretchable: true });
     const container = stub_container({ flex: "display:flex; align:stretch", children: [child] });
     apply_flex_layout(container);
     expect(child.h).toBeCloseTo(100);
@@ -346,15 +346,15 @@ describe("apply_flex_layout", () => {
   });
 
   test("fit 子项不会被 stretch 拉伸", () => {
-    const child = stub_child({ h: 20 });
+    const child = stub_child({ h: 20, stretchable: true });
     child.flex.fit_h = true;
     const container = stub_container({ flex: "display:flex; align:stretch", children: [child] });
     apply_flex_layout(container);
     expect(child.h).toBe(20);
   });
 
-  test("stretch_force 强制拉伸显式尺寸的子项", () => {
-    const child = stub_child({ h: 20, raw: { size: [100, 20, 0] } });
+  test("stretch_force 强制拉伸不可拉伸的子项", () => {
+    const child = stub_child({ h: 20 });
     child.flex.stretch_force = true;
     const container = stub_container({ flex: "display:flex; align:stretch", children: [child] });
     apply_flex_layout(container);

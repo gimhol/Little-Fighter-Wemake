@@ -11,7 +11,7 @@ import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
 import { apply_flex_layout } from "./flex_layout";
 import { FlexStyle } from "./flex_style";
 import type { IUICallback } from "./IUICallback";
-import type { IUIInfo, TUIActionPlace } from "./IUIInfo.dat";
+import type { TUIActionPlace } from "./IUIInfo.dat";
 import type { IUIKeyEvent } from "./IUIKeyEvent";
 import { LFWPointerEvent } from "./LFWPointerEvent";
 import { Style } from "./Style";
@@ -36,15 +36,6 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   readonly data: Readonly<ICookedUIInfo>;
-  /**
-   * 原始UI数据（合并模板后）
-   *
-   * 用于判断节点在UI数据中是否显式声明了某些属性（如 size）。
-   *
-   * @type {Readonly<IUIInfo> | undefined}
-   * @memberof UINode
-   */
-  readonly raw: Readonly<IUIInfo> | undefined;
   protected _outlineColor: string | undefined;
   protected _outlineWidth: number | undefined;
   protected _outlineAlpha: number | undefined;
@@ -466,7 +457,6 @@ export class UINode implements IDebugging {
   constructor(lfw: LFW, data: ICookedUIInfo, parent?: UINode, layer?: UILayer) {
     this.lfw = lfw;
     this.data = Object.freeze(data);
-    this.raw = data.raw;
     this.id = data.id;
     this.name = data.name;
     this._parent = parent;
