@@ -1,5 +1,5 @@
 import { Sine } from "../../animation/Sine";
-import type { IPropsMeta, IStyle } from "../../defines";
+import type { IPropsMeta } from "../../defines";
 import { UIComponent } from "./UIComponent";
 export interface IPlayerNameProps {
   prefix?: string;
@@ -8,6 +8,8 @@ export interface IPlayerNameProps {
 }
 /**
  * 显示玩家名称
+ *
+ * 字号等静态样式由 UI 文件负责，这里只按 COM / 玩家切换颜色。
  *
  * @export
  * @class PlayerName
@@ -22,22 +24,12 @@ export class PlayerName extends UIComponent<IPlayerNameProps> {
   private _decided?: boolean;
   private _com?: boolean;
 
-  protected make_style(com: boolean): IStyle {
-    const node_style = this.node.data.style;
-    if (node_style && Object.keys(node_style).length)
-      return { ...node_style };
-    return {
-      fill_style: com ? "pink" : "white",
-      font: "14px Arial",
-    }
-  }
-
   join(text: string, com: boolean, decided: boolean) {
     const { prefix } = this.props;
     this._decided = decided;
     this._com = com;
     this._decided = true;
-    this.node.style.assign(this.make_style(com));
+    this.node.style.fill_style = com ? "pink" : "white";
     this.node.set_text(prefix ? `${this.lfw.t(prefix)}${text}` : text);
     this.node.visible = true
   }
@@ -45,7 +37,7 @@ export class PlayerName extends UIComponent<IPlayerNameProps> {
   quit() {
     this._decided = void 0;
     this._com = void 0;
-    this.node.style.assign(this.make_style(false));
+    this.node.style.fill_style = "white";
     this.node.set_text(this.lfw.t("char_menu.join_q"));
     if (this.props.hide_join_q) this.node.visible = false;
   }

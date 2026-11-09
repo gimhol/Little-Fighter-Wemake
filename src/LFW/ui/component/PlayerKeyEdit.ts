@@ -7,7 +7,6 @@ export class PlayerKeyEdit extends PlayerKeyText {
   static override readonly TAGS: string[] = ["PlayerKeyEdit"];
 
   override on_start(): void {
-    this.node.style.font = "17px Arial"
     this.node.parent?.callbacks.add(this.p)
   }
   override on_stop(): void {
