@@ -17,7 +17,6 @@ export type TComponentInfo = IComponentInfo | string
 export type TUIAction = IUIAction | UIActionEnum
 export type TUIImgInfo = ToStringableDeep<IUIImgInfo> | string
 export type TUIActionPlace = 'rclick' | 'mclick' | 'click' | 'resume' | 'pause' | 'start' | 'stop';
-
 export interface IUIInfo {
   /**
    * 节点ID

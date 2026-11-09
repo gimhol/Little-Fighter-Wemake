@@ -11,13 +11,14 @@ import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
 import { apply_flex_layout } from "./flex_layout";
 import { FlexStyle } from "./flex_style";
 import type { IUICallback } from "./IUICallback";
-import type { IUIInfo } from "./IUIInfo.dat";
+import type { IUIInfo, TUIActionPlace } from "./IUIInfo.dat";
 import type { IUIKeyEvent } from "./IUIKeyEvent";
 import { LFWPointerEvent } from "./LFWPointerEvent";
 import { Style } from "./Style";
 import type { IPopPageOpts, UILayer } from './UILayer';
 import { actor } from './action/Actor';
 import type { UIComponent } from './component/UIComponent';
+import { ui_action_clone, type IUIAction } from "./IUIAction";
 
 export class UINode implements IDebugging {
   static readonly TAG: string = 'UINode';
@@ -82,6 +83,7 @@ export class UINode implements IDebugging {
   protected _text: TextInfo | null = null;
   /** 上次自动适配尺寸时的文本+样式签名，用于跳过内容未变化的重复测量 */
   protected _auto_size_key?: string;
+  auto_focus: boolean = false;
 
   get text(): TextInfo | null { return this._text; }
   set text(v: TextInfo | null) {
@@ -101,13 +103,15 @@ export class UINode implements IDebugging {
   protected _cache_rect: IRectInfo | undefined;
   protected _cache_geo: IGeoInfo | undefined;
   protected _cache_global_pos: IVector3Like | undefined;
-  protected _background: string | null = null;
-  protected _backgroundAlpha: number | null = null;
-  protected _foreground: string | null = null;
-  protected _foregroundAlpha: number | null = null;
+  background: string = '#000000';
+  backgroundAlpha: number | null = null;
+  foreground: string = '#000000';
+  foregroundAlpha: number | null = null;
   protected _local_only: boolean | null = null;
   readonly ignore_esc: boolean = false;
   protected _ignore_key = false;
+  protected actions: { [x in TUIActionPlace]?: IUIAction[] } = {}
+  protected values: { [x in string]?: any } = {}
 
   get cross(): Readonly<ICrossInfo> {
     if (this._cache_cross) return this._cache_cross;
@@ -177,8 +181,8 @@ export class UINode implements IDebugging {
     this._root.callbacks.call("on_foucs_item_changed", val, old);
   }
 
-  get id(): string | undefined { return this.data.id }
-  get name(): string | undefined { return this.data.name }
+  id: string | undefined;
+  name: string | undefined;
   get root(): UINode { return this._root; }
   get layer(): UILayer | undefined { return this._root._layer }
 
@@ -251,14 +255,6 @@ export class UINode implements IDebugging {
   set visible(v: boolean) {
     this.set_visible(v);
   }
-  get background(): string { return this._background ?? this.data.background ?? '#000000' }
-  set background(v: string | null) { this._background = v; }
-  get foreground(): string { return this._foreground ?? this.data.foreground ?? '#000000' }
-  set foreground(v: string | null) { this._foreground = v; }
-  get backgroundAlpha(): number { return this._backgroundAlpha ?? this.data.backgroundAlpha ?? 0 }
-  set backgroundAlpha(v: number | null) { this._backgroundAlpha = v; }
-  get foregroundAlpha(): number { return this._foregroundAlpha ?? this.data.foregroundAlpha ?? 0 }
-  set foregroundAlpha(v: number | null) { this._foregroundAlpha = v; }
   get outlineColor(): string | undefined { return this._outlineColor }
   get outlineWidth(): number | undefined { return this._outlineWidth }
   get outlineAlpha(): number | undefined { return this._outlineAlpha }
@@ -462,47 +458,64 @@ export class UINode implements IDebugging {
     this.lfw = lfw;
     this.data = Object.freeze(data);
     this.raw = data.raw;
+    this.id = data.id;
+    this.name = data.name;
     this._parent = parent;
     this._root = parent?.root ?? this;
     this._layer = layer;
-    this._disabled = this.data.disabled == true
-    this._visible = this.data.visible != false
-    this._clip_children = this.data.clips == true
-    this.local_only = this.data.local_only
-    this.ignore_esc = this.data.ignore_esc == true
-    this.touchable = this.data.touchable
-    this._opacity = this.data.opacity ?? 1
-    this.center.set(...this.data.center);
-    this.pos.set(...this.data.pos);
-    this.size.set(...this.data.size);
-    this.scale.set(...this.data.scale);
-    this.flex = new FlexStyle(this.data.flex);
+    this._disabled = data.disabled == true
+    this._visible = data.visible != false
+    this._clip_children = data.clips == true
+    this.local_only = data.local_only
+    this.ignore_esc = data.ignore_esc == true
+    this.touchable = data.touchable
+    this._opacity = data.opacity ?? 1
+    this.center.set(...data.center);
+    this.pos.set(...data.pos);
+    this.size.set(...data.size);
+    this.scale.set(...data.scale);
+    this.flex = new FlexStyle(data.flex);
     this.flex.on_change = () => this.on_flex_change();
     this._flex_dirty = this.is_flex;
-    const txt_info = this.data.txt_info;
-    this.text = txt_info && this.data.i18n
-      ? this.make_i18n_text(txt_info, this.data.i18n)
+    const txt_info = data.txt_info;
+    this.text = txt_info && data.i18n
+      ? this.make_i18n_text(txt_info, data.i18n)
       : txt_info ?? null;
-    this.image = this.data.img_info ?? null;
-    this.color = this.data.color ?? '';
+    this.image = data.img_info ?? null;
+    this.color = data.color ?? '';
     this.renderer = new D.UINodeRenderer(this);
-    this._outlineColor = this.data.outlineColor
-    this._outlineWidth = this.data.outlineWidth
-    this._outlineAlpha = this.data.outlineAlpha
-    if (this.data.style) this.style.assign(this.data.style)
+    this._outlineColor = data.outlineColor
+    this._outlineWidth = data.outlineWidth
+    this._outlineAlpha = data.outlineAlpha
+    this.auto_focus = data.auto_focus ?? false;
+    if (typeof data.background === 'string')
+      this.background = data.background;
+    if (typeof data.foreground === 'string')
+      this.foreground = data.foreground;
+    if (typeof data.backgroundAlpha === 'number')
+      this.backgroundAlpha = data.backgroundAlpha;
+    if (typeof data.foregroundAlpha === 'number')
+      this.foregroundAlpha = data.foregroundAlpha;
+
+    if (data.style) this.style.assign(data.style)
+
+    if (data.actions) {
+      for (const k in data.actions) {
+        const key = k as keyof typeof this.actions;
+        const actions = data.actions[key];
+        if (!Array.isArray(actions) || !actions.length) continue;
+        this.actions[key] = actions.map(ui_action_clone);
+      }
+    }
+    if (data.values) this.values.assign(data.values)
+
     make_debugging(this)
   }
 
-  /**
-   * 按“当前语言”解析 i18n 词条并重新测量文本
-   *
-   * UI 数据加载时，i18n 文字已按当时的语言烤进 txt_info（缓存起来避免反复测量）；
-   * 若运行中切换了语言，新建/重开页面时会用当前语言重新测量（语言未变时直接复用原 txt_info）。
-   */
   protected make_i18n_text(baked: TextInfo, key: string): TextInfo {
     const resolved = this.lfw.t(key);
     if (resolved === baked.text) return baked;
-    return this.lfw.images.measure_text(resolved, baked.style ?? this.data.style ?? void 0);
+    return this.lfw.images.measure_text(resolved, baked.style ?? this.style);
   }
 
   /**
@@ -515,7 +528,7 @@ export class UINode implements IDebugging {
    * @return {this}
    * @memberof UINode
    */
-  set_text(text: string, style?: IStyle | null): this {
+  set_text(text: string, style: IStyle | null): this {
     if (!style && text == this.text?.text) return this;
     this.text = new TextInfo({ text, style: style ?? this.style });
     return this;
@@ -615,7 +628,7 @@ export class UINode implements IDebugging {
       c.on_start?.();
     }
     for (const i of this.children) i.on_start();
-    const { start } = this.data.actions || {};
+    const { start } = this.actions;
     if (start) actor.act(this, start);
     this.renderer.on_start?.();
   }
@@ -628,7 +641,7 @@ export class UINode implements IDebugging {
     for (const c of this._linked_singletons) c.on_unlink?.(this);
     this._linked_singletons.length = 0;
     for (const l of this.children) l.on_stop();
-    const { stop } = this.data.actions || {};
+    const { stop } = this.actions;
     if (stop) actor.act(this, stop);
     this.renderer.on_stop?.();
   }
@@ -645,7 +658,7 @@ export class UINode implements IDebugging {
       c.on_resume?.();
     }
     for (const i of this.children) i.on_resume();
-    const { resume } = this.data.actions || {};
+    const { resume } = this.actions;
     if (resume) actor.act(this, resume);
     this.renderer.on_resume?.();
   }
@@ -657,7 +670,7 @@ export class UINode implements IDebugging {
       this.invoke_all_on_hide();
     }
     if (this.root === this) this.renderer.del_self();
-    const { pause } = this.data.actions || {};
+    const { pause } = this.actions;
     if (pause) actor.act(this, pause);
     for (const c of this._components) {
       c.paused = true;
@@ -672,7 +685,7 @@ export class UINode implements IDebugging {
   on_show() {
     for (const c of this.components) c.on_show?.();
     this.callbacks.call("on_show", this);
-    if (this.data.auto_focus && !this.disabled && !this.focused_node) {
+    if (this.auto_focus && !this.disabled && !this.focused_node) {
       this.focused_node = this;
     }
     this.renderer.on_show?.();
@@ -743,7 +756,7 @@ export class UINode implements IDebugging {
   }
 
   on_click(e: LFWPointerEvent) {
-    const { click, rclick, mclick } = this.data.actions ?? {};
+    const { click, rclick, mclick } = this.actions;
     if (click && e.button == 0) {
       actor.act(this, click);
       e.stop_propagation();
@@ -842,7 +855,7 @@ export class UINode implements IDebugging {
       i.on_key_down(e);
       if (e.stopped === 2) return;
     }
-    const { click, rclick, mclick } = this.data.actions ?? {};
+    const { click, rclick, mclick } = this.actions;
     if (this.focused && "a" === e.game_key && click) {
       actor.act(this, click);
       e.stop_immediate_propagation();
@@ -927,7 +940,7 @@ export class UINode implements IDebugging {
   }
 
   get_value(name: string, lookup: boolean = true): any {
-    const { values } = this.data;
+    const { values } = this;
     if (values && name in values) return values[name];
     if (lookup && this.parent) return this.parent.get_value(name, lookup);
     return void 0;
