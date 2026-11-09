@@ -5,7 +5,6 @@ export * from "./ICrossInfo";
 export * from "./IUIAction";
 export * from "./IUICallback";
 export * from "./IUIImgInfo.dat";
-export * from "./IUINodeInit";
 export * from "./IUIInfo.dat";
 export * from "./IUIKeyEvent";
 export * from "./IUIPointerEvent";

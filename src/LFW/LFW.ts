@@ -203,14 +203,10 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
 
   get host_node(): UI.UINode {
     if (this._host_node) return this._host_node;
-    return this._host_node = new UI.UINode(this, {
-      id: '__host__',
-      name: '__host__',
-      center: [0, 0, 0],
-      pos: [0, 0, 0],
-      size: [0, 0, 0],
-      scale: [1, 1, 1],
-    });
+    const node = new UI.UINode(this);
+    node.id = '__host__';
+    node.name = '__host__';
+    return this._host_node = node;
   }
 
   get_singleton<T extends UI.UIComponent>(cls: UIComponentClass): T | undefined {

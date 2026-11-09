@@ -18,7 +18,6 @@ import type { IPopPageOpts, UILayer } from './UILayer';
 import { actor } from './action/Actor';
 import type { UIComponent } from './component/UIComponent';
 import { ui_action_clone, type IUIAction } from "./IUIAction";
-import type { IUINodeInit } from "./IUINodeInit";
 
 export class UINode implements IDebugging {
   static readonly TAG: string = 'UINode';
@@ -28,9 +27,9 @@ export class UINode implements IDebugging {
   readonly lfw: LFW;
 
   /** 渲染器需要的图片描述（裁剪/平铺/九宫格参数） */
-  readonly image_desc: IUIImgInfo | null;
+  image_desc: IUIImgInfo | null = null;
   /** `$val:` 查找用的模板值（cook 阶段合并出的） */
-  readonly template_values?: { [x in string]?: any };
+  template_values?: { [x in string]?: any };
   protected _outlineColor: string | undefined;
   protected _outlineWidth: number | undefined;
   protected _outlineAlpha: number | undefined;
@@ -103,7 +102,7 @@ export class UINode implements IDebugging {
   foreground: string = '#000000';
   foregroundAlpha: number | null = null;
   protected _local_only: boolean | null = null;
-  readonly ignore_esc: boolean = false;
+  ignore_esc: boolean = false;
   protected _ignore_key = false;
   protected actions: { [x in TUIActionPlace]?: IUIAction[] } = {}
   values: { [x in string]?: any } = {}
@@ -445,77 +444,38 @@ export class UINode implements IDebugging {
 
 
   renderer: IUINodeRenderer;
-  readonly flex: FlexStyle;
+  readonly flex: FlexStyle = new FlexStyle();
   protected _flex_dirty: boolean = false;
   protected _applying_flex: boolean = false;
 
-  constructor(lfw: LFW, init: IUINodeInit, parent?: UINode, layer?: UILayer) {
+  constructor(lfw: LFW, parent?: UINode, layer?: UILayer) {
     this.lfw = lfw;
-    this.id = init.id;
-    this.name = init.name;
-    this.image_desc = init.img ?? null;
-    this.template_values = init.template_values;
     this._parent = parent;
     this._root = parent?.root ?? this;
     this._layer = layer;
-    this._disabled = init.disabled == true
-    this._visible = init.visible != false
-    this._clip_children = init.clips == true
-    this.local_only = init.local_only
-    this.ignore_esc = init.ignore_esc == true
-    this.touchable = init.touchable
-    this._opacity = init.opacity ?? 1
-    this.center.set(...(init.center ?? [0, 0, 0]));
-    this.pos.set(...(init.pos ?? [0, 0, 0]));
-    if (init.size) this.size.set(...init.size);
-    this.stretchable = !init.size
-    this.scale.set(...(init.scale ?? [1, 1, 1]));
-    this.flex = new FlexStyle(init.flex);
     this.flex.on_change = () => this.on_flex_change();
-    this._flex_dirty = this.is_flex;
-    if (init.style) this.style.assign(init.style)
-    const txt_info = init.txt_info;
-    if (init.i18n) {
-      this._i18n_key = init.i18n;
-      this.text = txt_info
-        ? this.make_i18n_text(txt_info, init.i18n)
-        : this.lfw.images.measure_text(this.lfw.t(init.i18n), this.style);
-    } else {
-      this.text = txt_info ?? null;
-    }
-    this.image = init.img_info ?? null;
-    this.color = init.color ?? '';
     this.renderer = new D.UINodeRenderer(this);
-    this._outlineColor = init.outlineColor
-    this._outlineWidth = init.outlineWidth
-    this._outlineAlpha = init.outlineAlpha
-    this.auto_focus = init.auto_focus ?? false;
-    if (typeof init.background === 'string')
-      this.background = init.background;
-    if (typeof init.foreground === 'string')
-      this.foreground = init.foreground;
-    if (typeof init.backgroundAlpha === 'number')
-      this.backgroundAlpha = init.backgroundAlpha;
-    if (typeof init.foregroundAlpha === 'number')
-      this.foregroundAlpha = init.foregroundAlpha;
-
-    if (init.actions) {
-      for (const k in init.actions) {
-        const key = k as keyof typeof this.actions;
-        const actions = init.actions[key];
-        if (!Array.isArray(actions) || !actions.length) continue;
-        this.actions[key] = actions.map(ui_action_clone);
-      }
-    }
-    if (init.values) Object.assign(this.values, init.values)
-
-    make_debugging(this)
+    make_debugging(this);
   }
 
-  protected make_i18n_text(baked: TextInfo, key: string): TextInfo {
-    const resolved = this.lfw.t(key);
-    if (resolved === baked.text) return baked;
-    return this.lfw.images.measure_text(resolved, this.style);
+  /**
+   * 设置动作表
+   *
+   * 逐条克隆，避免 `count` 展开出的多个节点共享同一份动作数据。
+   *
+   * @param {({ [x in TUIActionPlace]?: IUIAction[] } | null)} [actions]
+   * @return {this}
+   * @memberof UINode
+   */
+  set_actions(actions?: { [x in TUIActionPlace]?: IUIAction[] } | null): this {
+    if (!actions) return this;
+    for (const k in actions) {
+      const key = k as keyof typeof this.actions;
+      const list = actions[key];
+      if (!Array.isArray(list) || !list.length) continue;
+      this.actions[key] = list.map(ui_action_clone);
+    }
+    return this;
   }
 
   /**
@@ -549,14 +509,19 @@ export class UINode implements IDebugging {
    * 传 `null` 只解除绑定，不改变当前显示文本。
    *
    * @param {(string | null)} key i18n key
+   * @param {(TextInfo | null)} [baked] cook 阶段已测量好的文本；翻译未变化时直接复用
    * @return {this}
    * @memberof UINode
    */
-  set_i18n(key: string | null): this {
+  set_i18n(key: string | null, baked?: TextInfo | null): this {
     const k = key || null;
     this._i18n_key = k;
     if (!k) return this;
     const resolved = this.lfw.t(k);
+    if (baked && baked.text === resolved) {
+      this.text = baked;
+      return this;
+    }
     if (this.text?.text === resolved) {
       this.refresh_text_layout();
       return this;
