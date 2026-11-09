@@ -84,6 +84,7 @@ export class UINode implements IDebugging {
   /** 上次自动适配尺寸时的文本+样式签名，用于跳过内容未变化的重复测量 */
   protected _auto_size_key?: string;
   auto_focus: boolean = false;
+  stretchable: boolean = false;
 
   get text(): TextInfo | null { return this._text; }
   set text(v: TextInfo | null) {
@@ -472,7 +473,8 @@ export class UINode implements IDebugging {
     this._opacity = data.opacity ?? 1
     this.center.set(...data.center);
     this.pos.set(...data.pos);
-    this.size.set(...data.size);
+    if (data.size) this.size.set(...data.size);
+    this.stretchable = !data.size
     this.scale.set(...data.scale);
     this.flex = new FlexStyle(data.flex);
     this.flex.on_change = () => this.on_flex_change();
@@ -542,7 +544,10 @@ export class UINode implements IDebugging {
    * @memberof UINode
    */
   protected auto_size_by_text(v: TextInfo | null) {
-    if (!v || this.raw?.size || !this.parent) { this._auto_size_key = void 0; return; }
+    if (!v || !this.stretchable || !this.parent) {
+      this._auto_size_key = void 0;
+      return;
+    }
     const key = this._text_size_key(v);
     if (this._auto_size_key === key) return;
     this._auto_size_key = key;

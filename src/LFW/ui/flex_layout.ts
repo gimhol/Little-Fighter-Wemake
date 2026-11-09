@@ -213,7 +213,7 @@ export function compute_flex_layout(
 }
 
 function is_stretchable(node: UINode): boolean {
-  return !node.raw?.size;
+  return node.stretchable
 }
 
 export function apply_flex_layout(node: UINode): void {

@@ -7,8 +7,8 @@ import { floor } from '../utils/math/base';
 import { is_num_arr } from '../utils/type_check/is_num';
 import { is_str } from '../utils/type_check/is_str';
 import type { Unsafe } from "../utils/type_check/Unsafe";
-import type { IComponentInfo } from "./IComponentInfo";
 import { normalize_flex_style } from "./flex_style";
+import type { IComponentInfo } from "./IComponentInfo";
 import type { ICookedUIInfo } from "./ICookedUIInfo";
 import type { IUIAction } from "./IUIAction";
 import type { INinePatch, IUIImgInfo } from "./IUIImgInfo.dat";
@@ -164,7 +164,7 @@ export async function cook_ui_info(
     pos: [0, 0, 0],
     scale: [0, 0, 0],
     center: [0, 0, 0],
-    size: [0, 0, 0],
+    size: void 0,
     img_info: void 0,
     txt_info: void 0,
     items: void 0,
@@ -295,25 +295,24 @@ export async function cook_ui_info(
     ret.size = [lfw.world.dataset.screen_w, lfw.world.dataset.screen_h, 0]
   }
 
-  do {
-    if (!img) break;
+  if (img) {
     const { w: img_w = 0, h: img_h = 0, scale = 1 } = img;
-    if (!img_w || !img_h || !scale) {
-      debugger;
-      break;
+    if (img_w && img_h && scale) {
+      const sw = img_w / scale;
+      const sh = img_h / scale;
+      if (ret.size) {
+        const [w, h] = ret.size;
+        if (!w && !h) {
+          ret.size[0] = sw
+          ret.size[1] = sh
+        } else if (!w && h) {
+          ret.size[0] = floor(h * sw / sh);
+        } else if (!h && w) {
+          ret.size[1] = floor(w * sh / sw);
+        }
+      }
     }
-    const sw = img_w / scale;
-    const sh = img_h / scale;
-    const [w, h] = ret.size;
-    if (!w && !h) {
-      ret.size[0] = sw
-      ret.size[1] = sh
-    } else if (!w && h) {
-      ret.size[0] = floor(h * sw / sh);
-    } else if (!h && w) {
-      ret.size[1] = floor(w * sh / sw);
-    }
-  } while (0)
+  }
 
   const { items: raw_items } = raw;
   if (raw_items && !Array.isArray(raw_items)) {
