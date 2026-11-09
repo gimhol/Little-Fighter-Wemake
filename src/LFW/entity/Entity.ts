@@ -2079,11 +2079,12 @@ export class Entity {
       return;
     }
 
-    if (wp_a.weaponact !== this.frame.id) {
-      const res = this.enter_frame_by_id(wp_a.weaponact, true);
-      if (res === EnterFrameResult.Fallback && this.base_type === WeaponEnum.Heavy) {
-        this.enter_frame_by_id(this._data.indexes?.on_hands?.[0], true);
-      }
+    const weaponact = wp_a.weaponact;
+    const target = (weaponact && this._data.frames[weaponact])
+      ? weaponact
+      : this._data.indexes?.on_hands?.[0];
+    if (target && target !== this.frame.id) {
+      this.enter_frame_by_id(target);
     }
 
     const {
