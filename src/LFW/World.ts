@@ -15,6 +15,7 @@ import {
   GONE_FRAME_INFO,
   type IBdyInfo, type IBgData, type IBounding, type IEntityData,
   type IFrameInfo, type IItrInfo,
+  type ITerrainInfo,
   type IVector3Like,
   O_ID,
   SE,
@@ -436,6 +437,20 @@ export class World {
     return this._bound;
   }
 
+  protected apply_cliff(e: Entity, seg: Readonly<ITerrainInfo>, x: number, z: number): void {
+    e.terrain = this.ground.base;
+    if (!is_fighter(e)) {
+      e.enter_frame(Defines.NEXT_FRAME_GONE);
+      return;
+    }
+    const frame_id = seg.cliff_frame || e.data.indexes?.injured?.[e.facing === 1 ? 1 : -1];
+    e.position.x = x;
+    e.position.z = z;
+    e.position.y = seg.cliff_respawn_y ?? this.bg.height;
+    e.velocity.y = 0;
+    if (frame_id) e.enter_frame_by_id(frame_id);
+  }
+
   /**
    * 限制“实体”位置
    *
@@ -492,6 +507,14 @@ export class World {
     const rising = e.velocity.y > 0;
     const prev_y = e.prev_position.y;
     const seg = this.ground.segment(x, z, y, rising, prev_y);
+
+    if (seg.cliff && y <= this.ground.y(seg, x, z) + this.ground.step) {
+      this.apply_cliff(e, seg, x, z);
+      this._restrict_result.x = e.position.x;
+      this._restrict_result.y = e.position.y;
+      this._restrict_result.z = e.position.z;
+      return this._restrict_result;
+    }
 
     // 可进入，直接进入
     if (null != this.ground.enterable(seg, x, y, z)) {

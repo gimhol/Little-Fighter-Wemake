@@ -53,11 +53,9 @@ export class Ground {
    * 
    * @param {number} x X坐标
    * @param {number} z Z坐标
-   * @param {number} [y] 物体当前高度；给了才会按“单向平台”规则跳过位于其上方的平台
-   * @param {boolean} [rising] 物体正在上升（velocity.y > 0）。上升时必须严格高过顶面才算它，
-   *        否则一跳上去就会被平台吸住、穿不过去
-   * @param {number} [prev_y] 本帧移动前的高度。下落时若本帧从顶面上方跨过（高速下落），
-   *        仍算这块平台，避免直接漏下去
+   * @param {number} [y] 物体当前高度
+   * @param {boolean} [rising] 物体正在上升（velocity.y > 0）
+   * @param {number} [prev_y] 本帧移动前的高度
    * @returns {Readonly<ITerrainInfo>} 地形信息，找不到时返回默认平台
    */
   segment(x: number, z: number, y?: number, rising: boolean = false, prev_y?: number): Readonly<ITerrainInfo> {
@@ -115,6 +113,18 @@ export class Ground {
       }
     }
     return 0;
+  }
+
+  standable_x(x: number, z: number, min_x: number, max_x: number): number {
+    if (!this.segment(x, z).cliff) return x;
+    for (let d = 8; d <= 240; d += 8) {
+      const l = clamp(x - d, min_x, max_x);
+      if (!this.segment(l, z).cliff) return l;
+      const r = clamp(x + d, min_x, max_x);
+      if (!this.segment(r, z).cliff) return r;
+      if (l <= min_x && r >= max_x) break;
+    }
+    return x;
   }
 
   /**

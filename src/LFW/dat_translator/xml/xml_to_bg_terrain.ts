@@ -14,6 +14,9 @@ export function xml_to_bg_terrain(el: IXMLElement): ITerrainInfo {
   ret.h1 = el.get_num('h1', ret.h1);
   ret.h2 = el.get_num('h2', ret.h2);
   ret.one_way = el.get_bool('one_way', ret.one_way);
+  ret.cliff = el.get_bool('cliff', ret.cliff);
+  ret.cliff_frame = el.get_str('cliff_frame') ?? ret.cliff_frame;
+  ret.cliff_respawn_y = el.get_num('cliff_respawn_y') ?? ret.cliff_respawn_y;
   reorder_fields(ret, terrain_info_fields);
   return ret;
 }

@@ -143,8 +143,12 @@ export class Item {
     const px = this.lfw.mt.range(min_x, max_x)
     const py = this.lfw.mt.range(min_y, max_y)
     const pz = this.lfw.mt.range(min_z, max_z)
+    const sx = this.world.ground.standable_x(px, pz, this.stage.left, this.stage.right)
+    const sy = is_num(y) || is_weapon(e)
+      ? py
+      : this.world.ground.y(this.world.ground.segment(sx, pz), sx, pz)
 
-    e.set_position(px, py, pz)
+    e.set_position(sx, sy, pz)
     if (this.info.join)
       e.dead_join = {
         hp: this.info.join,

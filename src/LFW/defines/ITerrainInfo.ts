@@ -27,6 +27,16 @@ export interface ITerrainInfo {
    * 不填等同于普通实心地形。
    */
   one_way?: boolean;
+  /**
+   * 悬崖（极低地形）
+   *
+   * 触发“坠崖”
+   */
+  cliff?: boolean;
+  /** 坠崖时进入的帧ID（缺省 = 角色的受伤帧） */
+  cliff_frame?: string;
+  /** 坠崖后从多高重生（缺省 = 背景高度 bg.height） */
+  cliff_respawn_y?: number;
 }
 
 export function terrain_info_new(): ITerrainInfo {
@@ -39,6 +49,7 @@ export function terrain_info_new(): ITerrainInfo {
     h1: 0,
     h2: 0,
     one_way: false,
+    cliff: false,
   };
 }
 
@@ -61,6 +72,9 @@ export const terrain_info_fields = fields<ITerrainInfo>({
   h1: int,
   h2: int,
   one_way: bool,
+  cliff: bool,
+  cliff_frame: str,
+  cliff_respawn_y: int,
 })
 export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
   key: "ITerrainInfo",
@@ -84,5 +98,8 @@ export const Schema_ITerrainInfo = make_schema<ITerrainInfo>({
     h1: { type: "number", nullable: false, },
     h2: { type: "number", nullable: false, },
     one_way: { type: "boolean", nullable: true, },
+    cliff: { type: "boolean", nullable: true, },
+    cliff_frame: { type: "string", nullable: true, },
+    cliff_respawn_y: { type: "number", nullable: true, },
   },
 })

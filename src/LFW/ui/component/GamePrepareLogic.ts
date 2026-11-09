@@ -411,9 +411,10 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
         fighter.mp = fighter.mp_max = mp_map[difficulty] ?? 500
       }
       this.lfw.mt.mark = 'gpl_fighter_x';
-      const x = this.lfw.mt.range(xx1, xx2) + cam_x;
+      const raw_x = this.lfw.mt.range(xx1, xx2) + cam_x;
       this.lfw.mt.mark = 'gpl_fighter_z';
       const z = this.lfw.mt.range(far, near)
+      const x = this.world.ground.standable_x(raw_x, z, xx1 + cam_x, xx2 + cam_x)
       const seg = this.world.ground.segment(x, z)
       const y = this.world.ground.y(seg, x, z);
       fighter.set_position(x, y, z);
