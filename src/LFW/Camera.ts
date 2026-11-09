@@ -100,7 +100,8 @@ export class Camera {
       // 高地图：纵向可移动范围 = 世界高度 - 可见高度（世界比屏幕高多少，就能往上移多少）；
       // 普通/老地图：沿用 -0.5*far（经典数据里 far 承载了纵向范围），保持原行为
       const view_h = Defines.MODERN_SCREEN_HEIGHT / (bg.zoom_y ?? 1);
-      const cam_max_y = height > Defines.CLASSIC_SCREEN_HEIGHT
+      const follow_y = (bg.data.dataset?.cam_y_follow ?? 0) > 0;
+      const cam_max_y = follow_y
         ? max(0, height - view_h)
         : min(-0.5 * far, height - view_h);
       this.destination.y = clamp(cam_y, 0, cam_max_y);

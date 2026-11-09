@@ -36,7 +36,9 @@ export class CharacterState_Jump extends CharacterState_Base {
     const vz = e.dataset('jump_distancez') * UD * e.dataset('jump_z_f')
     const vx = LR * (e.dataset('jump_distance') * e.dataset('jump_x_f') - abs(vz / 4));
     const min = 4;
-    vy = e.jumping.t ? min + (vy - min) * e.jumping.y / e.jumping.t : min;
+    if (e.dataset('jump_hold_ctrl') > 0) {
+      vy = e.jumping.t ? min + (vy - min) * e.jumping.y / e.jumping.t : min;
+    }
     e.set_velocity(vx, vy, vz);
   }
   override on_landing(e: Entity): void {

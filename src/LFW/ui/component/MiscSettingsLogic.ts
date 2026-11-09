@@ -39,7 +39,7 @@ export class MiscSettingsLogic extends UIComponent {
   }
   cbs2: IWorldCallbacks = {
     on_dataset_change: (key, value) => {
-      if (key === 'sync_render') this.render_rate?.set_value(render_rate_options.indexOf(value))
+      if (key === 'sync_render') this.render_rate?.set_value(render_rate_options.indexOf(value as SyncRenderEnum))
     },
   }
   cbs3: ILFWCallback = {

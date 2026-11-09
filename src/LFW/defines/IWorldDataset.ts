@@ -1,4 +1,4 @@
-import { todo, fields, flt, int } from "../fields";
+import { todo, fields, flt, int, str } from "../fields";
 import { make_schema } from "../utils/schema";
 import { CheatEnum } from "./CheatType";
 import { Difficulty } from "./Difficulty";
@@ -239,6 +239,17 @@ export interface IWorldDataset {
    * @type {number}
    */
   jump_distancez: number;
+  jump_hold_ctrl: number;
+
+  cam_y_follow: number;
+  weapon_rain_oids: string;
+  weapon_rain_groups: string;
+  air_ctrl: number;
+  air_ctrl_accel: number;
+  air_ctrl_accel_x: number;
+  air_ctrl_accel_z: number;
+  air_ctrl_max_speed_x: number;
+  air_ctrl_max_speed_z: number;
 
   /**
    * 冲跳高度
@@ -364,6 +375,16 @@ export const world_dataset_fields = fields<IWorldDataset>({
   jump_height: flt('跳越速度Y'),
   jump_distance: flt('跳越速度X'),
   jump_distancez: flt('跳越速度Z'),
+  jump_hold_ctrl: flt('长按控制跳跃高度'),
+  cam_y_follow: flt('镜头纵向跟随角色'),
+  weapon_rain_oids: str('随机掉落武器'),
+  weapon_rain_groups: str('随机掉落武器分组'),
+  air_ctrl: flt('允许空中方向键加速'),
+  air_ctrl_accel: flt('角色空中方向键加速度'),
+  air_ctrl_accel_x: flt('空中方向键加速度X'),
+  air_ctrl_accel_z: flt('空中方向键加速度Z'),
+  air_ctrl_max_speed_x: flt('空中方向键最大速度X'),
+  air_ctrl_max_speed_z: flt('空中方向键最大速度Z'),
   dash_height: flt('冲跳速度Y'),
   dash_distance: flt('冲跳速度X'),
   dash_distancez: flt('冲跳速度Z'),
@@ -472,6 +493,16 @@ const params: ISchemaMeta<IWorldDataset> = {
     jump_height: { type: 'number' },
     jump_distance: { type: 'number' },
     jump_distancez: { type: 'number' },
+    jump_hold_ctrl: { type: 'number' },
+    cam_y_follow: { type: 'number' },
+    weapon_rain_oids: { type: 'string' },
+    weapon_rain_groups: { type: 'string' },
+    air_ctrl: { type: 'number' },
+    air_ctrl_accel: { type: 'number' },
+    air_ctrl_accel_x: { type: 'number' },
+    air_ctrl_accel_z: { type: 'number' },
+    air_ctrl_max_speed_x: { type: 'number' },
+    air_ctrl_max_speed_z: { type: 'number' },
     dash_height: { type: 'number' },
     dash_distance: { type: 'number' },
     dash_distancez: { type: 'number' },

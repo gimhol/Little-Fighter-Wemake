@@ -25,6 +25,7 @@ import {
   OpointKind, OpointMultiEnum, OpointSpreading,
   SpeedCtrl, SpeedMode,
   StateEnum, type TEntityEnum, type TFace, type TNextFrame,
+  SE,
   WpointKind
 } from "../defines";
 import type { ITerrainInfo } from "../defines/ITerrainInfo";
@@ -52,6 +53,7 @@ export interface IEntityRenderer {
 export class Entity {
   static readonly TAG: string = 'Entity';
   static readonly MotionlessWaitTicks: number = 16;
+  static readonly AirCtrlAccelRatio: number = 0.05;
   lfw: LFW;
   world: World;
   id: string = '';
@@ -1152,6 +1154,49 @@ export class Entity {
       this.velocity.y - this.gravity * this._atom_time,
     );
   }
+  handle_air_control(): void {
+    if (this.is_on_ground || this.bearer || this.catcher || this.ghosted) return;
+    if (this.shaking || this.motionless) return;
+    if (!is_fighter(this)) return;
+    if (this.state !== SE.Jump) return;
+    const map_dataset = this.world.bg.data.dataset;
+    const allow = this.dataset('air_ctrl');
+    const char_accel = this.dataset('air_ctrl_accel');
+    const accel_x_cfg = this.dataset('air_ctrl_accel_x');
+    const accel_z_cfg = this.dataset('air_ctrl_accel_z');
+    const map_speed_x = map_dataset?.air_ctrl_max_speed_x ?? 0;
+    const map_speed_z = map_dataset?.air_ctrl_max_speed_z ?? 0;
+    const max_x = this.dataset('air_ctrl_max_speed_x');
+    const max_z = this.dataset('air_ctrl_max_speed_z');
+    const accel_x = (accel_x_cfg > 0
+      ? accel_x_cfg
+      : (allow > 0 || map_speed_x > 0
+        ? (char_accel > 0 ? char_accel : max_x * Entity.AirCtrlAccelRatio)
+        : 0)) * this._atom_time;
+    const accel_z = (accel_z_cfg > 0
+      ? accel_z_cfg
+      : (allow > 0 || map_speed_z > 0
+        ? (char_accel > 0 ? char_accel : max_z * Entity.AirCtrlAccelRatio)
+        : 0)) * this._atom_time;
+    if (accel_x > 0 && max_x > 0) {
+      const lr = this.ctrl.LR;
+      if (lr) {
+        const vx = this.velocity.x;
+        this.velocity.x = lr > 0
+          ? min(vx + accel_x, max(vx, max_x))
+          : max(vx - accel_x, min(vx, -max_x));
+      }
+    }
+    if (accel_z > 0 && max_z > 0) {
+      const ud = this.ctrl.UD;
+      if (ud) {
+        const vz = this.velocity.z;
+        this.velocity.z = ud > 0
+          ? min(vz + accel_z, max(vz, max_z))
+          : max(vz - accel_z, min(vz, -max_z));
+      }
+    }
+  }
   get dvx(): number | undefined {
     const { dvx: v } = this.frame;
     return v ? v * (this.dataset("fvx_f") as number) : v;
@@ -1541,6 +1586,7 @@ export class Entity {
     for (let i = 0; i < sub_steps; ++i) {
       this.handle_gravity();
       this.update_velocity(this.frame);
+      this.handle_air_control();
       if (!i) this._state?.update(this);
       this.update_position();
     }
@@ -1616,6 +1662,7 @@ export class Entity {
     for (let i = 0; i < sub_steps; ++i) {
       this.handle_gravity();
       this.update_velocity(this.frame);
+      this.handle_air_control();
       if (!i) this._state?.update(this);
       this.update_position();
     }

@@ -396,6 +396,24 @@
         <xs:documentation>One-way platform (optional): no side blocking, pass through from below, land on the top only.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="cliff" type="xs:boolean">
+      <xs:annotation>
+        <xs:documentation>悬崖/极低地形（可选）：掉上去会触发坠崖（默认进入受伤帧，再从天上重生掉下来）。</xs:documentation>
+        <xs:documentation>Cliff / very low terrain (optional): falling onto it triggers the cliff behavior (injured frame, then respawn from the sky).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="cliff_frame" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>坠崖时进入的帧ID（可选，缺省 = 角色的受伤帧）。</xs:documentation>
+        <xs:documentation>Frame id entered when falling off (optional, default = the character's injured frame).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="cliff_respawn_y" type="xs:double">
+      <xs:annotation>
+        <xs:documentation>坠崖后从多高重生（可选，缺省 = 背景高度 bg.height）。</xs:documentation>
+        <xs:documentation>Respawn height after falling off (optional, default = background height).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <!-- ===================== <dataset> (arbitrary key/value) ===================== -->

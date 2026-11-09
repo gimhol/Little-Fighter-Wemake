@@ -781,7 +781,7 @@ export class World {
     // 高地图（bg.height 超过经典屏高）用“角色平均高度”驱动镜头 Y，让相机能上下跟；
     // 普通/老地图沿用 z 深度（经典数据里 far 承载了纵向范围，保持原行为）
     const half_h = this.dataset.screen_h / (2 * (this.bg.zoom_y || 1))
-    const use_y = this.bg.height > Defines.CLASSIC_SCREEN_HEIGHT;
+    const use_y = (this.bg.data.dataset?.cam_y_follow ?? 0) > 0;
     let cam_x = NaN;
     let cam_z = 0;
     let cam_y = 0;

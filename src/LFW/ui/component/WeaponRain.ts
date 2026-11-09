@@ -47,11 +47,9 @@ export class WeaponRain extends UIComponent<IWeaponRainProps> {
 
   protected try_drop_weapon(): void {
     const { world } = this;
-    const { 
-      groups = EntityGroup.VsWeapon, 
-      chance = DEFAULT_CHANCE, 
-      power = DEFAULT_POWER 
-    } = this.props;
+    const groups = this.map_groups() ?? this.props.groups ?? EntityGroup.VsWeapon;
+    const chance = this.props.chance ?? DEFAULT_CHANCE;
+    const power = this.props.power ?? DEFAULT_POWER;
     const { mt } = this.lfw;
     const limit = this.props.limit ?? DEFAULT_LIMIT;
     mt.mark = 'weapon_rain_range';
@@ -77,8 +75,16 @@ export class WeaponRain extends UIComponent<IWeaponRainProps> {
     return this.lfw.weapons.add_random(1, true, groups)[0];
   }
 
+  protected map_oids(): string | undefined {
+    const v = this.world.bg.data.dataset?.weapon_rain_oids;
+    return v ? v : void 0;
+  }
+  protected map_groups(): string | undefined {
+    const v = this.world.bg.data.dataset?.weapon_rain_groups;
+    return v ? v : void 0;
+  }
   protected resolve_oid_datas(): IEntityData[] {
-    const { oids } = this.props;
+    const oids = this.map_oids() ?? this.props.oids;
     if (this._using_oids === oids) return this._oid_datas;
     this._using_oids = oids;
     const { datas } = this.lfw;

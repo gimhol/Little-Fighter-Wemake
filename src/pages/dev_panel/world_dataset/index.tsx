@@ -30,13 +30,13 @@ export function WorldDatasetView(props: IWorldDatasetProps) {
     set_dwds(d => {
       for (const [k] of world_dataset_fields) {
         const key = k as keyof IWorldDataset;
-        d[key] = lfw.world.dataset[key]
+        (d as Record<string, unknown>)[key] = lfw.world.dataset[key]
       }
     })
     set_cwds(d => {
       for (const [k] of world_dataset_fields) {
         const key = k as keyof IWorldDataset;
-        d[key] = lfw.world.dataset[key]
+        (d as Record<string, unknown>)[key] = lfw.world.dataset[key]
       }
     })
     set_ready(true);

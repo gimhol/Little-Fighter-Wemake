@@ -105,6 +105,16 @@ export class WorldDataset implements IWorldDataset {
   jump_height: number = -16.299999;
   jump_distance: number = 8;
   jump_distancez: number = 3;
+  jump_hold_ctrl: number = 1;
+  cam_y_follow: number = 0;
+  weapon_rain_oids: string = '';
+  weapon_rain_groups: string = '';
+  air_ctrl: number = 0;
+  air_ctrl_accel: number = 0;
+  air_ctrl_accel_x: number = 0;
+  air_ctrl_accel_z: number = 0;
+  air_ctrl_max_speed_x: number = 8;
+  air_ctrl_max_speed_z: number = 3;
   dash_height: number = -11;
   dash_distance: number = 15;
   dash_distancez: number = 3.750000;
