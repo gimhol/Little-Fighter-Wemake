@@ -229,21 +229,20 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
       const cells = row.children
       const cell = (idx: number) => cells[idx]
       if (empty) {
-        for (let c = 0; c < cells.length; c++) cell(c)?.set_text("", cell(c)?.text?.style)
-        cell(1)?.set_text(this.lfw.t('survival.board_empty'), cell(1)?.text?.style)
+        for (let c = 0; c < cells.length; c++) cell(c)?.set_text("")
+        cell(1)?.set_text(this.lfw.t('survival.board_empty'))
         continue
       }
       const v = entries[i]!
-      cell(0)?.set_text(`${v.rank}.`, cell(0)?.text?.style)
-      cell(1)?.set_text([v.nickname, v.player2].filter(Boolean).join(' & '), cell(1)?.text?.style)
+      cell(0)?.set_text(`${v.rank}.`)
+      cell(1)?.set_text([v.nickname, v.player2].filter(Boolean).join(' & '))
       const fighters = [v.fighter, v.fighter2]
         .filter((x): x is string => !!x)
         .map(x => this.lfw.t(x))
         .filter(Boolean)
-      cell(2)?.set_text(fighters.join(' & '), cell(2)?.text?.style)
+      cell(2)?.set_text(fighters.join(' & '))
       cell(3)?.set_text(
-        i18n_fmt(this.lfw.t('survival.floor_reached'), v.score),
-        cell(3)?.text?.style,
+        i18n_fmt(this.lfw.t('survival.floor_reached'), v.score)
       )
     }
     if (my_node) {
@@ -255,8 +254,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
             this._rank_mine.rank,
             i18n_fmt(this.lfw.t('survival.floor_reached'), this._rank_mine.score),
           )
-          : this.lfw.t('survival.my_rank_unranked'),
-        my_node.text?.style,
+          : this.lfw.t('survival.my_rank_unranked')
       )
     }
   }
