@@ -49,8 +49,7 @@ export class CharacterState_Base extends State_Base {
       case StateEnum.Walking:
       case StateEnum.Standing:
       case StateEnum.Rowing:
-        if (e.holding?.base_type === WeaponEnum.Heavy)
-          e.drop_holding();
+        if (e.holding?.base_type === WeaponEnum.Heavy) return;
         e.enter_frame(Defines.NEXT_FRAME_AUTO);
         break;
     }

@@ -16,7 +16,7 @@
     head: 'characters/sera/sprite/face.png',
     small: 'characters/sera/sprite/s.png',
     group: [
-      '1000',
+      'hidden',
     ],
     ce: 1,
     hp_max: 540,

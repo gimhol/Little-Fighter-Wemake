@@ -16,7 +16,7 @@
     head: 'characters/rocky/sprite/face.png',
     small: 'characters/rocky/sprite/s.png',
     group: [
-      '1000',
+      'hidden',
     ],
     ce: 2,
     hp_max: 640,

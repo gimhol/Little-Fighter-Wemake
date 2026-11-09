@@ -16,7 +16,7 @@
     head: 'characters/rin/sprite/face.png',
     small: 'characters/rin/sprite/s.png',
     group: [
-      '1000',
+      'hidden',
     ],
     ce: 1,
     hp_max: 440,
