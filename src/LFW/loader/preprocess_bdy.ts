@@ -50,7 +50,7 @@ export function preprocess_bdy(ctx: IBdyInfoContext): IBdyInfo {
     bdy.test,
     get_val_geter_from_collision
   ) : void 0;
-  bdy.actions?.forEach((n, i, l) => l[i] = preprocess_action(lfw, n, jobs));
+  if (bdy.actions) bdy.actions = bdy.actions.map(n => preprocess_action(lfw, n, jobs));
   return bdy;
 }
 

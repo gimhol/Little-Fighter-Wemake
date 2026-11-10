@@ -249,7 +249,7 @@ export function preprocess_itr(ctx: IItrInfoContext): IItrInfo {
       break;
     }
   }
-  itr.actions?.forEach((n, i, l) => l[i] = preprocess_action(lfw, n, jobs));
+  if (itr.actions) itr.actions = itr.actions.map(n => preprocess_action(lfw, n, jobs));
   if (itr.test)
     itr.__tester = new Expression(itr.test, get_val_geter_from_collision);
   return itr;

@@ -32,6 +32,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   if (!merged.ok)
     throw prefab_error('preprocess_frame', `${data.id}:${raw_frame.id}`, 'frame', merged);
   const frame = merged.value;
+  ctx = { ...ctx, frame };
 
   if (data.processed != false) { 
     // TODO: 我需要再想想 processed 与预处理的事 -Gim
@@ -163,20 +164,26 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   if (frame.on_y_restrict) frame.on_y_restrict = preprocess_next_frame(frame.on_y_restrict);
   if (frame.on_z_restrict) frame.on_z_restrict = preprocess_next_frame(frame.on_z_restrict);
 
-  frame.bdy?.forEach((n, i, l) => {
-    const bdy = l[i] = preprocess_bdy({ ...ctx, bdy: n, index: i });
-    if (bdy.on_hit_ground) {
-      frame.__hit_ground_bdys = frame.__hit_ground_bdys || []
-      frame.__hit_ground_bdys?.push(bdy)
-    }
-  })
-  frame.itr?.forEach((n, i, l) => {
-    const itr = l[i] = preprocess_itr({ ...ctx, itr: n, index: i })
-    if (itr.on_hit_ground) {
-      frame.__hit_ground_itrs = frame.__hit_ground_itrs || []
-      frame.__hit_ground_itrs?.push(itr)
-    }
-  })
+  if (frame.bdy) {
+    frame.bdy = frame.bdy.map((n, i) => {
+      const bdy = preprocess_bdy({ ...ctx, bdy: n, index: i });
+      if (bdy.on_hit_ground) {
+        frame.__hit_ground_bdys = frame.__hit_ground_bdys || []
+        frame.__hit_ground_bdys.push(bdy)
+      }
+      return bdy;
+    })
+  }
+  if (frame.itr) {
+    frame.itr = frame.itr.map((n, i) => {
+      const itr = preprocess_itr({ ...ctx, itr: n, index: i })
+      if (itr.on_hit_ground) {
+        frame.__hit_ground_itrs = frame.__hit_ground_itrs || []
+        frame.__hit_ground_itrs.push(itr)
+      }
+      return itr;
+    })
+  }
   switch (frame.state) {
     case StateEnum.Burning:
       if (data.id != OID.JulianBall2) {
@@ -188,7 +195,8 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
       frame.opoint = ensure(frame.opoint, make_buring_smoke(2));
       break;
   }
-  frame.opoint?.forEach((n, i, l) => l[i] = preprocess_opoint({ ...ctx, opoint: n, index: i }))
+  if (frame.opoint)
+    frame.opoint = frame.opoint.map((n, i) => preprocess_opoint({ ...ctx, opoint: n, index: i }))
 
   const unchecked_frame = frame as any;
   if (unchecked_frame) {
@@ -199,7 +207,8 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
     }
   }
   frame.pic = preprocess_frame_pic(lfw, data, frame);
-  frame.pics?.forEach((pic, i, arr) => arr[i] = preprocess_pic(lfw, data, pic));
+  if (frame.pics)
+    frame.pics = frame.pics.map((pic) => preprocess_pic(lfw, data, pic));
 
 
   if (frame.landable === void 0)
