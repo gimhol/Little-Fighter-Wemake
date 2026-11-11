@@ -960,22 +960,29 @@ export class Entity {
       this.facing = emitter.facing;
     }
     const { pos_type } = opoint;
-    let { x: pos_x, y: pos_y } = emitter.position;
-    const { z: pos_z } = emitter.position;
+    const { x: ax, y: ay, z: az } = emitter.position;
     const opoint_y = (opoint.__gen_y ? opoint.__gen_y.get(emitter) : opoint.y) ?? 0;
     const opoint_x = (opoint.__gen_x ? opoint.__gen_x.get(emitter) : opoint.x) ?? 0;
     const opoint_z = (opoint.__gen_z ? opoint.__gen_z.get(emitter) : opoint.z) ?? 2;
 
-
+    let x = ax;
+    let y = ay;
+    let z = az + opoint_z;
     if (pos_type === 1) {
-      pos_y = pos_y - opoint_y;
-      pos_x = pos_x + emitter.facing * opoint_x;
+      x = round(x + emitter.facing * opoint_x);
+      y = round(y - opoint_y);
     } else {
-      pos_y = pos_y + emitter_frame.centery - opoint_y;
-      pos_x = pos_x - emitter.facing * (emitter_frame.centerx - opoint_x);
+      x = round(x - emitter.facing * (emitter_frame.centerx - opoint_x));
+      y = round(y + emitter_frame.centery - opoint_y);
     }
-    this.prev_position.copy(emitter.position);
-    this.set_position(pos_x, pos_y, pos_z + opoint_z);
+    const { terrain } = this.world;
+    const r = terrain.push_out(x, y, z, ax - x, ay - y, az - z)
+    x = r.x;
+    y = r.y;
+    z = r.z;
+
+    this.set_position(x, y, z);
+    this.prev_position.copy(this.position);
 
     const result = this.get_next_frame(opoint.action);
     const which = result?.which;
@@ -1375,7 +1382,7 @@ export class Entity {
     this.fall_value_recovering();
     this.defend_value_recovering();
   }
-  
+
   private follow_wpoint(is_hold: 0 | 1) {
     const { bearer } = this;
     if (!bearer) return;
@@ -1408,16 +1415,15 @@ export class Entity {
       y = round(y + cy_a - wa_y);
       z = round(z + wa_z);
       const { terrain } = this.world;
-      if (terrain.is_inside(x, y, z)) {
-        const r = terrain.push_out(x, y, z, ax - x, ay - y, az - z)
-        x = r.x;
-        y = r.y;
-        z = r.z;
-      }
+      const r = terrain.push_out(x, y, z, ax - x, ay - y, az - z);
+      x = r.x;
+      y = r.y;
+      z = r.z;
     }
     this.set_position(x, y, z);
     this.prev_position.copy(this.position);
   }
+
   drop_holding(): void {
     if (!this.holding) return;
     this.lfw.mt.mark = "dh_1";
