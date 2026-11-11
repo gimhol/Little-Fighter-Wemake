@@ -1748,14 +1748,14 @@ export class Entity {
 
     /** 
      是否本帧落地.
- 
-     注意：不能简单用 velocity.y <= 0 判断落地，因为存在Y速度向上但仍是落地的情况。
-     例如在45度斜坡上，X轴速度带来的水平位移使 ground_y 上升得比自身Y坐标更快，
-     此时即使 velocity.y > 0，position.y 仍可能 <= ground_y，应视为落地。
+
+     向上运动时（velocity.y > 0）不判落地：贴着地形起跳时，坡面/平台顶面
+     可能因为水平移动跑到脚下，但这时人还在上升，提前接住会直接中断跳跃。
+     等升到顶点/开始下落（velocity.y <= 0）再判并贴回地面。
     */
-    const just_land = !is_on_ground && (
+    const just_land = !is_on_ground &&
+      this.velocity.y <= 0 &&
       this.position.y <= _ground_y
-    )
 
     // 落地
     if (just_land) {

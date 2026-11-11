@@ -20,7 +20,6 @@ import {
   type IVector3Like,
   O_ID,
   SE,
-  TerrainEnum,
   WT
 } from "./defines";
 import { SyncRenderEnum } from "./defines/SyncRenderEnum";
@@ -511,17 +510,7 @@ export class World {
       return this._restrict_result;
     }
 
-    const enter_y = this.terrain.enterable(seg, x, y, z);
-    // 贴着平地向上跳时，脚还没高过顶面就不要算“可进入”，
-    // 否则 update_landable 会在贴近平面时把人吸上去、直接落地。
-    const rising_into_flat =
-      rising &&
-      enter_y !== null &&
-      seg.type === TerrainEnum.Flat &&
-      !seg.one_way &&
-      !seg.through &&
-      y <= enter_y;
-    if (enter_y !== null && !rising_into_flat) {
+    if (null != this.terrain.enterable(seg, x, y, z)) {
       e.terrain = seg;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
