@@ -27,8 +27,8 @@ export class CharacterState_Teleport2NearestEnemy extends CharacterState_Base {
       x = round(_tar.position.x - m.facing * 120);
       z = round(_tar.position.z);
     }
-    const seg = m.world.ground.segment(x, z);
-    const y = m.world.ground.y(seg, x, z);
+    const seg = m.world.terrain.segment(x, z);
+    const y = m.world.terrain.y(seg, x, z);
     m.set_position(x, y, z)
   }
 }

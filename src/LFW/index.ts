@@ -2,7 +2,6 @@
 export * from "./Camera";
 export * from "./Cases";
 export * from "./Factory";
-export * from "./Ground";
 export * from "./I18N";
 export * from "./ILFWCallback";
 export * from "./IPlayerInfoCallback";
@@ -33,6 +32,7 @@ export * from "./helper";
 export * from "./loader";
 export * from "./stage";
 export * from "./state";
+export * from "./terrain";
 export * from "./ui";
 export * from "./utils";
 /*** AUTO EXPORT END ***/

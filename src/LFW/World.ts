@@ -20,6 +20,7 @@ import {
   type IVector3Like,
   O_ID,
   SE,
+  TerrainEnum,
   WT
 } from "./defines";
 import { SyncRenderEnum } from "./defines/SyncRenderEnum";
@@ -34,7 +35,6 @@ import {
   is_human_ctrl,
   is_weapon
 } from "./entity";
-import { Ground } from "./Ground";
 import { TerrainWorld } from "./terrain/TerrainWorld";
 import type { IWorldCallbacks } from "./IWorldCallbacks";
 import { LFW } from "./LFW";
@@ -82,7 +82,6 @@ export class World {
   readonly buffs = new Map<string, Buff>();
   protected readonly _dead_buffs: Buff[] = [];
   private _game_time = new Times();
-  readonly ground = new Ground(this);
   private _counts = new Map<string, number>()
   /** 待移除实体 */
   private _gones = new Set<Entity>();
@@ -448,7 +447,7 @@ export class World {
   }
 
   protected apply_cliff(e: Entity, seg: Readonly<ITerrainInfo>, x: number, z: number): void {
-    e.terrain = this.ground.base;
+    e.terrain = this.terrain.base;
     if (!is_fighter(e)) {
       e.enter_frame(Defines.NEXT_FRAME_GONE);
       return;
@@ -468,9 +467,10 @@ export class World {
    * @memberof World
    */
   restrict(e: Entity): IVector3Like {
-    let { x, z, y } = e.position;
+    let { x, z } = e.position;
+    const y = e.position.y;
     if (e.bearer || e.catcher || e.ghosted) {
-      e.terrain = this.ground.base;
+      e.terrain = this.terrain.base;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
       this._restrict_result.z = z;
@@ -482,7 +482,7 @@ export class World {
     if (is_weapon(e)) {
       if (e.is_on_ground && x < left - e.l_len || x > right + e.r_len) {
         e.enter_frame(Defines.NEXT_FRAME_GONE);
-        e.terrain = this.ground.base;
+        e.terrain = this.terrain.base;
         this._restrict_result.x = x;
         this._restrict_result.y = y;
         this._restrict_result.z = z;
@@ -491,7 +491,7 @@ export class World {
     } else if (is_ball(e)) {
       if (x < left - 800 - e.l_len || x > right + 800 + e.r_len) {
         e.enter_frame(Defines.NEXT_FRAME_GONE);
-        e.terrain = this.ground.base;
+        e.terrain = this.terrain.base;
         this._restrict_result.x = x;
         this._restrict_result.y = y;
         this._restrict_result.z = z;
@@ -499,27 +499,11 @@ export class World {
       }
     }
 
-    // 检查路径是否穿过阻挡地形（处理超快速移动穿墙）
-    // const wall_hit = this.ground.intersect_wall(
-    //   e.prev_position.x, e.prev_position.y, e.prev_position.z,
-    //   x, y, z,
-    // );
-    // if (wall_hit) {
-    //   e.terrain = this.ground.segment(wall_hit.x, wall_hit.z);
-    //   this._restrict_result.x = wall_hit.x;
-    //   this._restrict_result.y = y;
-    //   this._restrict_result.z = wall_hit.z;
-    //   return this._restrict_result;
-    // }
-
-    // 传入 y / 是否上升 / 移动前的 y：单向平台在物体下方时不算地面，上升途中不能被接住，
-    // 下落时则允许“本帧从顶面上方跨过”的判定，避免高速下落直接穿过平台
     const rising = e.velocity.y > 0;
     const prev_y = e.prev_position.y;
     const drop_through = e.is_on_ground && !e.ctrl.is_end(GK.Defend) && e.ctrl.UD > 0;
-    const seg = this.ground.segment(x, z, y, rising, prev_y, drop_through);
-
-    if (seg.cliff && y <= this.ground.y(seg, x, z) + this.ground.step) {
+    let seg = this.terrain.segment(x, z, y, rising, prev_y, drop_through);
+    if (seg.cliff && y <= this.terrain.y(seg, x, z) + this.terrain.step) {
       this.apply_cliff(e, seg, x, z);
       this._restrict_result.x = e.position.x;
       this._restrict_result.y = e.position.y;
@@ -527,8 +511,17 @@ export class World {
       return this._restrict_result;
     }
 
-    // 可进入，直接进入
-    if (null != this.ground.enterable(seg, x, y, z)) {
+    const enter_y = this.terrain.enterable(seg, x, y, z);
+    // 贴着平地向上跳时，脚还没高过顶面就不要算“可进入”，
+    // 否则 update_landable 会在贴近平面时把人吸上去、直接落地。
+    const rising_into_flat =
+      rising &&
+      enter_y !== null &&
+      seg.type === TerrainEnum.Flat &&
+      !seg.one_way &&
+      !seg.through &&
+      y <= enter_y;
+    if (enter_y !== null && !rising_into_flat) {
       e.terrain = seg;
       this._restrict_result.x = x;
       this._restrict_result.y = y;
@@ -536,33 +529,21 @@ export class World {
       return this._restrict_result;
     }
 
-    // 被挡了，需要放到可能的新位置;
-    const pushs = this.ground.block(
-      seg, x, y, z, e.prev_position.x, e.prev_position.y, e.prev_position.y
-    );
+    // 被地形挡住：只处理水平方向。按上一帧在阻挡地形的哪一侧，退回那一侧的面；
+    // 上一帧就在地形内部的那一轴不动，竖向穿透交给 update_landable 落地。
+    const prev_x = e.prev_position.x;
+    const prev_z = e.prev_position.z;
+    if (prev_x <= seg.x1) x = seg.x1 - 1;
+    else if (prev_x >= seg.x2) x = seg.x2 + 1;
+    if (prev_z <= seg.z1) z = seg.z1 - 1;
+    else if (prev_z >= seg.z2) z = seg.z2 + 1;
+    x = clamp(x, left, right);
+    z = clamp(z, far, near);
+    seg = this.terrain.segment(x, z, y, rising, prev_y, drop_through);
 
-    for (const push of pushs) {
-      // 不能挤出地图外
-      if (push.z < far || push.z > near || push.x < left || push.x > right)
-        continue;
-
-      const seg2 = this.ground.segment(push.x, push.z, y, rising, prev_y, drop_through);
-      // 不能挤到其他地形中
-      if (null == this.ground.enterable(seg2, push.x, y, push.z))
-        continue;
-
-      // 成功挤出
-      e.terrain = seg2;
-      this._restrict_result.x = push.x;
-      this._restrict_result.y = y;
-      this._restrict_result.z = push.z;
-      return this._restrict_result;
-    }
-
-    // 无法挤出，直接抬上去
     e.terrain = seg;
     this._restrict_result.x = x;
-    this._restrict_result.y = this.ground.y(seg, x, z);
+    this._restrict_result.y = y;
     this._restrict_result.z = z;
     return this._restrict_result;
   }

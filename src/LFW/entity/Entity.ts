@@ -1,5 +1,5 @@
 import { Factory } from "../Factory";
-import { Ground } from "../Ground";
+import { TerrainWorld } from "../terrain/TerrainWorld";
 import type { LFW } from "../LFW";
 import { World } from "../World";
 import { Callbacks } from "../base";
@@ -593,7 +593,7 @@ export class Entity {
     this._data = data;
     this._states = states;
     this._atom_time = world.dataset.atom_time;
-    this.terrain = Ground.horizon;
+    this.terrain = TerrainWorld.horizon;
     this.reset(data, states)
   }
   reset(data: IEntityData, states: States = ENTITY_STATES) {
@@ -602,7 +602,7 @@ export class Entity {
     this.buffs.clear();
     const { world, lfw } = this;
     this.is_on_ground = false;
-    this.terrain = Ground.horizon;
+    this.terrain = TerrainWorld.horizon;
     this._data = data;
     this._origin_data_id = data.id;
     this.id = lfw.new_id;
@@ -1781,11 +1781,11 @@ export class Entity {
       this._landing_frame = this.frame
     } else if (is_on_ground) {
 
-      if (this.position.y - _ground_y > this.world.ground.step) {
+      if (this.position.y - _ground_y > this.world.terrain.step) {
         // 离地面太高
         this.leave_ground();
         this._state?.on_leave_ground?.(this);
-      } else if (_ground_y - this.position.y > this.world.ground.step) {
+      } else if (_ground_y - this.position.y > this.world.terrain.step) {
         // 地面突然出现在上方一大截（单向平台/地形切换的意外情况），不要把人闪上去，按离地处理
         this.leave_ground();
         this._state?.on_leave_ground?.(this);
@@ -2366,22 +2366,27 @@ export class Entity {
     if (this.prev_position.x === Number.MIN_SAFE_INTEGER)
       this.prev_position.copy(this.position);
     const { x, y, z } = this.world.restrict(this);
-    if (this.position.x !== x && this.frame.on_x_restrict)
+    const moved_x = this.position.x !== x;
+    const moved_y = this.position.y !== y;
+    const moved_z = this.position.z !== z;
+    // 应用 restriction 的结果（restrict 只计算，不直接改 position）
+    if (moved_x || moved_y || moved_z) {
+      this.position.x = round_float(x);
+      this.position.y = round_float(y);
+      this.position.z = round_float(z);
+    }
+    if (moved_x && this.frame.on_x_restrict)
       this.enter_frame(this.frame.on_x_restrict)
-    if (this.position.z !== z && this.frame.on_z_restrict)
+    if (moved_z && this.frame.on_z_restrict)
       this.enter_frame(this.frame.on_z_restrict)
-    if (this.position.y !== y && this.frame.on_y_restrict)
+    if (moved_y && this.frame.on_y_restrict)
       this.enter_frame(this.frame.on_y_restrict)
-    if (
-      this.position.x !== x ||
-      this.position.y !== y ||
-      this.position.z !== z
-    ) {
+    if (moved_x || moved_y || moved_z) {
       if (this.frame.on_restrict)
         this.enter_frame(this.frame.on_restrict)
       this._state?.on_restrict?.(this, x, y, z);
     }
-    this._ground_y = this.world.ground.y(this.terrain, this.position.x, this.position.z);
+    this._ground_y = this.world.terrain.y(this.terrain, this.position.x, this.position.z);
   }
 
   /** 离地 */

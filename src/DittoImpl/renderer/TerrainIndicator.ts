@@ -111,7 +111,7 @@ export class TerrainIndicator {
   }
 
   private _y(seg: Readonly<ITerrainInfo>, x: number, z: number): number {
-    return this.world_renderer.world.ground.y(seg, x, z);
+    return this.world_renderer.world.terrain.y(seg, x, z);
   }
 
   render(): void {
