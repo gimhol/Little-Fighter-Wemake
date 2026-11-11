@@ -979,7 +979,7 @@ export class Entity {
     }
     const { terrain } = this.world;
     const dx = ax - x;
-    const dy = ay - y + (this.foot_y * 0.5);
+    const dy = ay - y + (emitter.foot_y * 0.5);
     const dz = az - z;
     const r = terrain.push_out(x, y, z, dx, dy, dz)
     x = r.x;
@@ -998,14 +998,7 @@ export class Entity {
     else this.enter_frame(Defines.NEXT_FRAME_AUTO);
 
     const { speedz: speedz_field } = opoint;
-    /** 生成物首帧的状态（`z_disabled` / `o_speedz` 的默认值都看它） */
     const spawn_state = result?.frame?.state;
-    /**
-     * 发射时按上下键给的 Z 初速（`vz = … + o_speedz * ud`）。
-     * opoint 没写 `speedz` 时按**生成物首帧**的状态补默认值 —— 弹道类（球 / 投掷 / 天降重物）
-     * 才给 `DEFAULT_OPOINT_SPEED_Z`，其余仍是 0；显式写了 `speedz`（含 0，如冰片 / 烟雾 /
-     * JanChase 尾迹）的一律照用。
-     */
     const o_speedz =
       speedz_field ??
       (spawn_state === StateEnum.Ball_Flying ||
