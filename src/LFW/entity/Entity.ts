@@ -230,6 +230,8 @@ export class Entity {
   protected _opoints: [IOpointInfo, number][] = [];
   private prev_cpoint_a!: ICpoint | null;
 
+  get foot_x() { return this.frame.centerx }
+  get foot_y() { return this.frame.centery }
 
   /**
    * 最近一次被攻击信息
@@ -976,7 +978,10 @@ export class Entity {
       y = round(y + emitter_frame.centery - opoint_y);
     }
     const { terrain } = this.world;
-    const r = terrain.push_out(x, y, z, ax - x, ay - y, az - z)
+    const dx = ax - x;
+    const dy = ay - y + (this.foot_y * 0.5);
+    const dz = az - z;
+    const r = terrain.push_out(x, y, z, dx, dy, dz)
     x = r.x;
     y = r.y;
     z = r.z;
@@ -1415,7 +1420,10 @@ export class Entity {
       y = round(y + cy_a - wa_y);
       z = round(z + wa_z);
       const { terrain } = this.world;
-      const r = terrain.push_out(x, y, z, ax - x, ay - y, az - z);
+      const vx = ax - x;
+      const vy = ay - y + (cy_a * 0.5);
+      const vz = az - z;
+      const r = terrain.push_out(x, y, z, vx, vy, vz);
       x = r.x;
       y = r.y;
       z = r.z;
@@ -2137,11 +2145,7 @@ export class Entity {
 
     // 武器被丢
     if (dvx !== void 0 || dvy !== void 0 || dvz !== void 0) {
-      this.follow_wpoint(0)
 
-      bearer.holding = null;
-      this.bearer = null;
-      this.dropping = false;
       dvx = dvx ? dvx * this.dataset('wvx_f') : 0
       dvy = dvy ? dvy * this.dataset('wvy_f') : 0
       dvz = dvz ? dvz * this.dataset('wvz_f') : 0
@@ -2157,6 +2161,11 @@ export class Entity {
       const vx = (dvx - abs(vz / 2)) * this.facing;
       this.set_velocity(vx, dvy, vz);
       this.enter_frame(nf);
+      this.follow_wpoint(0);
+
+      bearer.holding = null;
+      this.bearer = null;
+      this.dropping = false;
       return;
     }
 
