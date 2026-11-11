@@ -184,7 +184,6 @@ export class TerrainWorld {
       rising = false,
       prev_y,
       drop_through = false,
-      step = TERRAIN_STEP,
     } = query;
     let best: ITerrainSolid | undefined;
     let best_y = 0;
@@ -197,9 +196,7 @@ export class TerrainWorld {
           if (y <= top) continue;
         } else if (
           solid.mode === TerrainMode.Through &&
-          drop_through &&
-          y <= top + EPS &&
-          y >= top - step
+          drop_through
         ) {
           continue;
         } else if (y < top - EPS) {
@@ -257,17 +254,13 @@ export class TerrainWorld {
         solid.mode === TerrainMode.OneWay || solid.mode === TerrainMode.Through;
       if (passable && y !== void 0) {
         if (rising) {
-          // 上升中：必须严格高过顶面才算它 → 一跳穿过去
           if (y <= top) continue;
         } else if (
           solid.mode === TerrainMode.Through &&
-          drop_through &&
-          y <= top + EPS &&
-          y >= top - this.step
+          drop_through
         ) {
           continue;
         } else if (y < top - EPS) {
-          // 下落/静止：只有本帧从上方跨过顶面（prev_y >= 顶面）才算它
           if (prev_y === void 0 || prev_y < top) continue;
         }
       }

@@ -8,6 +8,7 @@ export class CharacterState_Base extends State_Base {
     e.handle_ground_velocity_decay();
   }
   override on_landing(e: Entity, velocity: IVector3): void {
+    void velocity;
     const { on_landing } = e.frame;
     if (on_landing) {
       e.enter_frame(on_landing);
@@ -49,6 +50,7 @@ export class CharacterState_Base extends State_Base {
       case StateEnum.Walking:
       case StateEnum.Standing:
       case StateEnum.Rowing:
+      case StateEnum.Defend:
         if (e.holding?.base_type === WeaponEnum.Heavy) return;
         e.enter_frame(Defines.NEXT_FRAME_AUTO);
         break;

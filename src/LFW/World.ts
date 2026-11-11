@@ -467,7 +467,7 @@ export class World {
    */
   restrict(e: Entity): IVector3Like {
     let { x, z } = e.position;
-    const y = e.position.y;
+    let y = e.position.y;
     if (e.bearer || e.catcher || e.ghosted) {
       e.terrain = this.terrain.base;
       this._restrict_result.x = x;
@@ -500,7 +500,20 @@ export class World {
 
     const rising = e.velocity.y > 0;
     const prev_y = e.prev_position.y;
-    const drop_through = e.is_on_ground && !e.ctrl.is_end(GK.Defend) && e.ctrl.UD > 0;
+
+    let drop_through = false;
+    if (
+      !e.ctrl.is_end(GK.Defend) &&
+      e.ctrl.UD > 0 &&
+      e.is_on_ground &&
+      e.terrain?.through &&
+      (e.ctrl.is_hit(GK.D) || e.ctrl.is_hit(GK.Defend)) &&
+      y > e.ground_y - 1
+    ) {
+      y = e.ground_y - 1;
+      drop_through = true;
+    }
+
     let seg = this.terrain.segment(x, z, y, rising, prev_y, drop_through);
     if (seg.cliff && y <= this.terrain.y(seg, x, z) + this.terrain.step) {
       this.apply_cliff(e, seg, x, z);
