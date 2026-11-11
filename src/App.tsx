@@ -691,7 +691,9 @@ function App() {
         container={() => ele_game_canvas?.parentElement} />
       <Loading loading={!ui_id} big className={csses.loading_img} />
       <div className={classNames(csses.top_bar, { [csses.toy_bar_shift]: toy_mobile })}>
-        <div className={csses.wails_drag} />
+        {/* 只有桌面壳（Electron/Wails，暴露 window.runtime）需要无边框窗口拖拽；
+            浏览器/扩展/B站 Toy 里这层没有任何用处，只会挡住画面顶部的按钮。 */}
+        {Ditto.IsDesktop && <div className={csses.wails_drag} />}
         <Show show={lfw?.is_cheat(CheatEnum.GIM_INK)}>
           <ToggleImgButton
             checked={app_state.dev_ui_open}
