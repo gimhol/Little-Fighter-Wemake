@@ -35,6 +35,7 @@ import {
   is_weapon
 } from "./entity";
 import { Ground } from "./Ground";
+import { TerrainWorld } from "./terrain/TerrainWorld";
 import type { IWorldCallbacks } from "./IWorldCallbacks";
 import { LFW } from "./LFW";
 import { Stage } from "./stage/Stage";
@@ -64,6 +65,7 @@ export class World {
   private _spark_data?: IEntityData;
   private _etc_data?: IEntityData;
   private _bg: Background;
+  private _terrain_world?: TerrainWorld;
   private _stage: Stage;
   private _need_FPS: boolean = true;
   private _need_UPS: boolean = true;
@@ -115,6 +117,13 @@ export class World {
   public extra_step_budget_ms: number = 16;
   readonly ground_weapon_counts = new Map<number, number>();
   get bg() { return this._bg; }
+
+  get terrain(): TerrainWorld {
+    const terrain = this._bg.data.terrain;
+    if (!this._terrain_world || this._terrain_world.source !== terrain)
+      this._terrain_world = new TerrainWorld(terrain);
+    return this._terrain_world;
+  }
   set bg(v: Background) {
     if (v === this._bg) return;
     const o = this._bg;

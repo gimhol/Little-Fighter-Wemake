@@ -35,5 +35,6 @@ export * from "./CMD_SET_DIFFICULTY";
 export * from "./CMD_SET_LANG";
 export * from "./CMD_SET_PUPPET";
 export * from "./CMD_SPAWN";
+export * from "./CMD_WEAPON_TRACE";
 export * from "./cheat_code_handler";
 /*** AUTO EXPORT END ***/

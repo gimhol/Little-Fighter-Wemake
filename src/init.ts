@@ -9,6 +9,7 @@ import { HeadlessUIInputHandle } from "./DittoImpl/ui/HeadlessUIInputHandle";
 import { actor, Ditto, LFW, UIActionEnum } from "./LFW";
 import { Debug, Log, Warn } from "./Log";
 import { is_extension_page } from './Utils/environment';
+import './debug_weapon_trace';
 import { ewents } from './Utils/ewents';
 import './i18n';
 import { install_mock_toy_if_requested } from "./mock_toy";

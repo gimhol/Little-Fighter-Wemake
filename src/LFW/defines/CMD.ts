@@ -87,7 +87,10 @@ export const enum CMD {
   UI /**/ = "UI",
 
   /** 运行时切换 UI 语言 */
-  SET_LANG /**/ = "SET_LANG"
+  SET_LANG /**/ = "SET_LANG",
+
+  /** 武器出手诊断 */
+  WEAPON_TRACE /**/ = "WEAPON_TRACE"
 }
 
 export const CMD_NAMES: Record<CMD, string> = {
@@ -135,5 +138,6 @@ export const CMD_NAMES: Record<CMD, string> = {
   [CMD.INFO]: "INFO",
   [CMD.DATASET]: "DATASET",
   [CMD.UI]: "UI",
-  [CMD.SET_LANG]: "SET_LANG"
+  [CMD.SET_LANG]: "SET_LANG",
+  [CMD.WEAPON_TRACE]: "WEAPON_TRACE"
 }
