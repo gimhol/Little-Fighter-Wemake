@@ -3,6 +3,7 @@ import type { IRoomInfo } from '../../src/LFW/ditto/networking/IRoomInfo';
 import type { IDataInfo } from '../../src/LFW/defines/IDataInfo';
 import type { Client } from './Client';
 import type { Context } from "./Context";
+import { resolve_sync } from '../../src/LFW/ditto/networking/recommend_sync';
 import { next_msg_seq } from './handle_req_chat';
 import {
   ErrCode,
@@ -30,8 +31,7 @@ import {
   IRespRoomStart,
   IRespRoomSync,
   IRespTick,
-  MsgEnum, NetSyncMode, RoomSyncMode, SystemPlayerInfo, TInfo,
-  resolve_sync
+  MsgEnum, NetSyncMode, RoomSyncMode, SystemPlayerInfo, TInfo
 } from "./Net";
 import { random_str } from './random_str';
 let room_id = 0;

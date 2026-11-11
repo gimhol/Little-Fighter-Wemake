@@ -3,8 +3,8 @@ import net from 'node:net';
 import type { RawData, WebSocket } from 'ws';
 import type { IClientInfo } from '../../src/LFW/ditto/networking/IClientInfo';
 import type { Context } from './Context';
+import { clamp_nickname } from '../../src/LFW/ditto/networking/nickname';
 import {
-  clamp_nickname,
   ErrCode,
   IJob,
   IMsgReqMap, IMsgRespMap,
