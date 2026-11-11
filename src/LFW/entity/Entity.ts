@@ -6,9 +6,6 @@ import { Callbacks } from "../base";
 import { Buff } from "../buff/Buff";
 import type { Collision } from "../collision/Collision";
 import { collision_clone } from "../collision/Collision";
-import { release_point, TReleaseMode, type IReleasePoint } from "./release_point";
-import type { IPushOut } from "../terrain/TerrainWorld";
-import { trace_weapon_event } from "../debug/weapon_release_trace";
 import { BaseController } from "../controller/BaseController";
 import { InvalidController } from "../controller/InvalidController";
 import {
@@ -26,9 +23,9 @@ import {
   type IVector3Like,
   type IVelocityInfo,
   OpointKind, OpointMultiEnum, OpointSpreading,
+  SE,
   SpeedCtrl, SpeedMode,
   StateEnum, type TEntityEnum, type TFace, type TNextFrame,
-  SE,
   WpointKind
 } from "../defines";
 import type { ITerrainInfo } from "../defines/ITerrainInfo";
@@ -135,8 +132,6 @@ export class Entity {
   public catcher: Entity | null = null;
   protected _states: States;
   protected readonly _next_frame_by_id: INextFrame = { id: '' };
-  protected readonly _release: IReleasePoint = { x: 0, y: 0, z: 0 };
-  protected readonly _push_out: IPushOut = { x: 0, y: 0, z: 0, moved: false };
   aabb_min_x: number = 0;
   aabb_max_x: number = 0;
   aabb_min_z: number = 0;
@@ -1380,20 +1375,59 @@ export class Entity {
     this.fall_value_recovering();
     this.defend_value_recovering();
   }
-
+  
+  private follow_wpoint(is_hold: 0 | 1) {
+    const { bearer } = this;
+    if (!bearer) return;
+    const bearer_frame = bearer.frame;
+    const wp_a = bearer_frame.wpoint;
+    const wa_x = wp_a?.x ?? 0;
+    const wa_y = wp_a?.y ?? 0;
+    const wa_z = wp_a?.z ?? 0;
+    const cx_a = bearer_frame.centerx ?? 0;
+    const cy_a = bearer_frame.centery ?? 0;
+    const weapon_frame = this?.frame;
+    const wp_b = weapon_frame?.wpoint;
+    const cx_b = weapon_frame.centerx ?? 0;
+    const cy_b = weapon_frame.centery ?? 0;
+    const wb_x = wp_b?.x ?? 0;
+    const wb_y = wp_b?.y ?? 0;
+    const wb_z = wp_b?.z ?? 0;
+    const ax = bearer.position.x;
+    const ay = bearer.position.y;
+    const az = bearer.position.z;
+    let x = ax;
+    let y = ay;
+    let z = az;
+    if (is_hold) {
+      x = round(x + bearer.facing * (wa_x - cx_a + cx_b - wb_x));
+      y = round(y + cy_a - wa_y - cy_b + wb_y);
+      z = round(z + wa_z - wb_z);
+    } else {
+      x = round(x + bearer.facing * (wa_x - cx_a));
+      y = round(y + cy_a - wa_y);
+      z = round(z + wa_z);
+      const { terrain } = this.world;
+      if (terrain.is_inside(x, y, z)) {
+        const r = terrain.push_out(x, y, z, ax - x, ay - y, az - z)
+        x = r.x;
+        y = r.y;
+        z = r.z;
+      }
+    }
+    this.set_position(x, y, z);
+    this.prev_position.copy(this.position);
+  }
   drop_holding(): void {
     if (!this.holding) return;
     this.lfw.mt.mark = "dh_1";
     const { holding } = this;
-    const p = release_point(this._release, TReleaseMode.Drop, this, holding);
-    holding.set_position(round(p.x), round(p.y), p.z);
-    holding.prev_position.copy(holding.position);
+
     holding.dropping = true;
     holding.bearer = null;
     this.holding = null;
-    holding.push_out_toward(this.position);
-    holding.prev_position.copy(holding.position);
 
+    this.follow_wpoint(0);
     const on_hands = holding.data.indexes?.on_hands;
     const in_the_skys = holding.data.indexes?.in_the_skys
 
@@ -1405,16 +1439,12 @@ export class Entity {
       id: FrameId.Auto,
     };
     holding.enter_frame(nf);
-    holding.set_position(
-      holding.position.x,
-      holding.position.y,
-      holding.position.z
-    );
     holding.team = this.team;
     /*
     避免掉落的武器能被相同攻击对象立刻打中
     */
-    for (const [, v] of this.vrests) holding.add_v_rest(collision_clone(v));
+    for (const [, v] of this.vrests)
+      holding.add_v_rest(collision_clone(v));
   }
 
   hp_recovering(): void {
@@ -2101,6 +2131,8 @@ export class Entity {
 
     // 武器被丢
     if (dvx !== void 0 || dvy !== void 0 || dvz !== void 0) {
+      this.follow_wpoint(0)
+
       bearer.holding = null;
       this.bearer = null;
       this.dropping = false;
@@ -2112,11 +2144,7 @@ export class Entity {
         this.data.indexes?.on_hands,
         this.data.indexes?.throwings
       )
-      this.prev_position.copy(this.position)
-      const p = release_point(this._release, TReleaseMode.Throw, bearer, this)
-      this.set_position(round(p.x), round(p.y), p.z)
-      this.push_out_toward(bearer.position)
-      this.prev_position.copy(this.position);
+
       const vz = bearer.ctrl ? bearer.ctrl.UD * (dvz || 0) : 0;
       dvx = dvx / weight;
       dvy = dvy / weight;
@@ -2126,33 +2154,8 @@ export class Entity {
       return;
     }
 
-    if (wp_a?.kind) {
-      this.prev_position.copy(bearer.position)
-      const p = release_point(this._release, TReleaseMode.Hold, bearer, this)
-      this.set_position(p.x, p.y, p.z)
-    } else { // 还原wpoint丢失的情况
-      const p = release_point(this._release, TReleaseMode.Hold, bearer)
-      this.set_position(p.x, p.y, p.z)
-    }
+    this.follow_wpoint(1)
   }
-
-  push_out_toward(target: Readonly<IVector3Like>): void {
-    const p = this.position;
-    this.world.terrain.push_out(this._push_out, p, target);
-    trace_weapon_event(
-      `weapon=${this.id} from=(${p.x},${p.y},${p.z})` +
-      ` to=(${target.x},${target.y},${target.z}) moved=${this._push_out.moved}` +
-      (this._push_out.moved ? ` -> (${this._push_out.x},${this._push_out.y},${this._push_out.z})` : ""),
-    );
-    if (!this._push_out.moved) return;
-    this.set_position(
-      round_float(this._push_out.x),
-      round_float(this._push_out.y),
-      round_float(this._push_out.z),
-    );
-    this.prev_position.copy(this.position);
-  }
-
 
   enter_frame_by_id(id: string | undefined, fallback: boolean = false): EnterFrameResult {
     if (id == void 0 && fallback) id = FrameId.Auto;

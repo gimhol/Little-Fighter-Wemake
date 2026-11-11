@@ -16,6 +16,11 @@
       id: "leeonroad",
       type: "bg",
       file: "bg/leeonroad/leeonroad.bg.json5",
+    },
+    {
+      id: "castle_crypt",
+      type: "bg",
+      file: "bg/castle_crypt/castle_crypt.bg.xml",
     }
   ],
   stages: [
@@ -23,6 +28,11 @@
       id: "tutorial",
       type: "stage",
       file: "data/tutorial.stage.json5",
+    },
+    {
+      id: "castle_crypt",
+      type: "stage",
+      file: "data/castle_crypt.stage.json5",
     },
   ],
 }
