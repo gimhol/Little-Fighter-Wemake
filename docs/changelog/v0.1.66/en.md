@@ -4,11 +4,10 @@ by [**Gim**](https://gim.ink)
 
 <!-- git-range: dfc9ca610..HEAD -->
 
-"A new stage and terrain"
+"Terrain and netplay"
 
 ### What's New
 
-- New stage "Castle Crypt": entrance hall → corridor → tower → dungeon pit → boss platform; the floating wooden platforms in the corridor are one-way.
 - Terrain data gains `one_way` / `cliff` / `cliff_frame` / `cliff_respawn_y`: one-way platforms, cliff detection and post-fall respawn points.
 
 ### Tweaks

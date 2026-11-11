@@ -6,11 +6,10 @@ by [**Gim**](https://gim.ink)
 
 <!-- git-range: dfc9ca610..HEAD -->
 
-"地形与新场景"
+"地形与联机"
 
 ### 新增
 
-- 新场景「Castle Crypt / 城堡地穴」：入口大厅 → 回廊 → 塔 → 地牢坑 → Boss 高台；回廊的浮空木台支持单向平台。
 - 地形数据新增 `one_way` / `cliff` / `cliff_frame` / `cliff_respawn_y`：支持单向平台、坠崖判定与坠崖后的重生点。
 
 ### 调整
