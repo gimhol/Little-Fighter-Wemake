@@ -2365,11 +2365,14 @@ export class Entity {
     if (_z !== null && _z !== void 0) this.position.z = round_float(_z)
     if (this.prev_position.x === Number.MIN_SAFE_INTEGER)
       this.prev_position.copy(this.position);
-    const { x, y, z } = this.world.restrict(this);
+    this.restrict();
+  }
+  restrict() {
+    const { x, y, z, terrain } = this.world.restrict(this);
     const moved_x = this.position.x !== x;
     const moved_y = this.position.y !== y;
     const moved_z = this.position.z !== z;
-    // 应用 restriction 的结果（restrict 只计算，不直接改 position）
+    this.terrain = terrain
     if (moved_x || moved_y || moved_z) {
       this.position.x = round_float(x);
       this.position.y = round_float(y);

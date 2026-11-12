@@ -417,7 +417,6 @@ export class World {
     }
   }
 
-  private _restrict_result: IVector3Like = { x: 0, y: 0, z: 0 }
   private _bound: [number, number, number, number] = [0, 0, 0, 0]
   get_bound(e: Entity): [number, number, number, number] {
     const {
@@ -445,6 +444,7 @@ export class World {
     return this._bound;
   }
 
+  /** TODO: 感觉这不太对 */
   protected apply_cliff(e: Entity, seg: Readonly<ITerrainInfo>, x: number, z: number): void {
     e.terrain = this.terrain.base;
     if (!is_fighter(e)) {
@@ -459,21 +459,26 @@ export class World {
     if (frame_id) e.enter_frame_by_id(frame_id);
   }
 
+  private _ret_restric: IVector3Like & { terrain: Readonly<ITerrainInfo> } = {
+    x: 0, y: 0, z: 0,
+    terrain: TerrainWorld.horizon
+  }
   /**
    * 限制“实体”位置
    *
    * @param {Entity} e
    * @memberof World
    */
-  restrict(e: Entity): IVector3Like {
+  restrict(e: Entity): typeof this._ret_restric {
     let { x, z } = e.position;
     let y = e.position.y;
+    const ret = this._ret_restric;
     if (e.bearer || e.catcher || e.ghosted) {
-      e.terrain = this.terrain.base;
-      this._restrict_result.x = x;
-      this._restrict_result.y = y;
-      this._restrict_result.z = z;
-      return this._restrict_result;
+      ret.terrain = this.terrain.base;
+      ret.x = x;
+      ret.y = y;
+      ret.z = z;
+      return ret;
     }
     const [left, right, near, far] = this.get_bound(e);
     x = clamp(x, left, right);
@@ -481,30 +486,30 @@ export class World {
     if (is_weapon(e)) {
       if (e.is_on_ground && x < left - e.l_len || x > right + e.r_len) {
         e.enter_frame(Defines.NEXT_FRAME_GONE);
-        e.terrain = this.terrain.base;
-        this._restrict_result.x = x;
-        this._restrict_result.y = y;
-        this._restrict_result.z = z;
-        return this._restrict_result;
+        ret.terrain = this.terrain.base;
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        return ret;
       }
     } else if (is_ball(e)) {
       if (x < left - 800 - e.l_len || x > right + 800 + e.r_len) {
         e.enter_frame(Defines.NEXT_FRAME_GONE);
-        e.terrain = this.terrain.base;
-        this._restrict_result.x = x;
-        this._restrict_result.y = y;
-        this._restrict_result.z = z;
-        return this._restrict_result;
+        ret.terrain = this.terrain.base;
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        return ret;
       }
     }
 
     const rising = e.velocity.y > 0;
     const prev_y = e.prev_position.y;
 
+    /* TODO: 感觉不太对 */
     let drop_through = false;
     if (
-      !e.ctrl.is_end(GK.Defend) &&
-      e.ctrl.UD > 0 &&
+      is_fighter(e) &&
       e.is_on_ground &&
       e.terrain?.through &&
       (e.ctrl.is_hit(GK.D) || e.ctrl.is_hit(GK.Defend)) &&
@@ -517,18 +522,18 @@ export class World {
     let seg = this.terrain.segment(x, z, y, rising, prev_y, drop_through);
     if (seg.cliff && y <= this.terrain.y(seg, x, z) + this.terrain.step) {
       this.apply_cliff(e, seg, x, z);
-      this._restrict_result.x = e.position.x;
-      this._restrict_result.y = e.position.y;
-      this._restrict_result.z = e.position.z;
-      return this._restrict_result;
+      ret.x = e.position.x;
+      ret.y = e.position.y;
+      ret.z = e.position.z;
+      return ret;
     }
 
     if (null != this.terrain.enterable(seg, x, y, z)) {
-      e.terrain = seg;
-      this._restrict_result.x = x;
-      this._restrict_result.y = y;
-      this._restrict_result.z = z;
-      return this._restrict_result;
+      ret.terrain = seg;
+      ret.x = x;
+      ret.y = y;
+      ret.z = z;
+      return ret;
     }
 
     // 被地形挡住：只处理水平方向。按上一帧在阻挡地形的哪一侧，退回那一侧的面；
@@ -543,11 +548,11 @@ export class World {
     z = clamp(z, far, near);
     seg = this.terrain.segment(x, z, y, rising, prev_y, drop_through);
 
-    e.terrain = seg;
-    this._restrict_result.x = x;
-    this._restrict_result.y = y;
-    this._restrict_result.z = z;
-    return this._restrict_result;
+    ret.terrain = seg;
+    ret.x = x;
+    ret.y = y;
+    ret.z = z;
+    return ret;
   }
 
   protected update_ui() {
