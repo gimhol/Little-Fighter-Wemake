@@ -51,6 +51,7 @@
     },
     {
       "id": "launch_center",
+      "size": "794,450",
       "alignment": {
         "left": "left",
         "right": "right",

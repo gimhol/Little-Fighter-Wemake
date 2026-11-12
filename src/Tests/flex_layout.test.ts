@@ -387,8 +387,24 @@ describe("apply_flex_layout", () => {
   });
 });
 
-describe("XML 属性解析", () => {
-  function element(
+describe("居中容器", () => {
+  test("固定尺寸子项在宽屏内居中", () => {
+    const child = stub_child({ w: 794, h: 450, flex: new FlexStyle("shrink:0") });
+    const container = stub_container({
+      w: 950,
+      h: 450,
+      flex: "display:flex; direction:row; justify:center; align:center",
+      children: [child],
+    });
+    apply_flex_layout(container);
+    expect(child.w).toBe(794);
+    expect(child.h).toBe(450);
+    expect(child.x).toBe(78);
+    expect(child.y).toBe(0);
+  });
+});
+
+describe("XML 属性解析", () => {  function element(
     tag: string,
     attrs: Record<string, string> = {},
     text = "",

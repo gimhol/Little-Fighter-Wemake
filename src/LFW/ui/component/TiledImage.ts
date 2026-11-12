@@ -23,6 +23,7 @@ export class TiledImage extends UIComponent<ITiledImageProps> {
     const repeat_x = this.props.repeat_x;
     const repeat_y = this.props.repeat_y;
     if (!img || !design_w || !design_h || repeat_x == null || repeat_y == null) return;
+    if (this.node.w <= 0 || this.node.h <= 0) return;
     const rx = this.node.w / design_w * repeat_x;
     const ry = this.node.h / design_h * repeat_y;
     if (img.repeatX !== rx) img.repeatX = rx;
