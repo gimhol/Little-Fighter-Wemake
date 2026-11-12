@@ -1,23 +1,44 @@
 {
-  name: "页面：nine_patch_test",
-  id: "nine_patch_test",
-  items: [
+  "name": "页面：nine_patch_test",
+  "id": "nine_patch_test",
+  "items": [
     {
-      pos: "200, 200",
-      center: "0.5,0.5",
-      visible: true,
-      size: "400,200",
-      img: {
-        path: "!sprite/frame@4x.png",
-        nine_patch: {
-          f_w: 72,
-          f_h: 72,
-          l_w: 28,
-          t_h: 28,
-          r_w: 28,
-          b_h: 28,
-        },
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-    },
-  ],
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "flex": "shrink:0",
+          "items": [
+            {
+              "pos": "200, 200",
+              "center": "0.5,0.5",
+              "visible": true,
+              "size": "400,200",
+              "img": {
+                "path": "!sprite/frame@4x.png",
+                "nine_patch": {
+                  "f_w": 72,
+                  "f_h": 72,
+                  "l_w": 28,
+                  "t_h": 28,
+                  "r_w": 28,
+                  "b_h": 28
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

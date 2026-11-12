@@ -1,179 +1,240 @@
 {
-  name: "页面：DEMO模式",
-  id: "demo_mode_page",
-  component: [
+  "name": "页面：DEMO模式",
+  "id": "demo_mode_page",
+  "component": [
     {
-      cls: "DemoModeLogic",
-      properties: {
-        focus_prefix: "curr_focus_prefix",
-        focus_on: "focus_text_node",
-        cam_ctrl: "cam_ctrl",
-        score_board: "score_board",
-        situation_name: "situation_name",
-        focus_text_node: "focus_text_node",
-        jalousie: "jalousie",
-        gogogo: "play_gogogo",
-        gogogo_loop: "play_gogogo_loop",
-      },
+      "cls": "DemoModeLogic",
+      "properties": {
+        "focus_prefix": "curr_focus_prefix",
+        "focus_on": "focus_text_node",
+        "cam_ctrl": "cam_ctrl",
+        "score_board": "score_board",
+        "situation_name": "situation_name",
+        "focus_text_node": "focus_text_node",
+        "jalousie": "jalousie",
+        "gogogo": "play_gogogo",
+        "gogogo_loop": "play_gogogo_loop"
+      }
     },
     {
-      id: "cam_ctrl",
-      cls: "CameraCtrl",
-      properties: {},
+      "id": "cam_ctrl",
+      "cls": "CameraCtrl",
+      "properties": {}
     },
-    { cls: "WeaponRain", properties: {} },
+    {
+      "cls": "WeaponRain",
+      "properties": {}
+    }
   ],
-  templates: {
-    shutter_item: {
-      color: "rgb(0, 0, 0)",
-      size: "10,10",
-      pos: "0,0,2",
-    },
+  "templates": {
+    "shutter_item": {
+      "color": "rgb(0, 0, 0)",
+      "size": "10,10",
+      "pos": "0,0,2"
+    }
   },
-  items: [
+  "items": [
     {
-      pos: "0,0,5",
-      visible: false,
-      template: "ui/player_keys_hints.ui.json5",
-    },
-    {
-      i18n: "None",
-      outlineColor: "#005A8E",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      style: {
-        fill_style: "white",
-        font: "9px Arial",
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-      center: "0,0",
-      pos: "0,0",
-      id: "situation_name",
-    },
-    {
-      id: "demo_play_link",
-      i18n: "Click here to visit & play it: https://lf.gim.ink",
-      outlineColor: "#005A8E",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      style: {
-        underline_color: "white",
-        underline_width: 1,
-        font: "9px Arial",
-      },
-      center: "0.5, 0",
-      pos: "400, 0",
-      actions: {
-        click: ["sound(ok)", "link_to(https://lf.gim.ink)"],
-      },
-    },
-    "ui/center_pause_label.ui.json5",
-    "ui/fighter_stat_s_x8.ui.json5",
-    "ui/gogogo.ui.json5",
-    "ui/gogogo_loop.ui.json5",
-    {
-      pos: "397,10",
-      center: "0.5,0",
-      component: ["StageTitleText()"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-        padding_t: 2,
-      },
-    },
-    {
-      visible: true,
-      component: [{ cls: "PauseHandling", properties: { reverse: true } }],
-      i18n: "DEMO",
-      outlineColor: "#005A8E",
-      outlineWidth: 4,
-      outlineAlpha: 1,
-      style: {
-        fill_style: "white",
-        font: '24px "Arial Black", Arial',
-      },
-      center: "0.5,0.5",
-      pos: "397, 225",
-    },
-    {
-      id: "score_board",
-      template: "ui/score_board.ui.json5",
-      visible: false,
-    },
-    {
-      i18n: "demo_cam_ctrl",
-      outlineColor: "#005A8E",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      style: {
-        fill_style: "white",
-        font: "9px Arial",
-      },
-      component: [{ cls: "Alignment", properties: { right: "right", bottom: "bottom" } }],
-      center: "1,1",
-    },
-    {
-      id: "curr_focus_prefix",
-      i18n: "curr_focus",
-      outlineColor: "#005A8E",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      style: {
-        fill_style: "white",
-        font: "9px Arial",
-      },
-      component: [{ cls: "Alignment", properties: { left: "left", bottom: "bottom" } }],
-      center: "0,1",
-    },
-    {
-      id: "focus_text_node",
-      i18n: "",
-      outlineColor: "#005A8E",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      style: {
-        fill_style: "white",
-        font: "9px Arial",
-      },
-      component: [
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          cls: "Alignment",
-          properties: { left: "right", bottom: "bottom", followed: { l: "id:curr_focus_prefix" } },
-        },
-      ],
-      center: "0,1",
-    },
-    {
-      component: [
-        {
-          id: "jalousie",
-          cls: "Jalousie",
-          properties: {
-            direction: "column",
-            align: "stretch",
-            open: true,
-            end: true,
-          },
-        },
-        {
-          cls: "Alignment",
-          properties: {
-            left: "left",
-            right: "right",
-            top: "top",
-            bottom: "bottom",
-          },
-        },
-      ],
-      items: [
-        {
-          count: 50,
-          template: "shutter_item",
-        },
-      ],
-    },
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "pos": "0,0,5",
+              "visible": false,
+              "template": "ui/player_keys_hints.ui.json5"
+            },
+            {
+              "i18n": "None",
+              "outlineColor": "#005A8E",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "style": {
+                "fill_style": "white",
+                "font": "9px Arial"
+              },
+              "center": "0,0",
+              "pos": "0,0",
+              "id": "situation_name"
+            },
+            {
+              "id": "demo_play_link",
+              "i18n": "Click here to visit & play it: https://lf.gim.ink",
+              "outlineColor": "#005A8E",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "style": {
+                "underline_color": "white",
+                "underline_width": 1,
+                "font": "9px Arial"
+              },
+              "center": "0.5, 0",
+              "pos": "400, 0",
+              "actions": {
+                "click": [
+                  "sound(ok)",
+                  "link_to(https://lf.gim.ink)"
+                ]
+              }
+            },
+            "ui/center_pause_label.ui.json5",
+            "ui/fighter_stat_s_x8.ui.json5",
+            "ui/gogogo.ui.json5",
+            "ui/gogogo_loop.ui.json5",
+            {
+              "pos": "397,10",
+              "center": "0.5,0",
+              "component": [
+                "StageTitleText()"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1,
+                "padding_t": 2
+              }
+            },
+            {
+              "visible": true,
+              "component": [
+                {
+                  "cls": "PauseHandling",
+                  "properties": {
+                    "reverse": true
+                  }
+                }
+              ],
+              "i18n": "DEMO",
+              "outlineColor": "#005A8E",
+              "outlineWidth": 4,
+              "outlineAlpha": 1,
+              "style": {
+                "fill_style": "white",
+                "font": "24px \"Arial Black\", Arial"
+              },
+              "center": "0.5,0.5",
+              "pos": "397, 225"
+            },
+            {
+              "id": "score_board",
+              "template": "ui/score_board.ui.json5",
+              "visible": false
+            },
+            {
+              "i18n": "demo_cam_ctrl",
+              "outlineColor": "#005A8E",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "style": {
+                "fill_style": "white",
+                "font": "9px Arial"
+              },
+              "component": [
+                {
+                  "cls": "Alignment",
+                  "properties": {
+                    "right": "right",
+                    "bottom": "bottom"
+                  }
+                }
+              ],
+              "center": "1,1"
+            },
+            {
+              "id": "curr_focus_prefix",
+              "i18n": "curr_focus",
+              "outlineColor": "#005A8E",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "style": {
+                "fill_style": "white",
+                "font": "9px Arial"
+              },
+              "component": [
+                {
+                  "cls": "Alignment",
+                  "properties": {
+                    "left": "left",
+                    "bottom": "bottom"
+                  }
+                }
+              ],
+              "center": "0,1"
+            },
+            {
+              "id": "focus_text_node",
+              "i18n": "",
+              "outlineColor": "#005A8E",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "style": {
+                "fill_style": "white",
+                "font": "9px Arial"
+              },
+              "component": [
+                {
+                  "cls": "Alignment",
+                  "properties": {
+                    "left": "right",
+                    "bottom": "bottom",
+                    "followed": {
+                      "l": "id:curr_focus_prefix"
+                    }
+                  }
+                }
+              ],
+              "center": "0,1"
+            },
+            {
+              "component": [
+                {
+                  "id": "jalousie",
+                  "cls": "Jalousie",
+                  "properties": {
+                    "direction": "column",
+                    "align": "stretch",
+                    "open": true,
+                    "end": true
+                  }
+                },
+                {
+                  "cls": "Alignment",
+                  "properties": {
+                    "left": "left",
+                    "right": "right",
+                    "top": "top",
+                    "bottom": "bottom"
+                  }
+                }
+              ],
+              "items": [
+                {
+                  "count": 50,
+                  "template": "shutter_item"
+                }
+              ]
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
   ],
-  actions: {
-    stop: ["remove_all_entities()", "destory_stage()"],
-  },
+  "actions": {
+    "stop": [
+      "remove_all_entities()",
+      "destory_stage()"
+    ]
+  }
 }

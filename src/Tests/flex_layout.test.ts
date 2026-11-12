@@ -402,6 +402,19 @@ describe("居中容器", () => {
     expect(child.x).toBe(78);
     expect(child.y).toBe(0);
   });
+
+  test("padding-top 参与纵向居中", () => {
+    const child = stub_child({ w: 200, h: 130, cx: 0.5, cy: 0.5 });
+    const container = stub_container({
+      w: 794,
+      h: 450,
+      flex: "display:flex; direction:column; justify:center; align:center; padding:90,0,0,0",
+      children: [child],
+    });
+    apply_flex_layout(container);
+    expect(child.x).toBe(397);
+    expect(child.y).toBe(270);
+  });
 });
 
 describe("XML 属性解析", () => {  function element(

@@ -1,141 +1,189 @@
 {
-  name: "页面：闯关模式",
-  id: "stage_mode_page",
-  component: ["SummaryLogic()", "StageModeLogic()", { cls: "WeaponRain", properties: { groups: "StageWeapon" } }],
-  items: [
-    "ui/center_pause_label.ui.json5",
+  "name": "页面：闯关模式",
+  "id": "stage_mode_page",
+  "component": [
+    "SummaryLogic()",
+    "StageModeLogic()",
     {
-      pos: "0, 10",
-      template: "ui/fighter_stat_s_x8.ui.json5",
-      component: ["HideWhenDialoging()"],
-    },
-    {
-      pos: "0, 20",
-      template: "ui/fn_key_counts_row.ui.json5",
-    },
-    "ui/gogogo.ui.json5",
-    "ui/gogogo_loop.ui.json5",
-    {
-      template: "ui/dialog_bottom_long.ui.json5",
-    },
-    {
-      center: "0.5,0.5",
-      pos: "397, 225",
-      component: ["StageTitleShow()"],
-      style: {
-        font: '46px "Arial Black", Arial',
-      },
-      outlineColor: "#005A8E",
-      outlineWidth: 5,
-      outlineAlpha: 1,
-    },
-    {
-      pos: "397,10",
-      center: "0.5,0",
-      component: ["StageTitleText()", "HideWhenDialoging()"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-        padding_t: 2,
-      },
-    },
-    {
-      pos: "0,10",
-      center: "0,0",
-      component: ["TeamSituationText(1)", "HideWhenDialoging()"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-      },
-    },
-    {
-      pos: "794,10",
-      center: "1,0",
-      component: ["TeamSituationText()", "HideWhenDialoging()"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-      },
-    },
-    {
-      pos: "794,450",
-      center: "1,1",
-      component: ["PrefixAndDifficultyText(Stage mode)"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-      },
-    },
-    {
-      component: [
-        {
-          cls: "Jalousie",
-          properties: {
-            direction: "column",
-            align: "stretch",
-            open: true,
-            end: true,
-          },
-        },
-        {
-          cls: "Alignment",
-          properties: {
-            left: "left",
-            right: "right",
-            top: "top",
-            bottom: "bottom",
-          },
-        },
-      ],
-      items: [
-        {
-          count: 30,
-          template: "shutter_item",
-        },
-      ],
-    },
-    {
-      id: "score_board",
-      template: "ui/score_board.ui.json5",
-      visible: false,
-    },
-    {
-      id: "survival_rank_hint_mods",
-      pos: "0,450",
-      center: "0,1",
-      visible: false,
-      i18n: "survival.not_counted_mods",
-      style: {
-        fill_style: "#ff6666",
-        font: "16px Arial",
-        text_align: "left",
-      },
-    },
-    {
-      id: "survival_rank_hint_cheat",
-      pos: "0,430",
-      center: "0,1",
-      visible: false,
-      i18n: "survival.not_counted_cheat",
-      style: {
-        fill_style: "#ff6666",
-        font: "16px Arial",
-        text_align: "left",
-      },
-    },
+      "cls": "WeaponRain",
+      "properties": {
+        "groups": "StageWeapon"
+      }
+    }
   ],
-  templates: {
-    shutter_item: {
-      color: "rgb(0, 0, 0)",
-      size: "20,20",
-      pos: "0,0,2",
-    },
+  "items": [
+    {
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            "ui/center_pause_label.ui.json5",
+            {
+              "pos": "0, 10",
+              "template": "ui/fighter_stat_s_x8.ui.json5",
+              "component": [
+                "HideWhenDialoging()"
+              ]
+            },
+            {
+              "pos": "0, 20",
+              "template": "ui/fn_key_counts_row.ui.json5"
+            },
+            "ui/gogogo.ui.json5",
+            "ui/gogogo_loop.ui.json5",
+            {
+              "template": "ui/dialog_bottom_long.ui.json5"
+            },
+            {
+              "center": "0.5,0.5",
+              "pos": "397, 225",
+              "component": [
+                "StageTitleShow()"
+              ],
+              "style": {
+                "font": "46px \"Arial Black\", Arial"
+              },
+              "outlineColor": "#005A8E",
+              "outlineWidth": 5,
+              "outlineAlpha": 1
+            },
+            {
+              "pos": "397,10",
+              "center": "0.5,0",
+              "component": [
+                "StageTitleText()",
+                "HideWhenDialoging()"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1,
+                "padding_t": 2
+              }
+            },
+            {
+              "pos": "0,10",
+              "center": "0,0",
+              "component": [
+                "TeamSituationText(1)",
+                "HideWhenDialoging()"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1
+              }
+            },
+            {
+              "pos": "794,10",
+              "center": "1,0",
+              "component": [
+                "TeamSituationText()",
+                "HideWhenDialoging()"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1
+              }
+            },
+            {
+              "pos": "794,450",
+              "center": "1,1",
+              "component": [
+                "PrefixAndDifficultyText(Stage mode)"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1
+              }
+            },
+            {
+              "component": [
+                {
+                  "cls": "Jalousie",
+                  "properties": {
+                    "direction": "column",
+                    "align": "stretch",
+                    "open": true,
+                    "end": true
+                  }
+                },
+                {
+                  "cls": "Alignment",
+                  "properties": {
+                    "left": "left",
+                    "right": "right",
+                    "top": "top",
+                    "bottom": "bottom"
+                  }
+                }
+              ],
+              "items": [
+                {
+                  "count": 30,
+                  "template": "shutter_item"
+                }
+              ]
+            },
+            {
+              "id": "score_board",
+              "template": "ui/score_board.ui.json5",
+              "visible": false
+            },
+            {
+              "id": "survival_rank_hint_mods",
+              "pos": "0,450",
+              "center": "0,1",
+              "visible": false,
+              "i18n": "survival.not_counted_mods",
+              "style": {
+                "fill_style": "#ff6666",
+                "font": "16px Arial",
+                "text_align": "left"
+              }
+            },
+            {
+              "id": "survival_rank_hint_cheat",
+              "pos": "0,430",
+              "center": "0,1",
+              "visible": false,
+              "i18n": "survival.not_counted_cheat",
+              "style": {
+                "fill_style": "#ff6666",
+                "font": "16px Arial",
+                "text_align": "left"
+              }
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ],
+  "templates": {
+    "shutter_item": {
+      "color": "rgb(0, 0, 0)",
+      "size": "20,20",
+      "pos": "0,0,2"
+    }
   },
-  actions: {
-    stop: ["remove_all_entities()", "destory_stage()"],
-  },
+  "actions": {
+    "stop": [
+      "remove_all_entities()",
+      "destory_stage()"
+    ]
+  }
 }

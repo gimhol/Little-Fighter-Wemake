@@ -1,11 +1,15 @@
 <node id="network_modal" name="弹窗：联网游戏" local_only="true">
   <component cls="NetworkModalLogic"/>
 
-  <node id="network_bg" pos="0,0,-450">
+  <node id="network_bg" pos="0,0,-450" alignment="left:left; right:right; top:top; bottom:bottom">
     <node ref="builtin_data/launch/bg.ui.json"/>
   </node>
 
-  <node id="network_dim" size="794,450" center="0,0" pos="0,0" color="#00000040"/>
+  <node id="network_dim" size="794,450" center="0,0" pos="0,0" color="#00000040" alignment="left:left; right:right; top:top; bottom:bottom"/>
+
+  <node id="__center" size="794,450" alignment="left:left; right:right; top:top; bottom:bottom" flex="display:flex; direction:row; justify:center; align:center">
+  <node id="__design" size="794,450" center="0,0" flex="shrink:0">
+
 
   <node id="network_connect_panel" size="300,200" center="0,0" pos="267,100" clips="true">
     <node id="network_connect_frame_outer" size="300,200" center="0,0" pos="0,0" color="#5A73D6"/>
@@ -63,5 +67,8 @@
   <!-- 参考启动页右下角的加载动画，连接过程中显示 -->
   <node id="network_loading_anim" pos="760,428" visible="false">
     <node template="builtin_data/launch/loading_anim.ui.json"/>
+  </node>
+
+  </node>
   </node>
 </node>

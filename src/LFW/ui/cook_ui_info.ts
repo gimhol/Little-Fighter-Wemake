@@ -44,9 +44,13 @@ export async function merge_ui_template(lfw: LFW, raw_info: IUIInfo, parent: ICo
       component.push(c)
     })
   }
+  const remain_defined: IUIInfo = {};
+  for (const [key, value] of Object.entries(remain_info)) {
+    if (value !== void 0) (remain_defined as Record<string, unknown>)[key] = value;
+  }
   return {
     ...template_info,
-    ...remain_info,
+    ...remain_defined,
     template: template_name,
     component,
     values: {

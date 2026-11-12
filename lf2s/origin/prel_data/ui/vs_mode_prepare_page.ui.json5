@@ -1,39 +1,70 @@
 {
-  name: "页面：对战模式准备页",
-  id: "vs_mode_prepare_page",
-  color: "rgba(0, 0, 0, 0.5)",
-  component: [
+  "name": "页面：对战模式准备页",
+  "id": "vs_mode_prepare_page",
+  "color": "rgba(0, 0, 0, 0.5)",
+  "component": [
     {
-      cls: "GamePrepareLogic",
-      properties: {
-        game_mode: "vs_mode",
-        stage_switcher: "StageSwitcher",
-        bg_switcher: "BackgroundSwitcher",
+      "cls": "GamePrepareLogic",
+      "properties": {
+        "game_mode": "vs_mode",
+        "stage_switcher": "StageSwitcher",
+        "bg_switcher": "BackgroundSwitcher"
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-    },
-  ],
-  items: [
-    {
-      id: "frame",
-      template: "ui/char_menu.ui.json5",
-    },
-    {
-      id: "how_many_computer",
-      template: "ui/how_many_computer.ui.json5",
-      visible: false,
-    },
-    {
-      id: "game_settings_menu",
-      template: "ui/game_prepare_menu.ui.json5",
-      visible: false,
-    },
-    {
-      id: "bgm_switcher",
-      center: "0,1",
-      pos: "0, 450",
-      i18n: "",
-      style: { fill_style: "white" },
-      component: [{ cls: "BGMSwitcher", args: [0] }, "OpacityHover(0.7,1)"],
-    },
-  ],
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "id": "frame",
+              "template": "ui/char_menu.ui.json5"
+            },
+            {
+              "id": "how_many_computer",
+              "template": "ui/how_many_computer.ui.json5",
+              "visible": false
+            },
+            {
+              "id": "game_settings_menu",
+              "template": "ui/game_prepare_menu.ui.json5",
+              "visible": false
+            },
+            {
+              "id": "bgm_switcher",
+              "center": "0,1",
+              "pos": "0, 450",
+              "i18n": "",
+              "style": {
+                "fill_style": "white"
+              },
+              "component": [
+                {
+                  "cls": "BGMSwitcher",
+                  "args": [
+                    0
+                  ]
+                },
+                "OpacityHover(0.7,1)"
+              ]
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

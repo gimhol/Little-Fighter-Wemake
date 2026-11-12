@@ -1,9 +1,12 @@
 <node id="network_room_page" name="页面：房间" local_only="true">
   <component cls="RoomLogic"/>
 
-  <node id="network_bg" pos="0,0,-450">
+  <node id="network_bg" pos="0,0,-450" alignment="left:left; right:right; top:top; bottom:bottom">
     <node ref="builtin_data/launch/bg.ui.json"/>
   </node>
+
+  <node id="__center" size="794,450" alignment="left:left; right:right; top:top; bottom:bottom" flex="display:flex; direction:row; justify:center; align:center">
+  <node id="__design" size="794,450" center="0,0" flex="shrink:0">
 
   <node id="network_topbar" size="794,40" pos="0,0,1" clips="true">
     <node id="network_room_title" center="0,0.5" pos="16,20">
@@ -183,5 +186,8 @@
         <click action="sound" args="ok"/>
       </actions>
     </node>
+  </node>
+
+  </node>
   </node>
 </node>

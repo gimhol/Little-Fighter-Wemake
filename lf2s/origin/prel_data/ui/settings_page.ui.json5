@@ -1,86 +1,122 @@
 {
-  id: "settings",
-  name: "页面：设置页",
-  component: [
+  "id": "settings",
+  "name": "页面：设置页",
+  "component": [
     {
-      cls: "SettingsLogic",
-      properties: {
-        btn_misc_settings: "btn_misc_settings",
-        btn_ctrl_settings: "btn_ctrl_settings",
-        misc_settings_node: "misc_settings_node",
-        ctrl_settings_node: "ctrl_settings_node",
-      },
-    },
+      "cls": "SettingsLogic",
+      "properties": {
+        "btn_misc_settings": "btn_misc_settings",
+        "btn_ctrl_settings": "btn_ctrl_settings",
+        "misc_settings_node": "misc_settings_node",
+        "ctrl_settings_node": "ctrl_settings_node"
+      }
+    }
   ],
-  items: [
+  "items": [
     {
-      template: "builtin_data/launch/bg.ui.json",
-      color: "#00000033",
-      opacity: 0.9,
+      "template": "builtin_data/launch/bg.ui.json",
+      "color": "#00000033",
+      "opacity": 0.9
     },
     {
-      pos: "394,30",
-      center: "0.5,0",
-      flex: "display:flex; direction:column; fit:true; gap:10; align:center",
-      items: [
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          items: [
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
             {
-              id: "btn_exit_settings",
-              template: "builtin_data/launch/main_text_button.ui.json",
-              values: {
-                text: "exit_settings",
-              },
-              actions: {
-                click: ["pop_page()", "sound(cancel)"],
-              },
+              "pos": "394,30",
+              "center": "0.5,0",
+              "flex": "display:flex; direction:column; fit:true; gap:10; align:center",
+              "items": [
+                {
+                  "items": [
+                    {
+                      "id": "btn_exit_settings",
+                      "template": "builtin_data/launch/main_text_button.ui.json",
+                      "values": {
+                        "text": "exit_settings"
+                      },
+                      "actions": {
+                        "click": [
+                          "pop_page()",
+                          "sound(cancel)"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "btn_misc_settings",
+                      "template": "builtin_data/launch/main_text_button.ui.json",
+                      "values": {
+                        "text": "misc_settings"
+                      }
+                    },
+                    {
+                      "id": "btn_ctrl_settings",
+                      "template": "builtin_data/launch/main_text_button.ui.json",
+                      "values": {
+                        "text": "ctrl_settings"
+                      }
+                    }
+                  ],
+                  "flex": "display:flex; direction:row; fit:true; gap:20; align:start"
+                },
+                {
+                  "id": "misc_settings_node",
+                  "template": "ui/settings_misc.ui.json5"
+                },
+                {
+                  "id": "ctrl_settings_node",
+                  "template": "ui/settings_ctrl.ui.json5",
+                  "visible": false
+                }
+              ]
             },
             {
-              id: "btn_misc_settings",
-              template: "builtin_data/launch/main_text_button.ui.json",
-              values: {
-                text: "misc_settings",
+              "i18n": "goto_github_url",
+              "style": {
+                "fill_style": "#5A73D6",
+                "underline_color": "#5A73D6",
+                "underline_width": 1,
+                "font": "12px Arial"
               },
+              "center": "1, 1",
+              "pos": "789, 445"
             },
             {
-              id: "btn_ctrl_settings",
-              template: "builtin_data/launch/main_text_button.ui.json",
-              values: {
-                text: "ctrl_settings",
+              "i18n": "goto_github_url",
+              "style": {
+                "fill_style": "white",
+                "underline_color": "white",
+                "underline_width": 1,
+                "font": "12px Arial"
               },
-            },
+              "center": "1, 1",
+              "pos": "789, 445",
+              "component": [
+                "OpacityHover(0,1)"
+              ],
+              "actions": {
+                "click": [
+                  "sound(ok)",
+                  "link_to(https://github.com/gimhol/Little-Fighter-Wemake)"
+                ]
+              }
+            }
           ],
-          flex: "display:flex; direction:row; fit:true; gap:20; align:start",
-        },
-        { id: "misc_settings_node", template: "ui/settings_misc.ui.json5" },
-        { id: "ctrl_settings_node", template: "ui/settings_ctrl.ui.json5", visible: false },
-      ],
-    },
-    {
-      i18n: "goto_github_url",
-      style: {
-        fill_style: "#5A73D6",
-        underline_color: "#5A73D6",
-        underline_width: 1,
-        font: "12px Arial",
-      },
-      center: "1, 1",
-      pos: "789, 445",
-    },
-    {
-      i18n: "goto_github_url",
-      style: {
-        fill_style: "white",
-        underline_color: "white",
-        underline_width: 1,
-        font: "12px Arial",
-      },
-      center: "1, 1",
-      pos: "789, 445",
-      component: ["OpacityHover(0,1)"],
-      actions: {
-        click: ["sound(ok)", "link_to(https://github.com/gimhol/Little-Fighter-Wemake)"],
-      },
-    },
-  ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

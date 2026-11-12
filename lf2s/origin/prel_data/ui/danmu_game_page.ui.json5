@@ -1,7 +1,9 @@
 {
   "name": "页面：直播弹幕游戏模式选择",
   "id": "danmu_game_page",
-  "component": ["ReachableGroup(main,ud)"],
+  "component": [
+    "ReachableGroup(main,ud)"
+  ],
   "items": [
     {
       "template": "builtin_data/launch/bg.ui.json",
@@ -9,73 +11,114 @@
       "opacity": 0.9
     },
     {
-      "id": "danmu_game_menu",
-      "pos": "397, 270",
-      "center": "0.5, 0.5",
-      "component": [
-        {
-          "cls": "Flex",
-          "properties": {
-            "direction": "column",
-            "align": "center",
-            "fit": true,
-            "gap": 5
-          }
-        }
-      ],
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
       "items": [
         {
-          "id": "btn_danmu_ffa",
-          "size": "260,22",
-          "center": "0.5, 0.5",
-          "auto_focus": true,
-          "template": "builtin_data/launch/main_text_button.ui.json",
-          "values": {
-            "text": "danmu_game.ffa"
-          },
-          "component": ["Reachable(main)"],
-          "actions": {
-            "click": ["push_page(danmu_game_ffa_page)", "sound(ok)"]
-          }
-        },
-        {
-          "id": "btn_danmu_teams8",
-          "size": "260,22",
-          "center": "0.5, 0.5",
-          "template": "builtin_data/launch/main_text_button.ui.json",
-          "values": {
-            "text": "danmu_game.teams8"
-          },
-          "component": ["Reachable(main)"],
-          "actions": {
-            "click": ["push_page(danmu_game_teams8_page)", "sound(ok)"]
-          }
-        },
-        {
-          "id": "btn_danmu_coop",
-          "size": "260,22",
-          "center": "0.5, 0.5",
-          "template": "builtin_data/launch/main_text_button.ui.json",
-          "values": {
-            "text": "danmu_game.coop"
-          },
-          "component": ["Reachable(main)"],
-          "actions": {
-            "click": ["push_page(danmu_game_coop_page)", "sound(ok)"]
-          }
-        },
-        {
-          "id": "btn_danmu_back",
-          "size": "260,22",
-          "center": "0.5, 0.5",
-          "template": "builtin_data/launch/main_text_button.ui.json",
-          "values": {
-            "text": "danmu_game.back"
-          },
-          "component": ["Reachable(main)"],
-          "actions": {
-            "click": ["pop_page()", "sound(cancel)"]
-          }
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "id": "danmu_game_menu",
+              "pos": "397, 270",
+              "center": "0.5, 0.5",
+              "component": [
+                {
+                  "cls": "Flex",
+                  "properties": {
+                    "direction": "column",
+                    "align": "center",
+                    "fit": true,
+                    "gap": 5
+                  }
+                }
+              ],
+              "items": [
+                {
+                  "id": "btn_danmu_ffa",
+                  "size": "260,22",
+                  "center": "0.5, 0.5",
+                  "auto_focus": true,
+                  "template": "builtin_data/launch/main_text_button.ui.json",
+                  "values": {
+                    "text": "danmu_game.ffa"
+                  },
+                  "component": [
+                    "Reachable(main)"
+                  ],
+                  "actions": {
+                    "click": [
+                      "push_page(danmu_game_ffa_page)",
+                      "sound(ok)"
+                    ]
+                  }
+                },
+                {
+                  "id": "btn_danmu_teams8",
+                  "size": "260,22",
+                  "center": "0.5, 0.5",
+                  "template": "builtin_data/launch/main_text_button.ui.json",
+                  "values": {
+                    "text": "danmu_game.teams8"
+                  },
+                  "component": [
+                    "Reachable(main)"
+                  ],
+                  "actions": {
+                    "click": [
+                      "push_page(danmu_game_teams8_page)",
+                      "sound(ok)"
+                    ]
+                  }
+                },
+                {
+                  "id": "btn_danmu_coop",
+                  "size": "260,22",
+                  "center": "0.5, 0.5",
+                  "template": "builtin_data/launch/main_text_button.ui.json",
+                  "values": {
+                    "text": "danmu_game.coop"
+                  },
+                  "component": [
+                    "Reachable(main)"
+                  ],
+                  "actions": {
+                    "click": [
+                      "push_page(danmu_game_coop_page)",
+                      "sound(ok)"
+                    ]
+                  }
+                },
+                {
+                  "id": "btn_danmu_back",
+                  "size": "260,22",
+                  "center": "0.5, 0.5",
+                  "template": "builtin_data/launch/main_text_button.ui.json",
+                  "values": {
+                    "text": "danmu_game.back"
+                  },
+                  "component": [
+                    "Reachable(main)"
+                  ],
+                  "actions": {
+                    "click": [
+                      "pop_page()",
+                      "sound(cancel)"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "flex": "shrink:0"
         }
       ]
     }

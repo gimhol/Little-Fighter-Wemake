@@ -1,27 +1,50 @@
 {
-  id: "test_cases_page",
-  name: "页面：测试用例",
-  component: ["Tests"],
-  items: [
-    "ui/center_pause_label.ui.json5",
-    {
-      i18n: "[Left | Right]: Switch Test Case   [Up | Down]: Switch Test Group   [Attack]: Replay   [F4]: Exit",
-      style: "$val:txt_style",
-      outlineColor: "#000000",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      center: "0,1",
-      pos: "0, 450",
-    },
-    {
-      i18n: "None",
-      style: "$val:txt_style",
-      outlineColor: "#000000",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      center: "0,0",
-      pos: "300,0",
-      id: "test_case_name",
-    },
+  "id": "test_cases_page",
+  "name": "页面：测试用例",
+  "component": [
+    "Tests"
   ],
+  "items": [
+    {
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            "ui/center_pause_label.ui.json5",
+            {
+              "i18n": "[Left | Right]: Switch Test Case   [Up | Down]: Switch Test Group   [Attack]: Replay   [F4]: Exit",
+              "style": "$val:txt_style",
+              "outlineColor": "#000000",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "center": "0,1",
+              "pos": "0, 450"
+            },
+            {
+              "i18n": "None",
+              "style": "$val:txt_style",
+              "outlineColor": "#000000",
+              "outlineWidth": 1,
+              "outlineAlpha": 1,
+              "center": "0,0",
+              "pos": "300,0",
+              "id": "test_case_name"
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

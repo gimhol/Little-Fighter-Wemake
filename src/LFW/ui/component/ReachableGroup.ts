@@ -13,7 +13,7 @@ export class ReachableGroup extends UIComponent {
   get binded_layout(): UINode {
     const lid = this.info.args[2];
     if (!lid) return this.node;
-    return this.node.root.find_child(lid) || this.node;
+    return this.node.root.search_node(lid) || this.node;
   }
   override on_start(): void {
     this.reachables = this.node.root.search_components(Reachable, (v) => v.group_name === this.group)

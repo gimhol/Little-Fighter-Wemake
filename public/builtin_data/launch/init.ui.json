@@ -268,7 +268,11 @@
       "center": "0,0",
       "alignment": {
         "left": "left",
-        "top": "top"
+        "top": "top",
+        "offset": {
+          "l": 4,
+          "t": 4
+        }
       },
       "items": [
         {

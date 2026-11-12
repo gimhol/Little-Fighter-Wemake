@@ -21,6 +21,7 @@ export * from "./Alignment";
 export * from "./CameraCtrl";
 export * from "./CharMenuHead";
 export * from "./ComponentsPlayer";
+export * from "./CoverImage";
 export * from "./Dialogs";
 export * from "./EndingPageLogic";
 export * from "./FadeInOpacity";

@@ -2,6 +2,12 @@
   "name": "页面：bg",
   "id": "main_bg",
   "size": "794, 450",
+  "alignment": {
+    "left": "left",
+    "right": "right",
+    "top": "top",
+    "bottom": "bottom"
+  },
   "component": [
     {
       "cls": "TiledImage",

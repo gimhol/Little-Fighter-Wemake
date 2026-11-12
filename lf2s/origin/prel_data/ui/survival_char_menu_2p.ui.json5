@@ -1,277 +1,327 @@
 {
-  id: "survival_char_menu_2p",
-  name: "UI: 生存排行角色选择(双人)",
-  component: [
+  "id": "survival_char_menu_2p",
+  "name": "UI: 生存排行角色选择(双人)",
+  "component": [
     {
-      id: "CharMenuLogic",
-      cls: "CharMenuLogic",
-      properties: {
-        max_player: 2,
-        min_player: 2,
-        teams: ["1"],
-        // 只允许主线斗士 OID 1~11（Deep~Davis）与原创角色
-        oids: ["1", "2", "4", "5", "6", "7", "8", "9", "10", "11", "rocky", "rin", "sera"],
+      "id": "CharMenuLogic",
+      "cls": "CharMenuLogic",
+      "properties": {
+        "max_player": 2,
+        "min_player": 2,
+        "teams": [
+          "1"
+        ],
+        "oids": [
+          "1",
+          "2",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "rocky",
+          "rin",
+          "sera"
+        ]
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-    },
-  ],
-  items: [
-    // 玩家一（左侧）。分列容器让每位玩家头像组件的节点引用只在本列内解析
-    {
-      id: "col_1",
-      items: [
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          id: "CharMenuHead_1",
-          size: "120, 120",
-          pos: "35, 165",
-          component: [
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
             {
-              cls: "CharMenuHead",
-              properties: {
-                countdown_label: "countdown_text",
-                hints_node: "hints",
-                start_hints_node: "start_hint",
-                pick_prev_node: "fighter_pick_prev_1",
-                pick_next_node: "fighter_pick_next_1",
-              },
+              "id": "col_1",
+              "items": [
+                {
+                  "id": "CharMenuHead_1",
+                  "size": "120, 120",
+                  "pos": "35, 165",
+                  "component": [
+                    {
+                      "cls": "CharMenuHead",
+                      "properties": {
+                        "countdown_label": "countdown_text",
+                        "hints_node": "hints",
+                        "start_hints_node": "start_hint",
+                        "pick_prev_node": "fighter_pick_prev_1",
+                        "pick_next_node": "fighter_pick_next_1"
+                      }
+                    }
+                  ],
+                  "items": [
+                    {
+                      "id": "hints",
+                      "pos": "60, 60",
+                      "center": "0.5,0.5",
+                      "img": {
+                        "path": "!sprite/CMA@4x.png",
+                        "dw": 120,
+                        "dh": 66
+                      }
+                    },
+                    {
+                      "id": "random_head",
+                      "pos": "60, 60",
+                      "center": "0.5,0.5",
+                      "visible": false,
+                      "img": {
+                        "path": "sprite/RFACE@4x.png",
+                        "dw": 120,
+                        "dh": 120
+                      }
+                    },
+                    {
+                      "id": "countdown_text",
+                      "pos": "60, 60",
+                      "center": "0.5,0.5",
+                      "visible": false,
+                      "i18n": "5",
+                      "style": {
+                        "font": "120px \"Arial Black\", Arial"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "FighterName",
+                  "size": "133, 20",
+                  "pos": "95, 400",
+                  "center": "0.5, 1",
+                  "opacity": 0.8,
+                  "style": {
+                    "font": "16px \"Arial Black\", Arial"
+                  },
+                  "component": [
+                    "FighterName()"
+                  ]
+                },
+                {
+                  "id": "player_name",
+                  "size": "133, 16",
+                  "pos": "95, 425",
+                  "center": "0.5, 0",
+                  "visible": false,
+                  "style": {
+                    "fill_style": "#ffffff",
+                    "font": "8px Arial",
+                    "text_align": "center"
+                  },
+                  "component": [
+                    {
+                      "cls": "PlayerName",
+                      "properties": {
+                        "prefix": "survival.player_colon",
+                        "hide_join_q": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "start_hint",
+                  "pos": "95, 408",
+                  "center": "0.5,0",
+                  "i18n": "survival.press_atk_start",
+                  "style": {
+                    "fill_style": "#ffffff",
+                    "font": "8px Arial",
+                    "text_align": "center"
+                  }
+                },
+                {
+                  "id": "fighter_pick_prev_1",
+                  "pos": "15, 390",
+                  "center": "0.5,0.5",
+                  "visible": false,
+                  "i18n": "◀",
+                  "actions": {
+                    "click": [
+                      "broadcast(char_menu_pick_prev_1)",
+                      "sound(ok)"
+                    ]
+                  },
+                  "style": {
+                    "fill_style": "#9b9bff",
+                    "font": "16px Arial",
+                    "text_align": "center"
+                  }
+                },
+                {
+                  "id": "fighter_pick_next_1",
+                  "pos": "175, 390",
+                  "center": "0.5,0.5",
+                  "visible": false,
+                  "i18n": "▶",
+                  "actions": {
+                    "click": [
+                      "broadcast(char_menu_pick_next_1)",
+                      "sound(ok)"
+                    ]
+                  },
+                  "style": {
+                    "fill_style": "#9b9bff",
+                    "font": "16px Arial",
+                    "text_align": "center"
+                  }
+                }
+              ]
             },
+            {
+              "id": "col_2",
+              "items": [
+                {
+                  "id": "CharMenuHead_2",
+                  "size": "120, 120",
+                  "pos": "639, 165",
+                  "component": [
+                    {
+                      "cls": "CharMenuHead",
+                      "properties": {
+                        "countdown_label": "countdown_text",
+                        "hints_node": "hints",
+                        "start_hints_node": "start_hint",
+                        "pick_prev_node": "fighter_pick_prev_2",
+                        "pick_next_node": "fighter_pick_next_2"
+                      }
+                    }
+                  ],
+                  "items": [
+                    {
+                      "id": "hints",
+                      "pos": "60, 60",
+                      "center": "0.5,0.5",
+                      "img": {
+                        "path": "!sprite/CMA@4x.png",
+                        "dw": 120,
+                        "dh": 66
+                      }
+                    },
+                    {
+                      "id": "random_head",
+                      "pos": "60, 60",
+                      "center": "0.5,0.5",
+                      "visible": false,
+                      "img": {
+                        "path": "sprite/RFACE@4x.png",
+                        "dw": 120,
+                        "dh": 120
+                      }
+                    },
+                    {
+                      "id": "countdown_text",
+                      "pos": "60, 60",
+                      "center": "0.5,0.5",
+                      "visible": false,
+                      "i18n": "5",
+                      "style": {
+                        "font": "120px \"Arial Black\", Arial"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "FighterName",
+                  "size": "133, 20",
+                  "pos": "699, 400",
+                  "center": "0.5, 1",
+                  "opacity": 0.8,
+                  "style": {
+                    "font": "16px \"Arial Black\", Arial"
+                  },
+                  "component": [
+                    "FighterName()"
+                  ]
+                },
+                {
+                  "id": "player_name",
+                  "size": "133, 16",
+                  "pos": "699, 425",
+                  "center": "0.5, 0",
+                  "visible": false,
+                  "style": {
+                    "fill_style": "#ffffff",
+                    "font": "8px Arial",
+                    "text_align": "center"
+                  },
+                  "component": [
+                    {
+                      "cls": "PlayerName",
+                      "properties": {
+                        "prefix": "survival.player_colon",
+                        "hide_join_q": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "start_hint",
+                  "pos": "699, 408",
+                  "center": "0.5,0",
+                  "i18n": "survival.press_atk_start",
+                  "style": {
+                    "fill_style": "#ffffff",
+                    "font": "8px Arial",
+                    "text_align": "center"
+                  }
+                },
+                {
+                  "id": "fighter_pick_prev_2",
+                  "pos": "619, 390",
+                  "center": "0.5,0.5",
+                  "visible": false,
+                  "i18n": "◀",
+                  "actions": {
+                    "click": [
+                      "broadcast(char_menu_pick_prev_2)",
+                      "sound(ok)"
+                    ]
+                  },
+                  "style": {
+                    "fill_style": "#9b9bff",
+                    "font": "16px Arial",
+                    "text_align": "center"
+                  }
+                },
+                {
+                  "id": "fighter_pick_next_2",
+                  "pos": "779, 390",
+                  "center": "0.5,0.5",
+                  "visible": false,
+                  "i18n": "▶",
+                  "actions": {
+                    "click": [
+                      "broadcast(char_menu_pick_next_2)",
+                      "sound(ok)"
+                    ]
+                  },
+                  "style": {
+                    "fill_style": "#9b9bff",
+                    "font": "16px Arial",
+                    "text_align": "center"
+                  }
+                }
+              ]
+            }
           ],
-          items: [
-            {
-              id: "hints",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              img: {
-                path: "!sprite/CMA@4x.png",
-                dw: 120,
-                dh: 66,
-              },
-            },
-            {
-              id: "random_head",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              visible: false,
-              img: {
-                path: "sprite/RFACE@4x.png",
-                dw: 120,
-                dh: 120,
-              },
-            },
-            {
-              id: "countdown_text",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              visible: false,
-              i18n: "5",
-              style: {
-                font: '120px "Arial Black", Arial',
-              },
-            },
-          ],
-        },
-        {
-          id: "FighterName",
-          size: "133, 20",
-          pos: "95, 400",
-          center: "0.5, 1",
-          opacity: 0.8,
-          style: {
-            font: '16px "Arial Black", Arial',
-          },
-          component: ["FighterName()"],
-        },
-        {
-          id: "player_name",
-          size: "133, 16",
-          pos: "95, 425",
-          center: "0.5, 0",
-          visible: false,
-          style: {
-            fill_style: "#ffffff",
-            font: "8px Arial",
-            text_align: "center",
-          },
-          component: [
-            {
-              cls: "PlayerName",
-              properties: {
-                prefix: "survival.player_colon",
-                hide_join_q: true,
-              },
-            },
-          ],
-        },
-        {
-          id: "start_hint",
-          pos: "95, 408",
-          center: "0.5,0",
-          i18n: "survival.press_atk_start",
-          style: {
-            fill_style: "#ffffff",
-            font: "8px Arial",
-            text_align: "center",
-          },
-        },
-        {
-          id: "fighter_pick_prev_1",
-          pos: "15, 390",
-          center: "0.5,0.5",
-          visible: false,
-          i18n: "◀",
-          actions: {
-            click: ["broadcast(char_menu_pick_prev_1)", "sound(ok)"],
-          },
-          style: {
-            fill_style: "#9b9bff",
-            font: "16px Arial",
-            text_align: "center",
-          },
-        },
-        {
-          id: "fighter_pick_next_1",
-          pos: "175, 390",
-          center: "0.5,0.5",
-          visible: false,
-          i18n: "▶",
-          actions: {
-            click: ["broadcast(char_menu_pick_next_1)", "sound(ok)"],
-          },
-          style: {
-            fill_style: "#9b9bff",
-            font: "16px Arial",
-            text_align: "center",
-          },
-        },
-      ],
-    },
-    // 玩家二（右侧，x 以 794 镜像）
-    {
-      id: "col_2",
-      items: [
-        {
-          id: "CharMenuHead_2",
-          size: "120, 120",
-          pos: "639, 165",
-          component: [
-            {
-              cls: "CharMenuHead",
-              properties: {
-                countdown_label: "countdown_text",
-                hints_node: "hints",
-                start_hints_node: "start_hint",
-                pick_prev_node: "fighter_pick_prev_2",
-                pick_next_node: "fighter_pick_next_2",
-              },
-            },
-          ],
-          items: [
-            {
-              id: "hints",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              img: {
-                path: "!sprite/CMA@4x.png",
-                dw: 120,
-                dh: 66,
-              },
-            },
-            {
-              id: "random_head",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              visible: false,
-              img: {
-                path: "sprite/RFACE@4x.png",
-                dw: 120,
-                dh: 120,
-              },
-            },
-            {
-              id: "countdown_text",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              visible: false,
-              i18n: "5",
-              style: {
-                font: '120px "Arial Black", Arial',
-              },
-            },
-          ],
-        },
-        {
-          id: "FighterName",
-          size: "133, 20",
-          pos: "699, 400",
-          center: "0.5, 1",
-          opacity: 0.8,
-          style: {
-            font: '16px "Arial Black", Arial',
-          },
-          component: ["FighterName()"],
-        },
-        {
-          id: "player_name",
-          size: "133, 16",
-          pos: "699, 425",
-          center: "0.5, 0",
-          visible: false,
-          style: {
-            fill_style: "#ffffff",
-            font: "8px Arial",
-            text_align: "center",
-          },
-          component: [
-            {
-              cls: "PlayerName",
-              properties: {
-                prefix: "survival.player_colon",
-                hide_join_q: true,
-              },
-            },
-          ],
-        },
-        {
-          id: "start_hint",
-          pos: "699, 408",
-          center: "0.5,0",
-          i18n: "survival.press_atk_start",
-          style: {
-            fill_style: "#ffffff",
-            font: "8px Arial",
-            text_align: "center",
-          },
-        },
-        {
-          id: "fighter_pick_prev_2",
-          pos: "619, 390",
-          center: "0.5,0.5",
-          visible: false,
-          i18n: "◀",
-          actions: {
-            click: ["broadcast(char_menu_pick_prev_2)", "sound(ok)"],
-          },
-          style: {
-            fill_style: "#9b9bff",
-            font: "16px Arial",
-            text_align: "center",
-          },
-        },
-        {
-          id: "fighter_pick_next_2",
-          pos: "779, 390",
-          center: "0.5,0.5",
-          visible: false,
-          i18n: "▶",
-          actions: {
-            click: ["broadcast(char_menu_pick_next_2)", "sound(ok)"],
-          },
-          style: {
-            fill_style: "#9b9bff",
-            font: "16px Arial",
-            text_align: "center",
-          },
-        },
-      ],
-    },
-  ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

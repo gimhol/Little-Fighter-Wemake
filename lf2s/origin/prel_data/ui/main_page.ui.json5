@@ -1,200 +1,333 @@
 {
-  name: "页面：主页",
-  id: "main_page",
-  color: "rgb(16, 32, 108)",
-  pos: "0,0,-450",
-  component: ["ReachableGroup(main,ud)", "LittleFunnyAutoGame", { cls: "MainMenuLogic" }],
-  items: [
-    "builtin_data/launch/bg.ui.json",
-    "ui/bg_l_face.ui.json5",
-    "ui/bg_r_face.ui.json5",
-    "builtin_data/launch/version_name.ui.json",
-    "builtin_data/launch/extra_zips.ui.json",
+  "name": "页面：主页",
+  "id": "main_page",
+  "color": "rgb(16, 32, 108)",
+  "pos": "0,0,-450",
+  "component": [
+    "ReachableGroup(main,ud)",
+    "LittleFunnyAutoGame",
     {
-      id: "main_title",
-      img: {
-        path: "!sprite/MENU_CLIP.png",
-        x: 0,
-        y: 41,
-        w: 496,
-        h: 80,
-      },
-      center: "0.5, 0",
-      size: "496, 80",
-      pos: "398, 40",
-    },
-    {
-      id: "main_menu",
-      center: "0.5, 0.5",
-      pos: "397, 270",
-      _color: "red",
-      flex: "display:flex; direction:column; align:center; gap:5; fit:true",
-      items: [
-        {
-          id: "btn_survival",
-          size: "200,22",
-          center: "0.5, 0.5",
-          auto_focus: true,
-          visible: false,
-          disabled: true,
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.survival",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(survival_prepare_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_survival_2p",
-          size: "200,22",
-          center: "0.5, 0.5",
-          visible: false,
-          disabled: true,
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.survival_2p",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(survival_prepare_page_2p)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_vs_mode",
-          size: "200,22",
-          center: "0.5, 0.5",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.vs_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(vs_mode_prepare_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_stage_mode",
-          center: "0.5, 0.5",
-          size: "200,22",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.stage_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(stage_mode_prepare_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_1v1_championship_mode",
-          size: "200,22",
-          center: "0.5, 0.5",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          visible: false,
-          values: {
-            text: "main_page.1v1_championship_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["alert(还没写)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_2v2_championship_mode",
-          size: "200,22",
-          center: "0.5, 0.5",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          visible: false,
-          values: {
-            text: "main_page.2v2_championship_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["alert(还没写)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_battle_mode",
-          size: "200,22",
-          center: "0.5, 0.5",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          visible: false,
-          values: {
-            text: "main_page.battle_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["alert(还没写)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_demo_mode",
-          center: "0.5, 0.5",
-          size: "200,22",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.demo_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(demo_mode_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_move_table",
-          center: "0.5, 0.5",
-          size: "200,22",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.move_table",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(move_table_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_danmu_mode",
-          center: "0.5, 0.5",
-          size: "200,22",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.danmu_game_mode",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(danmu_game_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_test_cases",
-          center: "0.5, 0.5",
-          size: "200,22",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.test_cases",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["push_page(test_cases_page)", "sound(ok)"],
-          },
-        },
-        {
-          id: "btn_quit",
-          size: "200,22",
-          center: "0.5, 0.5",
-          template: "builtin_data/launch/main_text_button.ui.json",
-          values: {
-            text: "main_page.quit",
-          },
-          component: ["Reachable(main)"],
-          actions: {
-            click: ["exit()", "sound(ok)"],
-          },
-        },
-      ],
-    },
+      "cls": "MainMenuLogic"
+    }
   ],
+  "items": [
+    {
+      "template": "builtin_data/launch/bg.ui.json",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      }
+    },
+    {
+      "template": "ui/bg_l_face.ui.json5",
+      "alignment": {
+        "left": "left",
+        "top": "mid"
+      }
+    },
+    {
+      "template": "ui/bg_r_face.ui.json5",
+      "alignment": {
+        "right": "right",
+        "top": "mid"
+      }
+    },
+    {
+      "template": "builtin_data/launch/version_name.ui.json",
+      "pos": "1,449,1",
+      "alignment": {
+        "left": "left",
+        "bottom": "bottom",
+        "offset": {
+          "l": 1,
+          "b": -1
+        }
+      }
+    },
+    {
+      "template": "builtin_data/launch/extra_zips.ui.json",
+      "pos": "792,449,1",
+      "alignment": {
+        "right": "right",
+        "bottom": "bottom",
+        "offset": {
+          "r": -2,
+          "b": -1
+        }
+      }
+    },
+    {
+      "id": "main_top",
+      "size": "794,120",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:flex-start; padding:40,0,0,0",
+      "items": [
+        {
+          "id": "main_title",
+          "img": {
+            "path": "!sprite/MENU_CLIP.png",
+            "x": 0,
+            "y": 41,
+            "w": 496,
+            "h": 80
+          },
+          "center": "0.5, 0",
+          "size": "496, 80",
+          "pos": "398, 40"
+        }
+      ]
+    },
+    {
+      "id": "main_menu_center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:column; justify:center; align:center; padding:90,0,0,0",
+      "items": [
+        {
+          "id": "main_menu",
+          "center": "0.5, 0.5",
+          "pos": "397, 270",
+          "_color": "red",
+          "flex": "display:flex; direction:column; align:center; gap:5; fit:true",
+          "items": [
+            {
+              "id": "btn_survival",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "auto_focus": true,
+              "visible": false,
+              "disabled": true,
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.survival"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(survival_prepare_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_survival_2p",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "visible": false,
+              "disabled": true,
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.survival_2p"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(survival_prepare_page_2p)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_vs_mode",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.vs_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(vs_mode_prepare_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_stage_mode",
+              "center": "0.5, 0.5",
+              "size": "200,22",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.stage_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(stage_mode_prepare_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_1v1_championship_mode",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "visible": false,
+              "values": {
+                "text": "main_page.1v1_championship_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "alert(还没写)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_2v2_championship_mode",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "visible": false,
+              "values": {
+                "text": "main_page.2v2_championship_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "alert(还没写)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_battle_mode",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "visible": false,
+              "values": {
+                "text": "main_page.battle_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "alert(还没写)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_demo_mode",
+              "center": "0.5, 0.5",
+              "size": "200,22",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.demo_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(demo_mode_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_move_table",
+              "center": "0.5, 0.5",
+              "size": "200,22",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.move_table"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(move_table_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_danmu_mode",
+              "center": "0.5, 0.5",
+              "size": "200,22",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.danmu_game_mode"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(danmu_game_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_test_cases",
+              "center": "0.5, 0.5",
+              "size": "200,22",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.test_cases"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "push_page(test_cases_page)",
+                  "sound(ok)"
+                ]
+              }
+            },
+            {
+              "id": "btn_quit",
+              "size": "200,22",
+              "center": "0.5, 0.5",
+              "template": "builtin_data/launch/main_text_button.ui.json",
+              "values": {
+                "text": "main_page.quit"
+              },
+              "component": [
+                "Reachable(main)"
+              ],
+              "actions": {
+                "click": [
+                  "exit()",
+                  "sound(ok)"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

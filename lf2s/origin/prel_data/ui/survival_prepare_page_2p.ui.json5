@@ -1,229 +1,270 @@
 {
-  name: "页面：双人生存排行准备页",
-  id: "survival_prepare_page_2p",
-  color: "rgb(16, 32, 108)",
-  component: [
+  "name": "页面：双人生存排行准备页",
+  "id": "survival_prepare_page_2p",
+  "color": "rgb(16, 32, 108)",
+  "component": [
     {
-      cls: "GamePrepareLogic",
-      properties: {
-        game_mode: "survival",
-        players: 2,
-      },
-    },
+      "cls": "GamePrepareLogic",
+      "properties": {
+        "game_mode": "survival",
+        "players": 2
+      }
+    }
   ],
-  items: [
+  "items": [
     "builtin_data/launch/bg.ui.json",
     {
-      // 玩家一的背景大头像（左侧）
-      id: "survival_bg_face",
-      pos: "0, 0",
-      size: "338, 450",
-      component: [
+      "id": "survival_bg_face",
+      "pos": "0, 0",
+      "size": "338, 450",
+      "component": [
         {
-          cls: "Picture",
-        },
+          "cls": "Picture"
+        }
       ],
+      "alignment": {
+        "left": "left",
+        "top": "mid"
+      }
     },
     {
-      // 玩家二的背景大头像（右侧，水平镜像；锚点在页面右缘，scale.x = -1 使图像占 456~794）
-      id: "survival_bg_face_r",
-      pos: "794, 0",
-      size: "338, 450",
-      scale: "-1,1,1",
-      component: [
+      "id": "survival_bg_face_r",
+      "pos": "794, 0",
+      "size": "338, 450",
+      "scale": "-1,1,1",
+      "component": [
         {
-          cls: "Picture",
-        },
+          "cls": "Picture"
+        }
       ],
+      "alignment": {
+        "left": "right",
+        "top": "mid"
+      }
     },
     {
-      id: "frame",
-      template: "ui/survival_char_menu_2p.ui.json5",
-    },
-    {
-      // 榜单水平居中于页面（794/2 = 397）
-      id: "board_frame",
-      pos: "397, 0",
-      items: [
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          id: "survival_rank_title",
-          pos: "0, 20",
-          center: "0.5, 0",
-          i18n: "survival.board_title",
-          style: {
-            fill_style: "#9b9bff",
-            font: "22px Arial",
-            text_align: "center",
-          },
-        },
-        {
-          id: "rank_period_tabs",
-          pos: "0, 50",
-          center: "0.5, 0",
-          items: [
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
             {
-              id: "survival_rank_period_all",
-              pos: "-105, 0",
-              center: "0.5, 0",
-              i18n: "survival.rank_period_all",
-              actions: {
-                click: ["broadcast(rank_period_set_all)", "sound(ok)"],
-              },
-              style: {
-                fill_style: "#9b9bff",
-                font: "14px Arial",
-                text_align: "center",
-              },
+              "id": "frame",
+              "template": "ui/survival_char_menu_2p.ui.json5"
             },
             {
-              id: "survival_rank_period_month",
-              pos: "-35, 0",
-              center: "0.5, 0",
-              i18n: "survival.rank_period_month",
-              actions: {
-                click: ["broadcast(rank_period_set_month)", "sound(ok)"],
-              },
-              style: {
-                fill_style: "#9b9bff",
-                font: "14px Arial",
-                text_align: "center",
-              },
-            },
-            {
-              id: "survival_rank_period_week",
-              pos: "35, 0",
-              center: "0.5, 0",
-              i18n: "survival.rank_period_week",
-              actions: {
-                click: ["broadcast(rank_period_set_week)", "sound(ok)"],
-              },
-              style: {
-                fill_style: "#9b9bff",
-                font: "14px Arial",
-                text_align: "center",
-              },
-            },
-            {
-              id: "survival_rank_period_day",
-              pos: "105, 0",
-              center: "0.5, 0",
-              i18n: "survival.rank_period_day",
-              actions: {
-                click: ["broadcast(rank_period_set_day)", "sound(ok)"],
-              },
-              style: {
-                fill_style: "#9b9bff",
-                font: "14px Arial",
-                text_align: "center",
-              },
-            },
-          ],
-        },
-        {
-          id: "rank_sel_underline",
-          pos: "0, 0",
-          size: "10, 2",
-          color: "#ffffff",
-          visible: false,
-        },
-        {
-          id: "survival_rank_refresh",
-          pos: "200, 30",
-          center: "1, 0",
-          i18n: "survival.refresh",
-          actions: {
-            click: ["broadcast(rank_refresh)", "sound(ok)"],
-          },
-          style: {
-            fill_style: "#9b9bff",
-            font: "14px Arial",
-            text_align: "center",
-            underline_color: "#9b9bff",
-            underline_width: 1,
-          },
-        },
-        {
-          id: "survival_rank_scroll",
-          pos: "-220, 80",
-          size: "500, 335",
-          component: [
-            {
-              cls: "ScrollView",
-              properties: {
-                direction: "col",
-                content: "survival_rank_list",
-                step: 44,
-              },
-            },
-          ],
-          items: [
-            {
-              id: "survival_rank_list",
-              items: [
+              "id": "board_frame",
+              "pos": "397, 0",
+              "items": [
                 {
-                  id: "rank_row",
-                  size: "440, 36",
-                  visible: false,
-                  count: 100,
-                  items: [
-                    {
-                      id: "rank_row_rank",
-                      pos: "0, 8",
-                      size: "40, 20",
-                      style: {
-                        fill_style: "#ffffff",
-                        font: "16px Arial",
-                        text_align: "left",
-                      },
-                    },
-                    {
-                      id: "rank_row_name",
-                      pos: "125, 0",
-                      size: "190, 20",
-                      style: {
-                        fill_style: "#ffffff",
-                        font: "16px Arial",
-                        text_align: "center",
-                      },
-                    },
-                    {
-                      id: "rank_row_fighter",
-                      pos: "125, 19",
-                      size: "190, 17",
-                      style: {
-                        fill_style: "#9b9bff",
-                        font: "12px Arial",
-                        text_align: "center",
-                      },
-                    },
-                    {
-                      id: "rank_row_score",
-                      pos: "368, 8",
-                      size: "60, 20",
-                      style: {
-                        fill_style: "#ffffff",
-                        font: "16px Arial",
-                        text_align: "right",
-                      },
-                    },
-                  ],
+                  "id": "survival_rank_title",
+                  "pos": "0, 20",
+                  "center": "0.5, 0",
+                  "i18n": "survival.board_title",
+                  "style": {
+                    "fill_style": "#9b9bff",
+                    "font": "22px Arial",
+                    "text_align": "center"
+                  }
                 },
-              ],
-            },
+                {
+                  "id": "rank_period_tabs",
+                  "pos": "0, 50",
+                  "center": "0.5, 0",
+                  "items": [
+                    {
+                      "id": "survival_rank_period_all",
+                      "pos": "-105, 0",
+                      "center": "0.5, 0",
+                      "i18n": "survival.rank_period_all",
+                      "actions": {
+                        "click": [
+                          "broadcast(rank_period_set_all)",
+                          "sound(ok)"
+                        ]
+                      },
+                      "style": {
+                        "fill_style": "#9b9bff",
+                        "font": "14px Arial",
+                        "text_align": "center"
+                      }
+                    },
+                    {
+                      "id": "survival_rank_period_month",
+                      "pos": "-35, 0",
+                      "center": "0.5, 0",
+                      "i18n": "survival.rank_period_month",
+                      "actions": {
+                        "click": [
+                          "broadcast(rank_period_set_month)",
+                          "sound(ok)"
+                        ]
+                      },
+                      "style": {
+                        "fill_style": "#9b9bff",
+                        "font": "14px Arial",
+                        "text_align": "center"
+                      }
+                    },
+                    {
+                      "id": "survival_rank_period_week",
+                      "pos": "35, 0",
+                      "center": "0.5, 0",
+                      "i18n": "survival.rank_period_week",
+                      "actions": {
+                        "click": [
+                          "broadcast(rank_period_set_week)",
+                          "sound(ok)"
+                        ]
+                      },
+                      "style": {
+                        "fill_style": "#9b9bff",
+                        "font": "14px Arial",
+                        "text_align": "center"
+                      }
+                    },
+                    {
+                      "id": "survival_rank_period_day",
+                      "pos": "105, 0",
+                      "center": "0.5, 0",
+                      "i18n": "survival.rank_period_day",
+                      "actions": {
+                        "click": [
+                          "broadcast(rank_period_set_day)",
+                          "sound(ok)"
+                        ]
+                      },
+                      "style": {
+                        "fill_style": "#9b9bff",
+                        "font": "14px Arial",
+                        "text_align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "rank_sel_underline",
+                  "pos": "0, 0",
+                  "size": "10, 2",
+                  "color": "#ffffff",
+                  "visible": false
+                },
+                {
+                  "id": "survival_rank_refresh",
+                  "pos": "200, 30",
+                  "center": "1, 0",
+                  "i18n": "survival.refresh",
+                  "actions": {
+                    "click": [
+                      "broadcast(rank_refresh)",
+                      "sound(ok)"
+                    ]
+                  },
+                  "style": {
+                    "fill_style": "#9b9bff",
+                    "font": "14px Arial",
+                    "text_align": "center",
+                    "underline_color": "#9b9bff",
+                    "underline_width": 1
+                  }
+                },
+                {
+                  "id": "survival_rank_scroll",
+                  "pos": "-220, 80",
+                  "size": "500, 335",
+                  "component": [
+                    {
+                      "cls": "ScrollView",
+                      "properties": {
+                        "direction": "col",
+                        "content": "survival_rank_list",
+                        "step": 44
+                      }
+                    }
+                  ],
+                  "items": [
+                    {
+                      "id": "survival_rank_list",
+                      "items": [
+                        {
+                          "id": "rank_row",
+                          "size": "440, 36",
+                          "visible": false,
+                          "count": 100,
+                          "items": [
+                            {
+                              "id": "rank_row_rank",
+                              "pos": "0, 8",
+                              "size": "40, 20",
+                              "style": {
+                                "fill_style": "#ffffff",
+                                "font": "16px Arial",
+                                "text_align": "left"
+                              }
+                            },
+                            {
+                              "id": "rank_row_name",
+                              "pos": "125, 0",
+                              "size": "190, 20",
+                              "style": {
+                                "fill_style": "#ffffff",
+                                "font": "16px Arial",
+                                "text_align": "center"
+                              }
+                            },
+                            {
+                              "id": "rank_row_fighter",
+                              "pos": "125, 19",
+                              "size": "190, 17",
+                              "style": {
+                                "fill_style": "#9b9bff",
+                                "font": "12px Arial",
+                                "text_align": "center"
+                              }
+                            },
+                            {
+                              "id": "rank_row_score",
+                              "pos": "368, 8",
+                              "size": "60, 20",
+                              "style": {
+                                "fill_style": "#ffffff",
+                                "font": "16px Arial",
+                                "text_align": "right"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "survival_rank_my",
+                  "pos": "0, 422",
+                  "center": "0.5, 0",
+                  "i18n": "survival.my_rank_unranked",
+                  "style": {
+                    "fill_style": "#ffe97f",
+                    "font": "16px Arial",
+                    "text_align": "center"
+                  }
+                }
+              ]
+            }
           ],
-        },
-        {
-          id: "survival_rank_my",
-          pos: "0, 422",
-          center: "0.5, 0",
-          i18n: "survival.my_rank_unranked",
-          style: {
-            fill_style: "#ffe97f",
-            font: "16px Arial",
-            text_align: "center",
-          },
-        },
-      ],
-    },
-  ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

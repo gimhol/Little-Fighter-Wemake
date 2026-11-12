@@ -1,192 +1,224 @@
 {
-  id: "char_menu",
-  name: "UI: 八人框",
-  component: [
+  "id": "char_menu",
+  "name": "UI: 八人框",
+  "component": [
     {
-      id: "CharMenuLogic",
-      cls: "CharMenuLogic",
-      properties: {
-        max_player: 8,
-      },
-    },
+      "id": "CharMenuLogic",
+      "cls": "CharMenuLogic",
+      "properties": {
+        "max_player": 8
+      }
+    }
   ],
-  templates: {
-    player_slot: {
-      items: [
+  "templates": {
+    "player_slot": {
+      "items": [
         {
-          id: "CharMenuHead",
-          size: "120, 120",
-          pos: "0, 0",
-          component: [
+          "id": "CharMenuHead",
+          "size": "120, 120",
+          "pos": "0, 0",
+          "component": [
             {
-              cls: "CharMenuHead",
-              properties: {
-                countdown_label: "countdown_text",
-                hints_node: "hints",
-                head_pic: "head_pic",
-              },
-            },
+              "cls": "CharMenuHead",
+              "properties": {
+                "countdown_label": "countdown_text",
+                "hints_node": "hints",
+                "head_pic": "head_pic"
+              }
+            }
           ],
-          items: [
+          "items": [
             {
-              id: "head",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              size: "120, 120",
-              component: [{ id: "head_pic", cls: "Picture" }],
+              "id": "head",
+              "pos": "60, 60",
+              "center": "0.5,0.5",
+              "size": "120, 120",
+              "component": [
+                {
+                  "id": "head_pic",
+                  "cls": "Picture"
+                }
+              ]
             },
             {
-              id: "hints",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              img: {
-                path: "!sprite/CMA@4x.png",
-                w: 120,
-                h: 66,
-              },
+              "id": "hints",
+              "pos": "60, 60",
+              "center": "0.5,0.5",
+              "img": {
+                "path": "!sprite/CMA@4x.png",
+                "w": 120,
+                "h": 66
+              }
             },
             {
-              id: "countdown_text",
-              pos: "60, 60",
-              center: "0.5,0.5",
-              visible: false,
-              i18n: "5",
-              style: {
-                font: '90px "Arial Black", Arial',
-              },
-            },
+              "id": "countdown_text",
+              "pos": "60, 60",
+              "center": "0.5,0.5",
+              "visible": false,
+              "i18n": "5",
+              "style": {
+                "font": "90px \"Arial Black\", Arial"
+              }
+            }
+          ]
+        },
+        {
+          "id": "player_name",
+          "size": "120, 19",
+          "pos": "60, 133",
+          "center": "0.5, 0.5",
+          "component": [
+            "PlayerName()"
           ],
+          "style": {
+            "font": "14px Arial"
+          }
         },
         {
-          id: "player_name",
-          size: "120, 19",
-          pos: "60, 133",
-          center: "0.5, 0.5",
-          component: ["PlayerName()"],
-          style: {
-            font: "14px Arial",
-          },
+          "id": "FighterName",
+          "size": "120, 19",
+          "pos": "60, 155",
+          "center": "0.5, 0.5",
+          "component": [
+            "FighterName()"
+          ],
+          "style": {
+            "font": "14px Arial"
+          }
         },
         {
-          id: "FighterName",
-          size: "120, 19",
-          pos: "60, 155",
-          center: "0.5, 0.5",
-          component: ["FighterName()"],
-          style: {
-            font: "14px Arial",
-          },
-        },
-        {
-          id: "player_team",
-          size: "120, 19",
-          pos: "60, 177",
-          center: "0.5, 0.5",
-          component: ["PlayerTeamName()"],
-          style: {
-            font: "14px Arial",
-          },
-        },
-      ],
+          "id": "player_team",
+          "size": "120, 19",
+          "pos": "60, 177",
+          "center": "0.5, 0.5",
+          "component": [
+            "PlayerTeamName()"
+          ],
+          "style": {
+            "font": "14px Arial"
+          }
+        }
+      ]
     },
-    prefix_1: {
-      pos: "-230, 133",
-      center: "1, 0.5",
-      i18n: "char_menu.player_colon",
-      style: {
-        font: "12px Arial",
-      },
+    "prefix_1": {
+      "pos": "-230, 133",
+      "center": "1, 0.5",
+      "i18n": "char_menu.player_colon",
+      "style": {
+        "font": "12px Arial"
+      }
     },
-    prefix_2: {
-      pos: "-230, 155",
-      center: "1, 0.5",
-      i18n: "char_menu.fighter_colon",
-      style: {
-        font: "12px Arial",
-      },
+    "prefix_2": {
+      "pos": "-230, 155",
+      "center": "1, 0.5",
+      "i18n": "char_menu.fighter_colon",
+      "style": {
+        "font": "12px Arial"
+      }
     },
-    prefix_3: {
-      pos: "-230, 177",
-      center: "1, 0.5",
-      i18n: "char_menu.team_colon",
-      style: {
-        font: "12px Arial",
-      },
-    },
+    "prefix_3": {
+      "pos": "-230, 177",
+      "center": "1, 0.5",
+      "i18n": "char_menu.team_colon",
+      "style": {
+        "font": "12px Arial"
+      }
+    }
   },
-  items: [
+  "items": [
     {
-      size: "599, 406",
-      pos: "397, 225",
-      center: "0.5, 0.5",
-      img: {
-        path: "!sprite/CHARMENU.png",
-        w: 599,
-        h: 406,
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-      items: [
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          id: "players_row_1",
-          pos: "0,-192",
-          items: [
-            "prefix_1",
-            "prefix_2",
-            "prefix_3",
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
             {
-              id: "player_layout_0",
-              pos: "-227,0",
-              template: "player_slot",
-            },
-            {
-              id: "player_layout_1",
-              pos: "-98,0",
-              template: "player_slot",
-            },
-            {
-              id: "player_layout_2",
-              pos: "31,0",
-              template: "player_slot",
-            },
-            {
-              id: "player_layout_3",
-              pos: "160,0",
-              template: "player_slot",
-            },
-          ],
-        },
-        {
-          id: "players_row_2",
-          pos: "0,5",
-          items: [
-            "prefix_1",
-            "prefix_2",
-            "prefix_3",
-            {
-              id: "player_layout_4",
-              pos: "-227,0",
-              template: "player_slot",
-            },
-            {
-              id: "player_layout_5",
-              pos: "-98,0",
-              template: "player_slot",
-            },
-            {
-              id: "player_layout_6",
-              pos: "31,0",
-              template: "player_slot",
-            },
-            {
-              id: "player_layout_7",
-              pos: "160,0",
-              values: {
-                player_id: "8",
+              "size": "599, 406",
+              "pos": "397, 225",
+              "center": "0.5, 0.5",
+              "img": {
+                "path": "!sprite/CHARMENU.png",
+                "w": 599,
+                "h": 406
               },
-              template: "player_slot",
-            },
+              "items": [
+                {
+                  "id": "players_row_1",
+                  "pos": "0,-192",
+                  "items": [
+                    "prefix_1",
+                    "prefix_2",
+                    "prefix_3",
+                    {
+                      "id": "player_layout_0",
+                      "pos": "-227,0",
+                      "template": "player_slot"
+                    },
+                    {
+                      "id": "player_layout_1",
+                      "pos": "-98,0",
+                      "template": "player_slot"
+                    },
+                    {
+                      "id": "player_layout_2",
+                      "pos": "31,0",
+                      "template": "player_slot"
+                    },
+                    {
+                      "id": "player_layout_3",
+                      "pos": "160,0",
+                      "template": "player_slot"
+                    }
+                  ]
+                },
+                {
+                  "id": "players_row_2",
+                  "pos": "0,5",
+                  "items": [
+                    "prefix_1",
+                    "prefix_2",
+                    "prefix_3",
+                    {
+                      "id": "player_layout_4",
+                      "pos": "-227,0",
+                      "template": "player_slot"
+                    },
+                    {
+                      "id": "player_layout_5",
+                      "pos": "-98,0",
+                      "template": "player_slot"
+                    },
+                    {
+                      "id": "player_layout_6",
+                      "pos": "31,0",
+                      "template": "player_slot"
+                    },
+                    {
+                      "id": "player_layout_7",
+                      "pos": "160,0",
+                      "values": {
+                        "player_id": "8"
+                      },
+                      "template": "player_slot"
+                    }
+                  ]
+                }
+              ]
+            }
           ],
-        },
-      ],
-    },
-  ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

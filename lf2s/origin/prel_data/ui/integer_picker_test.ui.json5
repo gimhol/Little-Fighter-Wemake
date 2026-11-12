@@ -1,90 +1,124 @@
 {
-  id: "integer_picker_test",
-  name: "integer_picker_test",
-  color: "red",
-  items: [
+  "id": "integer_picker_test",
+  "name": "integer_picker_test",
+  "color": "red",
+  "items": [
     {
-      id: "click_integer_picker",
-      name: "click_integer_picker",
-      pos: "0,100",
-      center: "0,0",
-      i18n: "0",
-      style: {
-        fill_style: "white",
-        font: '90px "Arial Black", Arial',
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-      component: [
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          cls: "IntegerPicker",
-          properties: { min: 0, max: 8, val: 8 },
-        },
-      ],
-    },
-    {
-      id: "aj_integer_picker",
-      name: "aj_integer_picker",
-      pos: "100,100",
-      center: "0,0",
-      i18n: "0",
-      style: {
-        fill_style: "white",
-        font: '90px "Arial Black", Arial',
-      },
-      component: [
-        {
-          cls: "IntegerPicker",
-          properties: {
-            min: 0,
-            max: 8,
-            val: 8,
-            triggers: ["aj", "no-focused"],
-          },
-        },
-      ],
-    },
-    {
-      id: "ud_integer_picker",
-      name: "ud_integer_picker",
-      pos: "200,100",
-      center: "0,0",
-      i18n: "0",
-      style: {
-        fill_style: "white",
-        font: '90px "Arial Black", Arial',
-      },
-      component: [
-        {
-          cls: "IntegerPicker",
-          properties: {
-            min: 0,
-            max: 8,
-            val: 8,
-            triggers: ["ud", "no-focused"],
-          },
-        },
-      ],
-    },
-    {
-      id: "lr_integer_picker",
-      name: "lr_integer_picker",
-      pos: "300,100",
-      center: "0,0",
-      i18n: "0",
-      style: {
-        fill_style: "white",
-        font: '90px "Arial Black", Arial',
-      },
-      component: [
-        {
-          cls: "IntegerPicker",
-          properties: {
-            min: 0,
-            max: 8,
-            val: 8,
-            triggers: ["lr", "no-focused"],
-          },
-        },
-      ],
-    },
-  ],
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "id": "click_integer_picker",
+              "name": "click_integer_picker",
+              "pos": "0,100",
+              "center": "0,0",
+              "i18n": "0",
+              "style": {
+                "fill_style": "white",
+                "font": "90px \"Arial Black\", Arial"
+              },
+              "component": [
+                {
+                  "cls": "IntegerPicker",
+                  "properties": {
+                    "min": 0,
+                    "max": 8,
+                    "val": 8
+                  }
+                }
+              ]
+            },
+            {
+              "id": "aj_integer_picker",
+              "name": "aj_integer_picker",
+              "pos": "100,100",
+              "center": "0,0",
+              "i18n": "0",
+              "style": {
+                "fill_style": "white",
+                "font": "90px \"Arial Black\", Arial"
+              },
+              "component": [
+                {
+                  "cls": "IntegerPicker",
+                  "properties": {
+                    "min": 0,
+                    "max": 8,
+                    "val": 8,
+                    "triggers": [
+                      "aj",
+                      "no-focused"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "ud_integer_picker",
+              "name": "ud_integer_picker",
+              "pos": "200,100",
+              "center": "0,0",
+              "i18n": "0",
+              "style": {
+                "fill_style": "white",
+                "font": "90px \"Arial Black\", Arial"
+              },
+              "component": [
+                {
+                  "cls": "IntegerPicker",
+                  "properties": {
+                    "min": 0,
+                    "max": 8,
+                    "val": 8,
+                    "triggers": [
+                      "ud",
+                      "no-focused"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "lr_integer_picker",
+              "name": "lr_integer_picker",
+              "pos": "300,100",
+              "center": "0,0",
+              "i18n": "0",
+              "style": {
+                "fill_style": "white",
+                "font": "90px \"Arial Black\", Arial"
+              },
+              "component": [
+                {
+                  "cls": "IntegerPicker",
+                  "properties": {
+                    "min": 0,
+                    "max": 8,
+                    "val": 8,
+                    "triggers": [
+                      "lr",
+                      "no-focused"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

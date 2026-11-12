@@ -38,11 +38,11 @@ export class GameModeFSMState_End<C extends FSMComponent = FSMComponent> extends
       this.lfw.sounds.play_preset("pass");
     else
       this.lfw.sounds.play_preset("end");
-    const score_board = this.node.find_child("score_board");
+    const score_board = this.node.search_node("score_board");
     score_board?.set_visible(true);
   }
   override leave(): void {
-    const score_board = this.node.find_child("score_board");
+    const score_board = this.node.search_node("score_board");
     score_board?.set_visible(false);
   }
 }

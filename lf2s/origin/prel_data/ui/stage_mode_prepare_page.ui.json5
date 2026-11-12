@@ -1,31 +1,52 @@
 {
-  name: "页面：闯关模式准备页",
-  id: "stage_mode_prepare_page",
-  color: "rgba(0, 0, 0, 0.5)",
-  component: [
+  "name": "页面：闯关模式准备页",
+  "id": "stage_mode_prepare_page",
+  "color": "rgba(0, 0, 0, 0.5)",
+  "component": [
     {
-      cls: "GamePrepareLogic",
-      properties: {
-        game_mode: "stage_mode",
-        stage_switcher: "StageSwitcher",
-        bg_switcher: "BackgroundSwitcher",
+      "cls": "GamePrepareLogic",
+      "properties": {
+        "game_mode": "stage_mode",
+        "stage_switcher": "StageSwitcher",
+        "bg_switcher": "BackgroundSwitcher"
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-    },
-  ],
-  items: [
-    {
-      id: "frame",
-      template: "ui/char_menu.ui.json5",
-    },
-    {
-      id: "how_many_computer",
-      template: "ui/how_many_computer.ui.json5",
-      visible: false,
-    },
-    {
-      id: "game_settings_menu",
-      template: "ui/game_prepare_menu.ui.json5",
-      visible: false,
-    },
-  ],
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "id": "frame",
+              "template": "ui/char_menu.ui.json5"
+            },
+            {
+              "id": "how_many_computer",
+              "template": "ui/how_many_computer.ui.json5",
+              "visible": false
+            },
+            {
+              "id": "game_settings_menu",
+              "template": "ui/game_prepare_menu.ui.json5",
+              "visible": false
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ]
 }

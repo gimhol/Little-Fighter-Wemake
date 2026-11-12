@@ -20,6 +20,7 @@ export * from "./alignment";
 export * from "./flex_layout";
 export * from "./flex_style";
 export * from "./cook_ui_info";
+export * from "./cover_scale";
 export * from "./read_info_value";
 export * from "./ui_load_img";
 export * from "./xml_to_ui_info";

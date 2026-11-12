@@ -1,85 +1,165 @@
 {
-  name: "页面：Demo加载页",
-  id: "demo_loading",
-  actions: { start: "load_data()" },
-  items: [
+  "name": "页面：Demo加载页",
+  "id": "demo_loading",
+  "actions": {
+    "start": "load_data()"
+  },
+  "items": [
     {
-      id: "bg_wait",
-      img: {
-        path: "!sprite/MENU_WAIT_SHORT.png",
-        w: 794,
-        h: 450,
+      "id": "bg_center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
-    },
-    {
-      id: "now_loading_text",
-      i18n: "now_loading",
-      style: {
-        font: "16px Arial",
-        text_align: "center",
-      },
-      pos: "10,400",
-      center: "0,0",
-    },
-    {
-      id: "main_title",
-      img: {
-        path: "!sprite/MENU_CLIP.png",
-        x: 40,
-        y: 41,
-        w: 456,
-        h: 80,
-      },
-      center: "0, 0",
-      pos: "10,10",
-      opacity: 0.3,
-    },
-    {
-      id: "loading_content_row",
-      flex: "display:flex; direction:row; align:center; gap:4; fit:true",
-      pos: "10,420",
-      center: "0,0",
-      items: [
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
         {
-          id: "loading_content_prefix",
-          i18n: "loading:",
-          style: {
-            font: "16px Arial",
+          "id": "bg_wait",
+          "img": {
+            "path": "!sprite/MENU_WAIT_SHORT.png",
+            "w": 794,
+            "h": 450
           },
+          "center": "0.5,0.5",
+          "component": [
+            {
+              "cls": "CoverImage",
+              "properties": {
+                "design_w": 794,
+                "design_h": 450,
+                "target": "root"
+              }
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    },
+    {
+      "id": "now_loading_text",
+      "i18n": "now_loading",
+      "style": {
+        "font": "16px Arial",
+        "text_align": "center"
+      },
+      "center": "0,0",
+      "alignment": {
+        "left": "left",
+        "bottom": "bottom",
+        "offset": {
+          "l": 10,
+          "b": -30
+        }
+      }
+    },
+    {
+      "id": "main_title",
+      "img": {
+        "path": "!sprite/MENU_CLIP.png",
+        "x": 40,
+        "y": 41,
+        "w": 456,
+        "h": 80
+      },
+      "center": "0, 0",
+      "opacity": 0.3,
+      "alignment": {
+        "left": "left",
+        "top": "top",
+        "offset": {
+          "l": 10,
+          "t": 10
+        }
+      }
+    },
+    {
+      "id": "loading_content_row",
+      "flex": "display:flex; direction:row; align:center; gap:4; fit:true",
+      "center": "0,0",
+      "items": [
+        {
+          "id": "loading_content_prefix",
+          "i18n": "loading:",
+          "style": {
+            "font": "16px Arial"
+          }
         },
         {
-          id: "txt_loading_content",
-          component: [ "LoadingContentText(demo_mode_page)" ],
-          i18n: "",
-          style: {
-            font: "16px Arial",
-            disposable: true,
-          },
-        },
+          "id": "txt_loading_content",
+          "component": [
+            "LoadingContentText(demo_mode_page)"
+          ],
+          "i18n": "",
+          "style": {
+            "font": "16px Arial",
+            "disposable": true
+          }
+        }
       ],
+      "alignment": {
+        "left": "left",
+        "bottom": "bottom",
+        "offset": {
+          "l": 10,
+          "b": -10
+        }
+      }
     },
     {
-      id: "stage_transition",
-      component: [ "StageTransitions()" ],
+      "id": "stage_transition",
+      "component": [
+        "StageTransitions()"
+      ]
     },
     {
-      id: "demo_play_link",
-      i18n: "Click here to visit & play it: https://lf.gim.ink",
-      outlineColor: "#005A8E",
-      outlineWidth: 1,
-      outlineAlpha: 1,
-      style: {
-        underline_color: "white",
-        underline_width: 1,
-        font: "9px Arial",
+      "id": "demo_play_link",
+      "i18n": "Click here to visit & play it: https://lf.gim.ink",
+      "outlineColor": "#005A8E",
+      "outlineWidth": 1,
+      "outlineAlpha": 1,
+      "style": {
+        "underline_color": "white",
+        "underline_width": 1,
+        "font": "9px Arial"
       },
-      center: "0.5, 0",
-      pos: "400, 0",
-      actions: {
-        click: [ "sound(ok)", "link_to(https://lf.gim.ink)" ],
+      "center": "0.5, 0",
+      "actions": {
+        "click": [
+          "sound(ok)",
+          "link_to(https://lf.gim.ink)"
+        ]
       },
+      "alignment": {
+        "left": "mid",
+        "top": "top"
+      }
     },
-    "builtin_data/launch/version_name.ui.json",
-    "builtin_data/launch/extra_zips.ui.json",
-  ],
+    {
+      "template": "builtin_data/launch/version_name.ui.json",
+      "pos": "1,449,1",
+      "alignment": {
+        "left": "left",
+        "bottom": "bottom",
+        "offset": {
+          "l": 1,
+          "b": -1
+        }
+      }
+    },
+    {
+      "template": "builtin_data/launch/extra_zips.ui.json",
+      "pos": "792,449,1",
+      "alignment": {
+        "right": "right",
+        "bottom": "bottom",
+        "offset": {
+          "r": -2,
+          "b": -1
+        }
+      }
+    }
+  ]
 }

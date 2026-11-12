@@ -1,53 +1,83 @@
 {
-  name: "页面：结束语页",
-  id: "ending_page",
-  values: {
-    txt_style: {
-      fill_style: "white",
-      font: "14px Monospace, Arial",
-    },
+  "name": "页面：结束语页",
+  "id": "ending_page",
+  "values": {
+    "txt_style": {
+      "fill_style": "white",
+      "font": "14px Monospace, Arial"
+    }
   },
-  component: [
+  "component": [
     {
-      cls: "EndingPageLogic",
-      properties: { label: "label", jalousie: "jalousie" },
-    },
+      "cls": "EndingPageLogic",
+      "properties": {
+        "label": "label",
+        "jalousie": "jalousie"
+      }
+    }
   ],
-  templates: {
-    shutter_item: {
-      color: "rgb(0, 0, 0)",
-      size: "10,10",
-      pos: "0,0,2",
-    },
+  "templates": {
+    "shutter_item": {
+      "color": "rgb(0, 0, 0)",
+      "size": "10,10",
+      "pos": "0,0,2"
+    }
   },
-  items: [
+  "items": [
     {
-      id: "label",
-      i18n: "   ",
-      style: "$val:txt_style",
-      center: "0.5,0.5",
-      pos: "397, 225",
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "id": "label",
+              "i18n": "   ",
+              "style": "$val:txt_style",
+              "center": "0.5,0.5",
+              "pos": "397, 225"
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
     },
     {
-      size: "794,450",
-      component: [
+      "size": "794,450",
+      "component": [
         {
-          id: "jalousie",
-          cls: "Jalousie",
-          properties: {
-            direction: "column",
-            align: "stretch",
-            open: true,
-            end: true,
-          },
-        },
+          "id": "jalousie",
+          "cls": "Jalousie",
+          "properties": {
+            "direction": "column",
+            "align": "stretch",
+            "open": true,
+            "end": true
+          }
+        }
       ],
-      items: [
+      "items": [
         {
-          count: 46,
-          template: "shutter_item",
-        },
+          "count": 46,
+          "template": "shutter_item"
+        }
       ],
-    },
-  ],
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      }
+    }
+  ]
 }

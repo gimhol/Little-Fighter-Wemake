@@ -1,60 +1,107 @@
 {
-  name: "页面：对战模式",
-  id: "vs_mode_page",
-  component: ["SummaryLogic()", "VsModeLogic()", { cls: "WeaponRain", properties: { groups: "VsWeapon" } }],
-  items: [
+  "name": "页面：对战模式",
+  "id": "vs_mode_page",
+  "component": [
+    "SummaryLogic()",
+    "VsModeLogic()",
     {
-      pos: "0, 10",
-      template: "ui/fighter_stat_1v1.ui.json5",
-    },
-    {
-      pos: "0, 10",
-      template: "ui/fighter_stat_s_x8.ui.json5",
-    },
-    {
-      template: "ui/fn_key_counts_row.ui.json5",
-    },
-    {
-      pos: "0,0,5",
-      visible: false,
-      template: "ui/player_keys_hints.ui.json5",
-    },
-    "ui/center_pause_label.ui.json5",
-    {
-      pos: "397,0",
-      center: "0.5,0",
-      component: ["StageTitleText()"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-        padding_t: 2,
-      },
-    },
-    {
-      pos: "794,450",
-      center: "1,1",
-      component: ["PrefixAndDifficultyText(VS mode)"],
-      style: {
-        fill_style: "white",
-        font: "12px Arial",
-        line_width: 1,
-      },
-    },
-    {
-      template: "ui/score_board.ui.json5",
-      visible: false,
-    },
-    {
-      id: "bgm_switcher",
-      center: "0,1",
-      pos: "0, 450",
-      i18n: "",
-      style: { fill_style: "white" },
-      component: [{ cls: "BGMSwitcher", args: [0] }, "OpacityHover(0.7,1)"],
-    },
+      "cls": "WeaponRain",
+      "properties": {
+        "groups": "VsWeapon"
+      }
+    }
   ],
-  actions: {
-    stop: ["remove_all_entities()", "destory_stage()"],
-  },
+  "items": [
+    {
+      "id": "__center",
+      "size": "794,450",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      },
+      "flex": "display:flex; direction:row; justify:center; align:center",
+      "items": [
+        {
+          "id": "__design",
+          "size": "794,450",
+          "center": "0,0",
+          "items": [
+            {
+              "pos": "0, 10",
+              "template": "ui/fighter_stat_1v1.ui.json5"
+            },
+            {
+              "pos": "0, 10",
+              "template": "ui/fighter_stat_s_x8.ui.json5"
+            },
+            {
+              "template": "ui/fn_key_counts_row.ui.json5"
+            },
+            {
+              "pos": "0,0,5",
+              "visible": false,
+              "template": "ui/player_keys_hints.ui.json5"
+            },
+            "ui/center_pause_label.ui.json5",
+            {
+              "pos": "397,0",
+              "center": "0.5,0",
+              "component": [
+                "StageTitleText()"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1,
+                "padding_t": 2
+              }
+            },
+            {
+              "pos": "794,450",
+              "center": "1,1",
+              "component": [
+                "PrefixAndDifficultyText(VS mode)"
+              ],
+              "style": {
+                "fill_style": "white",
+                "font": "12px Arial",
+                "line_width": 1
+              }
+            },
+            {
+              "template": "ui/score_board.ui.json5",
+              "visible": false
+            },
+            {
+              "id": "bgm_switcher",
+              "center": "0,1",
+              "pos": "0, 450",
+              "i18n": "",
+              "style": {
+                "fill_style": "white"
+              },
+              "component": [
+                {
+                  "cls": "BGMSwitcher",
+                  "args": [
+                    0
+                  ]
+                },
+                "OpacityHover(0.7,1)"
+              ]
+            }
+          ],
+          "flex": "shrink:0"
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "stop": [
+      "remove_all_entities()",
+      "destory_stage()"
+    ]
+  }
 }

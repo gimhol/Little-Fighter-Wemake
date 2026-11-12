@@ -15,6 +15,7 @@ export const regist_components = () => {
     _.CharMenuLogic,
     _.ChatLogic,
     _.ComponentsPlayer,
+    _.CoverImage,
     _.DanmuGameLogic,
     _.DemoModeLogic,
     _.Dialogs,
