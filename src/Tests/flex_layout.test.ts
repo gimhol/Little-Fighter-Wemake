@@ -345,6 +345,22 @@ describe("apply_flex_layout", () => {
     expect(b.x).toBeCloseTo(105);
   });
 
+  test("fit 在未设尺寸的容器上按内容撑开", () => {
+    const a = stub_child({ w: 100, h: 20 });
+    const b = stub_child({ w: 30, h: 20 });
+    const container = stub_container({
+      flex: "display:flex; align:start; fit:true",
+      w: 0,
+      h: 0,
+      children: [a, b],
+    });
+    apply_flex_layout(container);
+    expect(container.w).toBeCloseTo(130);
+    expect(container.h).toBeCloseTo(20);
+    expect(a.x).toBeCloseTo(0);
+    expect(b.x).toBeCloseTo(100);
+  });
+
   test("fit 子项不会被 stretch 拉伸", () => {
     const child = stub_child({ h: 20, stretchable: true });
     child.flex.fit_h = true;
