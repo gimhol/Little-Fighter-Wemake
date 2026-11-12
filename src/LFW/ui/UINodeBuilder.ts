@@ -60,6 +60,7 @@ export class UINodeBuilder {
     node.pos.set(...info.pos);
     if (info.size) node.size.set(...info.size);
     node.stretchable = !info.size;
+    node.follow_screen = info.follow_screen === true;
     node.scale.set(...info.scale);
     node.flex.assign(info.flex);
     if (info.style) node.style.assign(info.style);

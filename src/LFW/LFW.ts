@@ -409,8 +409,10 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     this.pointings.set_screen_size(this.world.view_w, this.world.view_h);
     this.world.callbacks.add({
       on_dataset_change: (k) => {
-        if (k === 'screen_w' || k === 'screen_h')
+        if (k === 'screen_w' || k === 'screen_h') {
           this.pointings.set_screen_size(this.world.view_w, this.world.view_h);
+          this.layers?.resize_follow_screen();
+        }
       },
     });
     this.world.start_update();

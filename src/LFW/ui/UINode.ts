@@ -77,6 +77,7 @@ export class UINode implements IDebugging {
   protected _auto_size_key?: string;
   auto_focus: boolean = false;
   stretchable: boolean = false;
+  follow_screen: boolean = false;
 
   get text(): TextInfo | null { return this._text; }
   set text(v: TextInfo | null) {

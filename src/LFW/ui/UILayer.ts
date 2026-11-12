@@ -346,6 +346,20 @@ export class UILayers {
     this._all.push(ret)
     return ret;
   }
+  resize_follow_screen(): void {
+    const { world } = this.lfw;
+    const w = Math.max(1, Math.round(world.view_w));
+    const h = Math.max(1, Math.round(world.view_h));
+    const x = -world.ui_left;
+    const y = -world.ui_top;
+    for (const layer of this._all) {
+      for (const page of layer.pages) {
+        if (!page.follow_screen) continue;
+        if (page.w !== w || page.h !== h) page.resize(w, h);
+        if (page.x !== x || page.y !== y) page.move_to(x, y, page.z);
+      }
+    }
+  }
   ensure(index: number): UILayer {
     let ret = this._all[index]
     if (!ret) ret = this._all[index] = new UILayer(this.lfw, index)
