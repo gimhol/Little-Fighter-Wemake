@@ -153,10 +153,24 @@ export class World {
   on_dataset_change(k: string, curr: any, prev: any) {
     if (k === 'render_w' || k === 'render_h')
       this.renderer.set_render_resolution?.(this.dataset.render_w, this.dataset.render_h);
+    else if (k === 'screen_w' || k === 'screen_h')
+      this.renderer.set_view_size?.(this.dataset.screen_w, this.dataset.screen_h);
     this.callbacks.call('on_dataset_change', k as any, curr, prev, this)
   };
+  apply_render_resolution(w: number, h: number): this {
+    this.dataset.render_w = w;
+    this.dataset.render_h = h;
+    const viewport = Defines.resolution_viewport(w, h);
+    if (viewport) {
+      this.dataset.screen_w = viewport.w;
+      this.dataset.screen_h = viewport.h;
+    }
+    return this;
+  }
   get view_w(): number { return this.dataset.screen_w }
   get view_h(): number { return this.dataset.screen_h }
+  get design_view_w(): number { return Defines.SAFE_SCREEN_WIDTH / (this.bg.zoom_x || 1) }
+  get design_view_h(): number { return Defines.SAFE_SCREEN_HEIGHT / (this.bg.zoom_y || 1) }
   get ui_left(): number { return (this.view_w - Defines.SAFE_SCREEN_WIDTH) / 2 }
   get ui_top(): number { return (this.view_h - Defines.SAFE_SCREEN_HEIGHT) / 2 }
   ui_from_scene(sx: number, sy: number): { x: number; y: number } {
@@ -686,10 +700,9 @@ export class World {
     let local_count = 0;
     let human_count = 0;
     let fighter_count = 0;
-    // 可见宽度 = screen / zoom（bg 的 zoom 会缩放世界）；镜头记录的是视口左边缘
-    const view_w = this.dataset.screen_w / (this.bg.zoom_x || 1)
+    const view_w = this.design_view_w
     // 前瞻量：固定世界距离（不随 zoom 缩放，zoom 越大屏幕上前瞻越明显）
-    const lead = this.dataset.screen_w / 6
+    const lead = Defines.SAFE_SCREEN_WIDTH / 6
     const entities = this.entities;
     const ghosts = this.ghosts;
     for (let i = 0; i < entities.length; i++) {
@@ -798,10 +811,9 @@ export class World {
       }
     }
 
-    // y 的偏移在写入时补（z 的采样不含半屏）；可见高度 = screen / zoom
     // 高地图（bg.height 超过经典屏高）用“角色平均高度”驱动镜头 Y，让相机能上下跟；
     // 普通/老地图沿用 z 深度（经典数据里 far 承载了纵向范围，保持原行为）
-    const half_h = this.dataset.screen_h / (2 * (this.bg.zoom_y || 1))
+    const half_h = this.design_view_h / 2
     const use_y = (this.bg.data.dataset?.cam_y_follow ?? 0) > 0;
     let cam_x = NaN;
     let cam_z = 0;

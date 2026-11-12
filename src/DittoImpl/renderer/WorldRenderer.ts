@@ -87,6 +87,28 @@ export class WorldRenderer implements IWorldRenderer {
     this.apply_render_resolution();
   }
 
+  set_view_size(w: number, h: number): void {
+    const vw = Math.max(1, Math.round(w || 0));
+    const vh = Math.max(1, Math.round(h || 0));
+    const cameras: OrthographicCamera[] = [
+      this.camera as OrthographicCamera,
+      this.bg_camera,
+      this.fg_camera,
+      this.ui_bg_camera,
+      this.ui_fg_camera,
+    ];
+    for (let i = 0; i < cameras.length; i++) {
+      const camera = cameras[i];
+      camera.left = 0;
+      camera.right = vw;
+      camera.top = vh;
+      camera.bottom = 0;
+      camera.updateProjectionMatrix();
+    }
+    this.cursor_render?.set_view_size(vw, vh);
+    this.on_win_resize();
+  }
+
   protected apply_render_resolution(): void {
     const { w, h } = this.resolve_render_size();
     if (w === this.renderer_w && h === this.renderer_h) return;
@@ -257,12 +279,22 @@ export class WorldRenderer implements IWorldRenderer {
     }
 
     this.camera.position.lerpVectors(this.cam_p0, this.cam_p1, this.dfactor)
+    const design_x = this.camera.position.x;
+    const design_y = this.camera.position.y;
+    const design_z = this.camera.position.z;
+    const zoom_x = this.world.bg.zoom_x || 1;
+    const zoom_y = this.world.bg.zoom_y || 1;
+    this.camera.position.set(
+      design_x - this.world.ui_left / zoom_x,
+      design_y - this.world.ui_top / zoom_y,
+      design_z
+    );
     this.bg_camera.position.copy(this.camera.position);
     this.fg_camera.position.copy(this.camera.position);
-    this.ui_bg_camera.position.copy(this.camera.position);
-    this.ui_fg_camera.position.copy(this.camera.position);
-    const ui_x = this.camera.position.x + this.world.ui_left + this.ui_offset.x;
-    const ui_y = this.camera.position.y + this.world.view_h - this.world.ui_top + this.ui_offset.y;
+    this.ui_bg_camera.position.set(design_x, design_y, design_z);
+    this.ui_fg_camera.position.set(design_x, design_y, design_z);
+    const ui_x = design_x + this.world.ui_left + this.ui_offset.x;
+    const ui_y = design_y + this.world.view_h - this.world.ui_top + this.ui_offset.y;
     this.ui_bg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     this.ui_fg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     const { dataset: { entity_flags }, transform } = this.world;

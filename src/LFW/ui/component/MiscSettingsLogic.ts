@@ -55,6 +55,7 @@ export class MiscSettingsLogic extends UIComponent {
     this.lfw.sounds.callbacks.add(this.cbs)
     this.lfw.world.callbacks.add(this.cbs2)
     this.lfw.callbacks.add(this.cbs3)
+    this.render_resolution?.set_items(Defines.RENDER_RESOLUTION_PRESETS.map(v => v.label));
     this.main_volume?.on_value_changed((_, s) => {
       this.lfw.sounds.set_volume(s.factor)
       this.lfw.sounds.play_preset('cancel')
@@ -106,8 +107,7 @@ export class MiscSettingsLogic extends UIComponent {
     })
     this.render_resolution?.on_value_changed((v) => {
       const preset = Defines.RENDER_RESOLUTION_PRESETS[v] ?? Defines.RENDER_RESOLUTION_PRESETS[0];
-      this.world.dataset.render_w = preset.w;
-      this.world.dataset.render_h = preset.h;
+      this.world.apply_render_resolution(preset.w, preset.h);
       this.lfw.sounds.play_preset('ok')
     })
   }

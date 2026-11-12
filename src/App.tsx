@@ -369,8 +369,10 @@ function App() {
   useCallbacks(lfw?.world.callbacks, {
     on_stage_change: (s) => _set_bg_id(s.bg.id),
     on_pause_change: (v) => _set_paused(v),
-    on_dataset_change: (key, value) => {
-      if (aspect_override && (key === 'screen_w' || key === 'screen_h')) return;
+    on_dataset_change: (key, value, _prev, world) => {
+      if (key === 'screen_w' || key === 'screen_h')
+        set_viewport({ w: world.view_w, h: world.view_h });
+      if (aspect_override && (key === 'screen_w' || key === 'screen_h' || key === 'render_w' || key === 'render_h')) return;
       set_world_dataset(d => { d[key] = value })
     },
   })
@@ -434,6 +436,15 @@ function App() {
       // 视口以建实例时传入的尺寸为准（`?aspect=` 覆盖 / 存档值），并让 UI 居中于安全区
       lfw.world.dataset.screen_w = desired_viewport.w;
       lfw.world.dataset.screen_h = desired_viewport.h;
+      if (aspect_override) {
+        const { render_w, render_h } = lfw.world.dataset;
+        const view_aspect = desired_viewport.w / desired_viewport.h;
+        if (render_w > 0 && render_h > 0 &&
+          Math.abs(render_w / render_h - view_aspect) / view_aspect > 0.01) {
+          lfw.world.dataset.render_w = 0;
+          lfw.world.dataset.render_h = 0;
+        }
+      }
       set_viewport(desired_viewport);
       _set_bg_id(lfw.world.stage.bg.id);
       const on_touchstart = () => set_app_state(d => {

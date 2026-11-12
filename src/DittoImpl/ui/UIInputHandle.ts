@@ -122,7 +122,7 @@ export class UIInputHandle implements IUIInputHandle {
   protected intersections(x: number, y: number, ui: UINode): IIntersection[] {
     this.pointer_vec_2.x = x;
     this.pointer_vec_2.y = y;
-    this.pointer_raycaster.setFromCamera(this.pointer_vec_2, this.world_renderer.camera);
+    this.pointer_raycaster.setFromCamera(this.pointer_vec_2, this.world_renderer.ui_fg_camera);
     const ui_sprite = (ui.renderer as UINodeRenderer).mesh
 
     const ret: IIntersection[] = [];

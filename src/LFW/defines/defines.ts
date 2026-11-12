@@ -70,33 +70,36 @@ export namespace Defines {
     h: number;
     /** 展示名：i18n key 或字面量 */
     label: string;
+    aspect?: string;
+  }
+  function resolution(w: number, h: number, aspect: string): IRenderResolutionPreset {
+    return { w, h, aspect, label: `${w}×${h} (${aspect})` };
   }
   /** 默认按逻辑分辨率的 4 倍渲染（与历史行为一致） */
-  export const DEFAULT_RENDER_RESOLUTION: Readonly<IRenderResolutionPreset> = {
-    w: MODERN_SCREEN_WIDTH * 4,
-    h: MODERN_SCREEN_HEIGHT * 4,
-    label: `${MODERN_SCREEN_WIDTH * 4}×${MODERN_SCREEN_HEIGHT * 4}`,
-  };
-  /**
-   * 渲染分辨率预设
-   *
-   * 只改渲染缓冲的像素多少，逻辑视口（screen_w/screen_h）与世界范围不变，
-   * 因此 UI / 角色 / 背景比例都不会变，只是清晰度与性能不同。
-   *
-   * 顺序须与 `ui/settings_misc.ui.json5` 的 `render_resolution_row.items` 一致。
-   */
+  export const DEFAULT_RENDER_RESOLUTION: Readonly<IRenderResolutionPreset> =
+    resolution(MODERN_SCREEN_WIDTH * 4, MODERN_SCREEN_HEIGHT * 4, "16:9");
   export const RENDER_RESOLUTION_PRESETS: readonly IRenderResolutionPreset[] = [
     { w: 0, h: 0, label: "render_resolution_auto" },
-    { w: MODERN_SCREEN_WIDTH, h: MODERN_SCREEN_HEIGHT, label: `${MODERN_SCREEN_WIDTH}×${MODERN_SCREEN_HEIGHT}` },
-    { w: 1280, h: 720, label: "1280×720" },
-    { w: MODERN_SCREEN_WIDTH * 2, h: MODERN_SCREEN_HEIGHT * 2, label: `${MODERN_SCREEN_WIDTH * 2}×${MODERN_SCREEN_HEIGHT * 2}` },
-    { w: 1920, h: 1080, label: "1920×1080" },
-    { w: MODERN_SCREEN_WIDTH * 3, h: MODERN_SCREEN_HEIGHT * 3, label: `${MODERN_SCREEN_WIDTH * 3}×${MODERN_SCREEN_HEIGHT * 3}` },
+    resolution(MODERN_SCREEN_WIDTH, MODERN_SCREEN_HEIGHT, "16:9"),
+    resolution(1280, 720, "16:9"),
+    resolution(MODERN_SCREEN_WIDTH * 2, MODERN_SCREEN_HEIGHT * 2, "16:9"),
+    resolution(1920, 1080, "16:9"),
+    resolution(MODERN_SCREEN_WIDTH * 3, MODERN_SCREEN_HEIGHT * 3, "16:9"),
     { ...DEFAULT_RENDER_RESOLUTION },
+    resolution(1024, 768, "4:3"),
+    resolution(1600, 1200, "4:3"),
+    resolution(1280, 800, "16:10"),
+    resolution(1920, 1200, "16:10"),
+    resolution(2560, 1080, "21:9"),
+    resolution(3440, 1440, "21:9"),
   ];
   /** 当前 w/h 匹配的预设下标（不匹配时返回 -1） */
   export function render_resolution_index(w: number, h: number): number {
     return RENDER_RESOLUTION_PRESETS.findIndex((v) => v.w === w && v.h === h);
+  }
+  export function resolution_viewport(w: number, h: number): { w: number; h: number } | undefined {
+    if (!(w > 0) || !(h > 0)) return undefined;
+    return viewport_from_aspect(w / h);
   }
   export const DEFAULT_OPOINT_SPEED_Z = 3.5;
   export const DEFAULT_FIREN_FLAME_SPEED_Z = 0.5;

@@ -235,7 +235,7 @@ export class __Modern extends BaseSounds {
 
   protected get_l_r_vol(x?: number): [number, number, number] {
     const scale = (this.lfw.world.renderer as WorldRenderer).world_node.scale.x
-    const full_w = this.lfw.world.view_w / scale
+    const full_w = this.lfw.world.design_view_w
     const half_w = full_w / 2;
     const viewer_x = this.lfw.world.camera.position.x + half_w;
     const sound_x = x ?? viewer_x;

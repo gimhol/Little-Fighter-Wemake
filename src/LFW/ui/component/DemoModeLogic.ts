@@ -251,8 +251,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     else fighters_datas.push(...boss_datas)
 
     this.lfw.mt.mark = 'demo_startup_cam_x'
-    // 可见宽度 = screen / zoom（bg 的 zoom 会缩放世界，zoom>1 时视口更窄）
-    const view_w = this.lfw.world.dataset.screen_w / (this.lfw.world.bg.zoom_x || 1)
+    const view_w = this.lfw.world.design_view_w
     const cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - view_w)
     const min_x = is_stage_mode ? (cam_x + 40) : (cam_x + 1 * view_w / 3)
     const max_x = is_stage_mode ? (80) : (cam_x + 2 * view_w / 3)

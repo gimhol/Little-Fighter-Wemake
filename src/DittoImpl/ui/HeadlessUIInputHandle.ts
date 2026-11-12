@@ -93,7 +93,7 @@ export class HeadlessUIInputHandle implements IUIInputHandle {
   /** UI 坐标 → 世界坐标（ui_bg/ui_fg 容器的位置） */
   protected to_world(node: UINode, x: number, y: number): { x: number; y: number; z: number } {
     const off = this.world_renderer.ui_offset;
-    const cam = this.world_renderer.camera.position;
+    const cam = this.world_renderer.ui_bg_camera.position;
     const { world } = this.lfw;
     return {
       x: cam.x + world.ui_left + off.x + x,

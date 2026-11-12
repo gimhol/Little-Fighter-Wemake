@@ -52,11 +52,11 @@ export class Camera {
       this.jump_y(this._locked.y);
       return;
     }
-    const { stage, bg, dataset: { atom_time, screen_w, screen_h } } = this.world;
+    const { stage, bg, dataset: { atom_time }, design_view_w: view_w, design_view_h: view_h } = this.world;
     do {
       const { cam_l, cam_r } = stage;
       const min_cam_x = cam_l;
-      const max_cam_x = max(min_cam_x, cam_r - screen_w / bg.zoom_x);
+      const max_cam_x = max(min_cam_x, cam_r - view_w);
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
       this.destination.x = clamp(this._dested?.x ?? this.destination.x, min_cam_x, max_cam_x);
@@ -69,7 +69,7 @@ export class Camera {
 
       const acc_x = min(
         atom_time * acc_x_ratio,
-        atom_time * 0.7 * (acc_x_ratio * abs(this.position.x - this.destination.x)) / screen_w
+        atom_time * 0.7 * (acc_x_ratio * abs(this.position.x - this.destination.x)) / view_w
       );
       const direction_x = this.position.x > this.destination.x ? -1 : 1;
       const max_vx = direction_x * max_vx_ratio * acc_x;
@@ -89,7 +89,7 @@ export class Camera {
 
     do {
       const { height } = bg;
-      if (height <= screen_h) {
+      if (height <= view_h) {
         this.position.y = this.destination.y = 0;
         break;
       }
@@ -99,7 +99,6 @@ export class Camera {
       const cam_y = this._dested?.y ?? this.destination.y;
       // 高地图：纵向可移动范围 = 世界高度 - 可见高度（世界比屏幕高多少，就能往上移多少）；
       // 普通/老地图：沿用 -0.5*far（经典数据里 far 承载了纵向范围），保持原行为
-      const view_h = screen_h / (bg.zoom_y ?? 1);
       const follow_y = (bg.data.dataset?.cam_y_follow ?? 0) > 0;
       const cam_max_y = follow_y
         ? max(0, height - view_h)
@@ -107,7 +106,7 @@ export class Camera {
       this.destination.y = clamp(cam_y, 0, cam_max_y);
       const acc_y = min(
         atom_time * acc_y_ratio,
-        atom_time * 0.7 * (acc_y_ratio * abs(this.position.y - this.destination.y)) / screen_h
+        atom_time * 0.7 * (acc_y_ratio * abs(this.position.y - this.destination.y)) / view_h
       );
       if (round(this.position.y) == round(this.destination.y)) break;
       const direction_y = this.position.y > this.destination.y ? -1 : 1;

@@ -136,7 +136,7 @@
           id: "render_resolution_row",
           values: {
             prefix: "render_resolution",
-            items: "render_resolution_auto,794×450,1280×720,1588×900,1920×1080,2382×1350,3176×1800",
+            items: "render_resolution_auto,794×450 (16:9),1280×720 (16:9),1588×900 (16:9),1920×1080 (16:9),2382×1350 (16:9),3176×1800 (16:9),1024×768 (4:3),1600×1200 (4:3),1280×800 (16:10),1920×1200 (16:10),2560×1080 (21:9),3440×1440 (21:9)",
           },
           template: "ui/arrow_switcher_row.ui.json5",
         },

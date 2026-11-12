@@ -50,8 +50,7 @@ function set_sync_render(lfw: LFW, v: SyncRenderEnum) {
 function step_render_resolution(lfw: LFW, current: number, dir: -1 | 1) {
   const list = Defines.RENDER_RESOLUTION_PRESETS;
   const next = list[(current + dir + list.length) % list.length];
-  lfw.world.dataset.render_w = next.w;
-  lfw.world.dataset.render_h = next.h;
+  lfw.world.apply_render_resolution(next.w, next.h);
 }
 
 function toggle_team_outline(lfw: LFW) {

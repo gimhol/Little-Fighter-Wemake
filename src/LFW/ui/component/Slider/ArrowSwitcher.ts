@@ -65,6 +65,16 @@ export class ArrowSwitcher extends UIComponent<IArrowSwitcherProps, IArrowSwitch
   get items(): string[] {
     return this.props.items?.split(',') ?? [];
   }
+  set items(v: readonly string[]) {
+    this.set_items(v);
+  }
+  set_items(v: readonly string[]): this {
+    this.props.items = v.join(',');
+    const max = Math.max(0, v.length - 1);
+    if (this._value > max) this._value = max;
+    this.sync_label();
+    return this;
+  }
   get count(): number {
     return this.items.length;
   }

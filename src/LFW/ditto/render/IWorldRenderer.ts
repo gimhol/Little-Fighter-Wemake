@@ -6,4 +6,5 @@ export interface IWorldRenderer {
   render(dt: number): void;
   dispose(): void;
   set_render_resolution?(w: number, h: number): void;
+  set_view_size?(w: number, h: number): void;
 }

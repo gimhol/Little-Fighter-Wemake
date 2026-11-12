@@ -36,3 +36,30 @@ describe("parse_aspect", () => {
     expect(Defines.parse_aspect("5:1")).toBeUndefined();
   });
 });
+
+describe("render_resolution_presets", () => {
+  test("固定尺寸预设的展示名带宽高比", () => {
+    for (const preset of Defines.RENDER_RESOLUTION_PRESETS) {
+      if (!preset.w || !preset.h) continue;
+      expect(preset.label).toMatch(/ \(\d+:\d+\)$/);
+      expect(preset.aspect).toMatch(/^\d+:\d+$/);
+    }
+  });
+  test("覆盖 16:9 / 16:10 / 4:3 / 21:9 多种比例", () => {
+    const aspects = new Set(Defines.RENDER_RESOLUTION_PRESETS.map(v => v.aspect).filter(Boolean));
+    expect(aspects).toEqual(new Set(["16:9", "16:10", "4:3", "21:9"]));
+  });
+  test("各预设对应的逻辑视口完整包含安全区", () => {
+    for (const preset of Defines.RENDER_RESOLUTION_PRESETS) {
+      const vp = Defines.resolution_viewport(preset.w, preset.h);
+      if (!vp) {
+        expect(preset.w).toBe(0);
+        expect(preset.h).toBe(0);
+        continue;
+      }
+      expect(vp.w).toBeGreaterThanOrEqual(Defines.SAFE_SCREEN_WIDTH);
+      expect(vp.h).toBeGreaterThanOrEqual(Defines.SAFE_SCREEN_HEIGHT);
+      expect(vp.w / vp.h).toBeCloseTo(preset.w / preset.h, 2);
+    }
+  });
+});

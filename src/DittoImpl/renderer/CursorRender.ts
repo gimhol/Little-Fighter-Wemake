@@ -179,6 +179,14 @@ export class CursorRender {
     this._renderer?.setSize(w, h, false);
     this.sync_overlay();
   }
+  set_view_size(w: number, h: number): void {
+    const camera = this._camera;
+    camera.left = 0;
+    camera.right = Math.max(1, w);
+    camera.top = Math.max(1, h);
+    camera.bottom = 0;
+    camera.updateProjectionMatrix();
+  }
   sync_overlay(): void {
     const { _canvas: canvas, _host: host } = this;
     if (!canvas || !host) return;

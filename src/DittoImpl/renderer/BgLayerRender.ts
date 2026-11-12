@@ -128,11 +128,11 @@ export class BgLayerRender {
     if (absolute) return;
     const { bg, info: { x, width: layer_width, } } = this.layer;
     const { world } = bg;
-    const { screen_w } = world.dataset;
     const { width: bg_width } = world;
-    const cam_x = this.bg_render.world_renderer.camera.position.x;
-    const parallax = bg_width > screen_w ?
-      (bg_width - layer_width) * cam_x / (bg_width - screen_w) :
+    const view_w = world.design_view_w;
+    const cam_x = world.camera.position.x;
+    const parallax = bg_width > view_w ?
+      (bg_width - layer_width) * cam_x / (bg_width - view_w) :
       (bg_width - layer_width) * cam_x
     this.mesh.position.x = this.instanced_mesh ? parallax : x + parallax;
   }
