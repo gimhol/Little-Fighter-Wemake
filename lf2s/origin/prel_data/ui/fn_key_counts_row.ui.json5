@@ -36,7 +36,7 @@
     {
       visible: false,
       id: "fn_key_counts",
-      flex: "display:flex; align:start",
+      flex: "display:flex; align:start; fit:true",
       items: [
         {
           i18n: "Fn Keys Useds, F6: ",
