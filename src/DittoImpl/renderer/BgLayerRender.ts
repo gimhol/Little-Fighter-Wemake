@@ -31,6 +31,7 @@ export class BgLayerRender {
   readonly height: number;
   readonly width_percent: number | null;
   protected readonly base_width: number;
+  protected readonly min_width: number;
   /** 源图显示尺寸（px），无图时为 0 */
   protected readonly src_w: number;
   protected readonly src_h: number;
@@ -61,7 +62,8 @@ export class BgLayerRender {
     this.src_w = src_w
     this.src_h = src_h
     this.uv_loop = !!uv_loop
-    this.width_percent = width_percent ?? (info.absolute && !file && color !== void 0 ? 100 : null)
+    const auto_color = width_percent == null && !!info.absolute && !file && color !== void 0
+    this.width_percent = width_percent ?? (auto_color ? 100 : null)
     // 有图：目标尺寸 dw/dh（缺省 = 源图尺寸）；纯色/无图沿用 w/h/width/height
     const numeric_w = info.w || info.width || 0
     const bg_width = this.layer.bg.width
@@ -72,6 +74,7 @@ export class BgLayerRender {
         : numeric_w
     const dst_h = has_pic ? (dh ?? src_h) : (info.h || info.height || 0)
     this.base_width = dst_w || 1
+    this.min_width = auto_color ? this.base_width * 2 : 0
     this.width = this.width_percent !== null && !info.absolute
       ? bg_width * this.width_percent / 100
       : dst_w;
@@ -141,7 +144,10 @@ export class BgLayerRender {
       if (this.width_percent !== null) {
         const { world } = this.layer.bg;
         const zoom_x = this.layer.bg.zoom_x || 1;
-        const target_w = world.view_w / zoom_x * this.width_percent / 100;
+        const target_w = Math.max(
+          world.view_w / zoom_x * this.width_percent / 100,
+          this.min_width
+        );
         const scale = target_w / (this.base_width || 1);
         if (this.mesh.scale.x !== scale) this.mesh.scale.x = scale;
         const target_x = -world.ui_left / zoom_x + this.layer.info.x;
