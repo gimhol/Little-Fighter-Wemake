@@ -64,6 +64,7 @@ export interface IBgLayerInfo {
   /** 目标显示高度（可选，同上） */
   dh?: number;
   width_percent?: number;
+  center?: number;
   /**
    * UV 平铺循环开关（非 0 = 目标超出原图尺寸时循环平铺，而非拉伸）
    */
@@ -114,6 +115,7 @@ export const bg_layer_info_fields = fields<IBgLayerInfo>({
   dw: flt("目标显示宽"),
   dh: flt("目标显示高"),
   width_percent: flt("目标宽度百分比"),
+  center: int("居中"),
   uv_loop: int("UV循环"),
   loop: int("循环间隔"),
   cc: int("CC"),
@@ -142,6 +144,7 @@ export const Schema_IBgLayerInfo = make_schema<IBgLayerInfo>({
     dw: { type: 'number', nullable: true },
     dh: { type: 'number', nullable: true },
     width_percent: { type: 'number', nullable: true },
+    center: { type: 'number', nullable: true },
     uv_loop: { type: 'number', nullable: true },
     loop: { type: 'number', nullable: true },
     cc: { type: 'number', nullable: true },

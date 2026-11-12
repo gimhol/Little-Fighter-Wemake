@@ -532,8 +532,8 @@ function App() {
     const screen_h = viewport.h;
     const on_resize = () => {
       const { width, height } = contaner.getBoundingClientRect()
-      const win_w = Math.floor(width);
-      const win_h = Math.floor(height);
+      const win_w = Math.max(Math.floor(width), document.documentElement.clientWidth);
+      const win_h = Math.max(Math.floor(height), document.documentElement.clientHeight);
       if (fill_window) {
         Object.assign(ele.style, {
           width: win_w + "px",
@@ -577,7 +577,9 @@ function App() {
           ele.style.height = (view_h = scale * screen_h) + "px";
           break;
       }
-      const h_align_ = app_state.h_align < -1 ? app_state.custom_h_align : app_state.h_align;
+      const h_align_ = view_w < win_w
+        ? 0.5
+        : app_state.h_align < -1 ? app_state.custom_h_align : app_state.h_align;
       const v_align_ = app_state.v_align < -1 ? app_state.custom_v_align : app_state.v_align;
       ele.style.left = Math.floor((win_w - view_w) * h_align_) + "px";
       ele.style.top = Math.floor((win_h - view_h) * v_align_) + "px";

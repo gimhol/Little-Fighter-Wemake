@@ -22,6 +22,7 @@ export function xml_2_bg_layer(el: IXMLElement, index: number): IBgLayerInfo {
   ret.dw          /**/ = el.get_num("dw") ?? ret.dw
   ret.dh          /**/ = el.get_num("dh") ?? ret.dh
   ret.width_percent = el.get_num("width_percent") ?? el.get_num("w_percent") ?? ret.width_percent
+  ret.center      /**/ = el.get_num("center") ?? ret.center;
   ret.uv_loop     /**/ = el.get_num("uv_loop") ?? ret.uv_loop
   ret.z           /**/ = el.get_num("z") ?? index ?? ret.z
   ret.loop        /**/ = el.get_num("loop") ?? ret.loop;
@@ -51,6 +52,7 @@ export function xml_x_bg_layer(xml: IXML, l: IBgLayerInfo, tag: string): IXMLEle
   layer.set_attr("dw", l.dw);
   layer.set_attr("dh", l.dh);
   layer.set_attr("width_percent", l.width_percent);
+  layer.set_attr("center", l.center);
   layer.set_attr("uv_loop", l.uv_loop);
   layer.set_attr("loop", l.loop);
   layer.set_attr("absolute", l.absolute);

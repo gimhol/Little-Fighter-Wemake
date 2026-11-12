@@ -1,15 +1,15 @@
 <background id="bg_4">
   <base name="HK Coliseum" shadow="bg/sys/hkc/s.png" group="regular" bound=",794,-468,-216" shadowsize="37,9"></base>
-  <layer width="794" height="0" x="0" y="422" z="-12" w="794" h="0" width_percent="100" absolute="1" file="bg/sys/hkc/back1.png"></layer>
-  <layer width="794" height="0" x="0" y="313" z="-11" w="794" h="0" cc="32" c1="0" c2="15" file="bg/sys/hkc/back2.png"></layer>
-  <layer width="794" height="0" x="0" y="313" z="-10" w="794" h="0" cc="32" c1="16" c2="31" file="bg/sys/hkc/back22.png"></layer>
-  <layer width="1588" height="119" x="0" y="223" z="-9" w="1588" h="119" absolute="1" color="rgb(159,163,159)"></layer>
-  <layer width="1588" height="10" x="0" y="102" z="-8" w="1588" h="10" absolute="1" color="rgb(159,163,159)"></layer>
-  <layer width="1588" height="9" x="0" y="90" z="-7" w="1588" h="9" absolute="1" color="rgb(159,163,159)"></layer>
-  <layer width="1588" height="3" x="0" y="81" z="-6" w="1588" h="3" absolute="1" color="rgb(119,119,119)"></layer>
-  <layer width="1588" height="42" x="0" y="78" z="-5" w="1588" h="42" absolute="1" color="rgb(103,103,103)"></layer>
-  <layer width="1588" height="1" x="0" y="104" z="-4" w="1588" h="1" absolute="1" color="rgb(151,119,111)"></layer>
-  <layer width="1588" height="1" x="0" y="103" z="-3" w="1588" h="1" absolute="1" color="rgb(135,107,103)"></layer>
-  <layer width="1588" height="1" x="0" y="92" z="-2" w="1588" h="1" absolute="1" color="rgb(151,119,111)"></layer>
-  <layer width="1588" height="1" x="0" y="91" z="-1" w="1588" h="1" absolute="1" color="rgb(135,107,103)"></layer>
+  <layer width="794" height="0" x="0" y="422" z="-12" w="794" h="0" absolute="1" center="1" file="bg/sys/hkc/back1.png"></layer>
+  <layer width="794" height="0" x="0" y="313" z="-11" w="794" h="0" cc="32" c1="0" c2="15" absolute="1" center="1" file="bg/sys/hkc/back2.png"></layer>
+  <layer width="794" height="0" x="0" y="313" z="-10" w="794" h="0" cc="32" c1="16" c2="31" absolute="1" center="1" file="bg/sys/hkc/back22.png"></layer>
+  <layer width="794" height="119" x="0" y="223" z="-9" w="794" h="119" absolute="1" color="rgb(159,163,159)"></layer>
+  <layer width="794" height="10" x="0" y="102" z="-8" w="794" h="10" absolute="1" color="rgb(159,163,159)"></layer>
+  <layer width="794" height="9" x="0" y="90" z="-7" w="794" h="9" absolute="1" color="rgb(159,163,159)"></layer>
+  <layer width="794" height="3" x="0" y="81" z="-6" w="794" h="3" absolute="1" color="rgb(119,119,119)"></layer>
+  <layer width="794" height="42" x="0" y="78" z="-5" w="794" h="42" absolute="1" color="rgb(103,103,103)"></layer>
+  <layer width="794" height="1" x="0" y="104" z="-4" w="794" h="1" absolute="1" color="rgb(151,119,111)"></layer>
+  <layer width="794" height="1" x="0" y="103" z="-3" w="794" h="1" absolute="1" color="rgb(135,107,103)"></layer>
+  <layer width="794" height="1" x="0" y="92" z="-2" w="794" h="1" absolute="1" color="rgb(151,119,111)"></layer>
+  <layer width="794" height="1" x="0" y="91" z="-1" w="794" h="1" absolute="1" color="rgb(135,107,103)"></layer>
 </background>

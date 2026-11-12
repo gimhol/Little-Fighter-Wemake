@@ -57,8 +57,11 @@ export class Camera {
       const { cam_l, cam_r } = stage;
       const zoom_x = bg.zoom_x || 1;
       const side = this.world.ui_left / zoom_x;
-      const min_cam_x = cam_l + side;
-      const max_cam_x = max(min_cam_x, cam_r - view_w - side);
+      const screen_w = this.world.view_w / zoom_x;
+      const map_w = cam_r - cam_l;
+      const centered_cam_x = cam_l + (map_w - screen_w) / 2 + side;
+      const min_cam_x = map_w < screen_w ? centered_cam_x : cam_l + side;
+      const max_cam_x = map_w < screen_w ? centered_cam_x : max(min_cam_x, cam_r - view_w - side);
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
       this.destination.x = clamp(this._dested?.x ?? this.destination.x, min_cam_x, max_cam_x);
