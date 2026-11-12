@@ -47,7 +47,7 @@ export class UINodeBuilder {
   protected static fill(node: UINode, info: ICookedUIInfo): void {
     node.id = info.id;
     node.name = info.name;
-    node.image_desc = info.img ?? null;
+    node.image_desc = info.img ? { ...info.img } : null;
     node.template_values = info.template_values;
     node.disabled = info.disabled == true;
     node.visible = info.visible != false;

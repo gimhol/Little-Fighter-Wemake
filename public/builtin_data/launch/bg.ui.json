@@ -2,6 +2,17 @@
   "name": "页面：bg",
   "id": "main_bg",
   "size": "794, 450",
+  "component": [
+    {
+      "cls": "TiledImage",
+      "properties": {
+        "design_w": 794,
+        "design_h": 450,
+        "repeat_x": 20,
+        "repeat_y": 11
+      }
+    }
+  ],
   "img": {
     "path": "!launch/bg.png",
     "offsetAnimX": 0.5,

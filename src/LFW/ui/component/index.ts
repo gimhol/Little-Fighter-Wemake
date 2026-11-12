@@ -70,6 +70,7 @@ export * from "./StageTransitions";
 export * from "./SummaryLogic";
 export * from "./TeamSituationText";
 export * from "./TextInput";
+export * from "./TiledImage";
 export * from "./VerticalLayout";
 export * from "./WrapContent";
 export * from "./Jalousie";

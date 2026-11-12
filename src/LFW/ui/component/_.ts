@@ -85,6 +85,7 @@ export const regist_components = () => {
     _.TeamSituationText,
     _.Tests,
     _.TextInput,
+    _.TiledImage,
     _.VerticalLayout,
     _.VsModeLogic,
     _.WeaponRain,

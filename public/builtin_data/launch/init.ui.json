@@ -50,14 +50,21 @@
       }
     },
     {
-      "id": "launch_content",
-      "size": "794,450",
-      "center": "0,0",
+      "id": "launch_center",
       "alignment": {
-        "left": "mid",
-        "top": "mid"
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
       },
+      "flex": "display:flex; direction:row; justify:center; align:center",
       "items": [
+        {
+          "id": "launch_content",
+          "size": "794,450",
+          "center": "0,0",
+          "flex": "shrink:0",
+          "items": [
         {
           "id": "tap_to_launch",
           "i18n": "init.tap_any_place_to_launch",
@@ -235,6 +242,8 @@
                 500
               ]
             }
+          ]
+        }
           ]
         }
       ]
