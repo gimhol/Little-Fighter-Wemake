@@ -583,53 +583,8 @@ function App() {
       const v_align_ = app_state.v_align < -1 ? app_state.custom_v_align : app_state.v_align;
       ele.style.left = Math.floor((win_w - view_w) * h_align_) + "px";
       ele.style.top = Math.floor((win_h - view_h) * v_align_) + "px";
-
-      if (params.debug_layout) {
-        const update_debug = () => {
-          const world = (window as any).world?.lfw?.world;
-          let dbg = document.getElementById("layout_debug");
-          if (!dbg) {
-            dbg = document.createElement("pre");
-            dbg.id = "layout_debug";
-            Object.assign(dbg.style, {
-              position: "fixed", left: "4px", top: "4px", zIndex: "999999",
-              margin: "0", padding: "4px 6px", color: "#0f0", background: "#000c",
-              font: "12px/1.35 monospace", pointerEvents: "none", whiteSpace: "pre",
-            });
-            document.body.appendChild(dbg);
-          }
-          dbg.textContent = JSON.stringify({
-            inner: [window.innerWidth, window.innerHeight],
-            doc: [document.documentElement.clientWidth, document.documentElement.clientHeight],
-            parent: [Math.floor(width), Math.floor(height)],
-            canvas_style: [ele.style.width, ele.style.left, ele.style.top],
-            viewport: [viewport.w, viewport.h],
-            world_view: world ? [world.view_w, world.view_h, world.ui_left, world.ui_top] : null,
-            stage: world ? [world.stage.cam_l, world.stage.cam_r, world.stage.player_l, world.stage.player_r] : null,
-            camera: world ? [world.camera.position.x, world.camera.position.y] : null,
-            bg: world ? [world.bg.id, world.bg.width, world.bg.zoom_x] : null,
-            renderer_cam: world?.renderer ? [
-              world.renderer.bg_camera.position.x,
-              world.renderer.bg_camera.position.y,
-              world.renderer.bg_camera.left,
-              world.renderer.bg_camera.right,
-            ] : null,
-            renderer_bg: world?.renderer?.bg_render?.layers?.map((l: any) => ({
-              file: l.layer?.info?.file,
-              w: l.layer?.info?.width,
-              x: l.mesh?.position?.x,
-              sx: l.mesh?.scale?.x,
-              center: l.center,
-              pct: l.width_percent,
-            })) ?? null,
-            fill_window, mode: app_state.render_size_mode,
-          }, null, 2);
-        };
-        update_debug();
-        clearInterval((window as any).__layout_debug_timer);
-        (window as any).__layout_debug_timer = setInterval(update_debug, 500);
-      }
     };
+
     window.addEventListener("resize", on_resize);
     on_resize();
 
