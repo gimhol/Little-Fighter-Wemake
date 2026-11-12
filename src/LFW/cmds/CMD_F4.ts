@@ -10,6 +10,11 @@ CMDS.register(CMD.F4, help, (c) => {
   for (let i = all.length - 1; i >= 0; --i) {
     const layer = all[i];
     if (!layer) continue;
+    const modal = layer.modal;
+    if (modal) {
+      if (!modal.ignore_esc) layer.close_modal();
+      break;
+    }
     const { length } = layer.pages;
     if (!length) continue;
     if (length <= 1 && i == 0) continue;
