@@ -165,6 +165,14 @@ export class UILayer {
     if (!info) return;
     const ret = UINodeBuilder.create(this.lfw, info, void 0, this);
     ret.z = ret.z + this._index;
+    if (ret.follow_screen) {
+      const { world } = this.lfw;
+      ret.resize(
+        Math.max(1, Math.round(world.view_w)),
+        Math.max(1, Math.round(world.view_h))
+      );
+      ret.move_to(-world.ui_left, -world.ui_top, ret.z);
+    }
     return ret;
   }
 

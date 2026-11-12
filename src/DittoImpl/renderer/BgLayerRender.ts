@@ -61,7 +61,7 @@ export class BgLayerRender {
     this.src_w = src_w
     this.src_h = src_h
     this.uv_loop = !!uv_loop
-    this.width_percent = width_percent ?? null
+    this.width_percent = width_percent ?? (info.absolute && !file && color !== void 0 ? 100 : null)
     // 有图：目标尺寸 dw/dh（缺省 = 源图尺寸）；纯色/无图沿用 w/h/width/height
     const numeric_w = info.w || info.width || 0
     const bg_width = this.layer.bg.width
