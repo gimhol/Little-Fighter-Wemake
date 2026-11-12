@@ -20,7 +20,7 @@ class UIActor {
       lfw.layers.push_page({ id }, idx)
     }],
     [UIActionEnum.PopPage, (n) => {
-      n.pop_page({ min_pages: 1 })
+      n.pop_page({ min_pages: n.layer?.index ? 0 : 1 })
     }],
     [UIActionEnum.OpenModal, (n, id) => {
       n.layer?.open_modal({ id })
