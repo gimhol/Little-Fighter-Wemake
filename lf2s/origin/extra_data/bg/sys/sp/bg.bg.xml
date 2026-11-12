@@ -1,0 +1,16 @@
+<background id="bg_3">
+  <base name="Stanley Prison" shadow="bg/sys/sp/s.png" group="regular" bound=",2400,-516,-110" shadowsize="37,9"></base>
+  <layer width="2400" height="0" x="0" y="422" z="-13" w="2400" h="0" loop="277" file="bg/sys/sp/wall.png"></layer>
+  <layer width="1588" height="203" x="0" y="242" z="-12" w="1588" h="203" absolute="1" color="rgb(90,78,75)"></layer>
+  <layer width="2400" height="0" x="-41" y="422" z="-11" w="2400" h="0" loop="277" cc="12" c1="0" c2="5" file="bg/sys/sp/wall4.png"></layer>
+  <layer width="2400" height="0" x="-57" y="281" z="-10" w="2400" h="0" loop="277" cc="32" c1="16" c2="23" file="bg/sys/sp/wall2.png"></layer>
+  <layer width="2400" height="0" x="-57" y="281" z="-9" w="2400" h="0" loop="277" cc="32" c1="8" c2="15" file="bg/sys/sp/wall3.png"></layer>
+  <layer width="2400" height="0" x="-57" y="281" z="-8" w="2400" h="0" loop="277" cc="32" c1="24" c2="31" file="bg/sys/sp/wall3.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-7" w="2400" h="0" loop="277" cc="28" c1="0" c2="3" file="bg/sys/sp/fire1.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-6" w="2400" h="0" loop="277" cc="28" c1="4" c2="7" file="bg/sys/sp/fire2.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-5" w="2400" h="0" loop="277" cc="28" c1="8" c2="11" file="bg/sys/sp/fire3.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-4" w="2400" h="0" loop="277" cc="28" c1="12" c2="15" file="bg/sys/sp/fire4.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-3" w="2400" h="0" loop="277" cc="28" c1="16" c2="19" file="bg/sys/sp/fire5.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-2" w="2400" h="0" loop="277" cc="28" c1="20" c2="23" file="bg/sys/sp/fire6.png"></layer>
+  <layer width="2400" height="0" x="0" y="422" z="-1" w="2400" h="0" loop="277" cc="28" c1="24" c2="27" file="bg/sys/sp/fire7.png"></layer>
+</background>

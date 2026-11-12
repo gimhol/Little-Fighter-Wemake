@@ -1,0 +1,13 @@
+<background id="bg_2">
+  <base name="Lion Forest" shadow="bg/sys/lf/s.png" group="regular" bound=",3200,-370,-90" shadowsize="37,9"></base>
+  <layer width="800" height="0" x="0" y="422" z="-10" w="800" h="0" width_percent="100" absolute="1" file="bg/sys/lf/forests.png"></layer>
+  <layer width="1100" height="0" x="0" y="403" z="-9" w="1100" h="0" file="bg/sys/lf/forestm1.png"></layer>
+  <layer width="1100" height="0" x="800" y="403" z="-8" w="1100" h="0" file="bg/sys/lf/forestm2.png"></layer>
+  <layer width="1400" height="0" x="0" y="380" z="-7" w="1400" h="0" file="bg/sys/lf/forestm3.png"></layer>
+  <layer width="1400" height="0" x="1216" y="395" z="-6" w="1400" h="0" file="bg/sys/lf/forestm4.png"></layer>
+  <layer width="2900" height="0" x="0" y="351" z="-5" w="2900" h="0" loop="253" file="bg/sys/lf/forestt.png"></layer>
+  <layer width="1588" height="172" x="0" y="194" z="-4" w="1588" h="172" absolute="1" color="rgb(16,79,16)"></layer>
+  <layer width="2950" height="0" x="0" y="194" z="-3" w="2950" h="0" loop="520" file="bg/sys/lf/land1.png"></layer>
+  <layer width="3070" height="0" x="300" y="165" z="-2" w="3070" h="0" loop="530" file="bg/sys/lf/land2.png"></layer>
+  <layer width="3200" height="0" x="600" y="130" z="-1" w="3200" h="0" loop="570" file="bg/sys/lf/land4.png"></layer>
+</background>

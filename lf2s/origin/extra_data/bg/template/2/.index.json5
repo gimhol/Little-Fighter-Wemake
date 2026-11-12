@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "bg_11",
+      type: "bg",
+      file: "bg/template/2/bg.bg.xml",
+    }
+  ],
+}

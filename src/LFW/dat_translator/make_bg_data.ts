@@ -85,6 +85,12 @@ export function make_bg_data(
     ret.layers.push(layer);
   }
 
+  const sky = ret.layers.find(v => v.file && !v.absolute && !v.loop);
+  if (sky) {
+    sky.width_percent = 100;
+    sky.absolute = 1;
+  }
+
   if (datIndex && datIndex.file.startsWith("bg/template")) {
     ret.base.group = []
   } else {

@@ -67,17 +67,18 @@ export class BgLayerRender {
     // 有图：目标尺寸 dw/dh（缺省 = 源图尺寸）；纯色/无图沿用 w/h/width/height
     const numeric_w = info.w || info.width || 0
     const bg_width = this.layer.bg.width
+    const pct_w = this.width_percent !== null && !info.absolute
+      ? bg_width * this.width_percent / 100
+      : null
     const dst_w = has_pic
-      ? (dw ?? src_w)
+      ? (pct_w ?? dw ?? src_w)
       : this.width_percent !== null && !info.absolute
-        ? bg_width * this.width_percent / 100
+        ? pct_w ?? 0
         : numeric_w
     const dst_h = has_pic ? (dh ?? src_h) : (info.h || info.height || 0)
     this.base_width = dst_w || 1
     this.min_width = auto_color ? this.base_width * 2 : 0
-    this.width = this.width_percent !== null && !info.absolute
-      ? bg_width * this.width_percent / 100
-      : dst_w;
+    this.width = pct_w ?? dst_w;
     this.height = dst_h;
     this.src_texture = file ? (lfw.images.find(file)?.pic?.texture ?? null) : null;
     this._color = color;

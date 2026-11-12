@@ -1,0 +1,9 @@
+{
+  backgrounds: [
+    {
+      id: "bg_7",
+      type: "bg",
+      file: "bg/sys/ft/bg.bg.xml",
+    }
+  ],
+}

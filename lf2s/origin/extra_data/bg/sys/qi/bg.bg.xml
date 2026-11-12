@@ -1,0 +1,18 @@
+<background id="bg_6">
+  <base name="Queen&apos;s Island" shadow="bg/sys/qi/s.png" group="regular" bound=",2400,-500,-80" shadowsize="37,9"></base>
+  <layer width="800" height="0" x="0" y="421" z="-15" w="800" h="0" width_percent="100" absolute="1" file="bg/sys/qi/qi1.png"></layer>
+  <layer width="800" height="0" x="215" y="340" z="-14" w="800" h="0" file="bg/sys/qi/qie.png"></layer>
+  <layer width="800" height="0" x="218" y="421" z="-13" w="800" h="0" cc="40" c1="0" c2="9" file="bg/sys/qi/qi7.png"></layer>
+  <layer width="800" height="0" x="218" y="421" z="-12" w="800" h="0" cc="40" c1="10" c2="19" file="bg/sys/qi/qi8.png"></layer>
+  <layer width="800" height="0" x="218" y="421" z="-11" w="800" h="0" cc="40" c1="20" c2="29" file="bg/sys/qi/qi9.png"></layer>
+  <layer width="800" height="0" x="27" y="421" z="-10" w="800" h="0" cc="24" c1="0" c2="11" file="bg/sys/qi/qia.png"></layer>
+  <layer width="800" height="0" x="321" y="421" z="-9" w="800" h="0" cc="24" c1="6" c2="17" file="bg/sys/qi/qib.png"></layer>
+  <layer width="800" height="0" x="545" y="369" z="-8" w="800" h="0" cc="24" c1="12" c2="23" file="bg/sys/qi/qic.png"></layer>
+  <layer width="800" height="0" x="605" y="384" z="-7" w="800" h="0" cc="24" c1="2" c2="13" file="bg/sys/qi/qid.png"></layer>
+  <layer width="1200" height="0" x="0" y="416" z="-6" w="1200" h="0" file="bg/sys/qi/qi2.png"></layer>
+  <layer width="997" height="0" x="796" y="329" z="-5" w="997" h="0" file="bg/sys/qi/qi4.png"></layer>
+  <layer width="997" height="0" x="869" y="320" z="-4" w="997" h="0" file="bg/sys/qi/qi5.png"></layer>
+  <layer width="997" height="0" x="869" y="343" z="-3" w="997" h="0" file="bg/sys/qi/qi6.png"></layer>
+  <layer width="2300" height="0" x="0" y="289" z="-2" w="2300" h="0" loop="800" file="bg/sys/qi/qi3.png"></layer>
+  <layer width="1588" height="231" x="0" y="254" z="-1" w="1588" h="231" absolute="1" color="rgb(66,56,24)"></layer>
+</background>

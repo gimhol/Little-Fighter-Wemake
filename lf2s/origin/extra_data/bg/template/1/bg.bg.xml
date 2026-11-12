@@ -1,0 +1,11 @@
+<background id="bg_10">
+  <base name="Template1" shadow="bg/template/1/shadow.png" bound=",1600,-360,-80" shadowsize="37,9"></base>
+  <layer width="967" height="0" x="0" y="422" z="-8" w="967" h="0" width_percent="100" absolute="1" file="bg/template/1/pic1.png"></layer>
+  <layer width="967" height="0" x="800" y="422" z="-7" w="967" h="0" file="bg/template/1/pic2.png"></layer>
+  <layer width="1000" height="0" x="0" y="350" z="-6" w="1000" h="0" file="bg/template/1/pic3.png"></layer>
+  <layer width="1000" height="0" x="500" y="350" z="-5" w="1000" h="0" file="bg/template/1/pic4.png"></layer>
+  <layer width="1500" height="0" x="0" y="203" z="-4" w="1500" h="0" file="bg/template/1/pic5.png"></layer>
+  <layer width="1500" height="0" x="750" y="203" z="-3" w="1500" h="0" file="bg/template/1/pic6.png"></layer>
+  <layer width="1600" height="0" x="0" y="137" z="-2" w="1600" h="0" file="bg/template/1/pic7.png"></layer>
+  <layer width="1600" height="0" x="800" y="137" z="-1" w="1600" h="0" file="bg/template/1/pic8.png"></layer>
+</background>
