@@ -239,6 +239,8 @@
         <xs:documentation>Target display height (optional, as above).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="width_percent" type="xs:double" />
+    <xs:attribute name="w_percent" type="xs:double" />
     <xs:attribute name="uv_loop" type="xs:double">
       <xs:annotation>
         <xs:documentation>UV 平铺循环开关（非 0 = 目标尺寸超出原图尺寸时按 UV 循环平铺，而非拉伸）</xs:documentation>

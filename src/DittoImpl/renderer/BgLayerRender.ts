@@ -29,6 +29,8 @@ export class BgLayerRender {
   readonly width: number;
   /** 目标（几何/mesh）高度：dh ?? 源图尺寸；纯色层沿用 h ?? height */
   readonly height: number;
+  readonly width_percent: number | null;
+  protected readonly base_width: number;
   /** 源图显示尺寸（px），无图时为 0 */
   protected readonly src_w: number;
   protected readonly src_h: number;
@@ -51,7 +53,7 @@ export class BgLayerRender {
     this.bg_render = bg_render
     const { lfw } = this.layer.bg.world
     const { info } = this.layer;
-    const { y, z, file, id, name, color, dw, dh, uv_loop } = info;
+    const { y, z, file, id, name, color, dw, dh, uv_loop, width_percent } = info;
     const pic = file ? lfw.images.find(file)?.pic : null
     const has_pic = !!pic
     const src_w = pic?.w ?? 0
@@ -59,10 +61,20 @@ export class BgLayerRender {
     this.src_w = src_w
     this.src_h = src_h
     this.uv_loop = !!uv_loop
+    this.width_percent = width_percent ?? null
     // 有图：目标尺寸 dw/dh（缺省 = 源图尺寸）；纯色/无图沿用 w/h/width/height
-    const dst_w = has_pic ? (dw ?? src_w) : (info.w || info.width || 0)
+    const numeric_w = info.w || info.width || 0
+    const bg_width = this.layer.bg.width
+    const dst_w = has_pic
+      ? (dw ?? src_w)
+      : this.width_percent !== null && !info.absolute
+        ? bg_width * this.width_percent / 100
+        : numeric_w
     const dst_h = has_pic ? (dh ?? src_h) : (info.h || info.height || 0)
-    this.width = dst_w;
+    this.base_width = dst_w || 1
+    this.width = this.width_percent !== null && !info.absolute
+      ? bg_width * this.width_percent / 100
+      : dst_w;
     this.height = dst_h;
     this.src_texture = file ? (lfw.images.find(file)?.pic?.texture ?? null) : null;
     this._color = color;
@@ -125,8 +137,20 @@ export class BgLayerRender {
     if (offsetAnimX !== void 0) this.offsetX += (dt / 1000) * offsetAnimX;
     if (offsetAnimY !== void 0) this.offsetY += (dt / 1000) * offsetAnimY;
     this.update_uv(offsetAnimX, offsetAnimY);
-    if (absolute) return;
-    const { bg, info: { x, width: layer_width, } } = this.layer;
+    if (absolute) {
+      if (this.width_percent !== null) {
+        const { world } = this.layer.bg;
+        const zoom_x = this.layer.bg.zoom_x || 1;
+        const target_w = world.view_w / zoom_x * this.width_percent / 100;
+        const scale = target_w / (this.base_width || 1);
+        if (this.mesh.scale.x !== scale) this.mesh.scale.x = scale;
+        const target_x = -world.ui_left / zoom_x + this.layer.info.x;
+        if (this.mesh.position.x !== target_x) this.mesh.position.x = target_x;
+      }
+      return;
+    }
+    const { bg, info: { x, width: info_width, } } = this.layer;
+    const layer_width = this.width_percent !== null ? this.width : info_width;
     const { world } = bg;
     const { width: bg_width } = world;
     const view_w = world.design_view_w;
