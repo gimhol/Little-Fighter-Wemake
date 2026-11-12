@@ -149,9 +149,9 @@ export class BgLayerRender {
         const scale = target_w / (this.base_width || 1);
         if (this.mesh.scale.x !== scale) this.mesh.scale.x = scale;
       }
-      const target_x = this.center || (this.src_w > 0 && target_w < world.view_w / zoom_x)
-        ? (world.view_w / zoom_x - target_w) / 2 - world.ui_left / zoom_x + this.layer.info.x
-        : -world.ui_left / zoom_x + this.layer.info.x;
+      const target_x = this.center
+        ? (world.view_w / zoom_x - target_w) / 2 + this.layer.info.x
+        : this.layer.info.x;
       if (this.mesh.position.x !== target_x) this.mesh.position.x = target_x;
       return;
     }
