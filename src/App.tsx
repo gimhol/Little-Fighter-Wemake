@@ -237,6 +237,8 @@ function App() {
     return { w: Defines.SAFE_SCREEN_WIDTH, h: Defines.SAFE_SCREEN_HEIGHT };
   }, [aspect_override, world_dataset.screen_w, world_dataset.screen_h]);
   const [viewport, set_viewport] = useState(desired_viewport);
+  const auto_resolution = Number(world_dataset.render_w) === 0 && Number(world_dataset.render_h) === 0;
+  const fill_window = auto_resolution && !aspect_override;
 
   // 桌面客户端的模组目录：必须在 LFW 实例（下面的 useLFW）创建前读完，所以先拦一下启动
   const [mods_ready, set_mods_ready] = useState(false);
@@ -532,6 +534,15 @@ function App() {
       const { width, height } = contaner.getBoundingClientRect()
       const win_w = Math.floor(width);
       const win_h = Math.floor(height);
+      if (fill_window) {
+        Object.assign(ele.style, {
+          width: win_w + "px",
+          height: win_h + "px",
+          left: "0px",
+          top: "0px",
+        })
+        return;
+      }
       let view_w = win_w;
       let view_h = win_h;
       const s_1 = screen_w / screen_h;
@@ -592,8 +603,41 @@ function App() {
     app_state.custom_v_align,
     viewport.w,
     viewport.h,
+    fill_window,
     ele_game_canvas
   ]);
+
+  useEffect(() => {
+    if (!fill_window) return;
+    const el = ele_game_canvas?.parentElement ?? game_cell;
+    if (!el) return;
+    const sync = () => {
+      const { width, height } = el.getBoundingClientRect();
+      const w = Math.floor(width);
+      const h = Math.floor(height);
+      if (!(w > 0) || !(h > 0)) return;
+      const next = Defines.viewport_from_aspect(w / h);
+      if (next.w === viewport.w && next.h === viewport.h) return;
+      if (lfw) {
+        lfw.world.dataset.screen_w = next.w;
+        lfw.world.dataset.screen_h = next.h;
+      } else {
+        set_world_dataset(d => {
+          d.screen_w = next.w;
+          d.screen_h = next.h;
+        });
+      }
+      set_viewport(next);
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    window.addEventListener("resize", sync);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", sync);
+    };
+  }, [fill_window, ele_game_canvas, game_cell, lfw, viewport.w, viewport.h]);
 
   const player_infos = lfw?.players;
   const players = useMemo(() => {
