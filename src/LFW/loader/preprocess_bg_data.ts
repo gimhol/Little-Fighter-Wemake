@@ -23,22 +23,11 @@ export function preprocess_bg_data(lfw: LFW, data: IBgData, jobs: Promise<ImageI
   is_non_blank_str(shadow) && jobs.push(lfw.images.load_img(shadow, shadow));
 
   if (layers?.length) {
-    let backmost: (typeof layers)[number] | undefined;
-    let backmost_z = Infinity;
     for (const layer of layers) {
       reorder_fields(layer, bg_layer_info_fields)
       delete_undefined(layer);
       const { file } = layer
       is_non_blank_str(file) && jobs.push(lfw.images.load_img(file, file));
-      const z = layer.z ?? 0;
-      if (file && !layer.absolute && !layer.loop && z < backmost_z) {
-        backmost = layer;
-        backmost_z = z;
-      }
-    }
-    if (backmost && backmost.width_percent == null) {
-      backmost.width_percent = 100;
-      backmost.absolute = 1;
     }
   }
   if (terrain?.length) {

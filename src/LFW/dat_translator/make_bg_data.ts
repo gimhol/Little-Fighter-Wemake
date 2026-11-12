@@ -85,12 +85,6 @@ export function make_bg_data(
     ret.layers.push(layer);
   }
 
-  const sky = ret.layers.find(v => v.file && !v.absolute && !v.loop);
-  if (sky) {
-    sky.width_percent = 100;
-    sky.absolute = 1;
-  }
-
   if (datIndex && datIndex.file.startsWith("bg/template")) {
     ret.base.group = []
   } else {
@@ -133,10 +127,6 @@ function make_bg_layer(block_str: string) {
   layer.z = 0;
   layer.w = typeof fields.w === "number" ? fields.w : layer.width;
   layer.h = typeof fields.h === "number" ? fields.h : layer.height;
-  if (fields.rect) {
-    layer.width *= 2;
-    layer.w *= 2;
-  }
   layer.loop = fields.loop ?? void 0;
   layer.cc = typeof fields.cc === "number" ? fields.cc * 2 : void 0;
   layer.c1 = typeof fields.c1 === "number" ? fields.c1 * 2 : void 0;

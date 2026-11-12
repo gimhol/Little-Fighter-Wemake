@@ -73,4 +73,19 @@ id: 999  type: 5  file: data\broken_weapon.dat
 data\nothing.txt
 <file_editing_end>
 
+<background>
+id: 4    file: bg\sys\hkc\bg.dat
+id: 2    file: bg\sys\lf\bg.dat
+id: 3    file: bg\sys\sp\bg.dat
+id: 5    file: bg\sys\gw\bg.dat
+id: 6    file: bg\sys\qi\bg.dat
+id: 7    file: bg\sys\ft\bg.dat
+id: 8    file: bg\sys\bc\bg.dat skipped: 1
+id: 1    file: bg\sys\cuhk\bg.dat
+id: 0    file: bg\sys\thv\bg.dat
+id: 10    file: bg\template\1\bg.dat
+id: 11    file: bg\template\2\bg.dat
+id: 12    file: bg\template\3\bg.dat
+<background_end>
+
 id: 100~199 drop weapon

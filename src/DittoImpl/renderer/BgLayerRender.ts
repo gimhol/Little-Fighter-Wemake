@@ -31,7 +31,6 @@ export class BgLayerRender {
   readonly height: number;
   readonly width_percent: number | null;
   protected readonly base_width: number;
-  readonly center: boolean;
   /** 源图显示尺寸（px），无图时为 0 */
   protected readonly src_w: number;
   protected readonly src_h: number;
@@ -62,22 +61,20 @@ export class BgLayerRender {
     this.src_w = src_w
     this.src_h = src_h
     this.uv_loop = !!uv_loop
-    this.center = !!info.center
-    this.width_percent = width_percent ?? null
+    this.width_percent = width_percent ?? (info.absolute && !file && color !== void 0 ? 100 : null)
     // 有图：目标尺寸 dw/dh（缺省 = 源图尺寸）；纯色/无图沿用 w/h/width/height
     const numeric_w = info.w || info.width || 0
     const bg_width = this.layer.bg.width
-    const pct_w = this.width_percent !== null && !info.absolute
-      ? bg_width * this.width_percent / 100
-      : null
     const dst_w = has_pic
-      ? (pct_w ?? dw ?? src_w)
+      ? (dw ?? src_w)
       : this.width_percent !== null && !info.absolute
-        ? pct_w ?? 0
+        ? bg_width * this.width_percent / 100
         : numeric_w
     const dst_h = has_pic ? (dh ?? src_h) : (info.h || info.height || 0)
     this.base_width = dst_w || 1
-    this.width = pct_w ?? dst_w;
+    this.width = this.width_percent !== null && !info.absolute
+      ? bg_width * this.width_percent / 100
+      : dst_w;
     this.height = dst_h;
     this.src_texture = file ? (lfw.images.find(file)?.pic?.texture ?? null) : null;
     this._color = color;
@@ -141,18 +138,15 @@ export class BgLayerRender {
     if (offsetAnimY !== void 0) this.offsetY += (dt / 1000) * offsetAnimY;
     this.update_uv(offsetAnimX, offsetAnimY);
     if (absolute) {
-      const { world } = this.layer.bg;
-      const zoom_x = this.layer.bg.zoom_x || 1;
-      let target_w = this.base_width;
       if (this.width_percent !== null) {
-        target_w = world.view_w / zoom_x * this.width_percent / 100;
+        const { world } = this.layer.bg;
+        const zoom_x = this.layer.bg.zoom_x || 1;
+        const target_w = world.view_w / zoom_x * this.width_percent / 100;
         const scale = target_w / (this.base_width || 1);
         if (this.mesh.scale.x !== scale) this.mesh.scale.x = scale;
+        const target_x = -world.ui_left / zoom_x + this.layer.info.x;
+        if (this.mesh.position.x !== target_x) this.mesh.position.x = target_x;
       }
-      const target_x = this.center
-        ? (world.view_w / zoom_x - target_w) / 2 + this.layer.info.x
-        : this.layer.info.x;
-      if (this.mesh.position.x !== target_x) this.mesh.position.x = target_x;
       return;
     }
     const { bg, info: { x, width: info_width, } } = this.layer;

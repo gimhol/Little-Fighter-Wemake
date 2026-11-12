@@ -62,13 +62,13 @@
     },
     {
       "x": 0,
-      "width": 1588,
+      "width": 794,
       "height": 172,
       "y": 194,
       "z": -4,
       "absolute": 1,
       "color": "#979797",
-      "w": 1588
+      "width_percent": 100
     },
     {
       "width": 2950,
