@@ -1,9 +1,0 @@
-{
-  backgrounds: [
-    {
-      id: "bg_3",
-      type: "bg",
-      file: "bg/sys/sp/bg.bg.xml",
-    }
-  ],
-}

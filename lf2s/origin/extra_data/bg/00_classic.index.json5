@@ -1,0 +1,64 @@
+{
+  backgrounds: [
+    {
+      id: "bg_4",
+      type: "bg",
+      file: "bg/sys/hkc/bg.bg.xml",
+    },
+    {
+      id: "bg_2",
+      type: "bg",
+      file: "bg/sys/lf/bg.bg.xml",
+    },
+    {
+      id: "bg_3",
+      type: "bg",
+      file: "bg/sys/sp/bg.bg.xml",
+    },
+    {
+      id: "bg_5",
+      type: "bg",
+      file: "bg/sys/gw/bg.bg.xml",
+    },
+    {
+      id: "bg_6",
+      type: "bg",
+      file: "bg/sys/qi/bg.bg.xml",
+    },
+    {
+      id: "bg_7",
+      type: "bg",
+      file: "bg/sys/ft/bg.bg.xml",
+    },
+    {
+      id: "bg_8",
+      type: "bg",
+      file: "bg/sys/bc/bg.bg.xml",
+    },
+    {
+      id: "bg_1",
+      type: "bg",
+      file: "bg/sys/cuhk/bg.bg.xml",
+    },
+    {
+      id: "bg_0",
+      type: "bg",
+      file: "bg/sys/thv/bg.bg.xml",
+    },
+    {
+      id: "bg_10",
+      type: "bg",
+      file: "bg/template/1/bg.bg.xml",
+    },
+    {
+      id: "bg_11",
+      type: "bg",
+      file: "bg/template/2/bg.bg.xml",
+    },
+    {
+      id: "bg_12",
+      type: "bg",
+      file: "bg/template/3/bg.bg.xml",
+    },
+  ],
+}
