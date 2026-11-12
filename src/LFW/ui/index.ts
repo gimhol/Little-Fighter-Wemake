@@ -16,6 +16,7 @@ export * from "./UIImgLoader";
 export * from "./UINode";
 export * from "./UINodeBuilder";
 export * from "./UILayer";
+export * from "./alignment";
 export * from "./flex_layout";
 export * from "./flex_style";
 export * from "./cook_ui_info";

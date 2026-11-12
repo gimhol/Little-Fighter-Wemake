@@ -1,4 +1,5 @@
 import type { IStyle } from "../defines/IStyle";
+import type { IAlignmentInfo } from "./alignment";
 import type { IFlexStyleData } from "./flex_style";
 import type { IComponentInfo } from "./IComponentInfo";
 import type { IUIAction } from "./IUIAction";
@@ -49,6 +50,7 @@ export interface IUIInfo {
    * @memberof IUIInfo
    */
   flex?: IFlexStyleData | string;
+  alignment?: IAlignmentInfo | string;
   opacity?: number | string;
   center?: number[] | string;
   scale?: number[] | string;

@@ -7,6 +7,7 @@ import { round } from '../utils/math/base';
 import { round_float } from '../utils/math/round_float';
 import type { ICrossInfo, IGeoInfo, IRectInfo } from "./ICrossInfo";
 import type { IUIImgInfo } from "./IUIImgInfo.dat";
+import { apply_alignment, parse_alignment, type IAlignmentInfo } from "./alignment";
 import { apply_flex_layout } from "./flex_layout";
 import { FlexStyle } from "./flex_style";
 import type { IUICallback } from "./IUICallback";
@@ -78,6 +79,8 @@ export class UINode implements IDebugging {
   auto_focus: boolean = false;
   stretchable: boolean = false;
   follow_screen: boolean = false;
+  alignment: IAlignmentInfo | null = null;
+  protected _alignment_done = false;
 
   get text(): TextInfo | null { return this._text; }
   set text(v: TextInfo | null) {
@@ -373,6 +376,11 @@ export class UINode implements IDebugging {
     if (v && this.focused_node?.disabled) this.focused_node = void 0
     return this;
   }
+  set_alignment(v: IAlignmentInfo | string | null | undefined): this {
+    this.alignment = parse_alignment(v) ?? null;
+    this._alignment_done = false;
+    return this;
+  }
   set_opacity(v: number): this { this._opacity = v; return this; }
   set_w(v: number): this { return this.resize(v, this.h); }
   set_h(v: number): this { return this.resize(this.w, v); }
@@ -400,6 +408,7 @@ export class UINode implements IDebugging {
     y: number = this.pos.y,
     z: number = this.pos.z
   ): this {
+    if (x === this.pos.x && y === this.pos.y && z === this.pos.z) return this;
     this.pos.x = round_float(x);
     this.pos.y = round_float(y);
     this.pos.z = round_float(z);
@@ -407,7 +416,17 @@ export class UINode implements IDebugging {
     this._cache_rect = void 0;
     this._cache_geo = void 0;
     this._cache_global_pos = void 0;
+    this.clear_descendants_cache();
     return this;
+  }
+
+  protected clear_descendants_cache(): void {
+    for (const child of this._children) {
+      child._cache_global_pos = void 0;
+      child._cache_rect = void 0;
+      child._cache_geo = void 0;
+      child.clear_descendants_cache();
+    }
   }
 
   set_cx(v: number): this { return this.set_center(v); }
@@ -812,6 +831,10 @@ export class UINode implements IDebugging {
 
   update(dt: number) {
     this.flush_flex();
+    if (this.alignment && !this._alignment_done) {
+      if (apply_alignment(this, this.alignment) && this.alignment.once)
+        this._alignment_done = true;
+    }
     if (
       this._prev_size.x !== this.size.x ||
       this._prev_size.y !== this.size.y ||

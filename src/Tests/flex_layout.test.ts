@@ -388,17 +388,26 @@ describe("apply_flex_layout", () => {
 });
 
 describe("XML 属性解析", () => {
-  function xml(attrs: Record<string, string>): IXMLElement {
+  function element(
+    tag: string,
+    attrs: Record<string, string> = {},
+    text = "",
+    children: IXMLElement[] = [],
+  ): IXMLElement {
     return {
-      tag: "node",
-      children: [],
+      tag,
+      children,
       attrs: [],
-      text: "",
+      text,
       parent: void 0,
       attr: (name: string) => attrs[name],
       nums_attr: () => void 0,
       as_object: () => ({}),
     } as unknown as IXMLElement;
+  }
+
+  function xml(attrs: Record<string, string>, children: IXMLElement[] = []): IXMLElement {
+    return element("node", attrs, "", children);
   }
 
   test("flex 声明字符串", () => {
@@ -426,6 +435,44 @@ describe("XML 属性解析", () => {
     expect(style.direction).toBe("column");
     expect(style.gap).toBe(6);
     expect(style.grow).toBe(1);
+  });
+
+  test("<flex> 子元素拆属性", () => {
+    const info = xml_to_ui_info(xml({}, [
+      element("flex", {
+        display: "flex",
+        direction: "column",
+        gap: "6",
+        fit: "true",
+      }),
+    ]));
+    expect(info.flex).toEqual({
+      display: "flex",
+      direction: "column",
+      gap: "6",
+      fit: "true",
+    });
+    const style = new FlexStyle(info.flex);
+    expect(style.display).toBe("flex");
+    expect(style.direction).toBe("column");
+    expect(style.gap).toBe(6);
+    expect(style.fit).toBe(true);
+  });
+
+  test("<flex> 子元素文本声明", () => {
+    const info = xml_to_ui_info(xml({}, [
+      element("flex", {}, "display:flex; gap:4"),
+    ]));
+    expect(info.flex).toBe("display:flex; gap:4");
+  });
+
+  test("<flex> 子元素 properties", () => {
+    const props = element("properties");
+    (props as any).as_object = () => ({ direction: "column", gap: 6, fit: true });
+    const info = xml_to_ui_info(xml({}, [
+      element("flex", {}, "", [props]),
+    ]));
+    expect(info.flex).toEqual({ direction: "column", gap: 6, fit: true });
   });
 
   test("没有 flex 属性时为 undefined", () => {

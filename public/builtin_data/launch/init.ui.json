@@ -2,7 +2,6 @@
   "name": "页面：启动页",
   "id": "init",
   "color": "rgb(16, 32, 108)",
-  "size": "794, 794",
   "component": [
     {
       "cls": "LaunchPage",
@@ -19,184 +18,223 @@
     }
   ],
   "items": [
-    "builtin_data/launch/bg.ui.json",
-    "builtin_data/launch/version_name.ui.json",
-    "builtin_data/launch/extra_zips.ui.json",
     {
-      "id": "tap_to_launch",
-      "i18n": "init.tap_any_place_to_launch",
-      "style": {
-        "font": "36px Arial",
-        "text_align": "center"
-      },
-      "center": "0.5,0.5",
-      "pos": "397,225,1",
-      "component": [
-        "SineOpacity(0.1, 1, 0.5)",
-        "<fade_out>!FadeOutOpacity(250)"
-      ]
+      "template": "builtin_data/launch/bg.ui.json",
+      "alignment": {
+        "left": "left",
+        "right": "right",
+        "top": "top",
+        "bottom": "bottom"
+      }
     },
     {
-      "id": "translation_note",
-      "i18n": "init.translation_not_verified",
-      "style": {
-        "font": "12px Arial",
-        "text_align": "center",
-        "fill_style": "#9b9b9b"
-      },
-      "center": "0.5,0.5",
-      "pos": "397,270,1",
-      "component": [
-        "SineOpacity(0.1, 1, 0.5)",
-        "<fade_out>!FadeOutOpacity(250)"
-      ]
-    },
-    {
-      "id": "sound_warning",
-      "i18n": "init.sound_warning",
-      "style": {
-        "font": "18px Arial",
-        "text_align": "center"
-      },
-      "center": "0.5,0.5",
-      "pos": "397,400,1",
-      "component": [
-        "SineOpacity(0.1, 1, 0.5)",
-        "<fade_out>!FadeOutOpacity(250)"
-      ]
-    },
-    {
-      "id": "bearface",
-      "img": {
-        "path": "!builtin_data/launch/bearface.png",
-        "w": 100,
-        "h": 100
-      },
-      "center": "0.5,0.5",
-      "pos": "397,150,1",
-      "opacity": 0,
-      "scale": "0.2,0.2,0.2",
-      "component": [
-        "!OpacityAnimation(0,1, 0,500, 1,500, 1,2500)",
-        {
-          "id": "scale_in",
-          "cls": "ScaleAnimation",
-          "enabled": false,
-          "args": [
-            0,
-            1,
-            "0.2,0.2,0.2",
-            500,
-            "2,2,2",
-            250,
-            "1,1,1",
-            250
-          ]
-        },
-        {
-          "id": "move_in",
-          "cls": "PositionAnimation",
-          "args": [
-            0,
-            1,
-            "397,150,1",
-            500,
-            "319,150,1",
-            500
-          ]
-        },
-        {
-          "id": "scale_out",
-          "cls": "ScaleAnimation",
-          "enabled": false,
-          "args": [
-            0,
-            1,
-            "1,1,1",
-            500,
-            "0.2,0.2,0.2",
-            500
-          ]
+      "template": "builtin_data/launch/version_name.ui.json",
+      "alignment": {
+        "left": "left",
+        "bottom": "bottom",
+        "offset": {
+          "l": 1,
+          "b": -1
         }
-      ]
+      }
     },
     {
-      "id": "yeonface",
-      "img": {
-        "path": "!builtin_data/launch/yeonface.png",
-        "w": 100,
-        "h": 100
-      },
-      "center": "0.5,0.5",
-      "pos": "397,150,1",
-      "opacity": 0,
-      "scale": "0.2,0.2,0.2",
-      "component": [
-        "!OpacityAnimation(0,1, 0,500, 1,500, 1,2500)",
-        {
-          "id": "scale_in",
-          "cls": "ScaleAnimation",
-          "args": [
-            0,
-            1,
-            "0.2,0.2,0.2",
-            500,
-            "2,2,2",
-            250,
-            "1,1,1",
-            250
-          ]
-        },
-        {
-          "id": "scale_out",
-          "cls": "ScaleAnimation",
-          "enabled": false,
-          "args": [
-            0,
-            1,
-            "1,1,1",
-            500,
-            "0.2,0.2,0.2",
-            500
-          ]
-        },
-        {
-          "id": "move_in",
-          "cls": "PositionAnimation",
-          "enabled": false,
-          "args": [
-            0,
-            1,
-            "397,150,1",
-            500,
-            "477,150,1",
-            500
-          ]
+      "template": "builtin_data/launch/extra_zips.ui.json",
+      "alignment": {
+        "right": "right",
+        "bottom": "bottom",
+        "offset": {
+          "r": -2,
+          "b": -1
         }
-      ]
+      }
     },
     {
-      "id": "long_text",
-      "i18n": "init.long_description",
-      "style": {
-        "font": "18px Arial",
-        "text_align": "center"
+      "id": "launch_content",
+      "size": "794,450",
+      "center": "0,0",
+      "alignment": {
+        "left": "mid",
+        "top": "mid"
       },
-      "center": "0.5,0",
-      "pos": "397,150,2",
-      "opacity": 0,
-      "component": [
-        "<opacity>!OpacityAnimation(0,1, 0,500, 1,500, 1,2500)",
+      "items": [
         {
-          "id": "move_in",
-          "cls": "PositionAnimation",
-          "args": [
-            0,
-            1,
-            "397,150,1",
-            500,
-            "397,230,1",
-            500
+          "id": "tap_to_launch",
+          "i18n": "init.tap_any_place_to_launch",
+          "style": {
+            "font": "36px Arial",
+            "text_align": "center"
+          },
+          "center": "0.5,0.5",
+          "pos": "397,225,1",
+          "component": [
+            "SineOpacity(0.1, 1, 0.5)",
+            "<fade_out>!FadeOutOpacity(250)"
+          ]
+        },
+        {
+          "id": "translation_note",
+          "i18n": "init.translation_not_verified",
+          "style": {
+            "font": "12px Arial",
+            "text_align": "center",
+            "fill_style": "#9b9b9b"
+          },
+          "center": "0.5,0.5",
+          "pos": "397,270,1",
+          "component": [
+            "SineOpacity(0.1, 1, 0.5)",
+            "<fade_out>!FadeOutOpacity(250)"
+          ]
+        },
+        {
+          "id": "sound_warning",
+          "i18n": "init.sound_warning",
+          "style": {
+            "font": "18px Arial",
+            "text_align": "center"
+          },
+          "center": "0.5,0.5",
+          "pos": "397,400,1",
+          "component": [
+            "SineOpacity(0.1, 1, 0.5)",
+            "<fade_out>!FadeOutOpacity(250)"
+          ]
+        },
+        {
+          "id": "bearface",
+          "img": {
+            "path": "!builtin_data/launch/bearface.png",
+            "w": 100,
+            "h": 100
+          },
+          "center": "0.5,0.5",
+          "pos": "397,150,1",
+          "opacity": 0,
+          "scale": "0.2,0.2,0.2",
+          "component": [
+            "!OpacityAnimation(0,1, 0,500, 1,500, 1,2500)",
+            {
+              "id": "scale_in",
+              "cls": "ScaleAnimation",
+              "enabled": false,
+              "args": [
+                0,
+                1,
+                "0.2,0.2,0.2",
+                500,
+                "2,2,2",
+                250,
+                "1,1,1",
+                250
+              ]
+            },
+            {
+              "id": "move_in",
+              "cls": "PositionAnimation",
+              "args": [
+                0,
+                1,
+                "397,150,1",
+                500,
+                "319,150,1",
+                500
+              ]
+            },
+            {
+              "id": "scale_out",
+              "cls": "ScaleAnimation",
+              "enabled": false,
+              "args": [
+                0,
+                1,
+                "1,1,1",
+                500,
+                "0.2,0.2,0.2",
+                500
+              ]
+            }
+          ]
+        },
+        {
+          "id": "yeonface",
+          "img": {
+            "path": "!builtin_data/launch/yeonface.png",
+            "w": 100,
+            "h": 100
+          },
+          "center": "0.5,0.5",
+          "pos": "397,150,1",
+          "opacity": 0,
+          "scale": "0.2,0.2,0.2",
+          "component": [
+            "!OpacityAnimation(0,1, 0,500, 1,500, 1,2500)",
+            {
+              "id": "scale_in",
+              "cls": "ScaleAnimation",
+              "args": [
+                0,
+                1,
+                "0.2,0.2,0.2",
+                500,
+                "2,2,2",
+                250,
+                "1,1,1",
+                250
+              ]
+            },
+            {
+              "id": "scale_out",
+              "cls": "ScaleAnimation",
+              "enabled": false,
+              "args": [
+                0,
+                1,
+                "1,1,1",
+                500,
+                "0.2,0.2,0.2",
+                500
+              ]
+            },
+            {
+              "id": "move_in",
+              "cls": "PositionAnimation",
+              "enabled": false,
+              "args": [
+                0,
+                1,
+                "397,150,1",
+                500,
+                "477,150,1",
+                500
+              ]
+            }
+          ]
+        },
+        {
+          "id": "long_text",
+          "i18n": "init.long_description",
+          "style": {
+            "font": "18px Arial",
+            "text_align": "center"
+          },
+          "center": "0.5,0",
+          "pos": "397,150,2",
+          "opacity": 0,
+          "component": [
+            "<opacity>!OpacityAnimation(0,1, 0,500, 1,500, 1,2500)",
+            {
+              "id": "move_in",
+              "cls": "PositionAnimation",
+              "args": [
+                0,
+                1,
+                "397,150,1",
+                500,
+                "397,230,1",
+                500
+              ]
+            }
           ]
         }
       ]
@@ -204,13 +242,24 @@
     {
       "template": "builtin_data/launch/loading_anim.ui.json",
       "id": "loading",
-      "pos": "760, 430"
+      "alignment": {
+        "right": "right",
+        "bottom": "bottom",
+        "offset": {
+          "r": -1,
+          "b": 1
+        }
+      }
     },
     {
       "id": "loading_content_row",
       "flex": "display:flex; direction:row; align:center; gap:3; fit:true",
       "pos": "0,0",
       "center": "0,0",
+      "alignment": {
+        "left": "left",
+        "top": "top"
+      },
       "items": [
         {
           "id": "loading_content_prefix",
@@ -234,10 +283,15 @@
     {
       "id": "desktop_hint",
       "i18n": "init.desktop_recommend",
-      "pos": "397,18",
-      "center": "0.5,0",
       "style": {
         "font": "12px Arial"
+      },
+      "alignment": {
+        "left": "mid",
+        "top": "top",
+        "offset": {
+          "t": 18
+        }
       }
     }
   ]

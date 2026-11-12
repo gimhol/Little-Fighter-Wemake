@@ -148,12 +148,12 @@ export class LaunchPage extends UIComponent<ILaunchPageProps> {
     this.lfw.callbacks.del(this.lf2_cb)
   }
   override on_resume(): void {
-    this.props.bearface = this.node.find_child("bearface")!;
-    this.props.yeonface = this.node.find_child("yeonface")!;
-    this.props.tap_to_launch = this.node.find_child("tap_to_launch")!;
-    this.props.sound_warning = this.node.find_child("sound_warning")!;
-    this.props.long_text = this.node.find_child("long_text")!;
-    if (Ditto.IsDesktop) this.node.find_child("desktop_hint")?.set_visible(false);
+    this.props.bearface = this.node.search_node("bearface")!;
+    this.props.yeonface = this.node.search_node("yeonface")!;
+    this.props.tap_to_launch = this.node.search_node("tap_to_launch")!;
+    this.props.sound_warning = this.node.search_node("sound_warning")!;
+    this.props.long_text = this.node.search_node("long_text")!;
+    if (Ditto.IsDesktop) this.node.search_node("desktop_hint")?.set_visible(false);
     this.fsm.use(Status.TapHints)
   }
   override on_key_down(e: IUIKeyEvent): void {

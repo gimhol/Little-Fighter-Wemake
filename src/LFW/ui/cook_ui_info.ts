@@ -8,6 +8,7 @@ import { floor } from '../utils/math/base';
 import { is_num_arr } from '../utils/type_check/is_num';
 import { is_str } from '../utils/type_check/is_str';
 import type { Unsafe } from "../utils/type_check/Unsafe";
+import { parse_alignment } from "./alignment";
 import { normalize_flex_style } from "./flex_style";
 import type { IComponentInfo } from "./IComponentInfo";
 import type { ICookedUIInfo } from "../loader/ui/ICookedUIInfo";
@@ -193,6 +194,7 @@ export async function cook_ui_info(
     return parse_ui_value(ret, null, v)
   }
   ret.flex            /**/ = normalize_flex_style(raw.flex);
+  ret.alignment = parse_alignment(raw.alignment);
   ret.pos             /**/ = read_nums(parse_nums(raw.pos), 3)
   ret.scale           /**/ = read_nums(parse_nums(raw.scale), 3, 1)
   ret.center          /**/ = read_nums(parse_nums(raw.center), 3)

@@ -2,6 +2,7 @@ import type { IStyle } from "../defines";
 import type { IXMLElement } from "../ditto/xml/IXMLElement";
 import type { IComponentInfo } from "./IComponentInfo";
 import type { IUIInfo, TComponentInfo } from "./IUIInfo.dat";
+import { normalize_alignment, parse_alignment, parse_alignment_object, parse_offset, type IAlignmentInfo } from "./alignment";
 
 const ACTION_PLACES = new Set(['click', 'resume', 'pause', 'start', 'stop']);
 
@@ -9,6 +10,7 @@ const ACTION_PLACES = new Set(['click', 'resume', 'pause', 'start', 'stop']);
 const FLEX_ATTRS = [
   'display', 'direction', 'wrap', 'justify', 'align', 'align_content', 'align_self',
   'gap', 'row_gap', 'col_gap', 'padding', 'grow', 'shrink', 'basis', 'order',
+  'fit', 'fit_w', 'fit_h',
 ] as const;
 
 function parse_flex_attrs(el: IXMLElement): string | Record<string, string> | undefined {
@@ -20,6 +22,58 @@ function parse_flex_attrs(el: IXMLElement): string | Record<string, string> | un
     if (value != null) flex[name] = value;
   }
   return Object.keys(flex).length ? flex : void 0;
+}
+
+function parse_flex_element(el: IXMLElement): string | Record<string, string> | undefined {
+  const inline = el.attr('flex') ?? el.attr('value') ?? el.text.trim();
+  if (inline) return inline;
+  const propsEl = el.children.find(c => c.tag === 'properties');
+  if (propsEl) {
+    const props = propsEl.as_object({});
+    if (Object.keys(props).length) return props as Record<string, string>;
+  }
+  return parse_flex_attrs(el);
+}
+
+function parse_alignment_attrs(
+  el: IXMLElement,
+  prefix = 'alignment_',
+  inline_name = 'alignment',
+): IAlignmentInfo | undefined {
+  const inline = inline_name ? el.attr(inline_name) : void 0;
+  if (inline) return parse_alignment(inline);
+  const attr = (name: string) => el.attr(`${prefix}${name}`);
+  const info: IAlignmentInfo = {};
+  const left = attr('left');
+  const right = attr('right');
+  const top = attr('top');
+  const bottom = attr('bottom');
+  if (left != null) info.left = left;
+  if (right != null) info.right = right;
+  if (top != null) info.top = top;
+  if (bottom != null) info.bottom = bottom;
+  const offset = attr('offset');
+  if (offset != null) {
+    const parsed = parse_offset(offset);
+    if (parsed) info.offset = parsed;
+  }
+  const followed = attr('followed');
+  if (followed != null) info.followed = followed;
+  const followed_l = attr('followed_l');
+  const followed_r = attr('followed_r');
+  const followed_t = attr('followed_t');
+  const followed_b = attr('followed_b');
+  if (followed_l != null || followed_r != null || followed_t != null || followed_b != null) {
+    info.followed = {
+      l: followed_l ?? followed ?? void 0,
+      r: followed_r ?? followed ?? void 0,
+      t: followed_t ?? followed ?? void 0,
+      b: followed_b ?? followed ?? void 0,
+    };
+  }
+  const once = attr('once');
+  if (once != null) info.once = once.toLowerCase() === 'true' || once === '1';
+  return normalize_alignment(info) ?? void 0;
 }
 
 function parse_action_children(place: IXMLElement): string | string[] {
@@ -66,6 +120,7 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   ret.template = el.attr('template');
   ret.auto_focus = el.attr('auto_focus') === 'true' ? true : void 0;
   ret.flex = parse_flex_attrs(el);
+  ret.alignment = parse_alignment_attrs(el);
 
   // number arrays (comma-separated)
   ret.pos = el.nums_attr('pos');
@@ -216,6 +271,17 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
       case 'template': {
         const tid = child.attr('id') || child.attr('name') || '';
         templates[tid] = xml_to_ui_info(child);
+        break;
+      }
+      case 'alignment': {
+        const propsEl = child.children.find(c => c.tag === 'properties');
+        ret.alignment = (propsEl ? parse_alignment_object(propsEl.as_object({})) : void 0)
+          ?? parse_alignment_attrs(child, '', 'value')
+          ?? parse_alignment(child.text);
+        break;
+      }
+      case 'flex': {
+        ret.flex = parse_flex_element(child);
         break;
       }
       default: {
