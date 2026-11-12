@@ -2363,9 +2363,9 @@ export class Entity {
     if (_x !== null && _x !== void 0) this.position.x = round_float(_x)
     if (_y !== null && _y !== void 0) this.position.y = round_float(_y)
     if (_z !== null && _z !== void 0) this.position.z = round_float(_z)
+    this.restrict();
     if (this.prev_position.x === Number.MIN_SAFE_INTEGER)
       this.prev_position.copy(this.position);
-    this.restrict();
   }
   restrict() {
     const { x, y, z, terrain } = this.world.restrict(this);
