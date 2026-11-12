@@ -375,7 +375,8 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
     this.lfw.game_mode = game_mode
     this.lfw.mt.mark = 'gpl_start_game_cam_x';
-    let cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - Defines.MODERN_SCREEN_WIDTH)
+    const view_w = this.world.view_w
+    const cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, Math.max(left, right - view_w))
 
     for (const [player, slot_info] of char_menu_logic.players) {
       const { is_com } = player;
@@ -400,8 +401,8 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
         this.lfw.mt.pick([FacingFlag.Left, FacingFlag.Right])!;
       fighter.name_visible = 1
       fighter.as_key_role(true);
-      const xx1 = is_stage_mode ? 40 : 1 * Defines.MODERN_SCREEN_WIDTH / 3;
-      const xx2 = is_stage_mode ? 80 : 2 * Defines.MODERN_SCREEN_WIDTH / 3;
+      const xx1 = is_stage_mode ? 40 : 1 * view_w / 3;
+      const xx2 = is_stage_mode ? 80 : 2 * view_w / 3;
       if (is_survival_rank) {
         fighter.hp = fighter.hp_max = 2000
         fighter.mp = fighter.mp_max = 1000

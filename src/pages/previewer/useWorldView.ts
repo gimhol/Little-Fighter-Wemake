@@ -2,7 +2,6 @@ import { __Pointings } from "@/DittoImpl";
 import type { OrthographicCamera } from "@/DittoImpl/_t";
 import type { WorldRenderer } from "@/DittoImpl/renderer/WorldRenderer";
 import type { LFW } from "@/LFW";
-import { Defines } from "@/LFW/defines";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, PointerEvent as ReactPointerEvent, SetStateAction, WheelEvent as ReactWheelEvent } from "react";
 import type { TCanvasFit } from "./ctx";
@@ -135,7 +134,7 @@ export function useWorldView(lfw: LFW | undefined, options: IWorldViewOptions = 
     const k = (r.camera as OrthographicCamera).zoom || 1;
     return {
       w: world.dataset.screen_w / (world.transform.scale_x || 1) / k,
-      h: Defines.MODERN_SCREEN_HEIGHT / (world.transform.scale_y || 1) / k,
+      h: world.view_h / (world.transform.scale_y || 1) / k,
     };
   }, [lfw]);
 
@@ -160,7 +159,7 @@ export function useWorldView(lfw: LFW | undefined, options: IWorldViewOptions = 
     // 相机位置 = 视口中心对应的世界点 - 半个视口；正交 zoom 不影响这个换算
     const { world } = lfw;
     const sw = world.dataset.screen_w;
-    const sh = Defines.MODERN_SCREEN_HEIGHT;
+    const sh = world.view_h;
     lock_camera(
       x - sw / 2 / (world.transform.scale_x || 1),
       y - sh / 2 / (world.transform.scale_y || 1),
@@ -183,7 +182,7 @@ export function useWorldView(lfw: LFW | undefined, options: IWorldViewOptions = 
     const [kx, ky] = canvas_scale(
       e.currentTarget,
       world.dataset.screen_w,
-      Defines.MODERN_SCREEN_HEIGHT,
+      world.view_h,
       world.transform.scale_x || 1,
       world.transform.scale_y || 1,
       (r.camera as OrthographicCamera).zoom || 1,

@@ -1,5 +1,5 @@
 import { Ditto } from '.';
-import { type IVector2, type IVector2Like, Defines } from './defines';
+import { type IVector2, type IVector2Like } from './defines';
 import { abs, clamp, max, min, round, sign } from './utils';
 import type { World } from './World';
 
@@ -56,7 +56,7 @@ export class Camera {
     do {
       const { cam_l, cam_r } = stage;
       const min_cam_x = cam_l;
-      const max_cam_x = cam_r - screen_w / bg.zoom_x;
+      const max_cam_x = max(min_cam_x, cam_r - screen_w / bg.zoom_x);
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
       this.destination.x = clamp(this._dested?.x ?? this.destination.x, min_cam_x, max_cam_x);
@@ -89,7 +89,7 @@ export class Camera {
 
     do {
       const { height } = bg;
-      if (height <= Defines.MODERN_SCREEN_HEIGHT) {
+      if (height <= screen_h) {
         this.position.y = this.destination.y = 0;
         break;
       }
@@ -99,7 +99,7 @@ export class Camera {
       const cam_y = this._dested?.y ?? this.destination.y;
       // 高地图：纵向可移动范围 = 世界高度 - 可见高度（世界比屏幕高多少，就能往上移多少）；
       // 普通/老地图：沿用 -0.5*far（经典数据里 far 承载了纵向范围），保持原行为
-      const view_h = Defines.MODERN_SCREEN_HEIGHT / (bg.zoom_y ?? 1);
+      const view_h = screen_h / (bg.zoom_y ?? 1);
       const follow_y = (bg.data.dataset?.cam_y_follow ?? 0) > 0;
       const cam_max_y = follow_y
         ? max(0, height - view_h)

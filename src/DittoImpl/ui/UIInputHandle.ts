@@ -67,15 +67,11 @@ export class UIInputHandle implements IUIInputHandle {
   on_wheel(): void { }
 
   protected pos_arg(e: IPointingEvent): string {
-    const { screen_w, screen_h } = this.lfw.world.dataset;
-    const x = Math.round((e.scene_x + 1) / 2 * screen_w * 10) / 10;
-    const y = Math.round((1 - e.scene_y) / 2 * screen_h * 10) / 10;
-    return `--pos=${x},${y}`;
+    const { x, y } = this.lfw.world.ui_from_scene(e.scene_x, e.scene_y);
+    return `--pos=${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
   }
   protected update_local_cursor(e: IPointingEvent, hidden: boolean | undefined, down?: boolean) {
-    const { screen_w, screen_h } = this.lfw.world.dataset;
-    const x = (e.scene_x + 1) / 2 * screen_w;
-    const y = (1 - e.scene_y) / 2 * screen_h;
+    const { x, y } = this.lfw.world.ui_from_scene(e.scene_x, e.scene_y);
     set_local_cursor(this.lfw.world, x, y, hidden, down);
   }
   protected push_pointer(cmd: CMD, e: IPointingEvent) {

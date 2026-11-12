@@ -5,4 +5,5 @@ export interface IWorldRenderer {
   del_entity(entity: Entity): void;
   render(dt: number): void;
   dispose(): void;
+  set_render_resolution?(w: number, h: number): void;
 }

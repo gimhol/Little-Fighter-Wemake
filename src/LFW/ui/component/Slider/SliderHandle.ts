@@ -1,5 +1,5 @@
 import {
-  clamp, Defines, type IPointingEvent, type IPointingsCallback, type IPropsMeta,
+  clamp, type IPointingEvent, type IPointingsCallback, type IPropsMeta,
   type IUICallback, type IUICompnentCallbacks,
   LFWPointerEvent, max, min, round, round_float, UIComponent, UINode
 } from "../../..";
@@ -143,16 +143,17 @@ export class SliderHandle extends UIComponent<ISliderHandleProps, ISliderHandleC
     if (!container) return;
     const { geo } = container;
     const { cross } = this.node;
+    const point = this.world.ui_from_scene(e.scene_x, e.scene_y);
 
     if (this.direction == 'row') {
-      const fx = Defines.MODERN_SCREEN_WIDTH * (e.scene_x + 1) / 2
+      const fx = point.x
       const min_num = geo.left - geo.pos.x - cross.left;
       const max_num = geo.right - geo.pos.x - cross.right;
       const x = clamp(fx - geo.pos.x, min_num, max_num);
       this.factor = round_float((x - min_num) / (max_num - min_num));
       this.value = this.value
     } else {
-      const fy = Defines.MODERN_SCREEN_HEIGHT * (1 - e.scene_y) / 2
+      const fy = point.y
       const min_num = geo.top - geo.pos.y - cross.top;
       const max_num = geo.bottom - geo.pos.y - cross.bottom;
       const y = clamp(fy - geo.pos.y, min_num, max_num);

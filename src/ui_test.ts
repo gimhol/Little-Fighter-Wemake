@@ -65,12 +65,12 @@ function find_node(root: UINode, id: string): UINode | undefined {
 
 /** UI 坐标 → scene 坐标（`pos_arg` 的逆运算） */
 function pointer_event(lfw: LFW, x: number, y: number, button: number = 0): IPointingEvent {
-  const { screen_w, screen_h } = lfw.world.dataset;
+  const scene = lfw.world.scene_from_ui(x, y);
   return {
     x,
     y,
-    scene_x: (x / screen_w) * 2 - 1,
-    scene_y: 1 - (y / screen_h) * 2,
+    scene_x: scene.x,
+    scene_y: scene.y,
     is_pointing_event: true,
     button,
     delta_x: 0,

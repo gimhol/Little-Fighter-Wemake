@@ -6,6 +6,7 @@ export interface IPointings {
   get grabbing(): unknown;
   get enabled(): boolean;
   set enabled(v: boolean);
+  set_screen_size(w: number, h: number): void;
   grab(grabbing: unknown): boolean;
   ungrab(grabbing: unknown): void;
   dispose(): void;

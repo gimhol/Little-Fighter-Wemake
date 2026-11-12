@@ -26,8 +26,78 @@ export namespace Defines {
   export type TeamEnum = _TeamEnum;
   export const CLASSIC_SCREEN_WIDTH = 794;
   export const CLASSIC_SCREEN_HEIGHT = 550;
-  export const MODERN_SCREEN_WIDTH = 794;
-  export const MODERN_SCREEN_HEIGHT = 450;
+  /**
+   * UI / 关卡作者坐标系的安全区尺寸
+   *
+   * 逻辑视口（world.dataset.screen_w/screen_h）可以随比例向外扩，
+   * 但安全区始终完整可见；UI 页面按这个尺寸排版并在视口中居中。
+   */
+  export const SAFE_SCREEN_WIDTH = 794;
+  export const SAFE_SCREEN_HEIGHT = 450;
+  export const MODERN_SCREEN_WIDTH = SAFE_SCREEN_WIDTH;
+  export const MODERN_SCREEN_HEIGHT = SAFE_SCREEN_HEIGHT;
+  /**
+   * 按目标宽高比生成逻辑视口，保证安全区完整可见：只向外扩，不裁剪安全区。
+   *
+   * 例：16:9 → 800×450；4:3 → 794×596；21:9 → 1050×450。
+   */
+  export function viewport_from_aspect(aspect: number): { w: number; h: number } {
+    if (!(aspect > 0)) return { w: SAFE_SCREEN_WIDTH, h: SAFE_SCREEN_HEIGHT };
+    return {
+      w: Math.max(SAFE_SCREEN_WIDTH, Math.round(SAFE_SCREEN_HEIGHT * aspect)),
+      h: Math.max(SAFE_SCREEN_HEIGHT, Math.round(SAFE_SCREEN_WIDTH / aspect)),
+    };
+  }
+  /** 解析 `16:9` / `21:9` / `1.7778` 形式的宽高比；无效返回 undefined */
+  export function parse_aspect(value: unknown): number | undefined {
+    if (typeof value !== "string") return undefined;
+    const m = value.trim().match(/^(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)$/);
+    let aspect: number;
+    if (m) {
+      const a = parseFloat(m[1]);
+      const b = parseFloat(m[2]);
+      if (!(a > 0) || !(b > 0)) return undefined;
+      aspect = a / b;
+    } else {
+      aspect = parseFloat(value);
+    }
+    if (!Number.isFinite(aspect) || aspect < 0.5 || aspect > 4) return undefined;
+    return aspect;
+  }
+  /** 渲染分辨率预设（渲染缓冲的像素尺寸；w/h 都为 0 表示跟随画布显示尺寸） */
+  export interface IRenderResolutionPreset {
+    w: number;
+    h: number;
+    /** 展示名：i18n key 或字面量 */
+    label: string;
+  }
+  /** 默认按逻辑分辨率的 4 倍渲染（与历史行为一致） */
+  export const DEFAULT_RENDER_RESOLUTION: Readonly<IRenderResolutionPreset> = {
+    w: MODERN_SCREEN_WIDTH * 4,
+    h: MODERN_SCREEN_HEIGHT * 4,
+    label: `${MODERN_SCREEN_WIDTH * 4}×${MODERN_SCREEN_HEIGHT * 4}`,
+  };
+  /**
+   * 渲染分辨率预设
+   *
+   * 只改渲染缓冲的像素多少，逻辑视口（screen_w/screen_h）与世界范围不变，
+   * 因此 UI / 角色 / 背景比例都不会变，只是清晰度与性能不同。
+   *
+   * 顺序须与 `ui/settings_misc.ui.json5` 的 `render_resolution_row.items` 一致。
+   */
+  export const RENDER_RESOLUTION_PRESETS: readonly IRenderResolutionPreset[] = [
+    { w: 0, h: 0, label: "render_resolution_auto" },
+    { w: MODERN_SCREEN_WIDTH, h: MODERN_SCREEN_HEIGHT, label: `${MODERN_SCREEN_WIDTH}×${MODERN_SCREEN_HEIGHT}` },
+    { w: 1280, h: 720, label: "1280×720" },
+    { w: MODERN_SCREEN_WIDTH * 2, h: MODERN_SCREEN_HEIGHT * 2, label: `${MODERN_SCREEN_WIDTH * 2}×${MODERN_SCREEN_HEIGHT * 2}` },
+    { w: 1920, h: 1080, label: "1920×1080" },
+    { w: MODERN_SCREEN_WIDTH * 3, h: MODERN_SCREEN_HEIGHT * 3, label: `${MODERN_SCREEN_WIDTH * 3}×${MODERN_SCREEN_HEIGHT * 3}` },
+    { ...DEFAULT_RENDER_RESOLUTION },
+  ];
+  /** 当前 w/h 匹配的预设下标（不匹配时返回 -1） */
+  export function render_resolution_index(w: number, h: number): number {
+    return RENDER_RESOLUTION_PRESETS.findIndex((v) => v.w === w && v.h === h);
+  }
   export const DEFAULT_OPOINT_SPEED_Z = 3.5;
   export const DEFAULT_FIREN_FLAME_SPEED_Z = 0.5;
   export const WT_BOUNCE_MIN_Y: Record<WT, number> = {

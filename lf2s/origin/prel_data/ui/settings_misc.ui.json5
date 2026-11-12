@@ -132,6 +132,15 @@
           },
         },
         {
+          // 选项顺序须与 Defines.RENDER_RESOLUTION_PRESETS 一致
+          id: "render_resolution_row",
+          values: {
+            prefix: "render_resolution",
+            items: "render_resolution_auto,794×450,1280×720,1588×900,1920×1080,2382×1350,3176×1800",
+          },
+          template: "ui/arrow_switcher_row.ui.json5",
+        },
+        {
           id: "render_rate_row2",
           visible: false,
           values: {

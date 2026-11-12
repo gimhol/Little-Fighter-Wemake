@@ -1,4 +1,4 @@
-import { Defines, GK, type IPropsMeta } from "../../defines";
+import { GK, type IPropsMeta } from "../../defines";
 import type { IPointingEvent } from "../../ditto/pointings/IPointingEvent";
 import type { IPointingsCallback } from "../../ditto/pointings/IPointingsCallback";
 import { max, round } from "../../utils/math/base";
@@ -437,26 +437,20 @@ export class ScrollView extends UIComponent<IScrollViewProps, IScrollViewCallbac
   }
 
   protected pointer_axis_px(e: IPointingEvent): number {
-    if (this.is_col) {
-      return Defines.MODERN_SCREEN_HEIGHT * (1 - e.scene_y) / 2;
-    }
-    return Defines.MODERN_SCREEN_WIDTH * (e.scene_x + 1) / 2;
+    const p = this.world.ui_from_scene(e.scene_x, e.scene_y);
+    return this.is_col ? p.y : p.x;
   }
   protected pointer_in_view(e: IPointingEvent): boolean {
     const g = this.node.geo;
-    if (this.is_col) {
-      const fy = Defines.MODERN_SCREEN_HEIGHT * (1 - e.scene_y) / 2;
-      return fy >= g.top && fy <= g.bottom;
-    }
-    const fx = Defines.MODERN_SCREEN_WIDTH * (e.scene_x + 1) / 2;
-    return fx >= g.left && fx <= g.right;
+    const p = this.world.ui_from_scene(e.scene_x, e.scene_y);
+    if (this.is_col) return p.y >= g.top && p.y <= g.bottom;
+    return p.x >= g.left && p.x <= g.right;
   }
   /** 指针是否落在某节点矩形内（双向判定，便于命中轨道） */
   protected pointer_in_node(e: IPointingEvent, n: UINode): boolean {
     const g = n.geo;
-    const fx = Defines.MODERN_SCREEN_WIDTH * (e.scene_x + 1) / 2;
-    const fy = Defines.MODERN_SCREEN_HEIGHT * (1 - e.scene_y) / 2;
-    return fx >= g.left && fx <= g.right && fy >= g.top && fy <= g.bottom;
+    const p = this.world.ui_from_scene(e.scene_x, e.scene_y);
+    return p.x >= g.left && p.x <= g.right && p.y >= g.top && p.y <= g.bottom;
   }
 
   /** 由滚动条轨道上的指针位置换算进度（考虑抓取偏移 _sb_grab） */

@@ -8,8 +8,10 @@ export interface IUseLFWOptions {
   enabled?: boolean;
   /** 重建键：值变化时销毁旧实例再建一个；不传则只在 enabled 变 true 时建一次 */
   recreate_key?: unknown;
-  /** 传给 `new LFW(debug)` */
+  /** 传给 `new LFW(debug, options)` */
   debug?: boolean;
+  screen_w?: number;
+  screen_h?: number;
   /** 要加载的数据包，默认 `LFW.ZIPS` */
   zips?: readonly (IZip | string)[];
   /** 加载完成后静音（预览用） */
@@ -48,7 +50,10 @@ export function useLFW(options: IUseLFWOptions = {}): IUseLFWResult {
   // 建实例 / 销毁
   useEffect(() => {
     if (!enabled) return;
-    const lfw = new LFW(opts.current.debug);
+    const lfw = new LFW(opts.current.debug, {
+      screen_w: opts.current.screen_w,
+      screen_h: opts.current.screen_h,
+    });
     Object.assign(window, { LFW, lfw, world: lfw.world });
     set_lfw(lfw);
     return () => {

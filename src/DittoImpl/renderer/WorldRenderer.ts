@@ -1,4 +1,4 @@
-import { Defines, floor, min } from "@/LFW";
+import { floor, min } from "@/LFW";
 import type { IWorldRenderer } from "@/LFW/ditto/render/IWorldRenderer";
 import type { Entity } from "@/LFW/entity";
 import type { LFW } from "@/LFW/LFW";
@@ -55,6 +55,8 @@ export class WorldRenderer implements IWorldRenderer {
   protected ui_fg_scene = new Scene();
   protected renderer_w: number = 0;
   protected renderer_h: number = 0;
+  protected _render_w: number = 0;
+  protected _render_h: number = 0;
   /** 渲染缓冲尺寸（LineMaterial.resolution 需要与之匹配，否则线宽错误） */
   get renderer_size() {
     return { w: this.renderer_w, h: this.renderer_h };
@@ -75,12 +77,52 @@ export class WorldRenderer implements IWorldRenderer {
     this._renderer?.setSize(w, h, false);
     return this;
   }
+
+  set_render_resolution(w: number, h: number): void {
+    const rw = Math.max(0, Math.round(w || 0));
+    const rh = Math.max(0, Math.round(h || 0));
+    if (rw === this._render_w && rh === this._render_h) return;
+    this._render_w = rw;
+    this._render_h = rh;
+    this.apply_render_resolution();
+  }
+
+  protected apply_render_resolution(): void {
+    const { w, h } = this.resolve_render_size();
+    if (w === this.renderer_w && h === this.renderer_h) return;
+    this.set_renderer_size(w, h);
+    this.cursor_render?.resize_render_target(w, h);
+  }
+
+  protected resolve_render_size(): { w: number; h: number } {
+    const qw = Math.max(0, Math.round(this._render_w || 0));
+    const qh = Math.max(0, Math.round(this._render_h || 0));
+    const { screen_w, screen_h } = this.world.dataset;
+    const sw = Math.max(1, screen_w);
+    const sh = Math.max(1, screen_h);
+    if (qw > 0 && qh > 0) return { w: qw, h: qh };
+    if (qw > 0) return { w: qw, h: Math.max(1, Math.round((qw * sh) / sw)) };
+    if (qh > 0) return { w: Math.max(1, Math.round((qh * sw) / sh)), h: qh };
+    return this.resolve_auto_render_size();
+  }
+
+  protected resolve_auto_render_size(): { w: number; h: number } {
+    const { screen_w, screen_h } = this.world.dataset;
+    const rect = this._renderer?.domElement.getBoundingClientRect();
+    const dpr = typeof window === "undefined" ? 1 : (window.devicePixelRatio || 1);
+    const w = rect?.width ?? 0;
+    const h = rect?.height ?? 0;
+    if (w > 0 && h > 0)
+      return { w: Math.max(1, Math.round(w * dpr)), h: Math.max(1, Math.round(h * dpr)) };
+    return { w: Math.max(1, Math.round(screen_w * 4)), h: Math.max(1, Math.round(screen_h * 4)) };
+  }
   on_win_resize = () => {
     if (!this._css_renderer || !this._renderer) return;
     const styles = window.getComputedStyle(this._renderer.domElement)
-    let w = parseInt(styles.width)
-    let h = parseInt(styles.height)
-    const scale = w / Defines.CLASSIC_SCREEN_WIDTH
+    const w = parseInt(styles.width)
+    const h = parseInt(styles.height)
+    const view_w = Math.max(1, this.world.view_w)
+    const scale = w / view_w
     this._css_renderer.setSize(w / scale, h / scale)
     this._css_renderer.domElement.style.top = styles.top;
     this._css_renderer.domElement.style.left = styles.left;
@@ -90,6 +132,7 @@ export class WorldRenderer implements IWorldRenderer {
     this._css_renderer.domElement.style.transform = `scale(${scale})`
     this._css_renderer.domElement.style.transformOrigin = `0px 0px`
     this.cursor_render.sync_overlay()
+    this.apply_render_resolution()
   }
   constructor(world: World) {
     if (!world) debugger;
@@ -102,7 +145,12 @@ export class WorldRenderer implements IWorldRenderer {
 
     this.bg_render = new BgRender(this);
     this.bg_flags = new TerrainIndicator(this);
-    this.set_renderer_size(w * 4, h * 4);
+    this._render_w = world.dataset.render_w;
+    this._render_h = world.dataset.render_h;
+    {
+      const { w: rw, h: rh } = this.resolve_render_size();
+      this.set_renderer_size(rw, rh);
+    }
     this.scene.add(this.world_node);
     this.world_node.add(this.overlay_node);
     this.shadow_batch = new ShadowBatch(this);
@@ -213,8 +261,8 @@ export class WorldRenderer implements IWorldRenderer {
     this.fg_camera.position.copy(this.camera.position);
     this.ui_bg_camera.position.copy(this.camera.position);
     this.ui_fg_camera.position.copy(this.camera.position);
-    const ui_x = this.camera.position.x + this.ui_offset.x;
-    const ui_y = this.camera.position.y + this.world.dataset.screen_h + this.ui_offset.y;
+    const ui_x = this.camera.position.x + this.world.ui_left + this.ui_offset.x;
+    const ui_y = this.camera.position.y + this.world.view_h - this.world.ui_top + this.ui_offset.y;
     this.ui_bg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     this.ui_fg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     const { dataset: { entity_flags }, transform } = this.world;

@@ -71,6 +71,10 @@ const DEFAULT_INFO: Readonly<IGameZipInfo> = {
   author: "Gim",
   paths: ["prel.zip.json", "data.zip.json"],
 }
+export interface ILFWOptions {
+  screen_w?: number;
+  screen_h?: number;
+}
 export class LFW implements I.IKeyboardCallback, IDebugging {
   static readonly TAG = "LFW";
   static readonly instances: LFW[] = []
@@ -379,7 +383,7 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     return true;
   }
 
-  constructor(dev = false) {
+  constructor(dev = false, options: ILFWOptions = {}) {
     regist_components()
     regist_buffs();
     this.dev = dev;
@@ -401,7 +405,14 @@ export class LFW implements I.IKeyboardCallback, IDebugging {
     I.Ditto.Zip.forget_stored(LFW.DATA_TYPE, LFW.DATA_VERSION).catch(e => {
       I.Ditto.warn(e)
     })
-    this.world = new World(this);
+    this.world = new World(this, options);
+    this.pointings.set_screen_size(this.world.view_w, this.world.view_h);
+    this.world.callbacks.add({
+      on_dataset_change: (k) => {
+        if (k === 'screen_w' || k === 'screen_h')
+          this.pointings.set_screen_size(this.world.view_w, this.world.view_h);
+      },
+    });
     this.world.start_update();
     this.world.start_render();
     LFW.instances.push(this)

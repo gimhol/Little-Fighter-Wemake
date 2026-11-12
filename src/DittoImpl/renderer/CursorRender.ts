@@ -175,6 +175,10 @@ export class CursorRender {
     this.sync_overlay();
     this.start();
   }
+  resize_render_target(w: number, h: number): void {
+    this._renderer?.setSize(w, h, false);
+    this.sync_overlay();
+  }
   sync_overlay(): void {
     const { _canvas: canvas, _host: host } = this;
     if (!canvas || !host) return;
@@ -246,9 +250,12 @@ export class CursorRender {
     if (!overlay) return;
     if (!any && !this._had_content) return;
     this._had_content = any;
-    const { ui_offset } = this.renderer;
-    const { screen_h } = this.renderer.world.dataset;
-    this.container.position.set(ui_offset.x, screen_h + ui_offset.y, ui_offset.z);
+    const { ui_offset, world } = this.renderer;
+    this.container.position.set(
+      world.ui_left + ui_offset.x,
+      world.view_h - world.ui_top + ui_offset.y,
+      ui_offset.z
+    );
     overlay.render(this._scene, this._camera);
   }
 }

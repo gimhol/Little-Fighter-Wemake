@@ -150,6 +150,18 @@ export interface IWorldDataset {
 
   screen_w: number;
   screen_h: number;
+  /**
+   * 渲染分辨率宽
+   *
+   * 0 = 跟随画布显示尺寸
+   */
+  render_w: number;
+  /**
+   * 渲染分辨率高
+   *
+   * 0 = 跟随画布显示尺寸
+   */
+  render_h: number;
   /** 重力加速度 */
   gravity: number;
   /** 重力加速度（按着防御时） */
@@ -353,6 +365,8 @@ export const world_dataset_fields = fields<IWorldDataset>({
   land_friction_z: flt("落地摩擦Z", "在物体着地时，当前动作结束前，每帧速度Z将±=此值,向0靠近"),
   screen_w: todo,
   screen_h: todo,
+  render_w: int("渲染分辨率宽", "渲染缓冲像素宽；0 = 跟随画布显示尺寸", { min: 0, max: 16384 }),
+  render_h: int("渲染分辨率高", "渲染缓冲像素高；0 = 跟随画布显示尺寸", { min: 0, max: 16384 }),
   sync_render: todo,
   difficulty: flt,
   infinity_mp: int("无限MP", "无限MP, 1=无限, 0=有限(默认)", { min: 0, max: 1 }),
@@ -460,6 +474,8 @@ const params: ISchemaMeta<IWorldDataset> = {
     land_friction_z: { type: 'number' },
     screen_w: { type: 'number' },
     screen_h: { type: 'number' },
+    render_w: { type: 'number' },
+    render_h: { type: 'number' },
     gravity: { type: 'number' },
     gravity_d: { type: 'number' },
     weapon_throwing_gravity: { type: 'number' },

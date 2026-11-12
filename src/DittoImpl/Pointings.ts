@@ -1,12 +1,25 @@
 import { Callbacks } from "../LFW/base/Callbacks";
 import { NoEmitCallbacks } from "../LFW/base/NoEmitCallbacks";
+import { Defines } from "../LFW/defines/defines";
 import type { IPointings, IPointingsCallback } from "../LFW/ditto";
 import { __PointingEvent } from "./__PointingEvent";
 
 export class __Pointings implements IPointings {
   protected _callbacks = new Callbacks<IPointingsCallback>();
   protected _ele?: HTMLElement;
+  protected _screen_w: number = Defines.MODERN_SCREEN_WIDTH;
+  protected _screen_h: number = Defines.MODERN_SCREEN_HEIGHT;
   enabled: boolean = true;
+
+  set_screen_size(w: number, h: number): void {
+    if (!(w > 0) || !(h > 0)) return;
+    this._screen_w = w;
+    this._screen_h = h;
+  }
+  protected _event(e: PointerEvent | MouseEvent | WheelEvent): __PointingEvent {
+    return new __PointingEvent(this._ele, e, this._screen_w, this._screen_h);
+  }
+
   get callback(): NoEmitCallbacks<IPointingsCallback> {
     return this._callbacks;
   }
@@ -43,24 +56,24 @@ export class __Pointings implements IPointings {
 
   private _on_pointer_down = (e: PointerEvent) => {
     this.grab_begin();
-    if (this.enabled) this._callbacks.call("on_pointer_down", new __PointingEvent(this._ele, e));
+    if (this.enabled) this._callbacks.call("on_pointer_down", this._event(e));
   };
   private _on_pointer_up = (e: PointerEvent) =>
-    this.enabled && this._callbacks.call("on_pointer_up", new __PointingEvent(this._ele, e));
+    this.enabled && this._callbacks.call("on_pointer_up", this._event(e));
   private _on_pointer_move = (e: PointerEvent) =>
-    this.enabled && this._callbacks.call("on_pointer_move", new __PointingEvent(this._ele, e));
+    this.enabled && this._callbacks.call("on_pointer_move", this._event(e));
   private _on_pointer_cancel = (e: PointerEvent) =>
-    this.enabled && this._callbacks.call("on_pointer_cancel", new __PointingEvent(this._ele, e));
+    this.enabled && this._callbacks.call("on_pointer_cancel", this._event(e));
   private _on_pointer_enter = (e: PointerEvent) =>
-    this.enabled && this._callbacks.call("on_pointer_enter", new __PointingEvent(this._ele, e));
+    this.enabled && this._callbacks.call("on_pointer_enter", this._event(e));
   private _on_pointer_leave = (e: PointerEvent) =>
-    this.enabled && this._callbacks.call("on_pointer_leave", new __PointingEvent(this._ele, e));
+    this.enabled && this._callbacks.call("on_pointer_leave", this._event(e));
   private _on_click = (e: MouseEvent) =>
-    this.enabled && this._callbacks.call("on_click", new __PointingEvent(this._ele, e));
+    this.enabled && this._callbacks.call("on_click", this._event(e));
   private _on_wheel = (e: WheelEvent) => {
     if (!this.enabled) return;
     e.preventDefault();
-    this._callbacks.call("on_wheel", new __PointingEvent(this._ele, e));
+    this._callbacks.call("on_wheel", this._event(e));
   }
   dispose() {
     this._ele?.removeEventListener("click", this._on_click);

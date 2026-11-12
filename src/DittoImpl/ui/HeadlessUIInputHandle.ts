@@ -76,35 +76,28 @@ export class HeadlessUIInputHandle implements IUIInputHandle {
   }
 
   protected pos_arg(e: IPointingEvent): string {
-    const { screen_w, screen_h } = this.lfw.world.dataset;
-    const x = Math.round((e.scene_x + 1) / 2 * screen_w * 10) / 10;
-    const y = Math.round((1 - e.scene_y) / 2 * screen_h * 10) / 10;
-    return `--pos=${x},${y}`;
+    const { x, y } = this.lfw.world.ui_from_scene(e.scene_x, e.scene_y);
+    return `--pos=${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
   }
 
   protected update_local_cursor(e: IPointingEvent, hidden: boolean | undefined, down?: boolean): void {
-    const { screen_w, screen_h } = this.lfw.world.dataset;
-    const x = (e.scene_x + 1) / 2 * screen_w;
-    const y = (1 - e.scene_y) / 2 * screen_h;
+    const { x, y } = this.lfw.world.ui_from_scene(e.scene_x, e.scene_y);
     set_local_cursor(this.lfw.world, x, y, hidden, down);
   }
 
   /** scene(NDC -1~1) → UI 坐标（左上为原点，y 向下），与 pos_arg 同一套换算 */
   protected to_ui(e: IPointingEvent): { x: number; y: number } {
-    const { screen_w, screen_h } = this.lfw.world.dataset;
-    return {
-      x: (e.scene_x + 1) / 2 * screen_w,
-      y: (1 - e.scene_y) / 2 * screen_h,
-    };
+    return this.lfw.world.ui_from_scene(e.scene_x, e.scene_y);
   }
 
   /** UI 坐标 → 世界坐标（ui_bg/ui_fg 容器的位置） */
   protected to_world(node: UINode, x: number, y: number): { x: number; y: number; z: number } {
     const off = this.world_renderer.ui_offset;
     const cam = this.world_renderer.camera.position;
+    const { world } = this.lfw;
     return {
-      x: cam.x + off.x + x,
-      y: cam.y + this.lfw.world.dataset.screen_h + off.y - y,
+      x: cam.x + world.ui_left + off.x + x,
+      y: cam.y + world.view_h - world.ui_top + off.y - y,
       z: off.z + node.global_pos.z,
     };
   }

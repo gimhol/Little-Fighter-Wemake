@@ -47,6 +47,13 @@ function set_sync_render(lfw: LFW, v: SyncRenderEnum) {
   lfw.world.dataset.sync_render = v;
 }
 
+function step_render_resolution(lfw: LFW, current: number, dir: -1 | 1) {
+  const list = Defines.RENDER_RESOLUTION_PRESETS;
+  const next = list[(current + dir + list.length) % list.length];
+  lfw.world.dataset.render_w = next.w;
+  lfw.world.dataset.render_h = next.h;
+}
+
 function toggle_team_outline(lfw: LFW) {
   lfw.world.dataset.outline_enabled = lfw.world.dataset.outline_enabled ? 0 : 1;
 }
@@ -191,6 +198,7 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
 
   const lang_index = Math.max(0, LANG_CODES.indexOf(lfw.canonical_lang()));
   const render_index = Math.max(0, RENDER_RATE_OPTIONS.indexOf(lfw.world.dataset.sync_render));
+  const resolution_index = Math.max(0, Defines.render_resolution_index(lfw.world.dataset.render_w, lfw.world.dataset.render_h));
   const conn = Ditto.Networking;
   const owner = !conn.room || conn.room.owner?.id === conn.client?.id;
 
@@ -201,6 +209,9 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
       lfw,
       RENDER_RATE_OPTIONS[(render_index + dir + RENDER_RATE_OPTIONS.length) % RENDER_RATE_OPTIONS.length]
     );
+  };
+  const step_resolution = (dir: -1 | 1) => {
+    step_render_resolution(lfw, resolution_index, dir);
   };
 
   return (
@@ -356,6 +367,16 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
               <button className={csses.arrow} onClick={() => step_render(-1)}>◀</button>
               <div className={csses.switcher_label}>{lfw.t(RENDER_RATE_ITEMS[render_index])}</div>
               <button className={csses.arrow} onClick={() => step_render(1)}>▶</button>
+            </div>
+          </div>
+          <div className={csses.misc_row}>
+            <div className={csses.misc_label}>{lfw.t("render_resolution")}</div>
+            <div className={csses.switcher}>
+              <button className={csses.arrow} onClick={() => step_resolution(-1)}>◀</button>
+              <div className={csses.switcher_label}>
+                {lfw.t(Defines.RENDER_RESOLUTION_PRESETS[resolution_index].label)}
+              </div>
+              <button className={csses.arrow} onClick={() => step_resolution(1)}>▶</button>
             </div>
           </div>
           <div className={csses.misc_row}>

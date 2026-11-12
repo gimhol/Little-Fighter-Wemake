@@ -1,7 +1,7 @@
 import { BG_INDICATINGS } from "@/DittoImpl/renderer/INDICATINGS";
 import type { LFW } from "@/LFW";
 import { InvalidController } from "@/LFW/controller/InvalidController";
-import { Defines, type IBgData, type IBgLayerInfo } from "@/LFW/defines";
+import { type IBgData, type IBgLayerInfo } from "@/LFW/defines";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePreviewer } from "./ctx";
 import { FitButtons } from "./FitButtons";
@@ -159,7 +159,7 @@ export function BackgroundPreviewer() {
     const data = lfw.datas.find_object("30") ?? lfw.datas.fighters[0];
     if (!data) return;
     const sw = lfw.world.dataset.screen_w;
-    const sh = Defines.MODERN_SCREEN_HEIGHT;
+    const sh = lfw.world.view_h;
     const stage = lfw.world.stage;
     const zx = lfw.world.bg.zoom_x || 1;
     const zy = lfw.world.bg.zoom_y || 1;

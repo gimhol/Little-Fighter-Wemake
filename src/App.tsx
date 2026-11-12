@@ -161,11 +161,12 @@ function App() {
   const l = useLocation()
   const nav = useNavigate()
   const { params } = useMemo(() => {
+    const outer = qs.parse(window.location.search.substring(1))
     const sobj = qs.parse(l.search.substring(1))
     const hobj = qs.parse(l.hash.substring(1))
     const qi = l.hash.indexOf('?')
     const hsobj = qi >= 1 ? qs.parse(l.hash.substring(qi + 1)) : {}
-    return { sobj, hobj, params: { ...sobj, ...hobj, ...hsobj } }
+    return { sobj, hobj, params: { ...outer, ...sobj, ...hobj, ...hsobj } }
   }, [l])
 
   const [fullscreen] = useState(() => new Ditto.FullScreen());
@@ -226,6 +227,16 @@ function App() {
   const [net_settings_open, set_net_settings_open] = useState(false);
   const show_volume_popup = can_hover_volume_popup && !is_mobile_container && !toy_mobile;
   const { entity_flags, bg_flags } = world_dataset;
+
+  const aspect_override = useMemo(() => Defines.parse_aspect(params.aspect), [params.aspect]);
+  const desired_viewport = useMemo(() => {
+    if (aspect_override) return Defines.viewport_from_aspect(aspect_override);
+    const w = Number(world_dataset.screen_w);
+    const h = Number(world_dataset.screen_h);
+    if (Number.isFinite(w) && w > 0 && Number.isFinite(h) && h > 0) return { w, h };
+    return { w: Defines.SAFE_SCREEN_WIDTH, h: Defines.SAFE_SCREEN_HEIGHT };
+  }, [aspect_override, world_dataset.screen_w, world_dataset.screen_h]);
+  const [viewport, set_viewport] = useState(desired_viewport);
 
   // 桌面客户端的模组目录：必须在 LFW 实例（下面的 useLFW）创建前读完，所以先拦一下启动
   const [mods_ready, set_mods_ready] = useState(false);
@@ -359,6 +370,7 @@ function App() {
     on_stage_change: (s) => _set_bg_id(s.bg.id),
     on_pause_change: (v) => _set_paused(v),
     on_dataset_change: (key, value) => {
+      if (aspect_override && (key === 'screen_w' || key === 'screen_h')) return;
       set_world_dataset(d => { d[key] = value })
     },
   })
@@ -377,6 +389,8 @@ function App() {
     recreate_key: params,
     debug: params.dev == '1',
     zips: [LFW.ZIPS[0]],
+    screen_w: desired_viewport.w,
+    screen_h: desired_viewport.h,
     setup: (lfw) => {
       let lang = params.lang;
       if (typeof lang !== 'string') lang = navigator.language.toLowerCase()
@@ -417,6 +431,10 @@ function App() {
       lfw.sounds.set_sound_muted(app_state.sound_muted);
       lfw.sounds.set_sound_volume(app_state.sound_volume);
       Object.assign(lfw.world.dataset, world_dataset);
+      // 视口以建实例时传入的尺寸为准（`?aspect=` 覆盖 / 存档值），并让 UI 居中于安全区
+      lfw.world.dataset.screen_w = desired_viewport.w;
+      lfw.world.dataset.screen_h = desired_viewport.h;
+      set_viewport(desired_viewport);
       _set_bg_id(lfw.world.stage.bg.id);
       const on_touchstart = () => set_app_state(d => {
         d.touchpad_enabled = true;
@@ -497,9 +515,9 @@ function App() {
     const contaner = ele?.parentElement
     if (!ele || !contaner) return;
     const scale: number = app_state.render_fixed_scale || app_state.custom_render_fixed_scale;
+    const screen_w = viewport.w;
+    const screen_h = viewport.h;
     const on_resize = () => {
-      const screen_w = 794;
-      const screen_h = 450;
       const { width, height } = contaner.getBoundingClientRect()
       const win_w = Math.floor(width);
       const win_h = Math.floor(height);
@@ -561,6 +579,8 @@ function App() {
     app_state.h_align,
     app_state.custom_h_align,
     app_state.custom_v_align,
+    viewport.w,
+    viewport.h,
     ele_game_canvas
   ]);
 

@@ -4,6 +4,8 @@ import type { IPointingEvent } from "../LFW/ditto";
 export class __PointingEvent implements IPointingEvent {
   readonly is_pointing_event = true;
   protected _element?: HTMLElement;
+  protected _screen_w: number;
+  protected _screen_h: number;
   x: number = 0;
   y: number = 0;
   scene_x: number = 0;
@@ -12,8 +14,15 @@ export class __PointingEvent implements IPointingEvent {
   delta_x: number = 0;
   delta_y: number = 0;
 
-  constructor(element: HTMLElement | undefined, event: PointerEvent | MouseEvent | WheelEvent) {
+  constructor(
+    element: HTMLElement | undefined,
+    event: PointerEvent | MouseEvent | WheelEvent,
+    screen_w: number = Defines.MODERN_SCREEN_WIDTH,
+    screen_h: number = Defines.MODERN_SCREEN_HEIGHT,
+  ) {
     this._element = element;
+    this._screen_w = screen_w;
+    this._screen_h = screen_h;
     this.setup(element, event);
   }
 
@@ -52,7 +61,7 @@ export class __PointingEvent implements IPointingEvent {
     let px = delta;
     if (mode === 1) px = delta * 16;
     if (mode === 2) px = delta * size;
-    const ui_size = is_x ? Defines.MODERN_SCREEN_WIDTH : Defines.MODERN_SCREEN_HEIGHT;
+    const ui_size = is_x ? this._screen_w : this._screen_h;
     return px * (size > 0 ? ui_size / size : 1);
   }
 }

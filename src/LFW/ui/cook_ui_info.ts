@@ -1,4 +1,5 @@
 import type { IStyle } from "../defines";
+import { Defines } from "../defines/defines";
 import { Ditto } from "../ditto";
 import { ImportError } from "../ditto/importer/ImportError";
 import { Factory } from "../Factory";
@@ -291,7 +292,7 @@ export async function cook_ui_info(
     const h = ret.img.dh ?? ret.img.h ?? 0;
     ret.size = [w, h, 0]
   } else if (!parent) {
-    ret.size = [lfw.world.dataset.screen_w, lfw.world.dataset.screen_h, 0]
+    ret.size = [Defines.SAFE_SCREEN_WIDTH, Defines.SAFE_SCREEN_HEIGHT, 0]
   }
 
   if (img) {

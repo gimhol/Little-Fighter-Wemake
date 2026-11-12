@@ -1,4 +1,5 @@
 import { SyncRenderEnum } from "../../defines/SyncRenderEnum";
+import { Defines } from "../../defines/defines";
 import type { ISoundsCallback } from "../../ditto/sounds/ISoundsCallback";
 import type { ILFWCallback } from "../../ILFWCallback";
 import type { IWorldCallbacks } from "../../IWorldCallbacks";
@@ -28,6 +29,7 @@ export class MiscSettingsLogic extends UIComponent {
   get ups(): SliderHandle | undefined           /**/ { return this._anys.h ||= this.node.search_node("ups_row")?.search_component(SliderHandle) }
   get lang_row(): ArrowSwitcher | undefined    /**/ { return this._anys.i ||= this.node.search_node("language_row")?.search_component(ArrowSwitcher) }
   get stats_visible(): SliderHandle | undefined /**/ { return this._anys.j ||= this.node.search_node("stats_visible_row")?.search_component(SliderHandle) }
+  get render_resolution(): ArrowSwitcher | undefined /**/ { return this._anys.k ||= this.node.search_node("render_resolution_row")?.search_component(ArrowSwitcher) }
 
 
   cbs: ISoundsCallback = {
@@ -40,6 +42,7 @@ export class MiscSettingsLogic extends UIComponent {
   cbs2: IWorldCallbacks = {
     on_dataset_change: (key, value) => {
       if (key === 'sync_render') this.render_rate?.set_value(render_rate_options.indexOf(value as SyncRenderEnum))
+      else if (key === 'render_w' || key === 'render_h') this.sync_render_resolution();
     },
   }
   cbs3: ILFWCallback = {
@@ -101,6 +104,12 @@ export class MiscSettingsLogic extends UIComponent {
       this.lfw.broadcast("stats_visible_set:" + (v ? 1 : 0))
       this.lfw.sounds.play_preset(v ? 'ok' : 'cancel')
     })
+    this.render_resolution?.on_value_changed((v) => {
+      const preset = Defines.RENDER_RESOLUTION_PRESETS[v] ?? Defines.RENDER_RESOLUTION_PRESETS[0];
+      this.world.dataset.render_w = preset.w;
+      this.world.dataset.render_h = preset.h;
+      this.lfw.sounds.play_preset('ok')
+    })
   }
 
   override on_resume(): void {
@@ -117,6 +126,13 @@ export class MiscSettingsLogic extends UIComponent {
     this.ups?.set_value(ups_idx < 0 ? 1 : ups_idx);
     const cur_lang = this.lfw.canonical_lang();
     this.lang_row?.set_value(lang_codes.indexOf(cur_lang));
+    this.sync_render_resolution();
+  }
+
+  protected sync_render_resolution(): void {
+    const { render_w, render_h } = this.world.dataset;
+    const idx = Defines.render_resolution_index(render_w, render_h);
+    this.render_resolution?.set_value(idx < 0 ? 0 : idx);
   }
   override on_stop(): void {
     this.lfw.sounds.callbacks.del(this.cbs)

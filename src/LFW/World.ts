@@ -151,8 +151,26 @@ export class World {
     }
   }
   on_dataset_change(k: string, curr: any, prev: any) {
+    if (k === 'render_w' || k === 'render_h')
+      this.renderer.set_render_resolution?.(this.dataset.render_w, this.dataset.render_h);
     this.callbacks.call('on_dataset_change', k as any, curr, prev, this)
   };
+  get view_w(): number { return this.dataset.screen_w }
+  get view_h(): number { return this.dataset.screen_h }
+  get ui_left(): number { return (this.view_w - Defines.SAFE_SCREEN_WIDTH) / 2 }
+  get ui_top(): number { return (this.view_h - Defines.SAFE_SCREEN_HEIGHT) / 2 }
+  ui_from_scene(sx: number, sy: number): { x: number; y: number } {
+    return {
+      x: (sx + 1) / 2 * this.view_w - this.ui_left,
+      y: (1 - sy) / 2 * this.view_h - this.ui_top,
+    };
+  }
+  scene_from_ui(x: number, y: number): { x: number; y: number } {
+    return {
+      x: this.view_w > 0 ? ((x + this.ui_left) / this.view_w) * 2 - 1 : 0,
+      y: this.view_h > 0 ? 1 - ((y + this.ui_top) / this.view_h) * 2 : 0,
+    };
+  }
   get player_l() { return this.stage.player_l; }
   get player_r() { return this.stage.player_r; }
   get left() { return this.stage.left; }
@@ -170,8 +188,12 @@ export class World {
   get game_time() { return this._game_time.value }
   get lifetime() { return this._lifetime }
 
-  constructor(lfw: LFW) {
+  constructor(lfw: LFW, screen?: { screen_w?: number; screen_h?: number }) {
     this.lfw = lfw;
+    if (screen?.screen_w && screen?.screen_h) {
+      this.dataset.screen_w = screen.screen_w;
+      this.dataset.screen_h = screen.screen_h;
+    }
     this._bg = new Background(this, Defines.VOID_BG);
     this.transform.set_scale(this._bg.zoom_x, this._bg.zoom_y, this._bg.zoom_z)
     this._stage = new Stage(this, Defines.VOID_STAGE);
