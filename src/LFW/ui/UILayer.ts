@@ -171,7 +171,7 @@ export class UILayer {
         Math.max(1, Math.round(world.view_w)),
         Math.max(1, Math.round(world.view_h))
       );
-      ret.move_to(-world.ui_left, -world.ui_top, ret.z);
+      ret.move_to(0, 0, ret.z);
     }
     return ret;
   }
@@ -358,8 +358,8 @@ export class UILayers {
     const { world } = this.lfw;
     const w = Math.max(1, Math.round(world.view_w));
     const h = Math.max(1, Math.round(world.view_h));
-    const x = -world.ui_left;
-    const y = -world.ui_top;
+    const x = 0;
+    const y = 0;
     for (const layer of this._all) {
       for (const page of layer.pages) {
         if (!page.follow_screen) continue;

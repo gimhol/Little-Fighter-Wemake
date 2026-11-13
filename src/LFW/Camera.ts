@@ -52,13 +52,11 @@ export class Camera {
       this.jump_y(this._locked.y);
       return;
     }
-    const { stage, bg, dataset: { atom_time }, design_view_w: view_w, design_view_h: view_h } = this.world;
+    const { stage, bg, dataset: { atom_time }, view_w, view_h } = this.world;
     do {
       const { cam_l, cam_r } = stage;
-      const zoom_x = bg.zoom_x || 1;
-      const side = this.world.ui_left / zoom_x;
-      const min_cam_x = cam_l + side;
-      const max_cam_x = max(min_cam_x, cam_r - view_w - side);
+      const min_cam_x = cam_l;
+      const max_cam_x = max(min_cam_x, cam_r - view_w);
       let max_vx_ratio = 50;
       let acc_x_ratio = 1;
       this.destination.x = clamp(this._dested?.x ?? this.destination.x, min_cam_x, max_cam_x);

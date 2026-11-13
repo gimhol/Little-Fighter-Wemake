@@ -251,7 +251,7 @@ export class DemoModeLogic extends UIComponent<IDemoModeLogicProps> {
     else fighters_datas.push(...boss_datas)
 
     this.lfw.mt.mark = 'demo_startup_cam_x'
-    const view_w = this.lfw.world.design_view_w
+    const view_w = this.lfw.world.view_w
     const cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, right - view_w)
     const min_x = is_stage_mode ? (cam_x + 40) : (cam_x + 1 * view_w / 3)
     const max_x = is_stage_mode ? (80) : (cam_x + 2 * view_w / 3)

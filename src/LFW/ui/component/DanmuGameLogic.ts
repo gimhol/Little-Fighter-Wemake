@@ -170,7 +170,7 @@ export class DanmuGameLogic extends SummaryLogic {
     const staring = this._cam_ctrl?.staring;
     if (staring && this._cam_ctrl?.auto != false) {
       const { left, right } = this.world.stage;
-      const view_w = this.world.design_view_w
+      const view_w = this.world.view_w
       let cam_x = staring.position.x - view_w / 2
       const max_cam_left = left;
       const max_cam_right = right;
@@ -498,7 +498,7 @@ export class DanmuGameLogic extends SummaryLogic {
 
     const staring = this._cam_ctrl?.staring;
     if (staring && this._cam_ctrl?.auto != false) {
-      const view_w = this.world.design_view_w
+      const view_w = this.world.view_w
       this.lfw.push_cmd(CMD.DIST_CAM, `${staring.position.x - view_w / 2}`)
     }
     else if (!staring)

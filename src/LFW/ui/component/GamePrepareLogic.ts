@@ -375,7 +375,7 @@ export class GamePrepareLogic extends UIComponent<IGamePrepareLogicProps> {
 
     this.lfw.game_mode = game_mode
     this.lfw.mt.mark = 'gpl_start_game_cam_x';
-    const view_w = this.world.design_view_w
+    const view_w = this.world.view_w
     const cam_x = is_stage_mode ? 0 : this.lfw.mt.range(left, Math.max(left, right - view_w))
 
     for (const [player, slot_info] of char_menu_logic.players) {

@@ -2418,7 +2418,7 @@ export class Entity {
     if (frame.state === StateEnum.Message) {
       const { centerx, width } = frame;
       let { camera: { position: { x: cam_x } } } = this.world;
-      let cam_r = cam_x + this.world.design_view_w;
+      let cam_r = cam_x + this.world.view_w;
       const offset_x = this.facing === 1 ? centerx : width - centerx;
       cam_r -= width - offset_x;
       cam_x += offset_x;

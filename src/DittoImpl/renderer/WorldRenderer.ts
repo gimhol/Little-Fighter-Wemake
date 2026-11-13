@@ -282,19 +282,13 @@ export class WorldRenderer implements IWorldRenderer {
     const design_x = this.camera.position.x;
     const design_y = this.camera.position.y;
     const design_z = this.camera.position.z;
-    const zoom_x = this.world.bg.zoom_x || 1;
-    const zoom_y = this.world.bg.zoom_y || 1;
-    this.camera.position.set(
-      design_x - this.world.ui_left / zoom_x,
-      design_y - this.world.ui_top / zoom_y,
-      design_z
-    );
+    this.camera.position.set(design_x, design_y, design_z);
     this.bg_camera.position.copy(this.camera.position);
     this.fg_camera.position.copy(this.camera.position);
     this.ui_bg_camera.position.set(design_x, design_y, design_z);
     this.ui_fg_camera.position.set(design_x, design_y, design_z);
-    const ui_x = design_x + this.world.ui_left + this.ui_offset.x;
-    const ui_y = design_y + this.world.view_h - this.world.ui_top + this.ui_offset.y;
+    const ui_x = design_x + this.ui_offset.x;
+    const ui_y = design_y + this.world.view_h + this.ui_offset.y;
     this.ui_bg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     this.ui_fg_container.position.set(ui_x, ui_y, this.ui_offset.z)
     const { dataset: { entity_flags }, transform } = this.world;

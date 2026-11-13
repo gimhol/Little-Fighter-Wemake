@@ -169,20 +169,16 @@ export class World {
   }
   get view_w(): number { return this.dataset.screen_w }
   get view_h(): number { return this.dataset.screen_h }
-  get design_view_w(): number { return Defines.SAFE_SCREEN_WIDTH / (this.bg.zoom_x || 1) }
-  get design_view_h(): number { return Defines.SAFE_SCREEN_HEIGHT / (this.bg.zoom_y || 1) }
-  get ui_left(): number { return (this.view_w - Defines.SAFE_SCREEN_WIDTH) / 2 }
-  get ui_top(): number { return (this.view_h - Defines.SAFE_SCREEN_HEIGHT) / 2 }
   ui_from_scene(sx: number, sy: number): { x: number; y: number } {
     return {
-      x: (sx + 1) / 2 * this.view_w - this.ui_left,
-      y: (1 - sy) / 2 * this.view_h - this.ui_top,
+      x: (sx + 1) / 2 * this.view_w,
+      y: (1 - sy) / 2 * this.view_h,
     };
   }
   scene_from_ui(x: number, y: number): { x: number; y: number } {
     return {
-      x: this.view_w > 0 ? ((x + this.ui_left) / this.view_w) * 2 - 1 : 0,
-      y: this.view_h > 0 ? 1 - ((y + this.ui_top) / this.view_h) * 2 : 0,
+      x: this.view_w > 0 ? (x / this.view_w) * 2 - 1 : 0,
+      y: this.view_h > 0 ? 1 - (y / this.view_h) * 2 : 0,
     };
   }
   get player_l() { return this.stage.player_l; }
@@ -700,7 +696,7 @@ export class World {
     let local_count = 0;
     let human_count = 0;
     let fighter_count = 0;
-    const view_w = this.design_view_w
+    const view_w = this.view_w
     // 前瞻量：固定世界距离（不随 zoom 缩放，zoom 越大屏幕上前瞻越明显）
     const lead = Defines.SAFE_SCREEN_WIDTH / 6
     const entities = this.entities;
@@ -813,7 +809,7 @@ export class World {
 
     // 高地图（bg.height 超过经典屏高）用“角色平均高度”驱动镜头 Y，让相机能上下跟；
     // 普通/老地图沿用 z 深度（经典数据里 far 承载了纵向范围，保持原行为）
-    const half_h = this.design_view_h / 2
+    const half_h = this.view_h / 2
     const use_y = (this.bg.data.dataset?.cam_y_follow ?? 0) > 0;
     let cam_x = NaN;
     let cam_z = 0;

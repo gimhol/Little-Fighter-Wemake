@@ -55,9 +55,9 @@ export class CameraCtrl extends UIComponent {
       this.focus_lr(1)
 
     if (this.auto && this.staring) {
-      const { design_view_w, design_view_h } = this.world
-      const cam_x = this.staring.position.x - design_view_w / 2
-      const cam_y = -0.5 * round(this.staring.position.z) - design_view_h / 2
+      const { view_w, view_h } = this.world
+      const cam_x = this.staring.position.x - view_w / 2
+      const cam_y = -0.5 * round(this.staring.position.z) - view_h / 2
       this.lfw.push_cmd(CMD.DIST_CAM, `${cam_x},${cam_y}`)
     }
   }

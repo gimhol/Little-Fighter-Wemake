@@ -96,8 +96,8 @@ export class HeadlessUIInputHandle implements IUIInputHandle {
     const cam = this.world_renderer.ui_bg_camera.position;
     const { world } = this.lfw;
     return {
-      x: cam.x + world.ui_left + off.x + x,
-      y: cam.y + world.view_h - world.ui_top + off.y - y,
+      x: cam.x + off.x + x,
+      y: cam.y + world.view_h + off.y - y,
       z: off.z + node.global_pos.z,
     };
   }

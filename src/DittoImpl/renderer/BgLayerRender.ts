@@ -144,7 +144,7 @@ export class BgLayerRender {
         const target_w = world.view_w / zoom_x * this.width_percent / 100;
         const scale = target_w / (this.base_width || 1);
         if (this.mesh.scale.x !== scale) this.mesh.scale.x = scale;
-        const target_x = -world.ui_left / zoom_x + this.layer.info.x;
+        const target_x = this.layer.info.x;
         if (this.mesh.position.x !== target_x) this.mesh.position.x = target_x;
       }
       return;
@@ -153,7 +153,7 @@ export class BgLayerRender {
     const layer_width = this.width_percent !== null ? this.width : info_width;
     const { world } = bg;
     const { width: bg_width } = world;
-    const view_w = world.design_view_w;
+    const { view_w } = world;
     const cam_x = world.camera.position.x;
     const parallax = bg_width > view_w ?
       (bg_width - layer_width) * cam_x / (bg_width - view_w) :

@@ -298,10 +298,10 @@ export async function cook_ui_info(
     const h = ret.img.dh ?? ret.img.h ?? 0;
     ret.size = [w, h, 0]
   } else if (!parent) {
-    const { view_w, view_h, ui_left, ui_top } = lfw.world;
+    const { view_w, view_h } = lfw.world;
     ret.size = [view_w || Defines.SAFE_SCREEN_WIDTH, view_h || Defines.SAFE_SCREEN_HEIGHT, 0]
     ret.follow_screen = !(ret.flex?.display === 'flex' && (ret.flex.fit_w || ret.flex.fit_h))
-    if (ret.follow_screen) ret.pos = [-ui_left, -ui_top, ret.pos[2]]
+    if (ret.follow_screen) ret.pos = [0, 0, ret.pos[2]]
   }
 
   if (img) {

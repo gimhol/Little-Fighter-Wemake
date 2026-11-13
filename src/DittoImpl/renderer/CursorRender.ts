@@ -260,8 +260,8 @@ export class CursorRender {
     this._had_content = any;
     const { ui_offset, world } = this.renderer;
     this.container.position.set(
-      world.ui_left + ui_offset.x,
-      world.view_h - world.ui_top + ui_offset.y,
+      ui_offset.x,
+      world.view_h + ui_offset.y,
       ui_offset.z
     );
     overlay.render(this._scene, this._camera);
