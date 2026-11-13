@@ -10,6 +10,7 @@ export * from "./IWorldCallbacks";
 export * from "./Keys";
 export * from "./LFW";
 export * from "./PlayerInfo";
+export * from "./Settings";
 export * from "./Transform";
 export * from "./World";
 export * from "./WorldDataset";

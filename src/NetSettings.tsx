@@ -44,7 +44,7 @@ const LANG_ITEMS = LANG_CODES.map((v) => (v ? `lang.${v}` : "lang.en"));
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
 
 function set_sync_render(lfw: LFW, v: SyncRenderEnum) {
-  lfw.world.dataset.sync_render = v;
+  lfw.world.settings.sync_render = v;
 }
 
 function step_render_resolution(lfw: LFW, current: number, dir: -1 | 1) {
@@ -128,7 +128,7 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
       on_bgm_muted_changed: bump,
       on_sound_muted_changed: bump,
     };
-    const world_handler = { on_dataset_change: bump };
+    const world_handler = { on_dataset_change: bump, on_settings_change: bump };
     const lfw_handler = {
       on_lang_changed: bump,
       on_broadcast: (msg: string) => {
@@ -196,8 +196,8 @@ export function NetSettings(props: { lfw: LFW; on_close(): void }) {
   };
 
   const lang_index = Math.max(0, LANG_CODES.indexOf(lfw.canonical_lang()));
-  const render_index = Math.max(0, RENDER_RATE_OPTIONS.indexOf(lfw.world.dataset.sync_render));
-  const resolution_index = Math.max(0, Defines.render_resolution_index(lfw.world.dataset.render_w, lfw.world.dataset.render_h));
+  const render_index = Math.max(0, RENDER_RATE_OPTIONS.indexOf(lfw.world.settings.sync_render));
+  const resolution_index = Math.max(0, Defines.render_resolution_index(lfw.world.settings.render_w, lfw.world.settings.render_h));
   const conn = Ditto.Networking;
   const owner = !conn.room || conn.room.owner?.id === conn.client?.id;
 

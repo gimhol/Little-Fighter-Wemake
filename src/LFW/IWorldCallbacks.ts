@@ -1,4 +1,5 @@
 import type { IWorldDataset } from "./defines/IWorldDataset";
+import type { ISettings } from "./defines/ISettings";
 import type { World } from "./World";
 import type { Entity } from './entity/Entity';
 import type { Stage } from "./stage/Stage";
@@ -46,6 +47,18 @@ export interface IWorldCallbacks {
     key: T,
     value: IWorldDataset[T],
     prev: IWorldDataset[T],
+    zworld: World
+  ): void;
+
+  /**
+   * 客户端本地设置被修改
+   *
+   * 联机时这些设置不同步，也不会被房主覆盖。
+   */
+  on_settings_change?<T extends keyof ISettings>(
+    key: T,
+    value: ISettings[T],
+    prev: ISettings[T],
     zworld: World
   ): void;
 

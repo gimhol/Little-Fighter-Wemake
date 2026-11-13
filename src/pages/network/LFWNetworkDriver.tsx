@@ -40,12 +40,6 @@ function with_from(cmd: string, client_id?: string): string {
   return client_id ? `${cmd} --from=${client_id}` : cmd;
 }
 
-const LOCAL_ONLY_DATASET_KEYS = new Set<keyof IWorldDataset>([
-  "sync_render",
-  "render_w",
-  "render_h",
-]);
-
 export abstract class LFWNetworkDriver {
   static readonly TAG = 'Lf2NetworkDriver';
   debugging: boolean = true;
@@ -101,8 +95,6 @@ export abstract class LFWNetworkDriver {
   on_dataset_change(k?: keyof IWorldDataset, _value?: unknown, prev?: unknown) {
     const { conn, lfw } = this;
     if (!conn || !lfw) return;
-    // 本地显示设置：不同步，也不回滚
-    if (k && LOCAL_ONLY_DATASET_KEYS.has(k)) return;
     if (this.is_owner()) {
       conn.send(MsgEnum.Dataset, { dataset: lfw.world.dataset.dump_dataset() }).catch(() => void 0);
       return;
@@ -172,7 +164,6 @@ export abstract class LFWNetworkDriver {
     const { dataset } = lfw.world;
     this._applying_dataset = true;
     for (const key of world_dataset_fields.keys()) {
-      if (LOCAL_ONLY_DATASET_KEYS.has(key)) continue;
       const value = (incoming as any)[key];
       if (typeof value !== 'undefined')
         (dataset as any)[key] = value;

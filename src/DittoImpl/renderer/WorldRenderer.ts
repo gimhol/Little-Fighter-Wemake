@@ -167,8 +167,8 @@ export class WorldRenderer implements IWorldRenderer {
 
     this.bg_render = new BgRender(this);
     this.bg_flags = new TerrainIndicator(this);
-    this._render_w = world.dataset.render_w;
-    this._render_h = world.dataset.render_h;
+    this._render_w = world.settings.render_w;
+    this._render_h = world.settings.render_h;
     {
       const { w: rw, h: rh } = this.resolve_render_size();
       this.set_renderer_size(rw, rh);

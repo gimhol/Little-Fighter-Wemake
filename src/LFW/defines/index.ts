@@ -71,6 +71,7 @@ export * from "./IQubePair";
 export * from "./IRect";
 export * from "./IRectPair";
 export * from "./ISchema";
+export * from "./ISettings";
 export * from "./IStageInfo";
 export * from "./IStageObjectInfo";
 export * from "./IStagePhaseInfo";

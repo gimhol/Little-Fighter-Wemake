@@ -40,7 +40,7 @@ export class MiscSettingsLogic extends UIComponent {
     on_sound_muted_changed: (muted) => this.sfx_toggle?.set_value(muted ? 0 : 1),
   }
   cbs2: IWorldCallbacks = {
-    on_dataset_change: (key, value) => {
+    on_settings_change: (key, value) => {
       if (key === 'sync_render') this.render_rate?.set_value(render_rate_options.indexOf(value as SyncRenderEnum))
       else if (key === 'render_w' || key === 'render_h') this.sync_render_resolution();
     },
@@ -81,7 +81,7 @@ export class MiscSettingsLogic extends UIComponent {
       this.lfw.sounds.play_preset(v ? 'ok' : 'cancel')
     })
     this.render_rate?.on_value_changed((v) => {
-      this.world.dataset.sync_render = render_rate_options[v];
+      this.world.settings.sync_render = render_rate_options[v];
       this.lfw.sounds.play_preset('ok')
     })
     const ups_arr = [30, 60]
@@ -120,7 +120,7 @@ export class MiscSettingsLogic extends UIComponent {
     this.sfx_volume?.set_factor(this.lfw.sounds.sound_volume())
     this.sfx_toggle?.set_value(this.lfw.sounds.sound_muted() ? 0 : 1)
     this.team_outline?.set_factor(this.world.dataset.outline_enabled)
-    this.render_rate?.set_value(render_rate_options.indexOf(this.world.dataset.sync_render));
+    this.render_rate?.set_value(render_rate_options.indexOf(this.world.settings.sync_render));
     const ups_arr = [30, 60]
     const ups_idx = ups_arr.indexOf(this.world.dataset.UPS)
     this.ups?.set_value(ups_idx < 0 ? 1 : ups_idx);
@@ -130,7 +130,7 @@ export class MiscSettingsLogic extends UIComponent {
   }
 
   protected sync_render_resolution(): void {
-    const { render_w, render_h } = this.world.dataset;
+    const { render_w, render_h } = this.world.settings;
     const idx = Defines.render_resolution_index(render_w, render_h);
     this.render_resolution?.set_value(idx < 0 ? 0 : idx);
   }

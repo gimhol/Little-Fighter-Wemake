@@ -37,6 +37,7 @@ import {
 import { TerrainWorld } from "./terrain/TerrainWorld";
 import type { IWorldCallbacks } from "./IWorldCallbacks";
 import { LFW } from "./LFW";
+import { Settings } from "./Settings";
 import { Stage } from "./stage/Stage";
 import { Transform } from "./Transform";
 import { round_float } from './utils';
@@ -59,6 +60,8 @@ export class World {
   static readonly TAG: string = "World";
   readonly lfw: LFW;
   readonly dataset: WorldDataset = new WorldDataset()
+  /** 客户端本地设置（联机时不同步） */
+  readonly settings: Settings = new Settings()
   readonly callbacks = new Callbacks<IWorldCallbacks>();
   private _sleeping: boolean = false;
   private _spark_data?: IEntityData;
@@ -151,15 +154,20 @@ export class World {
     }
   }
   on_dataset_change(k: string, curr: any, prev: any) {
-    if (k === 'render_w' || k === 'render_h')
-      this.renderer.set_render_resolution?.(this.dataset.render_w, this.dataset.render_h);
-    else if (k === 'screen_w' || k === 'screen_h')
+    if (k === 'screen_w' || k === 'screen_h')
       this.renderer.set_view_size?.(this.dataset.screen_w, this.dataset.screen_h);
     this.callbacks.call('on_dataset_change', k as any, curr, prev, this)
   };
+  on_settings_change(k: string, curr: any, prev: any) {
+    if (k === 'render_w' || k === 'render_h')
+      this.renderer.set_render_resolution?.(this.settings.render_w, this.settings.render_h);
+    else if (k === 'sync_render')
+      this.start_render();
+    this.callbacks.call('on_settings_change', k as any, curr, prev, this)
+  };
   apply_render_resolution(w: number, h: number): this {
-    this.dataset.render_w = w;
-    this.dataset.render_h = h;
+    this.settings.render_w = w;
+    this.settings.render_h = h;
     const viewport = Defines.resolution_viewport(w, h);
     if (viewport) {
       this.dataset.screen_w = viewport.w;
@@ -210,6 +218,7 @@ export class World {
     this.renderer = new Ditto.WorldRender(this);
     this.camera = new Camera(this);
     this.dataset.on_dataset_change = this.on_dataset_change.bind(this)
+    this.settings.on_settings_change = this.on_settings_change.bind(this)
   }
   team_come(_team: string, x: number, y: number, z: number) {
     for (const e of this.entities) {
@@ -294,7 +303,7 @@ export class World {
     this._render_worker_id = 0;
   }
   get FPS() {
-    switch (this.dataset.sync_render as SyncRenderEnum) {
+    switch (this.settings.sync_render as SyncRenderEnum) {
       case SyncRenderEnum.Unlimited: return 1000
       case SyncRenderEnum.FPS_60: return 60
       case SyncRenderEnum.FPS_120: return 120
@@ -303,7 +312,7 @@ export class World {
     }
   }
   start_render() {
-    const { sync_render } = this.dataset
+    const { sync_render } = this.settings
     const { FPS } = this;
     if (this._render_worker_id) Ditto.Render.del(this._render_worker_id);
     if (sync_render == SyncRenderEnum.Sync) return;
@@ -373,7 +382,7 @@ export class World {
     this.lfw.broadcasts.length = 0;
     if (this.extra_steps > 0) this.catch_up();
 
-    const { sync_render } = this.dataset;
+    const { sync_render } = this.settings;
     if (sync_render == SyncRenderEnum.Sync) {
       this.render_once(dt);
       this._FPS.update(dt);
@@ -392,7 +401,7 @@ export class World {
     }
     this.after_update?.();
 
-    if (this.dataset.sync_render !== sync_render)
+    if (this.settings.sync_render !== sync_render)
       this.start_render();
   }
 

@@ -29,13 +29,11 @@ import { BG_INDICATINGS, ENTITY_INDICATINGS } from "./DittoImpl/renderer/INDICAT
 import { WorldRenderer } from "./DittoImpl/renderer/WorldRenderer";
 import EditorView from "./EditorView";
 import GamePad from "./GamePad";
-import { Difficulty, type IWorldDataset, LFW, WorldDataset } from "./LFW";
+import { Difficulty, type ISettings, type IWorldDataset, LFW, Settings, WorldDataset } from "./LFW";
 import { CheatEnum, CtrlDevice } from "./LFW/defines";
 import { CMD } from "./LFW/defines/CMD";
-import { SyncRenderEnum } from "./LFW/defines/SyncRenderEnum";
 import { Defines } from "./LFW/defines/defines";
 import { Ditto, type IZip } from "./LFW/ditto";
-import { Factory } from "./LFW/Factory";
 import type { IUIInfo } from "./LFW/ui/IUIInfo.dat";
 import { range } from "./LFW/utils/math/range";
 import { Loading } from "./LoadingImg";
@@ -136,7 +134,6 @@ const init_app_state = () => ({
 })
 const init_world_dataset = (): IWorldDataset => {
   const ret = new WorldDataset(true).dump_dataset();
-  ret.sync_render = SyncRenderEnum.FPS_60;
   ret.UPS = low_device ? 30 : 60;
   ret.atom_time = low_device ? 2 : 1;
   ret.double_click_interval = low_device ? 15 : 30;
@@ -145,7 +142,9 @@ const init_world_dataset = (): IWorldDataset => {
   ret.entity_flags = 0;
   return ret;
 }
+const init_world_settings = (): ISettings => new Settings(true).dump_settings()
 const world_dataset_version = md5(JSON.stringify(init_world_dataset()))
+const world_settings_version = md5(JSON.stringify(init_world_settings()))
 const app_state_version = '2'
 
 
@@ -220,6 +219,11 @@ function App() {
       return v;
     }
   })
+  const [world_settings, set_world_settings, world_settings_ready] = useForage({
+    key: 'world_settings',
+    version: world_settings_version,
+    init: init_world_settings,
+  })
 
   const [is_maximised, set_is_maximised] = useState(false);
   const [is_fullscreen, _set_is_fullscreen] = useState(false);
@@ -237,7 +241,7 @@ function App() {
     return { w: Defines.SAFE_SCREEN_WIDTH, h: Defines.SAFE_SCREEN_HEIGHT };
   }, [aspect_override, world_dataset.screen_w, world_dataset.screen_h]);
   const [viewport, set_viewport] = useState(desired_viewport);
-  const auto_resolution = Number(world_dataset.render_w) === 0 && Number(world_dataset.render_h) === 0;
+  const auto_resolution = Number(world_settings.render_w) === 0 && Number(world_settings.render_h) === 0;
   const fill_window = auto_resolution && !aspect_override;
 
   // 桌面客户端的模组目录：必须在 LFW 实例（下面的 useLFW）创建前读完，所以先拦一下启动
@@ -374,8 +378,12 @@ function App() {
     on_dataset_change: (key, value, _prev, world) => {
       if (key === 'screen_w' || key === 'screen_h')
         set_viewport({ w: world.view_w, h: world.view_h });
-      if (aspect_override && (key === 'screen_w' || key === 'screen_h' || key === 'render_w' || key === 'render_h')) return;
+      if (aspect_override && (key === 'screen_w' || key === 'screen_h')) return;
       set_world_dataset(d => { d[key] = value })
+    },
+    on_settings_change: (key, value) => {
+      if (aspect_override && (key === 'render_w' || key === 'render_h')) return;
+      set_world_settings(d => { d[key] = value })
     },
   })
 
@@ -389,7 +397,7 @@ function App() {
   })
 
   useLFW({
-    enabled: app_state_ready && world_dataset_ready && mods_ready,
+    enabled: app_state_ready && world_dataset_ready && world_settings_ready && mods_ready,
     recreate_key: params,
     debug: params.dev == '1',
     zips: [LFW.ZIPS[0]],
@@ -435,16 +443,17 @@ function App() {
       lfw.sounds.set_sound_muted(app_state.sound_muted);
       lfw.sounds.set_sound_volume(app_state.sound_volume);
       Object.assign(lfw.world.dataset, world_dataset);
+      Object.assign(lfw.world.settings, world_settings);
       // 视口以建实例时传入的尺寸为准（`?aspect=` 覆盖 / 存档值），并让 UI 居中于安全区
       lfw.world.dataset.screen_w = desired_viewport.w;
       lfw.world.dataset.screen_h = desired_viewport.h;
       if (aspect_override) {
-        const { render_w, render_h } = lfw.world.dataset;
+        const { render_w, render_h } = lfw.world.settings;
         const view_aspect = desired_viewport.w / desired_viewport.h;
         if (render_w > 0 && render_h > 0 &&
           Math.abs(render_w / render_h - view_aspect) / view_aspect > 0.01) {
-          lfw.world.dataset.render_w = 0;
-          lfw.world.dataset.render_h = 0;
+          lfw.world.settings.render_w = 0;
+          lfw.world.settings.render_h = 0;
         }
       }
       set_viewport(desired_viewport);
