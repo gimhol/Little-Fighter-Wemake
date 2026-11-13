@@ -10,11 +10,12 @@ import { conf } from "./conf";
 import { CacheInfos } from "./utils/cache_infos";
 import { classify } from "./utils/classify";
 import { convert_audio } from "./utils/convert_audio";
-import { convert_dat_file, IConvertDatContext } from "./utils/convert_dat_file";
+import { convert_dat_file, find_pre_generated_file, IConvertDatContext, write_obj_bot_file } from "./utils/convert_dat_file";
 import { convert_data_txt, write_index_file } from "./utils/convert_data_txt";
 import { convert_grid_image, convert_whole_image } from "./utils/convert_image";
 import { copy_dir } from "./utils/copy_dir";
-import { debug, error, log } from "./utils/log";
+import { is_file } from "./utils/is_file";
+import { debug, error, log, warn } from "./utils/log";
 import { make_zip_and_json } from "./utils/make_zip_and_json";
 import { remove_untracked_outputs, reset_output_tracker, track_output } from "./utils/output_tracker";
 import { optimize_png } from "./utils/optimize_png";
@@ -91,6 +92,33 @@ export async function make_data() {
       suffix,
       conf().OUT_TYPE ?? void 0,
     );
+    const pre_generated = await find_pre_generated_file(
+      IN_LF2_DIR,
+      src_path,
+      suffix,
+      conf().OUT_TYPE ?? void 0,
+    );
+    if (pre_generated) {
+      const pre_dst_path = convert_dat_file.get_dst_path(
+        TMP_DAT_DIR,
+        IN_LF2_DIR,
+        src_path,
+        suffix,
+        pre_generated.suffix,
+      );
+      if (pre_dst_path !== dst_path)
+        item.file = pre_dst_path.replace(TMP_DAT_DIR + "/", "");
+      track_output(pre_dst_path);
+      await fs.mkdir(path.dirname(pre_dst_path), { recursive: true });
+      await fs.copyFile(pre_generated.path, pre_dst_path);
+      if (suffix === 'obj') await write_obj_bot_file(indexes, item.id, pre_dst_path, TMP_DAT_DIR);
+      log("Use pre-generated:", pre_generated.path, "=>\n    " + pre_dst_path);
+      continue;
+    }
+    if (!(await is_file(src_path))) {
+      warn("Source file not found, skipped:", src_path);
+      continue;
+    }
     const cache_info = await cache_infos.get_info(src_path, [dst_path]);
     // TODO: 日后将bot文件另外生成吧……
     // const is_changed = await cache_info.changed();
