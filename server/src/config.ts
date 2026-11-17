@@ -23,6 +23,12 @@ export interface IRanksConfig {
   rate_token_per_ip?: number;
 }
 
+export interface ISuggestionsConfig {
+  path?: string;
+  rate_window_ms?: number;
+  rate_per_ip?: number;
+}
+
 export interface IServerConfig {
   http_host?: string;
   http_port?: number;
@@ -32,6 +38,7 @@ export interface IServerConfig {
   admin_tokens?: string | string[];
   rest?: IRestConfig;
   ranks?: IRanksConfig;
+  suggestions?: ISuggestionsConfig;
 }
 
 export interface ILoadedConfig {

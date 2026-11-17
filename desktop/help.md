@@ -169,6 +169,7 @@ DANMU_JOIN_COOLDOWN / DANMU_BRIDGE_PORT / DANMU_BRIDGE_HOST / DANMU_SCORES_FILE
 ### 数据、日志与接口
 
 - 服务器存档 / 排行数据写入本目录 `ranks/`（桌面端自动指定，可用 `RANKS_DIR` 环境变量改）
+- 玩家建议写入本目录 `suggestions.jsonl`（桌面端自动指定，可用 `SUGGESTIONS_FILE_PATH` 环境变量改）
 - 服务器日志并入 `logs.txt`（以 `[server]` 开头）
 - 服务器同时提供 REST 接口（与 WebSocket 同端口）：
 
@@ -185,6 +186,8 @@ DELETE /api/ranks/:type/:uid  删除某条排行成绩（admin）
 GET  /api/ranks/bans          封禁名单（admin）
 POST /api/ranks/bans          封禁 uid / token（admin）
 DELETE /api/ranks/bans/:uid   解除封禁（admin）
+POST /api/suggestions         提交玩家建议
+GET  /api/suggestions         查看玩家建议（admin）
 ```
 
 排行提交现在要求带玩家 token（`x-token` 头），并受分数上限、提交频率限制与审计日志约束，详见 `docs/Multiplayer Online Game/REST API.MD`。

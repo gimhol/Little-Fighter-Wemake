@@ -6,6 +6,7 @@ import { register_me_routes } from './me';
 import { register_rank_routes } from './ranks';
 import { register_room_routes } from './rooms';
 import { register_server_routes } from './server';
+import { register_suggestion_routes } from './suggestions';
 
 export function register_routes(rest: Rest) {
   register_server_routes(rest);
@@ -15,4 +16,5 @@ export function register_routes(rest: Rest) {
   register_auth_routes(rest);
   register_me_routes(rest);
   register_rank_routes(rest);
+  register_suggestion_routes(rest);
 }

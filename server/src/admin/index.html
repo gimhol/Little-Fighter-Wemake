@@ -145,6 +145,7 @@
       <button data-tab="clients">客户端</button>
       <button data-tab="tokens">玩家 token</button>
       <button data-tab="ranks">排行榜</button>
+      <button data-tab="suggestions">建议</button>
       <button data-tab="routes">接口</button>
     </nav>
 
@@ -222,6 +223,27 @@
         <tbody id="ranks"></tbody>
       </table>
       <div id="ranks-empty" class="empty"></div>
+    </section>
+
+    <section id="tab-suggestions" class="panel">
+      <div class="row-form">
+        <input id="suggestion-limit" size="6" type="number" min="1" max="500" value="50" />
+        <button id="suggestion-query">刷新建议</button>
+        <span id="suggestion-info" class="dim"></span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="num">时间</th>
+            <th>称呼</th>
+            <th>联系方式</th>
+            <th>版本 / 页面</th>
+            <th>内容</th>
+          </tr>
+        </thead>
+        <tbody id="suggestions"></tbody>
+      </table>
+      <div id="suggestions-empty" class="empty"></div>
     </section>
 
     <section id="tab-routes" class="panel">
@@ -435,6 +457,22 @@
         $("rank-info").textContent = type + " · 共 " + ((data && data.total) || 0) + " 条";
       }
 
+      function render_suggestions(data) {
+        var list = (data && data.suggestions) || [];
+        var rows = list.map(function (s) {
+          var meta = [s.version, s.page, s.lang].filter(Boolean).join(" / ") || "-";
+          return "<tr>" +
+            '<td class="num dim">' + esc(fmt_time(s.date)) + "</td>" +
+            "<td>" + esc(s.name || "-") + "</td>" +
+            "<td>" + esc(s.contact || "-") + "</td>" +
+            '<td class="dim">' + esc(meta) + "</td>" +
+            '<td style="white-space:pre-wrap;max-width:560px">' + esc(s.text) + "</td>" +
+            "</tr>";
+        });
+        table_rows("suggestions", "suggestions-empty", rows, state.token ? "暂无建议" : "需要管理员 token 才能查看建议");
+        $("suggestion-info").textContent = state.token ? "共 " + ((data && data.total) || 0) + " 条" : "";
+      }
+
       /* ---------- 拉取 ---------- */
 
       function refresh_public() {
@@ -456,6 +494,7 @@
         if (!state.token) {
           render_clients(null);
           render_tokens(null);
+          render_suggestions(null);
           set_hint("未填写管理员 token：只显示公开信息（房间 / 排行 / 统计）。token 由服务器的 --admin-token / ADMIN_TOKEN 指定。");
           return Promise.resolve();
         }
@@ -463,16 +502,23 @@
           api("/api/system"),
           api("/api/clients"),
           api("/api/auth/tokens"),
+          api("/api/suggestions?limit=" + suggestion_limit()),
         ]).then(function (res) {
           render_stats(Object.assign({}, state.stats || {}, res[0]));
           render_clients(res[1]);
           render_tokens(res[2]);
+          render_suggestions(res[3]);
           set_hint("");
         }).catch(function (e) {
           render_clients(null);
           render_tokens(null);
+          render_suggestions(null);
           set_hint("管理员接口不可用：" + e.message);
         });
+      }
+
+      function suggestion_limit() {
+        return Math.max(1, Math.min(500, Number($("suggestion-limit").value) || 50));
       }
 
       function refresh() {
@@ -497,6 +543,13 @@
         var limit = Math.max(1, Math.min(500, Number($("rank-limit").value) || 50));
         api("/api/ranks/" + encodeURIComponent(type) + "?limit=" + limit)
           .then(function (data) { render_ranks(type, data); set_status("ok", "已查询 " + type); })
+          .catch(toast_err);
+      }
+
+      function query_suggestions() {
+        if (!state.token) { set_status("err", "需要管理员 token 才能查看建议"); return; }
+        api("/api/suggestions?limit=" + suggestion_limit())
+          .then(function (data) { render_suggestions(data); set_status("ok", "已刷新建议"); })
           .catch(toast_err);
       }
 
@@ -555,6 +608,7 @@
           document.querySelectorAll("section.panel").forEach(function (p) {
             p.classList.toggle("on", p.id === "tab-" + tab);
           });
+          if (tab === "suggestions") query_suggestions();
         });
       });
 
@@ -579,6 +633,8 @@
       $("interval").addEventListener("change", set_timer);
       $("rank-query").addEventListener("click", query_ranks);
       $("rank-type").addEventListener("keydown", function (e) { if (e.key === "Enter") query_ranks(); });
+      $("suggestion-query").addEventListener("click", query_suggestions);
+      $("suggestion-limit").addEventListener("keydown", function (e) { if (e.key === "Enter") query_suggestions(); });
 
       // ?token=xxx 便于从托盘一键打开
       var params = new URLSearchParams(location.search);

@@ -57,6 +57,9 @@ Environment variables (.env is supported):
   RANKS_RATE_PER_TOKEN
   RANKS_RATE_PER_IP
   RANKS_RATE_TOKEN_PER_IP
+  SUGGESTIONS_FILE_PATH
+  SUGGESTIONS_RATE_WINDOW_MS
+  SUGGESTIONS_RATE_PER_IP
 
 REST API (与 ws 共用端口):
   GET  /api                接口清单
@@ -71,6 +74,8 @@ REST API (与 ws 共用端口):
   GET  /api/ranks/bans          封禁名单（admin）
   POST /api/ranks/bans          封禁 uid / token（admin）
   DELETE /api/ranks/bans/:uid   解除封禁（admin）
+  POST /api/suggestions         提交玩家建议
+  GET  /api/suggestions         查看玩家建议（admin）
 `.trim())
 }
 async function main() {
@@ -115,6 +120,9 @@ async function main() {
     ranks_rate_per_token: to_num(process.env.RANKS_RATE_PER_TOKEN) ?? to_num(config.ranks?.rate_per_token),
     ranks_rate_per_ip: to_num(process.env.RANKS_RATE_PER_IP) ?? to_num(config.ranks?.rate_per_ip),
     ranks_rate_token_per_ip: to_num(process.env.RANKS_RATE_TOKEN_PER_IP) ?? to_num(config.ranks?.rate_token_per_ip),
+    suggestions_path: to_str(process.env.SUGGESTIONS_FILE_PATH) ?? to_str(config.suggestions?.path),
+    suggestions_rate_window_ms: to_num(process.env.SUGGESTIONS_RATE_WINDOW_MS) ?? to_num(config.suggestions?.rate_window_ms),
+    suggestions_rate_per_ip: to_num(process.env.SUGGESTIONS_RATE_PER_IP) ?? to_num(config.suggestions?.rate_per_ip),
     log: to_bool(config.rest?.log),
     max_body_size: to_num(config.rest?.max_body_size),
     info: { ssl: is_https, port, http_port, https_port, config_file: config_file.loaded ? config_file.path : void 0, commit: __GIT_COMMIT__, dirty: __GIT_DIRTY__, built_at: __BUILD_TIME__ },

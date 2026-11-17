@@ -416,7 +416,7 @@ async function start_server(lan) {
   if (port !== SERVER_STATE.base_port) log(`端口 ${SERVER_STATE.base_port} 被占用，联机服务器改用 ${port}`);
   SERVER_STATE.port = port;
   const child = spawn(process.execPath, [entry, "--port", String(port), "--host", host, "--admin-token", ADMIN_TOKEN], {
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", RANKS_DIR: join(data_dir, "ranks") },
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", RANKS_DIR: join(data_dir, "ranks"), SUGGESTIONS_FILE_PATH: join(data_dir, "suggestions.jsonl") },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });

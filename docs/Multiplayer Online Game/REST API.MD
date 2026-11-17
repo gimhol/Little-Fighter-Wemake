@@ -125,6 +125,8 @@ WebSocket 连接地址带上管理员 token 时，对应客户端会被标记为
 | POST | `/api/ranks/bans` | admin | 封禁 uid / token |
 | DELETE | `/api/ranks/bans/:uid` | admin | 解除封禁 |
 | DELETE | `/api/ranks/:type/:uid` | admin | 删除某个提交者的成绩 |
+| POST | `/api/suggestions` | public | 提交玩家建议 |
+| GET | `/api/suggestions` | admin | 查看玩家建议 |
 
 ## 接口详情
 
@@ -566,6 +568,64 @@ curl -X POST -H "Content-Type: application/json" -H "x-token: <admin>" \
 
 > 封禁名单持久化在 `ranks_bans.json`，重启后仍然生效（token 哈希同理）。注意玩家 token 本身保存在服务器内存里，重启后旧 token 失效，客户端会重新申请。
 
+### POST /api/suggestions
+
+提交一条玩家建议。**公开接口**，不需要玩家 token（入口页在连服务器之前也能提建议），按来源 IP 限流。
+
+| 字段 | 类型 | 必填 | 说明 |
+| - | - | - | - |
+| `text` | string | 是 | 建议内容，最长 2000 字符；会做 NFC 归一化并剔除控制符/零宽字符，保留换行 |
+| `name` | string | 否 | 称呼，最长 32 字符 |
+| `contact` | string | 否 | 联系方式，最长 128 字符 |
+| `version` | string | 否 | 客户端版本（建议带上，方便定位） |
+| `lang` | string | 否 | 客户端语言 |
+| `page` | string | 否 | 提交时所在页面（如 `entry` / `main_page`） |
+| `website` | string | 否 | 蜜罐字段；正常客户端不会填，填了会返回成功但不落盘 |
+
+``` bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"text":"希望增加练习模式","name":"玩家","contact":"a@b.c","version":"v0.1.66","page":"entry"}' \
+  http://localhost/api/suggestions
+```
+
+``` json
+{ "ok": true, "id": "s_mwkcoi5s_04c718", "date": 1794899267056 }
+```
+
+- 默认每个 IP 每 60 秒最多 5 条，超出返回 429（`code: suggestion_rate_limited`）
+- 服务端会额外记录来源地址 `address`、User-Agent `agent`，但不会出现在公开响应里
+- 数据追加到 JSONL 文件（默认 `<运行目录>/suggestions.jsonl`），一行一条，方便直接用文本工具查看或轮转
+
+### GET /api/suggestions
+
+查看最近提交的建议，需要管理员 token。
+
+| 参数 | 类型 | 默认 | 说明 |
+| - | - | - | - |
+| `limit` | number | 50 | 返回条数，范围 1 到 500 |
+
+``` json
+{
+  "total": 1,
+  "suggestions": [
+    {
+      "id": "s_mwkcoi5s_04c718",
+      "date": 1794899267056,
+      "text": "希望增加练习模式",
+      "name": "玩家",
+      "contact": "a@b.c",
+      "version": "v0.1.66",
+      "lang": "zh-hans",
+      "page": "entry",
+      "agent": "Mozilla/5.0 ...",
+      "address": "::ffff:127.0.0.1"
+    }
+  ]
+}
+```
+
+按时间从新到旧返回；`total` 是文件里当前保留的总条数（不受 `limit` 影响）。管理页的「建议」标签页用的就是这个接口。
+
 ## 数据结构
 
 ### RoomInfo
@@ -642,6 +702,12 @@ curl -X POST -H "Content-Type: application/json" -H "x-token: <admin>" \
     allowed_types: ['story', 'versus'],
     max_per_type: 0, // 0 或负数 = 不限条数
   },
+
+  suggestions: {
+    path: '/root/data/lfj/suggestions.jsonl',
+    rate_window_ms: 60000,
+    rate_per_ip: 5,
+  },
 }
 ```
 
@@ -664,6 +730,9 @@ curl -X POST -H "Content-Type: application/json" -H "x-token: <admin>" \
 | `ranks.rate_per_token` | number | 每个 token 每窗口允许的提交次数，默认 60 |
 | `ranks.rate_per_ip` | number | 每个 IP 每窗口允许的提交次数，默认 240 |
 | `ranks.rate_token_per_ip` | number | 每个 IP 每窗口允许申请的 token 数，默认 30 |
+| `suggestions.path` | string | 玩家建议的 JSONL 文件路径，缺省为 `<运行目录>/suggestions.jsonl` |
+| `suggestions.rate_window_ms` | number | 建议提交限流窗口，默认 60000 毫秒 |
+| `suggestions.rate_per_ip` | number | 每个 IP 每窗口允许提交的建议数，默认 5 |
 
 ### 环境变量
 
@@ -689,6 +758,9 @@ RANKS_RATE_WINDOW_MS=60000
 RANKS_RATE_PER_TOKEN=60
 RANKS_RATE_PER_IP=240
 RANKS_RATE_TOKEN_PER_IP=30
+SUGGESTIONS_FILE_PATH=/root/data/lfj/suggestions.jsonl
+SUGGESTIONS_RATE_WINDOW_MS=60000
+SUGGESTIONS_RATE_PER_IP=5
 ```
 
 | 配置 | 说明 |
@@ -704,6 +776,8 @@ RANKS_RATE_TOKEN_PER_IP=30
 | `RANKS_AUDIT_PATH` | 提交审计日志路径，缺省为排行数据同目录的 `ranks_audit.jsonl` |
 | `RANKS_BANS_PATH` | 封禁名单路径，缺省为排行数据同目录的 `ranks_bans.json` |
 | `RANKS_RATE_WINDOW_MS` / `RANKS_RATE_PER_TOKEN` / `RANKS_RATE_PER_IP` / `RANKS_RATE_TOKEN_PER_IP` | 限流窗口与配额，缺省 60000ms / 60 次 / 240 次 / 30 次 |
+| `SUGGESTIONS_FILE_PATH` | 玩家建议 JSONL 路径，缺省 `<运行目录>/suggestions.jsonl` |
+| `SUGGESTIONS_RATE_WINDOW_MS` / `SUGGESTIONS_RATE_PER_IP` | 建议提交限流窗口与配额，缺省 60000ms / 5 次 |
 
 ### 排行存储
 

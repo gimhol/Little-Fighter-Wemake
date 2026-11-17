@@ -13,6 +13,7 @@ import { SqliteRankMgr } from './SqliteRankMgr';
 import { RestError } from './RestError';
 import { RestResponse } from './RestResponse';
 import { Router } from './Router';
+import { SuggestionMgr } from './SuggestionMgr';
 import { parse_body, read_body } from './read_body';
 import { register_routes } from './routes/index';
 import type { IAuth } from './AuthMgr';
@@ -27,6 +28,7 @@ export * from './SqliteRankMgr';
 export * from './RestError';
 export * from './RestResponse';
 export * from './Router';
+export * from './SuggestionMgr';
 export * from './read_body';
 export * from './types';
 export * from './utils';
@@ -55,6 +57,10 @@ export interface IRestOptions {
   ranks_rate_per_token?: number;
   ranks_rate_per_ip?: number;
   ranks_rate_token_per_ip?: number;
+  /** 玩家建议的 JSONL 存储路径，缺省 <运行目录>/suggestions.jsonl */
+  suggestions_path?: string;
+  suggestions_rate_window_ms?: number;
+  suggestions_rate_per_ip?: number;
 }
 
 export class Rest {
@@ -64,6 +70,7 @@ export class Rest {
   readonly auth: AuthMgr;
   readonly ranks: IRankStore;
   readonly ranks_guard: RankGuard;
+  readonly suggestions: SuggestionMgr;
   readonly options: IRestOptions;
   readonly started_at = Date.now();
 
@@ -73,6 +80,7 @@ export class Rest {
     this.options = options;
     this.ranks = create_rank_store(options);
     this.ranks_guard = create_rank_guard(this.ranks, options);
+    this.suggestions = create_suggestion_mgr(options);
     this.auth.add_admin_token(...(Array.isArray(options.admin_tokens) ? options.admin_tokens : [options.admin_tokens]));
     register_routes(this);
   }
@@ -189,5 +197,13 @@ function create_rank_guard(ranks: IRankStore, options: IRestOptions): RankGuard 
     rate_per_token: to_num(options.ranks_rate_per_token) ?? to_num(process.env.RANKS_RATE_PER_TOKEN),
     rate_per_ip: to_num(options.ranks_rate_per_ip) ?? to_num(process.env.RANKS_RATE_PER_IP),
     rate_token_per_ip: to_num(options.ranks_rate_token_per_ip) ?? to_num(process.env.RANKS_RATE_TOKEN_PER_IP),
+  });
+}
+
+function create_suggestion_mgr(options: IRestOptions): SuggestionMgr {
+  return new SuggestionMgr({
+    path: to_str(options.suggestions_path) ?? to_str(process.env.SUGGESTIONS_FILE_PATH),
+    rate_window_ms: to_num(options.suggestions_rate_window_ms) ?? to_num(process.env.SUGGESTIONS_RATE_WINDOW_MS),
+    rate_per_ip: to_num(options.suggestions_rate_per_ip) ?? to_num(process.env.SUGGESTIONS_RATE_PER_IP),
   });
 }

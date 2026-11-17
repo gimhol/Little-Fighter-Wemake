@@ -10,6 +10,7 @@ import { useLocation, useNavigate } from "react-router";
 import { DomAdapter } from "splittings-dom/dist/es/splittings-dom";
 import "splittings-dom/dist/es/splittings-dom.css";
 import { Workspaces } from "splittings/dist/es/splittings";
+import { AnyIdea } from "./AnyIdea";
 import csses from "./App.module.scss";
 import { BgScrollerView } from "./BgScrollerView";
 import { Button } from "./Component/Buttons/Button";
@@ -184,6 +185,7 @@ function App() {
   const [bg_id, _set_bg_id] = useState(Defines.VOID_BG.id);
   const [dat_viewer_open, set_dat_viewer_open] = useState(false);
   const [editor_open, set_editor_open] = useState(false);
+  const [idea_open, set_idea_open] = useState(false);
 
   const [app_state, set_app_state, app_state_ready] = useForage({
     key: 'app_state', version: app_state_version, init: init_app_state,
@@ -230,6 +232,8 @@ function App() {
   const [toy_mobile] = useState(is_toy_mobile_now);
   const [net_settings_open, set_net_settings_open] = useState(false);
   const show_volume_popup = can_hover_volume_popup && !is_mobile_container && !toy_mobile;
+  /** 网页浮层打开时屏蔽游戏快捷键（Esc 等交给浮层自己处理） */
+  const overlay_open = idea_open || net_settings_open || dat_viewer_open || editor_open;
   const { entity_flags, bg_flags } = world_dataset;
 
   const aspect_override = useMemo(() => Defines.parse_aspect(params.aspect), [params.aspect]);
@@ -299,6 +303,9 @@ function App() {
           break;
         case 'custom_game':
           nav(Paths.Paths.custom_game)
+          break;
+        case 'any_idea':
+          set_idea_open(true)
           break;
         case 'rank_request':
           // 生存排行准备页请求数据：宿主拉取后“下发”，UI 值变化时自动更新
@@ -665,13 +672,13 @@ function App() {
     [players],
   );
 
-  useShortcut("Escape", 0, () => lfw?.push_cmd(CMD.F4));
-  useShortcut("F8", 0, () => lfw?.push_cmd(CMD.F8));
-  useShortcut("F9", 0, () => lfw?.push_cmd(CMD.F9));
-  useShortcut("F10", 0, () => lfw?.push_cmd(CMD.F10));
-  useShortcut("F11", 0, () => toggle_fullscreen());
-  useShortcut("ctrl+F1", 0, () => lfw?.is_cheat(CheatEnum.GIM_INK) && set_app_state(d => { d.dev_ui_open = !d.dev_ui_open }));
-  useShortcut("ctrl+F3", 0, () => lfw?.is_cheat(CheatEnum.GIM_INK) && set_app_state(d => {
+  useShortcut("Escape", overlay_open, () => lfw?.push_cmd(CMD.F4));
+  useShortcut("F8", overlay_open, () => lfw?.push_cmd(CMD.F8));
+  useShortcut("F9", overlay_open, () => lfw?.push_cmd(CMD.F9));
+  useShortcut("F10", overlay_open, () => lfw?.push_cmd(CMD.F10));
+  useShortcut("F11", overlay_open, () => toggle_fullscreen());
+  useShortcut("ctrl+F1", overlay_open, () => lfw?.is_cheat(CheatEnum.GIM_INK) && set_app_state(d => { d.dev_ui_open = !d.dev_ui_open }));
+  useShortcut("ctrl+F3", overlay_open, () => lfw?.is_cheat(CheatEnum.GIM_INK) && set_app_state(d => {
     d.show_stats = !d.show_stats;
   }));
   useEffect(() => {
@@ -1262,6 +1269,9 @@ function App() {
         lfw={lfw} />
       {net_settings_open && lfw && (
         <NetSettings lfw={lfw} on_close={() => set_net_settings_open(false)} />
+      )}
+      {idea_open && (
+        <AnyIdea lfw={lfw} page={ui_id} on_close={() => set_idea_open(false)} />
       )}
     </>
   );
