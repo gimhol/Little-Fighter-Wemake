@@ -66,6 +66,14 @@ export function AnyIdea(props: IAnyIdeaProps) {
   const [cooldown, set_cooldown] = useState(() => Math.ceil(suggestion_cooldown_left() / 1000));
 
   const close_timer = useRef<number | undefined>(void 0);
+  /**
+   * 提交回来时组件是否还挂着。
+   *
+   * 只在 effect 的清理函数里置 false 是不够的：StrictMode 在开发模式下会把 effect
+   * 走一遍"挂载 → 卸载 → 再挂载"，清理函数一跑 alive 就永久变成 false，
+   * 之后 on_submit 里 `if (!alive.current) return` 会把所有返回结果（成功/失败）都丢掉，
+   * 界面就永远停在"提交中…"，看起来像点了没反应。所以挂载时必须重置为 true。
+   */
   const alive = useRef(true);
 
   useEffect(() => {
@@ -87,9 +95,12 @@ export function AnyIdea(props: IAnyIdeaProps) {
     return () => window.removeEventListener('keydown', on_key_down, true);
   }, [on_close]);
 
-  useEffect(() => () => {
-    alive.current = false;
-    if (close_timer.current !== void 0) window.clearTimeout(close_timer.current);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      if (close_timer.current !== void 0) window.clearTimeout(close_timer.current);
+    };
   }, []);
 
   const lang = lfw?.canonical_lang() ?? '';
