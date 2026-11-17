@@ -1,4 +1,5 @@
 import type { UINode } from "../UINode";
+import { parse_percent } from "../alignment";
 import { UIComponent } from "./UIComponent";
 
 interface IFolloweds {
@@ -8,10 +9,10 @@ interface IFolloweds {
   b?: UINode | null
 }
 interface IAligns {
-  l?: "left" | "right" | "mid" | null;
-  r?: "left" | "right" | null;
-  t?: "top" | "bottom" | "mid" | null;
-  b?: "top" | "bottom" | null;
+  l?: string | null;
+  r?: string | null;
+  t?: string | null;
+  b?: string | null;
 }
 interface IOffsets {
   l: number;
@@ -65,10 +66,16 @@ export class Alignment extends UIComponent {
     // eslint-disable-next-line prefer-const
     let { x, y, z } = follower.global_pos;
     let { w, h } = follower;
+    const left_pct = parse_percent(this.align.l);
+    const right_pct = parse_percent(this.align.r);
+    const top_pct = parse_percent(this.align.t);
+    const bottom_pct = parse_percent(this.align.b);
     if (this.align.r && followed.r && followed.r !== follower) {
       const { x } = followed.r.global_pos;
       const c = followed.r.cross;
-      switch (this.align.r) {
+      if (right_pct !== null) {
+        _r = x + c.left + right_pct * (c.right - c.left - w) + w;
+      } else switch (this.align.r) {
         case "left": _r = x + c.left; break;
         case "right": _r = x + c.right; break;
       }
@@ -77,7 +84,9 @@ export class Alignment extends UIComponent {
     if (this.align.l && followed.l && followed.l !== follower) {
       const { x } = followed.l.global_pos;
       const c = followed.l.cross;
-      switch (this.align.l) {
+      if (left_pct !== null) {
+        _l = x + c.left + left_pct * (c.right - c.left - w);
+      } else switch (this.align.l) {
         case "left": _l = x + c.left; break;
         case "right": _l = x + c.right; break;
         case "mid":
@@ -90,7 +99,9 @@ export class Alignment extends UIComponent {
     if (this.align.b && followed.b && followed.b !== follower) {
       const { y } = followed.b.global_pos;
       const c = followed.b.cross;
-      switch (this.align.b) {
+      if (bottom_pct !== null) {
+        _b = y + c.top + bottom_pct * (c.bottom - c.top - h) + h;
+      } else switch (this.align.b) {
         case "top": _b = y + c.top; break;
         case "bottom": _b = y + c.bottom; break;
       }
@@ -98,7 +109,9 @@ export class Alignment extends UIComponent {
     if (this.align.t && followed.t && followed.t !== follower) {
       const { y } = followed.t.global_pos;
       const c = followed.t.cross;
-      switch (this.align.t) {
+      if (top_pct !== null) {
+        _t = y + c.top + top_pct * (c.bottom - c.top - h);
+      } else switch (this.align.t) {
         case "top": _t = y + c.top; break;
         case "bottom": _t = y + c.bottom; break;
         case "mid":

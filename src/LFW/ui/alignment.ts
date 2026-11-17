@@ -44,6 +44,23 @@ export function normalize_alignment(v: unknown): IAlignmentInfo | null {
   return ret;
 }
 
+const PERCENT_RE = /^\s*([+-]?\d+(?:\.\d+)?)\s*%\s*$/;
+
+/**
+ * `50%` → 0.5。
+ *
+ * 百分比表示「对齐比例」：0% 与 `left`/`top` 相同（贴左/上），
+ * 50% 与 `mid` 相同（居中），100% 为右/下对齐；中间值按
+ * 「父级尺寸 - 自身尺寸」的可用空间线性插值。允许负数与 >100%。
+ */
+export function parse_percent(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const matched = PERCENT_RE.exec(value);
+  if (!matched) return null;
+  const percent = Number(matched[1]);
+  return Number.isFinite(percent) ? percent / 100 : null;
+}
+
 export function parse_offset(value: string): { l: number; r: number; t: number; b: number } | undefined {
   const text = value.trim();
   if (!text) return undefined;
@@ -193,6 +210,11 @@ export function apply_alignment(follower: UINode, info: IAlignmentInfo): boolean
   let _t: number | null = null;
   let _b: number | null = null;
 
+  const left_pct = parse_percent(info.left);
+  const right_pct = parse_percent(info.right);
+  const top_pct = parse_percent(info.top);
+  const bottom_pct = parse_percent(info.bottom);
+
   const { x: cx, y: cy } = follower.center;
   const global_pos = follower.global_pos;
   let { x, y } = global_pos;
@@ -203,7 +225,9 @@ export function apply_alignment(follower: UINode, info: IAlignmentInfo): boolean
   if (info.right && followed_r && followed_r !== follower) {
     const followed_x = followed_r.global_pos.x;
     const c = followed_r.cross;
-    if (info.right === "left") _r = followed_x + c.left;
+    if (right_pct !== null) {
+      _r = followed_x + c.left + right_pct * (c.right - c.left - w) + w;
+    } else if (info.right === "left") _r = followed_x + c.left;
     else if (info.right === "right") _r = followed_x + c.right;
   }
 
@@ -211,7 +235,9 @@ export function apply_alignment(follower: UINode, info: IAlignmentInfo): boolean
   if (info.left && followed_l && followed_l !== follower) {
     const followed_x = followed_l.global_pos.x;
     const c = followed_l.cross;
-    if (info.left === "left") _l = followed_x + c.left;
+    if (left_pct !== null) {
+      _l = followed_x + c.left + left_pct * (c.right - c.left - w);
+    } else if (info.left === "left") _l = followed_x + c.left;
     else if (info.left === "right") _l = followed_x + c.right;
     else if (info.left === "mid") {
       _l = followed_x + c.mid_x - 0.5 * w;
@@ -223,7 +249,9 @@ export function apply_alignment(follower: UINode, info: IAlignmentInfo): boolean
   if (info.bottom && followed_b && followed_b !== follower) {
     const followed_y = followed_b.global_pos.y;
     const c = followed_b.cross;
-    if (info.bottom === "top") _b = followed_y + c.top;
+    if (bottom_pct !== null) {
+      _b = followed_y + c.top + bottom_pct * (c.bottom - c.top - h) + h;
+    } else if (info.bottom === "top") _b = followed_y + c.top;
     else if (info.bottom === "bottom") _b = followed_y + c.bottom;
   }
 
@@ -231,7 +259,9 @@ export function apply_alignment(follower: UINode, info: IAlignmentInfo): boolean
   if (info.top && followed_t && followed_t !== follower) {
     const followed_y = followed_t.global_pos.y;
     const c = followed_t.cross;
-    if (info.top === "top") _t = followed_y + c.top;
+    if (top_pct !== null) {
+      _t = followed_y + c.top + top_pct * (c.bottom - c.top - h);
+    } else if (info.top === "top") _t = followed_y + c.top;
     else if (info.top === "bottom") _t = followed_y + c.bottom;
     else if (info.top === "mid") {
       _t = followed_y + c.mid_y - 0.5 * h;

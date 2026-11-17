@@ -1,0 +1,52 @@
+<node id="vs_mode_page" name="页面：对战模式">
+  <component cls="SummaryLogic"/>
+  <component cls="VsModeLogic"/>
+  <component cls="WeaponRain">
+    <properties>
+      <string name="groups">VsWeapon</string>
+    </properties>
+  </component>
+
+  <node id="__center" name="布局：居中容器" size="794,450">
+    <alignment left="left" right="right" top="top" bottom="bottom"/>
+    <flex display="flex" direction="row" justify="center" align="center"/>
+    <node id="__design" name="布局：设计画布" size="794,450" center="0,0">
+      <flex shrink="0"/>
+      <node id="fighter_stat_1v1" name="UI: fighter_stat_1v1" pos="0,10" template="ui/fighter_stat_1v1.ui.json5"/>
+      <node id="fighter_stat_s_x8" name="UI: fighter_stat_s_x8" pos="0,10" template="ui/fighter_stat_s_x8.ui.json5"/>
+      <node id="player_keys_hints" name="玩家按键提示" pos="0,0,5" visible="false" template="ui/player_keys_hints.ui.json5"/>
+      <node id="center_pause_label" name="UI: 居中暂停文本" template="ui/center_pause_label.ui.json5"/>
+      <node id="score_board" name="UI: 分数版" template="ui/score_board.ui.json5" visible="false"/>
+    </node>
+  </node>
+
+  <node id="fn_key_counts_row" name="功能键统计" template="ui/fn_key_counts_row.ui.json5">
+    <alignment left="left" top="top"/>
+  </node>
+
+  <node id="stage_title_text" name="文本：关卡标题" center="0.5,0">
+    <alignment left="mid" top="top"/>
+    <component cls="StageTitleText"/>
+    <style fill_style="white" font="12px Arial" line_width="1" padding_t="2"/>
+  </node>
+
+  <node id="bgm_switcher" name="组件：BGM 切换" center="0,1" i18n="">
+    <alignment left="left" bottom="bottom"/>
+    <style fill_style="white" font="12px Arial" line_width="1"/>
+    <component cls="BGMSwitcher" args="0"/>
+    <OpacityHover args="0.7,1"/>
+  </node>
+
+  <node id="prefix_and_difficulty_text" name="文本：前缀与难度" pos="794,450" center="1,1">
+    <alignment right="right" bottom="bottom"/>
+    <component cls="PrefixAndDifficultyText" args="VS mode"/>
+    <style fill_style="white" font="12px Arial" line_width="1"/>
+  </node>
+
+  <actions>
+    <stop>
+      <action action="remove_all_entities"/>
+      <action action="destory_stage"/>
+    </stop>
+  </actions>
+</node>

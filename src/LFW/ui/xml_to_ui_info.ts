@@ -13,56 +13,162 @@ const FLEX_ATTRS = [
   'fit', 'fit_w', 'fit_h',
 ] as const;
 
-function parse_flex_attrs(el: IXMLElement): string | Record<string, string> | undefined {
-  const inline = el.attr('flex');
+/**
+ * 读取元素属性：自身属性优先，其次按文档顺序倒序查子元素 `<attrs>`（后者覆盖前者）。
+ *
+ * `<node id="FOO" name="bar"/>` 等价于
+ * `<node><attrs id="FOO" name="bar"/></node>`。
+ */
+type AttrGetter = (name: string) => string | undefined;
+
+function attr_getter(el: IXMLElement): AttrGetter {
+  const attr_children: IXMLElement[] = [];
+  for (const child of el.children) {
+    if (child.tag === 'attrs') attr_children.push(child);
+  }
+  return (name: string) => {
+    const own = el.attr(name);
+    if (own != null) return own;
+    for (let i = attr_children.length - 1; i >= 0; --i) {
+      const value = attr_children[i].attr(name);
+      if (value != null) return value;
+    }
+    return void 0;
+  };
+}
+
+/** 与 XML 元素的 `nums_attr` 一致：逗号分隔后逐段转数字 */
+function nums_of(attr: AttrGetter, name: string, sep = ','): number[] | undefined {
+  const value = attr(name);
+  if (value == null) return void 0;
+  return value.split(sep).map((part) => Number(part.trim()));
+}
+
+function parse_flex_attrs(attr: AttrGetter): string | Record<string, string> | undefined {
+  const inline = attr('flex');
   if (inline != null) return inline;
   const flex: Record<string, string> = {};
   for (const name of FLEX_ATTRS) {
-    const value = el.attr(name);
+    const value = attr(name);
     if (value != null) flex[name] = value;
   }
   return Object.keys(flex).length ? flex : void 0;
 }
 
 function parse_flex_element(el: IXMLElement): string | Record<string, string> | undefined {
-  const inline = el.attr('flex') ?? el.attr('value') ?? el.text.trim();
+  const attr = attr_getter(el);
+  const inline = attr('flex') ?? attr('value') ?? el.text.trim();
   if (inline) return inline;
   const propsEl = el.children.find(c => c.tag === 'properties');
   if (propsEl) {
     const props = propsEl.as_object({});
     if (Object.keys(props).length) return props as Record<string, string>;
   }
-  return parse_flex_attrs(el);
+  return parse_flex_attrs(attr);
+}
+
+/** `display:flex; gap:4` → { display: "flex", gap: "4" }（按第一个 ':' 切分） */
+function flex_decls(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const decl of text.split(';')) {
+    const at = decl.indexOf(':');
+    if (at < 0) continue;
+    const key = decl.slice(0, at).trim();
+    const value = decl.slice(at + 1).trim();
+    if (key && value) out[key] = value;
+  }
+  return out;
+}
+
+/** 多个 flex 声明按文档顺序合并（后者覆盖前者）；只有一个时原样返回以保留原类型 */
+function merge_flex(
+  specs: (string | Record<string, string>)[],
+): string | Record<string, string> {
+  if (specs.length === 1) return specs[0];
+  const merged: Record<string, string> = {};
+  for (const spec of specs) {
+    Object.assign(merged, typeof spec === 'string' ? flex_decls(spec) : spec);
+  }
+  return merged;
+}
+
+/**
+ * 多个 alignment 声明按文档顺序合并（后者覆盖前者）。
+ *
+ * `offset` / `followed` 整体替换（`offset` 解析后总是四边齐全，逐字段合并会冲掉前面的值）。
+ */
+function merge_alignment(specs: IAlignmentInfo[]): IAlignmentInfo {
+  if (specs.length === 1) return specs[0];
+  const merged: IAlignmentInfo = {};
+  for (const spec of specs) {
+    if (spec.left != null) merged.left = spec.left;
+    if (spec.right != null) merged.right = spec.right;
+    if (spec.top != null) merged.top = spec.top;
+    if (spec.bottom != null) merged.bottom = spec.bottom;
+    if (spec.offset != null) merged.offset = spec.offset;
+    if (spec.followed != null) merged.followed = spec.followed;
+    if (spec.once) merged.once = true;
+  }
+  return merged;
+}
+
+const STYLE_NUMBER_ATTRS = [
+  'line_width', 'scale', 'padding_l', 'padding_r', 'padding_t', 'padding_b',
+  'shadow_blur', 'shadow_offset_x', 'shadow_offset_y', 'underline_width',
+] as const;
+
+/** `<style>` 元素 → `IStyle`（数值/布尔属性在此统一转型，与 JSON5 的 style 对象一致） */
+function read_style(el: IXMLElement): IStyle | undefined {
+  const raw = el.as_object() as IStyle | undefined;
+  const style: Record<string, unknown> = raw != null ? { ...raw } : {};
+  let any = raw != null;
+  for (const name of STYLE_NUMBER_ATTRS) {
+    const value = el.attr(name);
+    if (value == null) continue;
+    style[name] = Number(value);
+    any = true;
+  }
+  const smoothing = el.attr('smoothing');
+  if (smoothing != null) {
+    style.smoothing = smoothing === 'true';
+    any = true;
+  }
+  const disposable = el.attr('disposable');
+  if (disposable != null) {
+    style.disposable = disposable === 'true';
+    any = true;
+  }
+  return any ? (style as IStyle) : void 0;
 }
 
 function parse_alignment_attrs(
-  el: IXMLElement,
+  attr: AttrGetter,
   prefix = 'alignment_',
   inline_name = 'alignment',
 ): IAlignmentInfo | undefined {
-  const inline = inline_name ? el.attr(inline_name) : void 0;
+  const inline = inline_name ? attr(inline_name) : void 0;
   if (inline) return parse_alignment(inline);
-  const attr = (name: string) => el.attr(`${prefix}${name}`);
+  const read = (name: string) => attr(`${prefix}${name}`);
   const info: IAlignmentInfo = {};
-  const left = attr('left');
-  const right = attr('right');
-  const top = attr('top');
-  const bottom = attr('bottom');
+  const left = read('left');
+  const right = read('right');
+  const top = read('top');
+  const bottom = read('bottom');
   if (left != null) info.left = left;
   if (right != null) info.right = right;
   if (top != null) info.top = top;
   if (bottom != null) info.bottom = bottom;
-  const offset = attr('offset');
+  const offset = read('offset');
   if (offset != null) {
     const parsed = parse_offset(offset);
     if (parsed) info.offset = parsed;
   }
-  const followed = attr('followed');
+  const followed = read('followed');
   if (followed != null) info.followed = followed;
-  const followed_l = attr('followed_l');
-  const followed_r = attr('followed_r');
-  const followed_t = attr('followed_t');
-  const followed_b = attr('followed_b');
+  const followed_l = read('followed_l');
+  const followed_r = read('followed_r');
+  const followed_t = read('followed_t');
+  const followed_b = read('followed_b');
   if (followed_l != null || followed_r != null || followed_t != null || followed_b != null) {
     info.followed = {
       l: followed_l ?? followed ?? void 0,
@@ -71,7 +177,7 @@ function parse_alignment_attrs(
       b: followed_b ?? followed ?? void 0,
     };
   }
-  const once = attr('once');
+  const once = read('once');
   if (once != null) info.once = once.toLowerCase() === 'true' || once === '1';
   return normalize_alignment(info) ?? void 0;
 }
@@ -108,50 +214,58 @@ function parse_component(el: IXMLElement): TComponentInfo {
 
 export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   const ret: IUIInfo = {};
+  const attr = attr_getter(el);
 
   // id / name / i18n
-  ret.id = el.attr('id');
-  ret.name = el.attr('name');
-  ret.i18n = el.attr('i18n');
-  ret.color = el.attr('color');
-  ret.background = el.attr('background');
-  ret.foreground = el.attr('foreground');
-  ret.outlineColor = el.attr('outlineColor');
-  ret.template = el.attr('template');
-  ret.auto_focus = el.attr('auto_focus') === 'true' ? true : void 0;
-  ret.flex = parse_flex_attrs(el);
-  ret.alignment = parse_alignment_attrs(el);
+  ret.id = attr('id');
+  ret.name = attr('name');
+  ret.i18n = attr('i18n');
+  ret.color = attr('color');
+  ret.background = attr('background');
+  ret.foreground = attr('foreground');
+  ret.outlineColor = attr('outlineColor');
+  ret.template = attr('template');
+  ret.auto_focus = attr('auto_focus') === 'true' ? true : void 0;
+
+  // flex / alignment：属性形式与多个子元素按文档顺序合并
+  const flex_specs: (string | Record<string, string>)[] = [];
+  const alignment_specs: IAlignmentInfo[] = [];
+  const style_specs: IStyle[] = [];
+  const flex = parse_flex_attrs(attr);
+  if (flex != null) flex_specs.push(flex);
+  const alignment = parse_alignment_attrs(attr);
+  if (alignment) alignment_specs.push(alignment);
 
   // number arrays (comma-separated)
-  ret.pos = el.nums_attr('pos');
-  ret.size = el.nums_attr('size');
-  ret.center = el.nums_attr('center');
-  ret.scale = el.nums_attr('scale');
+  ret.pos = nums_of(attr, 'pos');
+  ret.size = nums_of(attr, 'size');
+  ret.center = nums_of(attr, 'center');
+  ret.scale = nums_of(attr, 'scale');
 
   // number properties
-  const opacity = el.attr('opacity');
+  const opacity = attr('opacity');
   if (opacity != null) ret.opacity = Number(opacity);
-  const count = el.attr('count');
+  const count = attr('count');
   if (count != null) ret.count = Number(count);
-  const visible = el.attr('visible');
+  const visible = attr('visible');
   if (visible != null) ret.visible = visible === 'true';
-  const disabled = el.attr('disabled');
+  const disabled = attr('disabled');
   if (disabled != null) ret.disabled = disabled === 'true';
-  const clips = el.attr('clips');
+  const clips = attr('clips');
   if (clips != null) ret.clips = clips === 'true';
-  const local_only = el.attr('local_only');
+  const local_only = attr('local_only');
   if (local_only != null) ret.local_only = local_only === 'true';
-  const ignore_esc = el.attr('ignore_esc');
+  const ignore_esc = attr('ignore_esc');
   if (ignore_esc != null) ret.ignore_esc = ignore_esc === 'true';
-  const touchable = el.attr('touchable');
+  const touchable = attr('touchable');
   if (touchable != null) ret.touchable = touchable === 'true';
-  const bgAlpha = el.attr('backgroundAlpha');
+  const bgAlpha = attr('backgroundAlpha');
   if (bgAlpha != null) ret.backgroundAlpha = Number(bgAlpha);
-  const fgAlpha = el.attr('foregroundAlpha');
+  const fgAlpha = attr('foregroundAlpha');
   if (fgAlpha != null) ret.foregroundAlpha = Number(fgAlpha);
-  const olWidth = el.attr('outlineWidth');
+  const olWidth = attr('outlineWidth');
   if (olWidth != null) ret.outlineWidth = Number(olWidth);
-  const olAlpha = el.attr('outlineAlpha');
+  const olAlpha = attr('outlineAlpha');
   if (olAlpha != null) ret.outlineAlpha = Number(olAlpha);
 
   // children
@@ -162,6 +276,10 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
   for (const child of el.children) {
     const tag = child.tag;
     switch (tag) {
+      case 'attrs': {
+        // 已合并进本节点的属性（`attr_getter`），不是子节点
+        break;
+      }
       case 'node':
       case 'item': {
         const ref = child.attr('ref');
@@ -211,21 +329,8 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
         break;
       }
       case 'style': {
-        ret.style = child.as_object() as IStyle;
-        // 数值属性转换
-        const s = ret.style as any;
-        if (child.attr('line_width') != null) s.line_width = Number(child.attr('line_width'));
-        if (child.attr('scale') != null) s.scale = Number(child.attr('scale'));
-        if (child.attr('padding_l') != null) s.padding_l = Number(child.attr('padding_l'));
-        if (child.attr('padding_r') != null) s.padding_r = Number(child.attr('padding_r'));
-        if (child.attr('padding_t') != null) s.padding_t = Number(child.attr('padding_t'));
-        if (child.attr('padding_b') != null) s.padding_b = Number(child.attr('padding_b'));
-        if (child.attr('shadow_blur') != null) s.shadow_blur = Number(child.attr('shadow_blur'));
-        if (child.attr('shadow_offset_x') != null) s.shadow_offset_x = Number(child.attr('shadow_offset_x'));
-        if (child.attr('shadow_offset_y') != null) s.shadow_offset_y = Number(child.attr('shadow_offset_y'));
-        if (child.attr('underline_width') != null) s.underline_width = Number(child.attr('underline_width'));
-        if (child.attr('smoothing') != null) s.smoothing = child.attr('smoothing') === 'true';
-        if (child.attr('disposable') != null) s.disposable = child.attr('disposable') === 'true';
+        const style = read_style(child);
+        if (style != null) style_specs.push(style);
         break;
       }
       case 'img': {
@@ -275,13 +380,15 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
       }
       case 'alignment': {
         const propsEl = child.children.find(c => c.tag === 'properties');
-        ret.alignment = (propsEl ? parse_alignment_object(propsEl.as_object({})) : void 0)
-          ?? parse_alignment_attrs(child, '', 'value')
+        const parsed = (propsEl ? parse_alignment_object(propsEl.as_object({})) : void 0)
+          ?? parse_alignment_attrs(attr_getter(child), '', 'value')
           ?? parse_alignment(child.text);
+        if (parsed) alignment_specs.push(parsed);
         break;
       }
       case 'flex': {
-        ret.flex = parse_flex_element(child);
+        const parsed = parse_flex_element(child);
+        if (parsed != null) flex_specs.push(parsed);
         break;
       }
       default: {
@@ -293,6 +400,14 @@ export function xml_to_ui_info(el: IXMLElement): IUIInfo {
         break;
       }
     }
+  }
+
+  if (flex_specs.length) ret.flex = merge_flex(flex_specs);
+  if (alignment_specs.length) ret.alignment = merge_alignment(alignment_specs);
+  if (style_specs.length) {
+    ret.style = style_specs.length === 1
+      ? style_specs[0]
+      : (Object.assign({}, ...style_specs) as IStyle);
   }
 
   if (items.length) ret.items = items;

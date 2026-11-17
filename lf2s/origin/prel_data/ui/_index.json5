@@ -48,6 +48,6 @@
   "ui/stage_mode_page.ui.json5",
   "ui/stage_mode_prepare_page.ui.json5",
   "ui/test_cases_page.ui.json5",
-  "ui/vs_mode_page.ui.json5",
+  "ui/vs_mode_page.ui.xml",
   "ui/vs_mode_prepare_page.ui.json5",
 ]

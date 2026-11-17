@@ -1,4 +1,4 @@
-import { apply_alignment, normalize_alignment, parse_alignment, parse_offset } from "../LFW/ui/alignment";
+import { apply_alignment, normalize_alignment, parse_alignment, parse_offset, parse_percent } from "../LFW/ui/alignment";
 import type { IXMLElement } from "../LFW/ditto/xml/IXMLElement";
 import { xml_to_ui_info } from "../LFW/ui/xml_to_ui_info";
 
@@ -252,5 +252,98 @@ describe("apply_alignment", () => {
     apply_alignment(b, { left: "right", top: "top", followed: "bro:0" });
     expect(b.x).toBe(150);
     expect(b.y).toBe(0);
+  });
+});
+
+describe("parse_percent", () => {
+  test("百分比字符串", () => {
+    expect(parse_percent("50%")).toBe(0.5);
+    expect(parse_percent(" 12.5 % ")).toBe(0.125);
+    expect(parse_percent("-25%")).toBe(-0.25);
+    expect(parse_percent("100%")).toBe(1);
+  });
+
+  test("非百分比返回 null", () => {
+    expect(parse_percent("50")).toBeNull();
+    expect(parse_percent("abc%")).toBeNull();
+    expect(parse_percent("%")).toBeNull();
+    expect(parse_percent(void 0)).toBeNull();
+    expect(parse_percent(50)).toBeNull();
+  });
+});
+
+describe("apply_alignment 百分比", () => {
+  test("0% / 50% / 100% 与 left/mid/right 等价", () => {
+    const root = parent(800, 450);
+    const left = stub({ parent: root });
+    const mid = stub({ parent: root });
+    const right = stub({ parent: root });
+    apply_alignment(left, { left: "left" });
+    apply_alignment(mid, { left: "mid" });
+    apply_alignment(right, { right: "right" });
+    const p0 = stub({ parent: root });
+    const p50 = stub({ parent: root });
+    const p100 = stub({ parent: root });
+    apply_alignment(p0, { left: "0%" });
+    apply_alignment(p50, { left: "50%" });
+    apply_alignment(p100, { left: "100%" });
+    expect(p0.x).toBe(left.x);
+    expect(p50.x).toBe(mid.x);
+    expect(p100.x).toBe(right.x);
+  });
+
+  test("top/bottom 百分比与关键字等价", () => {
+    const root = parent(800, 450);
+    const p0 = stub({ parent: root });
+    const p50 = stub({ parent: root });
+    const p100 = stub({ parent: root });
+    apply_alignment(p0, { top: "0%" });
+    apply_alignment(p50, { top: "50%" });
+    apply_alignment(p100, { bottom: "100%" });
+    expect(p0.y).toBe(0);
+    expect(p50.y).toBe(200);
+    expect(p100.y).toBe(400);
+    const bottom0 = stub({ parent: root });
+    apply_alignment(bottom0, { bottom: "0%" });
+    expect(bottom0.y).toBe(0);
+  });
+
+  test("center 非 0 时 50% 仍为居中", () => {
+    const root = parent(800, 450);
+    const by_mid = stub({ parent: root, center: { x: 0.5, y: 0.5 } });
+    const by_pct = stub({ parent: root, center: { x: 0.5, y: 0.5 } });
+    apply_alignment(by_mid, { left: "mid", top: "mid" });
+    apply_alignment(by_pct, { left: "50%", top: "50%" });
+    expect(by_pct.x).toBe(by_mid.x);
+    expect(by_pct.y).toBe(by_mid.y);
+  });
+
+  test("任意百分比按可用空间插值", () => {
+    const root = parent(800, 450);
+    const node = stub({ parent: root });
+    apply_alignment(node, { left: "25%", top: "25%" });
+    expect(node.x).toBe(175);
+    expect(node.y).toBe(100);
+  });
+
+  test("两侧百分比同时存在时拉伸", () => {
+    const root = parent(800, 450);
+    const node = stub({ parent: root });
+    apply_alignment(node, {
+      left: "0%",
+      right: "100%",
+      top: "0%",
+      bottom: "100%",
+    });
+    expect(node.x).toBe(0);
+    expect(node.y).toBe(0);
+    expect(node.w).toBe(800);
+    expect(node.h).toBe(450);
+  });
+
+  test("非法百分比不生效", () => {
+    const root = parent(800, 450);
+    const node = stub({ parent: root });
+    expect(apply_alignment(node, { left: "abc%" })).toBe(false);
   });
 });
