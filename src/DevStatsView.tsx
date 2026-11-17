@@ -1,10 +1,13 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type RefObject } from "react";
 import csses from "./DevStatsView.module.scss";
 import { Ditto, type ILFWCallback, type IWorldCallbacks, type LFW } from "./LFW";
 import { useCallbacks } from "./pages/network/useCallbacks";
 
 export interface IDevStatsViewProps {
   lfw?: LFW | null;
+}
+function set_inner_text<E extends HTMLElement>(ref: RefObject<E | null>, text: string) {
+  if (ref.current) ref.current.innerText = text;
 }
 export function DevStatsView(props: IDevStatsViewProps) {
   const { lfw } = props;
@@ -22,49 +25,52 @@ export function DevStatsView(props: IDevStatsViewProps) {
   const ref_loading = useRef<HTMLSpanElement>(null);
   const ref_tid = useRef<number>(0);
   const ref_tid2 = useRef<number>(0);
-  const ref_lf2 = useRef(lfw);
-  ref_lf2.current = lfw;
+
 
   useCallbacks(
     lfw?.world.callbacks,
     useMemo<IWorldCallbacks>(() => ({
       on_ups_update: (ups, _score, speed) => {
-        ref_ups.current!.innerText =
-          "UPS:" + ups.toFixed(0) + ` ×${speed!.toFixed(2)}`;
+        set_inner_text(ref_ups, "UPS:" + ups.toFixed(0) + ` ×${speed!.toFixed(2)}`);
       },
       on_fps_update: (fps) => {
-        ref_fps.current!.innerText = "FPS:" + fps.toFixed(0);
-        const world = ref_lf2.current?.world;
+        set_inner_text(ref_fps, "FPS:" + fps.toFixed(0));
+        const world = lfw?.world;
         if (!world) return;
-        ref_ent.current!.innerText = "ENT:" + world.entities.length;
-        ref_buf.current!.innerText = "BUF:" + world.buffs.size;
-        ref_cost.current!.innerText = "COST:" + (world.ticker?.cost ?? 0).toFixed(2) + "ms";
-        ref_pair.current!.innerText = "PAIR:" + world.pairs_compared;
-        ref_coll.current!.innerText = "COLL:" + world.collisions.size;
-        ref_rnd.current!.innerText = "RND:" + world.render_cost.toFixed(2) + "ms";
-        ref_span.current!.innerText = "SPAN:" + (world.ticker?.span ?? 1).toFixed(2);
-        const rtt = Ditto.Networking.rtt;
-        ref_rtt.current!.innerText = "RTT:" + (rtt ? rtt + "ms" : "--");
-        const k = Ditto.Networking.lead;
-        ref_k.current!.innerText = "K:" + (k ?? "--");
+        const { rtt, lead: k } = Ditto.Networking;
+        set_inner_text(ref_ent, "ENT:" + world.entities.length);
+        set_inner_text(ref_buf, "BUF:" + world.buffs.size);
+        set_inner_text(ref_cost, "COST:" + (world.ticker?.cost ?? 0).toFixed(2) + "ms");
+        set_inner_text(ref_pair, "PAIR:" + world.pairs_compared);
+        set_inner_text(ref_coll, "COLL:" + world.collisions.size);
+        set_inner_text(ref_rnd, "RND:" + world.render_cost.toFixed(2) + "ms");
+        set_inner_text(ref_span, "SPAN:" + (world.ticker?.span ?? 1).toFixed(2));
+        set_inner_text(ref_rtt, "RTT:" + (rtt ? rtt + "ms" : "--"));
+        set_inner_text(ref_k, "K:" + (k ?? "--"));
       }
-    }), [])
+    }), [lfw])
   )
   useCallbacks(
     lfw?.callbacks,
     useMemo<ILFWCallback>(() => ({
       on_progress: (content, progress) => {
-        const el = ref_loading.current!;
-        el.style.display = '';
-        el.innerText = `${content}, ${progress}%`;
-        el.style.transition = ''
-        el.style.opacity = '1'
+        const el = ref_loading.current;
+        if (el) {
+          el.style.display = '';
+          el.innerText = `${content}, ${progress}%`;
+          el.style.transition = ''
+          el.style.opacity = '1'
+        }
         window.clearTimeout(ref_tid.current);
         window.clearTimeout(ref_tid2.current);
         ref_tid.current = window.setTimeout(() => {
-          el.style.transition = 'opacity 150ms'
-          el.style.opacity = '0'
-          ref_tid2.current = window.setTimeout(() => { el.style.display = 'none' }, 150)
+          if (el) {
+            el.style.transition = 'opacity 150ms'
+            el.style.opacity = '0'
+          }
+          ref_tid2.current = window.setTimeout(() => {
+            if (el) el.style.display = 'none'
+          }, 150)
         }, 1000)
       }
     }), [])
