@@ -1,23 +1,15 @@
-import { BGG, Defines, type IBgData } from "../../defines";
+import { Defines, type IBgData } from "../../defines";
+import { arrange_switcher_backgrounds } from "./background_switcher_order";
 import { UIComponent } from "./UIComponent";
 
 export class BackgroundSwitcher extends UIComponent {
   static override readonly TAGS: string[] = ["BackgroundSwitcher"];
   private _background: IBgData = Defines.RANDOM_BG;
   get backgrounds(): IBgData[] {
-    let set = new Set<IBgData>();
-    set.add(Defines.RANDOM_BG)
-
-    for (const bg of this.lfw.datas.backgrounds) {
-      if (bg.base.group?.includes(BGG.Regular)) {
-        set.add(bg)
-      } else if (bg.base.group?.includes(BGG.Hidden)) {
-        if (this.world.dataset.LF2_NET) set.add(bg)
-      } else {
-        if (this.world.dataset.GIM_INK) set.add(bg)
-      }
-    }
-    return Array.from(set).filter(v => v.id !== Defines.VOID_BG.id);
+    return arrange_switcher_backgrounds(
+      this.lfw.datas.backgrounds,
+      this.world.dataset,
+    );
   }
   get background(): IBgData {
     return this._background;

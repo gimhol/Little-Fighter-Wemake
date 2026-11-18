@@ -39,7 +39,7 @@
     shadowsize="37,9"
     bound="0,2600,-1,0"
     height="700"
-    group="regular" />
+    group="Dev" />
 
   <dataset type="object">
     <value type="number" name="cam_y_follow" value="1" />
