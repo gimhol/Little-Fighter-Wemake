@@ -859,7 +859,7 @@ export class BotController extends BaseController {
 
     const ks = action.keys?.map<LGK>(v => {
       if (v === 'F') return facing > 0 ? GK.R : GK.L;
-      if (v === 'B') return facing > 0 ? GK.R : GK.L;
+      if (v === 'B') return facing > 0 ? GK.L : GK.R;
       return v
     })
     return ks ?? false
