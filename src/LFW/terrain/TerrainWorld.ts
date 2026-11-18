@@ -1,5 +1,5 @@
 import { TerrainEnum, type ITerrainInfo, type IVector3Like } from "../defines";
-import { clamp } from "../utils";
+import { clamp, round } from "../utils";
 import { line_plane_intersection } from "../utils/math/line_plane_intersection";
 import {
   TerrainMode,
@@ -13,6 +13,17 @@ const EPS = 0.5;
 /** 挤出后与地形边界保持的距离 */
 const PUSH_OUT_MARGIN = 1;
 const PUSH_OUT_MAX_TRAVEL = 256;
+/** 寻找可站立地面时，方形环采样的步长 */
+const STANDABLE_STEP = 4;
+/** 寻找可站立地面时，最大搜索半径 */
+const STANDABLE_MAX_RADIUS = 512;
+
+/** 可站立的地面坐标 */
+export interface IStandablePoint {
+  x: number;
+  y: number;
+  z: number;
+}
 
 /** 地形挤出的结果 */
 export interface IPushOut {
@@ -309,6 +320,81 @@ export class TerrainWorld {
       if (l <= min_x && r >= max_x) break;
     }
     return x;
+  }
+
+  /** 可站立地面查询的结果（复用，避免每次查询分配对象） */
+  private readonly _standable_result: IStandablePoint = { x: 0, y: 0, z: 0 };
+
+  /**
+   * 寻找距离 (x, z) 最近的可站立地面坐标
+   *
+   * 以 (x, z) 为锚点，由近到远按方形环采样。环上的点到锚点的距离不小于环半径，
+   * 所以一旦找到候选点，半径更大的环就不必再看。
+   *
+   * @param {number} x 锚点 X 坐标
+   * @param {number} z 锚点 Z 坐标
+   * @param {number} left X 轴下限（舞台左边界）
+   * @param {number} right X 轴上限（舞台右边界）
+   * @param {number} near Z 轴上限（舞台近边界）
+   * @param {number} far Z 轴下限（舞台远边界）
+   * @returns {Readonly<IStandablePoint> | undefined} 最近的可站立地面坐标，结果对象会被复用；找不到时返回 undefined
+   */
+  nearest_standable(
+    x: number,
+    z: number,
+    left: number,
+    right: number,
+    near: number,
+    far: number,
+  ): Readonly<IStandablePoint> | undefined {
+    const ax = clamp(round(x), left, right);
+    const az = clamp(round(z), far, near);
+    let best_x = ax;
+    let best_z = az;
+    let best_seg: Readonly<ITerrainInfo> | undefined;
+    let best_d2 = Infinity;
+    for (let r = 0; r <= STANDABLE_MAX_RADIUS; r += STANDABLE_STEP) {
+      if (r * r >= best_d2) break;
+      // r === 0 时只看锚点本身，否则把方形环的四条边首尾相接遍历
+      const edge = 2 * r / STANDABLE_STEP + 1;
+      const count = r === 0 ? 1 : 4 * edge;
+      for (let i = 0; i < count; ++i) {
+        let dx = 0;
+        let dz = 0;
+        if (r !== 0) {
+          if (i < edge) { // 远边：z = -r
+            dx = i * STANDABLE_STEP - r;
+            dz = -r;
+          } else if (i < 2 * edge) { // 右边：x = r
+            dx = r;
+            dz = (i - edge) * STANDABLE_STEP - r;
+          } else if (i < 3 * edge) { // 近边：z = r
+            dx = r - (i - 2 * edge) * STANDABLE_STEP;
+            dz = r;
+          } else { // 左边：x = -r
+            dx = -r;
+            dz = r - (i - 3 * edge) * STANDABLE_STEP;
+          }
+        }
+        const cx = ax + dx;
+        const cz = az + dz;
+        if (cx < left || cx > right || cz < far || cz > near) continue;
+        const d2 = dx * dx + dz * dz;
+        if (d2 >= best_d2) continue;
+        const seg = this.segment(cx, cz);
+        if (seg.cliff) continue;
+        best_x = cx;
+        best_z = cz;
+        best_seg = seg;
+        best_d2 = d2;
+      }
+    }
+    if (!best_seg) return void 0;
+    const ret = this._standable_result;
+    ret.x = best_x;
+    ret.y = this.y(best_seg, best_x, best_z);
+    ret.z = best_z;
+    return ret;
   }
 
   /**
