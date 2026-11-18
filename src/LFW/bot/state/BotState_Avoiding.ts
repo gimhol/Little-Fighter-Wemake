@@ -96,6 +96,8 @@ export class BotState_Avoiding extends BotState_Base {
 
     const z_backward_key = z_forwrd_key == GK.D ? GK.U : GK.D
     const x_backward_key = x_forwrd_key == GK.L ? GK.R : GK.L
+    const x_escape_safe = c.step_safe(x_forwrd_key === GK.L ? -1 : 1, 0);
+    const z_escape_safe = c.step_safe(0, z_forwrd_key === GK.D ? 1 : -1);
     /* 威胁越近，跑的欲望越高 */
     const { avoid_out_x } = c.dataset;
     const { difficulty } = this // 1, 2, 3, 4
@@ -107,12 +109,16 @@ export class BotState_Avoiding extends BotState_Base {
     if (c.desire('jump_avoiding') < jump_desire) {
       c.click(GK.j);
     }
-    if (c.desire('run_avoiding') < run_desire) {
-      c.dbl_click(x_forwrd_key)
+    if (x_escape_safe) {
+      if (c.desire('run_avoiding') < run_desire) {
+        c.dbl_click(x_forwrd_key)
+      } else {
+        c.key_down(x_forwrd_key)
+      }
+      c.key_up(x_backward_key)
     } else {
-      c.key_down(x_forwrd_key)
+      c.key_up(GK.L, GK.R)
     }
-    c.key_up(x_backward_key)
     const rz = round(av_z - me_z)
     if (dead_zone_only && !cornered) {
       const { w_atk_min_z: z_min, w_atk_max_z: z_max } = c.dataset;
@@ -127,9 +133,11 @@ export class BotState_Avoiding extends BotState_Base {
       } else {
         this.hold_UD(rz, z_min, z_max)
       }
-    } else {
+    } else if (z_escape_safe) {
       c.key_down(z_forwrd_key)
       c.key_up(z_backward_key)
+    } else {
+      c.key_up(GK.U, GK.D)
     }
   }
 }

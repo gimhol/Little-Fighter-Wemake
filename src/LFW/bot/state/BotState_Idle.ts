@@ -1,6 +1,7 @@
 import { AGK, Defines, GK, SE, WeaponEnum as WT } from "../../defines";
 import { BSE } from "../../defines/BotStateEnum";
 import { round } from '../../utils/math/base';
+import { clamp } from '../../utils/math/clamp';
 import { BotBehavior } from "../BotController";
 import { BotState_Base } from "./BotState";
 
@@ -41,21 +42,11 @@ export class BotState_Idle extends BotState_Base {
 
     const { x: my_x, z: my_z } = me.position;
     // 空闲时远离边界
-    if (my_x < c.idle_min_x) {
-      c.key_down(GK.R).key_up(GK.L)
-    } else if (my_x > c.idle_max_x) {
-      c.key_down(GK.L).key_up(GK.R)
-    } else {
-      c.key_up(GK.L, GK.R)
-    }
-
-    if (my_z < c.idle_min_z) {
-      c.key_down(GK.D).key_up(GK.U)
-    } else if (my_z > c.idle_max_z) {
-      c.key_down(GK.U).key_up(GK.D)
-    } else {
-      c.key_up(GK.U, GK.D)
-    }
+    c.walk_toward(
+      clamp(my_x, c.idle_min_x, c.idle_max_x),
+      clamp(my_z, c.idle_min_z, c.idle_max_z),
+      1
+    );
 
     const watching = c.watching;
     if (

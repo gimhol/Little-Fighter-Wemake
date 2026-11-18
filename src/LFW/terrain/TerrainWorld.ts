@@ -398,6 +398,38 @@ export class TerrainWorld {
   }
 
   /**
+   * 该 XZ 位置涉及的所有地形段，按顶面从高到低排序。
+   *
+   * 只读查询，供 AI、调试等上层逻辑使用；物理判定仍走 `segment` / `enterable`。
+   * 传 `out` 可复用数组，避免高频查询时反复分配。
+   *
+   * @param {number} x X坐标
+   * @param {number} z Z坐标
+   * @param {ITerrainSolid[]} [out] 复用的输出数组
+   * @returns {ITerrainSolid[]} 地形段列表（按顶面降序）
+   */
+  column(x: number, z: number, out: ITerrainSolid[] = []): ITerrainSolid[] {
+    out.length = 0;
+    for (const solid of this.candidates(x)) {
+      if (x < solid.x1 || x > solid.x2 || z < solid.z1 || z > solid.z2) continue;
+      out.push(solid);
+    }
+    // 同一点上的地形段通常只有 1~3 块，直接插入排序：
+    // 不额外创建比较函数（这里是每帧都会走的热路径）。
+    for (let i = 1; i < out.length; ++i) {
+      const solid = out[i];
+      const top = terrain_top(solid, x, z);
+      let j = i - 1;
+      while (j >= 0 && terrain_top(out[j], x, z) < top) {
+        out[j + 1] = out[j];
+        --j;
+      }
+      out[j + 1] = solid;
+    }
+    return out;
+  }
+
+  /**
    * 能否进入地点
    *
    * @param {Readonly<ITerrainInfo>} seg 地形信息

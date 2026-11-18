@@ -123,8 +123,11 @@ export class BotState_Chasing extends BotState_Base {
     }
 
     if (x_ok && z_ok) c.click(GK.a)
-    this.hold_UD(rz, c.dataset.w_atk_min_z, c.dataset.w_atk_max_z)
-    this.hold_LR(rx, c.w_atk_b_x, c.w_atk_f_x)
+    c.move_to(
+      rx, rz,
+      c.w_atk_b_x, c.w_atk_f_x,
+      c.dataset.w_atk_min_z, c.dataset.w_atk_max_z
+    )
     const { team, player_l, player_r } = this.stage
     if (team === me.team) {
       if (my_x < player_l) c.click(GK.R)
@@ -197,6 +200,11 @@ export class BotState_Chasing extends BotState_Base {
       } else {
         c.click(GK.a);
       }
+      return;
+    }
+
+    if (c.danger_ahead(me_facing > 0 ? 1 : -1, 0)) {
+      c.click(GK_B);
       return;
     }
 

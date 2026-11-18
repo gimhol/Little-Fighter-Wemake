@@ -32,6 +32,7 @@ import { BotState_Following } from "./state/BotState_Following";
 import { BotState_Idle } from './state/BotState_Idle';
 import { BotState_StageEnd } from "./state/BotState_StageEnd";
 import { is_ray_hit } from "./utils/is_ray_hit";
+import { BotTerrain, step_probe_new } from "./terrain/BotTerrain";
 
 export enum BotBehavior {
   Stay = 'Stay',
@@ -39,6 +40,24 @@ export enum BotBehavior {
   Follow = 'Follow',
 }
 const NEAR_SCAN_RADIUS = 250;
+/** 近处探测距离：查墙、查台阶 */
+const PROBE_NEAR = 8;
+/** 远处探测距离：只查悬崖、大落差（斜坡的坡度会被误判成墙，所以远处不查 blocked） */
+const PROBE_FAR = 28;
+/** 允许直接走下去的最大落差；再大就当成深渊，不主动往下跳 */
+const MAX_STEP_DOWN = 160;
+/** 连续卡住多少帧开始绕行 */
+const STUCK_TIME = 8;
+/** 连续卡住多少帧尝试起跳爬台 */
+const STUCK_CLIMB_TIME = 16;
+/** 连续卡住多少帧放弃目标 */
+const STUCK_GIVEUP_TIME = 45;
+/** 起跳需要保持按跳键的帧数（角色时长决定跳跃高度） */
+const JUMP_HOLD_FRAMES = 6;
+/** 判定为不可达后，多少帧内不再追同一个目标 */
+const UNREACHABLE_COOLDOWN = 120;
+/** 尝试爬台时向前探测的距离（身体有宽度，别只探脚底那一点） */
+const CLIMB_PROBES = [12, 24, 36] as const;
 export class BotController extends BaseController {
   readonly fsm = new FSM<BSE>()
     .add(
@@ -77,6 +96,26 @@ export class BotController extends BaseController {
   protected _dataset = new BotDataSet();
   bot_frame: string | undefined;
 
+  /** 地形探针（世界地形变化后自动跟随） */
+  protected _terrain?: BotTerrain;
+  /** 连续“想走却没走成”的帧数 */
+  protected _stuck_time: number = 0;
+  /** 卡住时优先绕行的方向 */
+  protected _stuck_side: 1 | -1 = 1;
+  /** 爬台尝试的冷却帧数 */
+  protected _climb_cd: number = 0;
+  /** 跳键还需保持按下的帧数 */
+  protected _jump_hold: number = 0;
+  /** 暂时判定为不可达的目标 */
+  protected _unreachable: Entity | null = null;
+  /** 不可达判定的解除时间 */
+  protected _unreachable_until: number = 0;
+  /** 上次采样的位置，用于判断有没有真的走动 */
+  protected _last_x: number = 0;
+  protected _last_z: number = 0;
+  /** 复用的探测结果对象 */
+  private readonly _probe_b = step_probe_new();
+
   get dummy(): DummyEnum {
     return this._dummy;
   }
@@ -100,6 +139,17 @@ export class BotController extends BaseController {
   get av(): Entity | undefined { return this.avoidings.get() }
   get bot_state(): BSE { return this.fsm.state?.key || BSE.Idle }
   get dataset() { return this._dataset }
+  /** 地形探针 */
+  get terrain(): BotTerrain {
+    return (this._terrain ??= new BotTerrain(this.world));
+  }
+  /** 一次跳跃大约能升高多少（留 20% 余量） */
+  get jump_reach(): number {
+    const vy = this.me.dataset('jump_height') * this.me.dataset('jump_h_f');
+    const gravity = this.me.dataset('gravity');
+    if (!(vy > 0) || !(gravity > 0)) return 0;
+    return (vy * vy) / (2 * gravity) * 0.8;
+  }
 
   get atk_f_x() {
     switch (this.entity.state) {
@@ -256,6 +306,15 @@ export class BotController extends BaseController {
     this._dummy = DummyEnum.None;
     this._bot_id = void 0;
     this._bot = void 0;
+    this._terrain = void 0;
+    this._stuck_time = 0;
+    this._stuck_side = 1;
+    this._climb_cd = 0;
+    this._jump_hold = 0;
+    this._unreachable = null;
+    this._unreachable_until = 0;
+    this._last_x = entity.position.x;
+    this._last_z = entity.position.z;
     this.fsm.reset(BSE.Idle);
   }
 
@@ -399,6 +458,12 @@ export class BotController extends BaseController {
   should_chase(e: Entity): boolean {
     if (this.entity.catching)
       return this.entity.catching == e;
+
+    /* 刚判定过“够不着”的目标，先晾一会儿，别一直撞墙 */
+    if (e === this._unreachable) {
+      if (this.time < this._unreachable_until) return false;
+      this._unreachable = null;
+    }
 
     // 正在注视的对象已失效(死亡/消失/回到可追击范围)时置空
     if (this.watching === e) {
@@ -621,6 +686,202 @@ export class BotController extends BaseController {
     return box_gap_xz(this.entity, other)
   }
 
+  /**
+   * 朝目标移动一帧（带地形保护）
+   *
+   * @param rx 目标相对X（已乘朝向；正数=正面）
+   * @param rz 目标相对Z（正数=下方）
+   * @param x_min 背向死区
+   * @param x_max 正向死区
+   * @param z_min 上方死区
+   * @param z_max 下方死区
+   */
+  move_to(
+    rx: number,
+    rz: number,
+    x_min: number,
+    x_max: number,
+    z_min: number,
+    z_max: number,
+  ): void {
+    const forward: 1 | -1 = this.facing > 0 ? 1 : -1;
+    const dx: -1 | 0 | 1 = rx < x_min ? (forward > 0 ? -1 : 1) : rx > x_max ? forward : 0;
+    const dz: -1 | 0 | 1 = rz < z_min ? -1 : rz > z_max ? 1 : 0;
+    this._drive(dx, dz);
+  }
+
+  /**
+   * 靠近一个世界坐标（带地形保护）
+   *
+   * @param tx 目标X
+   * @param tz 目标Z
+   * @param deadzone 死区
+   */
+  walk_toward(tx: number, tz: number, deadzone: number = 10): void {
+    const { x, z } = this.me.position;
+    const dx: -1 | 0 | 1 = tx > x + deadzone ? 1 : tx < x - deadzone ? -1 : 0;
+    const dz: -1 | 0 | 1 = tz > z + deadzone ? 1 : tz < z - deadzone ? -1 : 0;
+    this._drive(dx, dz);
+  }
+
+  /**
+   * 该方向近处能不能走（墙、悬崖、过大的落差都算不能走）
+   *
+   * 给躲避、奔跑等自己算方向的逻辑用。
+   */
+  step_safe(dx: -1 | 0 | 1, dz: -1 | 0 | 1): boolean {
+    return this._can_move(dx, dz);
+  }
+
+  /**
+   * 该方向远处是否有悬崖/过大落差
+   *
+   * 用于奔跑刹车：跑起来速度快，近处再探就来不及了。
+   */
+  danger_ahead(dx: -1 | 0 | 1, dz: -1 | 0 | 1): boolean {
+    if (!dx && !dz) return false;
+    const { position, velocity } = this.me;
+    const { x, y, z } = position;
+    const dist = max(PROBE_FAR, round((abs(velocity.x) + abs(velocity.z)) * 3));
+    const probe = this.terrain.probe(x + dx * dist, z + dz * dist, y, this._probe_b);
+    return probe.cliff || probe.dy < -MAX_STEP_DOWN;
+  }
+
+  /** 该方向能不能迈一步 */
+  private _can_move(dx: -1 | 0 | 1, dz: -1 | 0 | 1): boolean {
+    if (!dx && !dz) return true;
+    const { x, y, z } = this.me.position;
+    return this.terrain.can_step(
+      x, z, y, dx, dz,
+      PROBE_NEAR, PROBE_FAR, MAX_STEP_DOWN
+    );
+  }
+
+  /**
+   * 输出移动按键；走不动时依次尝试绕行、跳上台阶、放弃目标。
+   */
+  private _drive(dx: -1 | 0 | 1, dz: -1 | 0 | 1): void {
+    const { me } = this;
+    if (me.hp <= 0) return;
+    const state = me.state;
+    /* 受伤、倒地、被击飞时不参与地形判定（但按键照旧输出，保持原有手感） */
+    const hurt = (
+      state === StateEnum.Injured ||
+      state === StateEnum.Lying ||
+      state === StateEnum.Falling ||
+      state === StateEnum.BrokenDefend
+    );
+
+    const { x, z } = me.position;
+    /* 只看“朝目标方向”的位移：贴着墙侧滑不算进展，否则永远绕不过去 */
+    const moved_x = x - this._last_x;
+    const moved_z = z - this._last_z;
+    this._last_x = x;
+    this._last_z = z;
+    if (this._climb_cd > 0) --this._climb_cd;
+
+    const want_x = dx;
+    const want_z = dz;
+    const on_ground = me.is_on_ground;
+
+    /* 空中不做地形过滤：方向键就是空中操控 */
+    let blocked_x = false;
+    let blocked_z = false;
+    if (on_ground && !hurt) {
+      if (dx && !this._can_move(dx, 0)) { dx = 0; blocked_x = true; }
+      if (dz && !this._can_move(0, dz)) { dz = 0; blocked_z = true; }
+    }
+
+    const can_walk = !hurt && on_ground &&
+      (state === StateEnum.Standing || state === StateEnum.Walking);
+    const wanted = want_x !== 0 || want_z !== 0;
+    const progress = want_x * moved_x + want_z * moved_z;
+
+    if (!wanted || !can_walk) {
+      this._stuck_time = 0;
+    } else if (blocked_x || blocked_z || progress < 0.05) {
+      ++this._stuck_time;
+      if (this._stuck_time >= STUCK_GIVEUP_TIME) {
+        this._give_up();
+      } else {
+        if (this._stuck_time >= STUCK_CLIMB_TIME && this._climb_cd <= 0) {
+          if (this._try_climb(want_x, want_z)) return;
+          this._climb_cd = 20;
+        }
+        /*
+          侧移绕行：只在“不需要对齐 Z”时轻轻挪一下，贴墙找缺口。
+          不能压过状态自己的 Z 意愿，否则会和重新对齐打架。
+        */
+        if (this._stuck_time >= STUCK_TIME && want_z === 0 && !blocked_z) {
+          const side = this._pick_side();
+          if (this._can_move(0, side)) dz = side;
+        }
+      }
+    } else {
+      this._stuck_time = 0;
+    }
+
+    if (dx > 0) this.key_down(GK.R).key_up(GK.L);
+    else if (dx < 0) this.key_down(GK.L).key_up(GK.R);
+    else this.key_up(GK.L, GK.R);
+
+    if (dz > 0) this.key_down(GK.D).key_up(GK.U);
+    else if (dz < 0) this.key_down(GK.U).key_up(GK.D);
+    else this.key_up(GK.U, GK.D);
+  }
+
+  /** 卡住时往哪边绕 */
+  private _pick_side(): 1 | -1 {
+    const up_ok = this._can_move(0, -1);
+    const down_ok = this._can_move(0, 1);
+    if (up_ok !== down_ok) return up_ok ? -1 : 1;
+    const en = this.chasings.get();
+    if (en) return en.position.z >= this.me.position.z ? 1 : -1;
+    return this._stuck_side;
+  }
+
+  /**
+   * 尝试跳上面前（或侧面）比自己高的台子
+   *
+   * @returns 已经按下起跳键时返回 true
+   */
+  private _try_climb(dx: -1 | 0 | 1, dz: -1 | 0 | 1): boolean {
+    if ((!dx && !dz) || !this.me.is_on_ground) return false;
+    const reach = this.jump_reach;
+    if (reach <= this.terrain.step) return false;
+    const { x, y, z } = this.me.position;
+
+    let top: number | null = null;
+    for (const dist of CLIMB_PROBES) {
+      top = this.terrain.climbable_top(x + dx * dist, z + dz * dist, y, reach);
+      if (top !== null) break;
+    }
+    if (top === null) return false;
+
+    if (dx > 0) this.key_down(GK.R).key_up(GK.L);
+    else if (dx < 0) this.key_down(GK.L).key_up(GK.R);
+    if (dz > 0) this.key_down(GK.D).key_up(GK.U);
+    else if (dz < 0) this.key_down(GK.U).key_up(GK.D);
+
+    this._jump_hold = JUMP_HOLD_FRAMES;
+    this.key_down(GK.j);
+    if (this.lfw.mt.debugging) this._case('bot_climb', top, round(top - y));
+    return true;
+  }
+
+  /** 放弃当前追击目标：短时间内不再把它当目标 */
+  private _give_up(): void {
+    const en = this.chasings.get();
+    if (en) {
+      this._unreachable = en;
+      this._unreachable_until = this.time + UNREACHABLE_COOLDOWN;
+      this.chasings.clear();
+      if (this.lfw.mt.debugging) this._case('bot_give_up', en.id);
+    }
+    this._stuck_time = 0;
+    this._climb_cd = 0;
+  }
+
   lookup(other: Entity) {
     const { entity: me } = this;
     if (!me.mounted || !other.mounted) {
@@ -765,6 +1026,10 @@ export class BotController extends BaseController {
     if (this.lfw.mt.debugging)
       this._case(`bot_update_${this.me.id}_${this.me.name}`)
     this.check_bot();
+    if (this._jump_hold > 0) {
+      if (--this._jump_hold > 0) this.key_down(GK.j);
+      else this.key_up(GK.j);
+    }
     if (this.watching?.mounted == 0)
       this.watching = null;
     if (this.dummy) {
@@ -800,6 +1065,7 @@ export class BotController extends BaseController {
         + `${c.length ? `c=[${c.map(v => v.id).join()}] ` : ''}`
         + `${d.length ? `d=[${d.map(v => v.id).join()}] ` : ''}`
       if (msg) this._case(`bot_target`, msg.trim())
+      if (this._stuck_time) this._case(`bot_stuck`, this._stuck_time)
       if (ret.result?.frame) this._case(`bot_nf`, ret.result?.frame.id)
       this._case(`bot_update_end_${this.me.id}_${this.me.name}`)
     }
