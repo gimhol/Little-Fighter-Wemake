@@ -7,6 +7,7 @@ import {
   to_terrain_solids,
   type ITerrainSolid,
 } from "./TerrainSolid";
+import { TerrainReachability } from "./TerrainReachability";
 
 export const TERRAIN_STEP = 10;
 const EPS = 0.5;
@@ -152,9 +153,12 @@ export class TerrainWorld {
   private readonly bucket_origin: number;
   private readonly _intersect_result = { x: 0, y: 0, z: 0 };
 
+  readonly reach: TerrainReachability;
+
   constructor(terrain: readonly ITerrainInfo[] | undefined) {
     this.source = terrain;
     this.solids = to_terrain_solids(terrain);
+    this.reach = new TerrainReachability(this.solids);
     if (!this.solids.length) {
       this.bucket_origin = 0;
       this.buckets = [];
@@ -821,3 +825,5 @@ export class TerrainWorld {
     return out;
   }
 }
+
+

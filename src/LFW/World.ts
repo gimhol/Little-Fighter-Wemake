@@ -129,6 +129,7 @@ export class World {
     if (v === this._bg) return;
     const o = this._bg;
     this._bg = v;
+    this._terrain_world = new TerrainWorld(this._bg.data.terrain);
     this.transform.set_scale(
       this._bg.zoom_x,
       this._bg.zoom_y,

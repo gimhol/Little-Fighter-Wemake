@@ -143,6 +143,8 @@ export class BotController extends BaseController {
   get terrain(): BotTerrain {
     return (this._terrain ??= new BotTerrain(this.world));
   }
+  /** 地形段之间的可达关系（跳跃/方向移动/坠落） */
+  get reach() { return this.terrain.reach; }
   /** 一次跳跃大约能升高多少（留 20% 余量） */
   get jump_reach(): number {
     const vy = this.me.dataset('jump_height') * this.me.dataset('jump_h_f');

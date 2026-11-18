@@ -1,4 +1,5 @@
 import type { ITerrainInfo } from "../../defines";
+import type { TerrainReachability } from "../../terrain/TerrainReachability";
 import { terrain_top, type ITerrainSolid } from "../../terrain/TerrainSolid";
 import { TerrainWorld } from "../../terrain/TerrainWorld";
 import type { World } from "../../World";
@@ -62,6 +63,11 @@ export class BotTerrain {
   /** 允许直接跨过的高度差 */
   get step(): number {
     return this.terrain.step;
+  }
+
+  /** 地形段之间的可达关系（随世界地形自动重建） */
+  get reach(): TerrainReachability {
+    return this.terrain.reach;
   }
 
   /**
@@ -170,3 +176,4 @@ export class BotTerrain {
     return best;
   }
 }
+
