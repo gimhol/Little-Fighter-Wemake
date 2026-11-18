@@ -6,6 +6,15 @@ import { round_float } from '../../utils/math/round_float';
 import { BotBehavior } from "../BotController";
 import { BotState_Base } from "./BotState";
 
+function throw_desire(wt: WeaponEnum | undefined): number {
+  switch (wt) {
+    case WT.Knife: return 4000;
+    case WT.Stick: return 200;
+    case WT.Drink: return 50;
+    default: return 200;
+  }
+}
+
 export class BotState_Chasing extends BotState_Base {
   readonly key = BSE.Chasing;
   override update(): BSE | undefined {
@@ -110,7 +119,7 @@ export class BotState_Chasing extends BotState_Base {
 
         if (wt && between(abs_dz, 0, 30)) {
           if (wt == WeaponEnum.Knife) {
-            if (this.ctrl.desire('rtwd') < 400) {
+            if (this.ctrl.desire('rtwd') < throw_desire(wt)) {
               c.key_down(GK_F).click(GK.a)
               return;
             }
@@ -228,12 +237,7 @@ export class BotState_Chasing extends BotState_Base {
     /* 概率丢武器 */
     if (wt) {
       const d = this.ctrl.desire('rtwd_1')
-      const t_ok = (
-        wt == WT.Knife && d < 400 ||
-        wt == WT.Stick && d < 100 ||
-        wt == WT.Drink && d < 50
-      );
-      if (t_ok) c.click(GK_F).click(GK.a)
+      if (d < throw_desire(wt)) c.click(GK_F).click(GK.a)
       return
     }
   }
@@ -282,12 +286,7 @@ export class BotState_Chasing extends BotState_Base {
     */
     if (wt) {
       const d = this.ctrl.desire('jtw')
-      const t_ok = (
-        wt == WT.Knife && d < 400 ||
-        wt == WT.Stick && d < 100 ||
-        wt == WT.Drink && d < 50
-      );
-      if (t_ok) c.click(GK_F).click(GK.a)
+      if (d < throw_desire(wt)) c.click(GK_F).click(GK.a)
     }
 
     const x_ok = between(rx, 0, c.j_atk_x)
@@ -304,4 +303,5 @@ export class BotState_Chasing extends BotState_Base {
 
   }
 }
+
 
