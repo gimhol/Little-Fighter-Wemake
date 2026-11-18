@@ -547,13 +547,14 @@ export class World {
     const rising = e.velocity.y > 0;
     const prev_y = e.prev_position.y;
 
-    /* TODO: 感觉不太对 */
+    // 防御 + 下：同时按住防御与下方向才会穿过 through 平台
     let drop_through = false;
     if (
       is_fighter(e) &&
       e.is_on_ground &&
       e.terrain?.through &&
-      (e.ctrl.is_hit(GK.D) || e.ctrl.is_hit(GK.Defend)) &&
+      e.state === SE.Defend &&
+      !e.ctrl.is_end(GK.D) && !e.ctrl.is_end(GK.Defend) &&
       y > e.ground_y - 1
     ) {
       y = e.ground_y - 1;
@@ -1112,3 +1113,6 @@ export class World {
     return 'win';
   }
 }
+
+
+
