@@ -8,6 +8,7 @@
     shadow_h: 9,
     group: [
       "regular",
+      "classic",
     ],
     right: 3200,
     far: -370,

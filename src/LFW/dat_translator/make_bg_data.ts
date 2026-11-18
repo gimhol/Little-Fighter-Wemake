@@ -1,4 +1,4 @@
-import { BackgroundGroup, BGG } from "../defines";
+import { BackgroundGroup } from "../defines";
 import { bg_data_fields, bg_data_new, type IBgData } from "../defines/IBgData";
 import { bg_layer_info_fields, bg_layer_info_new, type IBgLayerInfo } from "../defines/IBgLayerInfo";
 import type { IDatIndex } from "../defines/IDatIndex";
@@ -10,7 +10,7 @@ import { to_num } from "../utils/type_cast/to_num";
 import { is_str } from "../utils/type_check";
 import { ColonValueReader } from "./ColonValueReader";
 import { take } from "./take";
-import { delete_undefined } from "./xml";
+import { delete_undefined } from "./xml/delete_undefined";
 const bg_color_translate = function (rect: number | string) {
   switch ("" + rect) {
     case "4706":
@@ -69,7 +69,6 @@ export function make_bg_data(
   info.shadow = fields.shadow
   info.shadow_w = fields.shadowsize[0]
   info.shadow_h = fields.shadowsize[1]
-  info.group = [BGG.Regular]
   info.right = fields.width
   info.far = 2 * (fields.zboundary[0] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的远坐标
   info.near = 2 * (fields.zboundary[1] - Defines.CLASSIC_SCREEN_HEIGHT) // 转为Z轴的近坐标,
@@ -88,7 +87,7 @@ export function make_bg_data(
   if (datIndex && datIndex.file.startsWith("bg/template")) {
     ret.base.group = []
   } else {
-    ret.base.group = [BackgroundGroup.Regular]
+    ret.base.group = [BackgroundGroup.Regular, BackgroundGroup.Classic]
   }
   reorder_fields(ret, bg_data_fields);
   return ret;
