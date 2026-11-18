@@ -142,7 +142,7 @@ export class BotState_Chasing extends BotState_Base {
     const rx = round(me_facing * (en_x - my_x))
     const rz = round(en_z - my_z)
     const x_ok = rx >= c.d_atk_min_x && rx <= c.d_atk_max_x
-    const z_ok = rz >= c.dataset.d_atk_min_z && rx <= c.dataset.d_atk_max_z
+    const z_ok = rz >= c.dataset.d_atk_min_z && rz <= c.dataset.d_atk_max_z
 
     if (x_ok && z_ok) {
       c.click(GK.a)
