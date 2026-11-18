@@ -1,0 +1,35 @@
+{
+  // 通用配置：随仓库走，不含机器相关路径与密钥。
+  // 优先级：命令行参数 > 环境变量 > 本文件 > 默认值（见 docs/Multiplayer Online Game/REST API.MD「配置文件」）。
+  //
+  // 机器相关的项一律放 .env（不进 git）：
+  //   HTTP_PORT / ADMIN_PWD
+  //   RANKS_DIR / RANKS_AUDIT_PATH / RANKS_BANS_PATH  排行榜、审计、封禁的存放位置
+  //   SUGGESTIONS_FILE_PATH                           玩家建议的存放位置
+  // 生产环境的目录结构与部署方式见 server/README.MD。
+  "rest": {
+    "log": true,
+    "max_body_size": 1048576
+  },
+  "ranks": {
+    "allowed_types": [
+      "survival_all",
+      "survival_month",
+      "survival_week",
+      "survival_day",
+      "survival_2p_all",
+      "survival_2p_month",
+      "survival_2p_week",
+      "survival_2p_day",
+      "survival_bili_all",
+      "survival_bili_month",
+      "survival_bili_week",
+      "survival_bili_day",
+      "survival_bili_2p_all",
+      "survival_bili_2p_month",
+      "survival_bili_2p_week",
+      "survival_bili_2p_day"
+    ],
+    "max_per_type": 0
+  }
+}

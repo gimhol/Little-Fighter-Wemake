@@ -3,5 +3,6 @@ dist
 deployer.private.json5
 deployer.private.json
 .env
+# 机器相关的配置与密钥一律放 .env（已被忽略）；
+# server.config.json5 是随仓库走的通用配置，不再忽略。
 server.config.json
-server.config.json5

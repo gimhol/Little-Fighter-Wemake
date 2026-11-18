@@ -9,6 +9,11 @@
     GIT_NO_BEHIND: false,
     GIT_NO_AHEAD: false,
     GIT_NO_DIRTY: false,
-    SSH_POST_CMD: ["pm2 restart lfj"],
+    // 机器相关的配置（端口、管理员密码、排行/审计/封禁/建议的路径）全部固化在
+    // /root/backends/lfj_config/.env，部署后先覆盖进新 release 再重启；
+    // 覆盖失败则不重启，避免以缺配置的状态启动。
+    SSH_POST_CMD: [
+      "install -m 600 /root/backends/lfj_config/.env /root/backends/lfj/.env && pm2 restart lfj",
+    ],
   },
 }
