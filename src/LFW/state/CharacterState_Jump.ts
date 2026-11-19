@@ -1,14 +1,14 @@
-import { GK, type IFrameInfo, SpeedCtrl, StateEnum } from "../defines";
+import { GK, SpeedCtrl, StateEnum } from "../defines";
 import { is_bot_ctrl } from "../entity";
 import type { Entity } from "../entity/Entity";
-import { abs, float_equal, round_float } from "../utils";
+import { abs, float_equal, round_float as rf } from "../utils";
 import { CharacterState_Base } from "./CharacterState_Base";
 
 export class CharacterState_Jump extends CharacterState_Base {
   constructor(state: StateEnum = StateEnum.Jump) {
     super(state)
   }
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
+  override enter(e: Entity): void {
     e.jumping.x = 0
     e.jumping.y = 0
     e.jumping.z = 0
@@ -17,18 +17,18 @@ export class CharacterState_Jump extends CharacterState_Base {
   override update(e: Entity): void {
     e.handle_ground_velocity_decay();
     if (!float_equal(e.position.y, e.ground_y)) return;
-    const rf = round_float;
     const { jump_flag } = e.get_prev_frame();
+    const { atom_time } = e.world.dataset;
     if (is_bot_ctrl(e.ctrl)) {
-      e.jumping.t = rf(e.jumping.t + e.world.dataset.atom_time);
-      e.jumping.y = rf(e.jumping.y + e.world.dataset.atom_time);
+      e.jumping.t = rf(e.jumping.t + atom_time);
+      e.jumping.y = rf(e.jumping.y + atom_time);
     } else {
-      e.jumping.t = rf(e.jumping.t + e.world.dataset.atom_time);
-      if (!e.ctrl.is_end(GK.R)) e.jumping.x = rf(e.jumping.x + e.world.dataset.atom_time);
-      if (!e.ctrl.is_end(GK.L)) e.jumping.x = rf(e.jumping.x - e.world.dataset.atom_time);
-      if (!e.ctrl.is_end(GK.U)) e.jumping.z = rf(e.jumping.z - e.world.dataset.atom_time);
-      if (!e.ctrl.is_end(GK.D)) e.jumping.z = rf(e.jumping.z + e.world.dataset.atom_time);
-      if (!e.ctrl.is_end(GK.j)) e.jumping.y = rf(e.jumping.y + e.world.dataset.atom_time);
+      e.jumping.t = rf(e.jumping.t + atom_time);
+      if (!e.ctrl.is_end(GK.R)) e.jumping.x = rf(e.jumping.x + atom_time);
+      if (!e.ctrl.is_end(GK.L)) e.jumping.x = rf(e.jumping.x - atom_time);
+      if (!e.ctrl.is_end(GK.U)) e.jumping.z = rf(e.jumping.z - atom_time);
+      if (!e.ctrl.is_end(GK.D)) e.jumping.z = rf(e.jumping.z + atom_time);
+      if (!e.ctrl.is_end(GK.j)) e.jumping.y = rf(e.jumping.y + atom_time);
     }
     if (!jump_flag) return;
     const { LR, UD } = e.ctrl;
