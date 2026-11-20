@@ -1797,9 +1797,8 @@ export class Entity {
   protected handle_leave_ground(): void {
     const { on_leave_ground } = this.frame;
     this.leave_ground();
-    if (on_leave_ground &&
-      this.enter_frame(on_leave_ground) >= EnterFrameResult.Entered
-    ) return;
+    if (on_leave_ground)
+      this.enter_frame(on_leave_ground)
     this._state?.on_leave_ground?.(this);
   }
 

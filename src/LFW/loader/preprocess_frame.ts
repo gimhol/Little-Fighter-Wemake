@@ -70,6 +70,9 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
     if (throwings.length) data.indexes.throwings = throwings
     if (on_hands.length) data.indexes.on_hands = on_hands
   }
+  if (is_weapon_data(data)) {
+    frame.on_leave_ground ??= { ...Defines.NEXT_FRAME_AUTO };
+  }
   if (is_fighter_data(data)) {
     switch (frame.state) {
       case StateEnum.Falling:
