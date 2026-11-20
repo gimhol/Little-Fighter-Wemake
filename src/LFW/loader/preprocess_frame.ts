@@ -25,6 +25,11 @@ const breakfall_j_expression = new CondMaker<EV>()
   .and(EV.CAUGHT, "!=", 1)
   .done()
 
+/** 举重时不响应离地跳转 */
+const leave_ground_expression = new CondMaker<EV>()
+  .add(EV.HoldingHeavy, "!=", 1)
+  .done()
+
 export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   const { lfw, data, jobs } = ctx;
   const { frame: raw_frame } = ctx;
@@ -93,6 +98,19 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
       case StateEnum.Lying:
       case StateEnum.Rowing:
         frame.toughness_recover ??= 1;
+        break;
+    }
+    switch (frame.state) {
+      case StateEnum.Standing:
+      case StateEnum.Walking:
+      case StateEnum.Running:
+      case StateEnum.Rowing:
+      case StateEnum.Defend:
+        // 离地跳转由帧数据负责：默认回到auto帧，举重时不跳
+        frame.on_leave_ground ??= {
+          ...Defines.NEXT_FRAME_AUTO,
+          expression: leave_ground_expression,
+        };
         break;
     }
   }
