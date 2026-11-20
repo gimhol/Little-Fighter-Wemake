@@ -2337,8 +2337,15 @@ export class Entity {
   }
 
   find_frame_by_id(id: string | undefined): IFrameInfo | undefined {
-    const r = this._state?.find_frame_by_id?.(this, id);
-    if (r) return r;
+    if (
+      this.hp <= 0 &&
+      this.position.y <= this.ground_y &&
+      this.state === StateEnum.Lying &&
+      !this.dead_join
+    ) {
+      // 尸体躺在原地：忽略任何帧跳转，避免按 lying 帧的 next 站起来
+      return this.frame;
+    }
 
     switch (id) {
       case void 0:

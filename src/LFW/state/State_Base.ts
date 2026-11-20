@@ -31,9 +31,8 @@ export class State_Base {
   on_landing?(e: Entity): void;
   get_gravity?(e: Entity): number | undefined | null;
 
-  // TODO: 下面两个，不知为何总觉得有点傻 - Gim
+  // TODO: 不知为何总觉得有点傻 - Gim
   get_auto_frame?(e: Entity): IFrameInfo | undefined;
-  find_frame_by_id?(e: Entity, id: string | undefined): IFrameInfo | undefined;
 
   /** "病毒就关闭了" */
   on_leave_ground?(e: Entity): void;

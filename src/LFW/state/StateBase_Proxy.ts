@@ -57,12 +57,6 @@ export class StateBase_Proxy extends State_Base implements Required<State_Base> 
   override on_leave_ground(e: Entity): void {
     return this.get_proxy(e)?.on_leave_ground?.(e);
   }
-  override find_frame_by_id(
-    e: Entity,
-    id: string | undefined,
-  ): IFrameInfo | undefined {
-    return this.get_proxy(e)?.find_frame_by_id?.(e, id);
-  }
   override on_restrict(e: Entity, x: number, y: number, z: number): void {
     return this.get_proxy(e)?.on_restrict?.(e, x, y, z);
   }

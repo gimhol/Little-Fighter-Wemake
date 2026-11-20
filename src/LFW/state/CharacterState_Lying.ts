@@ -1,4 +1,4 @@
-import { GK, StateEnum, WeaponEnum, type IFrameInfo } from "../defines";
+import { GK, StateEnum, WeaponEnum } from "../defines";
 import { TeamEnum } from "../defines/TeamEnum";
 import type { Entity } from "../entity/Entity";
 import { round_float } from "../utils/math/round_float";
@@ -73,16 +73,6 @@ export class CharacterState_Lying extends CharacterState_Base {
     } else if (e.dead_gone) {
       // 非玩家槽的角色在被击败时，闪烁着离开了这个世界
       e.blink_and_gone(e.world.dataset.gone_blink_time);
-    }
-  }
-  override find_frame_by_id(e: Entity): IFrameInfo | undefined {
-    if (
-      e.hp <= 0 &&
-      e.position.y <= e.ground_y &&
-      e.state === StateEnum.Lying &&
-      !e.dead_join
-    ) {
-      return e.frame;
     }
   }
 }
