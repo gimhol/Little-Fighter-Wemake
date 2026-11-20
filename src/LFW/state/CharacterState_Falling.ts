@@ -1,4 +1,4 @@
-import { StateEnum, WeaponEnum, type IFrameInfo, type IVector3 } from "../defines";
+import { StateEnum, type IFrameInfo, type IVector3 } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { find_direction } from "../entity/find_frame_direction";
 import { abs } from "../utils";
@@ -9,7 +9,7 @@ export class CharacterState_Falling extends CharacterState_Base {
   constructor(state: StateEnum = StateEnum.Falling) {
     super(state)
   }
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
+  override enter(e: Entity): void {
     e.bounced = false;
     e.ctrl.reset_key_list();
     if (!this._bouncing_frames_map.has(e.data.id) && e.data.indexes?.bouncing) {

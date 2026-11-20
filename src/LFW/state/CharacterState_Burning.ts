@@ -8,7 +8,7 @@ export class CharacterState_Burning extends CharacterState_Base {
   constructor() {
     super(StateEnum.Burning)
   }
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
+  override enter(e: Entity): void {
     super.update(e);
     e.bounced = false;
     if (e.catcher) e.catcher.drop_catching()

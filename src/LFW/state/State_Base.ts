@@ -11,9 +11,10 @@ export class State_Base {
     this.state = state
   }
   pre_update?(e: Entity): void;
-  update(_e: Entity): void { }
-  enter?(e: Entity, prev_frame: IFrameInfo): void;
+  update(e: Entity): void { void e; }
+  enter?(e: Entity): void;
   leave(e: Entity, next_frame: IFrameInfo): void {
+    void next_frame;
     switch (this.state) {
       case StateEnum.HealSelf:
         grant_buff(

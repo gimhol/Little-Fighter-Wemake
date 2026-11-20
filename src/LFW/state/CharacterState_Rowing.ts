@@ -1,4 +1,5 @@
-import { type IFrameInfo, SE, SpeedMode, StateEnum } from "../defines";
+import { SpeedMode } from "../defines/SpeedMode";
+import { SE } from "../defines/StateEnum";
 import { calc_v } from "../entity/calc_v";
 import { Entity } from "../entity/Entity";
 import { CharacterState_Base } from "./CharacterState_Base";
@@ -10,10 +11,11 @@ import { CharacterState_Base } from "./CharacterState_Base";
  * - 受身
  */
 export class CharacterState_Rowing extends CharacterState_Base {
-  constructor(state: StateEnum = StateEnum.Rowing) {
+  constructor(state: SE = SE.Rowing) {
     super(state)
   }
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
+  override enter(e: Entity): void {
+    const prev_frame = e.get_prev_frame();
     if (prev_frame.state !== SE.Falling) return;
     const vx = e.dataset('rowing_distance') * e.dataset('bfall_x_f')
     const vy = e.dataset('rowing_height') * e.dataset('bfall_h_f')

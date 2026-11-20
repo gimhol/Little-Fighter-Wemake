@@ -1,17 +1,18 @@
-import { FrameBehavior, type IFrameInfo, type IVector3 } from "../defines";
+import { FrameBehavior } from "../defines/FrameBehavior";
+import { type IVector3 } from "../defines/IVector3";
 import type { Entity } from "../entity/Entity";
-import { round_float } from "../utils";
+import { round_float as rt } from "../utils/math/round_float";
 import { WeaponState_Base } from "./WeaponState_Base";
 
 export class WeaponState_Throwing extends WeaponState_Base {
   override get_gravity(e: Entity) {
     if (e.frame.behavior == FrameBehavior.Boomerang) {
       // ... dont hard-code ? -Gim
-      return round_float(e.dataset('weapon_throwing_gravity') / 4);
+      return rt(e.dataset('weapon_throwing_gravity') / 4);
     }
     return e.dataset('weapon_throwing_gravity');
   }
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
+  override enter(e: Entity): void {
     e.leave_ground();
     e.drop_hurted = false;
     if (e.frame.behavior == FrameBehavior.Boomerang) {

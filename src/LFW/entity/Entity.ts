@@ -762,7 +762,7 @@ export class Entity {
     if (this._state === v) return;
     this._state?.leave?.(this, this.frame);
     this._state = v || null;
-    this._state?.enter?.(this, this.get_prev_frame());
+    this._state?.enter?.(this);
   }
 
   set_frame(v: IFrameInfo) {

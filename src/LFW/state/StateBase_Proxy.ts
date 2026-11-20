@@ -33,8 +33,8 @@ export class StateBase_Proxy extends State_Base implements Required<State_Base> 
     if (is_ball(e)) return this.ball_proxy;
     return this.proxy;
   }
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
-    return this.get_proxy(e).enter?.(e, prev_frame);
+  override enter(e: Entity): void {
+    return this.get_proxy(e).enter?.(e);
   }
   override leave(e: Entity, next_frame: IFrameInfo): void {
     return this.get_proxy(e).leave?.(e, next_frame);

@@ -1,10 +1,12 @@
 
-import { Defines, type IFrameInfo, type IVector3, WT } from "../defines";
+import { Defines } from "../defines/defines";
+import { type IVector3 } from "../defines/IVector3";
+import { WT } from "../defines/WeaponType";
 import type { Entity } from "../entity/Entity";
 import { WeaponState_Base } from "./WeaponState_Base";
 
 export class WeaponState_InTheSky extends WeaponState_Base {
-  override enter(e: Entity, prev_frame: IFrameInfo): void {
+  override enter(e: Entity): void {
     e.drop_hurted = false;
   }
   override on_landing(e: Entity, velocity: IVector3): void {
