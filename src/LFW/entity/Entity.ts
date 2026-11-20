@@ -1769,11 +1769,7 @@ export class Entity {
       this._state?.on_landing?.(this);
 
       this.play_sound(this._data.base.drop_sounds);
-      if (this.throwinjury) {
-        this.hp -= this.throwinjury;
-        this.hp_r -= round(this.throwinjury * (1 - this.dataset('hp_recoverability')))
-        this.throwinjury = 0;
-      }
+      if (this.throwinjury) this.throwinjury = 0;
       if (this.fallinjury) {
         this.hp -= this.fallinjury;
         this.hp_r -= round(this.fallinjury * (1 - this.dataset('hp_recoverability')))
@@ -1905,9 +1901,8 @@ export class Entity {
     this.prev_cpoint_a = cp_a;
 
     const { throwvx: tx = 0, throwvy: ty = 0, throwvz: tz = 0, throwinjury: ti = 0 } = cp_a;
-    if (ti > 0) {
-      this.throwinjury = ti;
-    }
+    if (ti > 0) this.throwinjury = this.fallinjury = ti;
+  
     if (tx || ty || tz) {
       this.follow_catcher();
       this.catcher = null;
