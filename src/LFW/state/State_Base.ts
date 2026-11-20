@@ -2,7 +2,6 @@ import { Buff_Healing } from "../buff/Buff_Healing";
 import { grant_buff } from "../buff/grant_buff";
 import { Defines } from "../defines/defines";
 import { type IFrameInfo } from "../defines/IFrameInfo";
-import { type INextFrame } from "../defines/INextFrame";
 import { StateEnum } from "../defines/StateEnum";
 import type { Entity } from "../entity/Entity";
 import { clamp, float_equal } from "../utils";
@@ -32,8 +31,7 @@ export class State_Base {
   on_landing?(e: Entity): void;
   get_gravity?(e: Entity): number | undefined | null;
 
-  // TODO: 下面三个，不知为何总觉得有点傻 - Gim
-  get_sudden_death_frame?(e: Entity): INextFrame | undefined;
+  // TODO: 下面两个，不知为何总觉得有点傻 - Gim
   get_auto_frame?(e: Entity): IFrameInfo | undefined;
   find_frame_by_id?(e: Entity, id: string | undefined): IFrameInfo | undefined;
 

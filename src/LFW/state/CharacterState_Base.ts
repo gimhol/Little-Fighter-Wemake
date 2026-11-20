@@ -1,4 +1,4 @@
-import { type IFrameInfo, type INextFrame, WeaponEnum } from "../defines";
+import { type IFrameInfo, WeaponEnum } from "../defines";
 import { Entity } from "../entity/Entity";
 import { State_Base } from "./State_Base";
 
@@ -26,12 +26,5 @@ export class CharacterState_Base extends State_Base {
     }
     if (!fid) return void 0;
     return e.data.frames[fid];
-  }
-
-  override get_sudden_death_frame(target: Entity): INextFrame | undefined {
-    target.set_velocity(2 * target.facing, 2)
-    if (target.data.indexes?.falling)
-      return { id: target.data.indexes?.falling[1][1] };
-    return void 0;
   }
 }

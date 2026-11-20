@@ -213,6 +213,16 @@ export interface IFrameInfo extends IVelocityInfo {
   on_exhaustion?: TNextFrame;
 
   /**
+   * 意外死亡跳转
+   *
+   * hp意外归0时（如站在地面、行走、奔跑时），跳转至on_sudden_death中符合条件的帧
+   *
+   * @see {Entity.get_sudden_death_frame}
+   * @type {?TNextFrame}
+   */
+  on_sudden_death?: TNextFrame;
+
+  /**
    * Description placeholder
    *
    * @type {?TNextFrame}
@@ -371,6 +381,7 @@ export const frame_info_fields = fields<IFrameInfo>({
   jump_flag: int("起跳标志", "下一帧将拥有向上的跳越速度，仅用于跳越", { nullable: true }),
   on_dead: obj('死亡跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_exhaustion: obj('体力耗尽跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_sudden_death: obj('意外死亡跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_landing: obj('落地跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_caught_end: obj('被抓结束跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_leave_ground: obj('离地跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
@@ -480,6 +491,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     cpoint: { type: 'object', nullable: true },// TODO!
     on_dead: { type: 'object', nullable: true },// TODO!
     on_exhaustion: { type: 'object', nullable: true },// TODO!
+    on_sudden_death: { type: 'object', nullable: true },// TODO!
     on_landing: { type: 'object', nullable: true },// TODO!
     on_caught_end: { type: 'object', nullable: true },// TODO!
     on_leave_ground: { type: 'object', nullable: true },// TODO!

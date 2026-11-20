@@ -1,4 +1,4 @@
-import type { IFrameInfo, INextFrame } from "../defines";
+import type { IFrameInfo } from "../defines";
 import { Entity } from "../entity/Entity";
 import { is_ball, is_fighter, is_weapon } from "../entity/type_check";
 import { BallState_Base } from "./BallState_Base";
@@ -53,9 +53,6 @@ export class StateBase_Proxy extends State_Base implements Required<State_Base> 
   }
   override get_auto_frame(e: Entity): IFrameInfo | undefined {
     return this.get_proxy(e).get_auto_frame?.(e);
-  }
-  override get_sudden_death_frame(target: Entity): INextFrame | undefined {
-    return this.get_proxy(target)?.get_sudden_death_frame?.(target);
   }
   override on_leave_ground(e: Entity): void {
     return this.get_proxy(e)?.on_leave_ground?.(e);

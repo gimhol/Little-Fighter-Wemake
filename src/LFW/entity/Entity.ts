@@ -1842,10 +1842,15 @@ export class Entity {
 
   /**
    * hp意外归0时，应该去的地方
+   *
+   * @see {IFrameInfo.on_sudden_death}
    * @returns
    */
   get_sudden_death_frame(): TNextFrame {
-    return this._state?.get_sudden_death_frame?.(this) || Defines.NEXT_FRAME_AUTO
+    if (is_fighter(this)) {
+      this.set_velocity(2 * this.facing, 2);
+    }
+    return this.frame.on_sudden_death ?? Defines.NEXT_FRAME_AUTO;
   }
 
   /**
