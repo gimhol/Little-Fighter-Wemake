@@ -1783,17 +1783,24 @@ export class Entity {
 
       if (this.position.y - _ground_y > this.world.terrain.step) {
         // 离地面太高
-        this.leave_ground();
-        this._state?.on_leave_ground?.(this);
+        this.handle_leave_ground();
       } else if (_ground_y - this.position.y > this.world.terrain.step) {
         // 地面突然出现在上方一大截（单向平台/地形切换的意外情况），不要把人闪上去，按离地处理
-        this.leave_ground();
-        this._state?.on_leave_ground?.(this);
+        this.handle_leave_ground();
       } else {
         // 视为 斜坡/楼梯
         this.position.y = _ground_y;
       }
     }
+  }
+
+  protected handle_leave_ground(): void {
+    const { on_leave_ground } = this.frame;
+    this.leave_ground();
+    if (on_leave_ground &&
+      this.enter_frame(on_leave_ground) >= EnterFrameResult.Entered
+    ) return;
+    this._state?.on_leave_ground?.(this);
   }
 
   update_itr_bdy_hit_ground(itrs: (IItrInfo | IBdyInfo)[]): void {

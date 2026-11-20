@@ -143,6 +143,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   if (frame.on_dead) frame.on_dead = preprocess_next_frame(frame.on_dead);
   if (frame.on_exhaustion) frame.on_exhaustion = preprocess_next_frame(frame.on_exhaustion);
   if (frame.on_landing) frame.on_landing = preprocess_next_frame(frame.on_landing);
+  if (frame.on_leave_ground) frame.on_leave_ground = preprocess_next_frame(frame.on_leave_ground);
 
 
   if (
