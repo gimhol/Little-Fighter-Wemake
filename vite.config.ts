@@ -29,6 +29,16 @@ const GIT_COMMIT_ID = getGitCommitId();
 const GIT_COMMIT_DIRTY = isGitDirty();
 const BUILD_STAMP = Date.now();
 
+// common（src/Component、src/Utils）与 lfw-dom（src/LFW、src/DittoImpl、src/Net）
+// 互相引用时，Rollup 会报 "Circular chunk: lfw-dom -> common -> lfw-dom"。
+// 下面三个 Utils 只被 DittoImpl 使用，且自身不 import 任何东西：把它们归入
+// lfw-dom 后，只剩下 common -> lfw-dom 单向依赖，环即消除。
+const LFW_DOM_ONLY_UTILS = [
+  '/src/Utils/create_img_ele.ts',
+  '/src/Utils/get_blob.ts',
+  '/src/Utils/is_editing_element.ts',
+];
+
 function version_file_plugin(): Plugin {
   return {
     name: 'lfj-version-file',
@@ -147,7 +157,11 @@ export default defineConfig(({ command, mode }) => {
           if (id.includes('node_modules')) {
             return 'vendor';
           }
-          if (id.includes('/src/Component/') || id.includes('/src/Utils/') || id.includes('/src/Utils/hooks')) {
+          // 这三个 Utils 只被 lfw-dom 引用，留在 common 会产生 lfw-dom -> common 回边。
+          if (LFW_DOM_ONLY_UTILS.some((suffix) => id.endsWith(suffix))) {
+            return 'lfw-dom';
+          }
+          if (id.includes('/src/Component/') || id.includes('/src/Utils/')) {
             return 'common';
           }
           if (id.includes('/src/Editor/') || id.includes('/src/EditorView/')) {
