@@ -220,6 +220,17 @@ export interface IFrameInfo extends IVelocityInfo {
   on_landing?: TNextFrame;
 
   /**
+   * 被抓结束跳转
+   *
+   * 被抓起后，抓人者的“抓取值”降至0时，视为“被抓结束”，
+   * 跳转至on_caught_end中符合条件的帧
+   *
+   * @see {Entity.get_caught_end_frame}
+   * @type {?TNextFrame}
+   */
+  on_caught_end?: TNextFrame;
+
+  /**
    * 离地跳转
    *
    * 实体因脚下地形变化而离地时（走出平台边缘、地面高度突变等），
@@ -361,6 +372,7 @@ export const frame_info_fields = fields<IFrameInfo>({
   on_dead: obj('死亡跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_exhaustion: obj('体力耗尽跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_landing: obj('落地跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
+  on_caught_end: obj('被抓结束跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   on_leave_ground: obj('离地跳转', { nullable: true, array: 'auto', fields: next_frame_fields }),
   behavior: int("行为标志", {
     nullable: true,
@@ -469,6 +481,7 @@ export const Schema_IFrameInfo = make_schema<IFrameInfo>({
     on_dead: { type: 'object', nullable: true },// TODO!
     on_exhaustion: { type: 'object', nullable: true },// TODO!
     on_landing: { type: 'object', nullable: true },// TODO!
+    on_caught_end: { type: 'object', nullable: true },// TODO!
     on_leave_ground: { type: 'object', nullable: true },// TODO!
     on_restrict: { type: 'object', nullable: true },// TODO!
     on_x_restrict: { type: 'object', nullable: true },// TODO!

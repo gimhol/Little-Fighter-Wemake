@@ -34,13 +34,4 @@ export class CharacterState_Base extends State_Base {
       return { id: target.data.indexes?.falling[1][1] };
     return void 0;
   }
-
-  override get_caught_end_frame(e: Entity): INextFrame | undefined {
-    const cvx = e.dataset('cvx_d')
-    const cvy = e.dataset('cvy_d')
-    e.set_velocity(-1 * cvx * e.facing, cvy)
-    if (e.data.indexes?.falling)
-      return { id: e.data.indexes.falling[-1][1] };
-    return void 0;
-  }
 }

@@ -57,9 +57,6 @@ export class StateBase_Proxy extends State_Base implements Required<State_Base> 
   override get_sudden_death_frame(target: Entity): INextFrame | undefined {
     return this.get_proxy(target)?.get_sudden_death_frame?.(target);
   }
-  override get_caught_end_frame(target: Entity): INextFrame | undefined {
-    return this.get_proxy(target)?.get_caught_end_frame?.(target);
-  }
   override on_leave_ground(e: Entity): void {
     return this.get_proxy(e)?.on_leave_ground?.(e);
   }

@@ -1854,12 +1854,17 @@ export class Entity {
    * 被抓后，抓人者的“抓取值”降至0时，视为“被抓结束”，
    * 此时被抓者跳去的帧即为“被抓结束”帧
    *
-   * @deprecated 感觉有点蠢
+   * @see {IFrameInfo.on_caught_end}
    * @returns 下帧信息
    */
-  get_caught_end_frame(): INextFrame {
+  get_caught_end_frame(): TNextFrame {
     if (this.position.y < this.ground_y) this.position.y = this.ground_y + 1;
-    return this._state?.get_caught_end_frame?.(this) || Defines.NEXT_FRAME_AUTO
+    if (is_fighter(this)) {
+      const cvx = this.dataset('cvx_d');
+      const cvy = this.dataset('cvy_d');
+      this.set_velocity(-1 * cvx * this.facing, cvy);
+    }
+    return this.frame.on_caught_end ?? Defines.NEXT_FRAME_AUTO;
   }
 
   update_caught(): boolean {

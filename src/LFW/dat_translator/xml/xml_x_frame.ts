@@ -121,6 +121,7 @@ export function xml_2_frame(el: IXMLElement): IFrameInfo {
   ret.next /**/ = xml_2_t_next_frame(el.children_by_tag("next"));
   ret.on_dead /**/ = xml_2_t_next_frame(el.children_by_tag("on_dead"));
   ret.on_landing /**/ = xml_2_t_next_frame(el.children_by_tag("on_landing"));
+  ret.on_caught_end /**/ = xml_2_t_next_frame(el.children_by_tag("on_caught_end"));
   ret.on_leave_ground /**/ = xml_2_t_next_frame(el.children_by_tag("on_leave_ground"));
   ret.on_exhaustion /**/ = xml_2_t_next_frame(el.children_by_tag("on_exhaustion"));
   ret.bdy /**/ = xml_2_non_empty(el, "bdy", xml_2_bdy);

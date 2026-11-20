@@ -90,6 +90,16 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
         frame.stat_recover ??= 1;
     }
     switch (frame.state) {
+      case StateEnum.Caught: {
+        // 被抓结束由帧数据负责：默认进入摔落帧
+        const falling_id = data.indexes?.falling?.[-1]?.[1];
+        frame.on_caught_end ??= falling_id
+          ? { id: falling_id }
+          : { ...Defines.NEXT_FRAME_AUTO };
+        break;
+      }
+    }
+    switch (frame.state) {
       case StateEnum.Standing:
       case StateEnum.Walking:
       case StateEnum.Running:
@@ -164,6 +174,7 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
   if (frame.on_dead) frame.on_dead = preprocess_next_frame(frame.on_dead);
   if (frame.on_exhaustion) frame.on_exhaustion = preprocess_next_frame(frame.on_exhaustion);
   if (frame.on_landing) frame.on_landing = preprocess_next_frame(frame.on_landing);
+  if (frame.on_caught_end) frame.on_caught_end = preprocess_next_frame(frame.on_caught_end);
   if (frame.on_leave_ground) frame.on_leave_ground = preprocess_next_frame(frame.on_leave_ground);
 
 
