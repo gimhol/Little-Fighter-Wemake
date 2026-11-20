@@ -760,7 +760,7 @@ export class Entity {
   set_state(state_code: number): void {
     const v = this._states.get(state_code) || this._states.fallback(this._data.type, state_code);
     if (this._state === v) return;
-    this._state?.leave?.(this, this.frame);
+    this._state?.leave?.(this);
     this._state = v || null;
     this._state?.enter?.(this);
   }

@@ -1,4 +1,4 @@
-import { StateEnum, type IFrameInfo, type IVector3 } from "../defines";
+import { StateEnum, type IVector3 } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { find_direction } from "../entity/find_frame_direction";
 import { abs } from "../utils";
@@ -64,8 +64,8 @@ export class CharacterState_Falling extends CharacterState_Base {
       });
     }
   }
-  override leave(e: Entity, next_frame: IFrameInfo): void {
-    super.leave(e, next_frame);
+  override leave(e: Entity): void {
+    super.leave(e);
     e.bounced = false;
     e.fall_value = e.fall_value_max;
     e.defend_value = e.defend_value_max;

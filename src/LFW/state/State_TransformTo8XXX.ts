@@ -1,4 +1,4 @@
-import { EntityEnum } from "../defines";
+import { EntityEnum } from "../defines/EntityEnum";
 import type { Entity } from "../entity/Entity";
 import { State_Base } from "./State_Base";
 export class State_TransformTo8XXX extends State_Base {

@@ -1,4 +1,8 @@
-import { Defines, StateEnum, type IFrameInfo, type INextFrame, type IVector3 } from "../defines";
+import { Defines } from "../defines/defines";
+import { StateEnum } from "../defines/StateEnum";
+import { type IFrameInfo } from "../defines/IFrameInfo";
+import { type INextFrame } from "../defines/INextFrame";
+import { type IVector3 } from "../defines/IVector3";
 import { Buff_Healing } from "../buff/Buff_Healing";
 import { grant_buff } from "../buff/grant_buff";
 import type { Entity } from "../entity/Entity";
@@ -13,8 +17,7 @@ export class State_Base {
   pre_update?(e: Entity): void;
   update(e: Entity): void { void e; }
   enter?(e: Entity): void;
-  leave(e: Entity, next_frame: IFrameInfo): void {
-    void next_frame;
+  leave(e: Entity): void {
     switch (this.state) {
       case StateEnum.HealSelf:
         grant_buff(

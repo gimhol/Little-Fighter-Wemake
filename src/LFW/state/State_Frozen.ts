@@ -1,4 +1,3 @@
-import { type IFrameInfo } from "../defines/IFrameInfo";
 import { type IVector3 } from "../defines/IVector3";
 import { StateEnum } from "../defines/StateEnum";
 import { WeaponEnum } from "../defines/WeaponType";
@@ -16,11 +15,10 @@ export class State_Frozen extends StateBase_Proxy {
     if (e.holding?.base_type == WeaponEnum.Heavy) e.drop_holding();
     e.play_sound(["data/065.wav.mp3"]);
   }
-  override leave(e: Entity, next_frame: IFrameInfo): void {
-    super.leave(e, next_frame);
+  override leave(e: Entity): void {
+    super.leave(e);
     e.play_sound(["data/066.wav.mp3"]);
     e.apply_opoints(ice_piece_opoints);
-    super.leave?.(e, next_frame);
   }
   override on_landing(e: Entity, velocity: IVector3): void {
     const { on_landing } = e.frame;

@@ -1,5 +1,6 @@
 
-import { type IFrameInfo, type IVector3, StateEnum } from "../defines";
+import { type IVector3 } from "../defines/IVector3";
+import { StateEnum } from "../defines/StateEnum";
 import type { Entity } from "../entity/Entity";
 import { abs } from "../utils/math";
 import { CharacterState_Base } from "./CharacterState_Base";
@@ -18,8 +19,8 @@ export class CharacterState_Burning extends CharacterState_Base {
     const vx = e.velocity.x
     if (vx) e.facing = vx > 0 ? -1 : 1;
   }
-  override leave(e: Entity, next_frame: IFrameInfo): void {
-    super.leave(e, next_frame);
+  override leave(e: Entity): void {
+    super.leave(e);
     e.bounced = false;
   }
   override on_landing(e: Entity, velocity: IVector3): void {
