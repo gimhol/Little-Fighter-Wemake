@@ -1,10 +1,9 @@
-import { Defines } from "../defines/defines";
-import { StateEnum } from "../defines/StateEnum";
-import { type IFrameInfo } from "../defines/IFrameInfo";
-import { type INextFrame } from "../defines/INextFrame";
-import { type IVector3 } from "../defines/IVector3";
 import { Buff_Healing } from "../buff/Buff_Healing";
 import { grant_buff } from "../buff/grant_buff";
+import { Defines } from "../defines/defines";
+import { type IFrameInfo } from "../defines/IFrameInfo";
+import { type INextFrame } from "../defines/INextFrame";
+import { StateEnum } from "../defines/StateEnum";
 import type { Entity } from "../entity/Entity";
 import { clamp, float_equal } from "../utils";
 
@@ -30,7 +29,7 @@ export class State_Base {
     }
   }
   on_dead?(e: Entity): void;
-  on_landing?(e: Entity, velocity: IVector3): void;
+  on_landing?(e: Entity): void;
   get_gravity?(e: Entity): number | undefined | null;
 
   // TODO: 下面四个，不知为何总觉得有点傻 - Gim

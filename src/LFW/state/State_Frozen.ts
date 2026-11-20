@@ -1,4 +1,3 @@
-import { type IVector3 } from "../defines/IVector3";
 import { StateEnum } from "../defines/StateEnum";
 import { WeaponEnum } from "../defines/WeaponType";
 import type { Entity } from "../entity/Entity";
@@ -20,7 +19,7 @@ export class State_Frozen extends StateBase_Proxy {
     e.play_sound(["data/066.wav.mp3"]);
     e.apply_opoints(ice_piece_opoints);
   }
-  override on_landing(e: Entity, velocity: IVector3): void {
+  override on_landing(e: Entity): void {
     const { on_landing } = e.frame;
     if (on_landing) {
       e.enter_frame(on_landing);
@@ -28,7 +27,7 @@ export class State_Frozen extends StateBase_Proxy {
     }
     const { data: { indexes },
     } = e;
-    const { y: vy } = velocity;
+    const { y: vy } = e.landing_velocity;
     if (vy <= e.world.dataset.cha_bc_tst_spd_y * 2) {
       e.enter_frame_by_id(indexes?.bouncing?.[-1][0]);
       e.set_velocity(null, e.world.dataset.cha_bc_spd)

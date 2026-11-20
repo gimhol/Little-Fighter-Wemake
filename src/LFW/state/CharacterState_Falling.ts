@@ -1,4 +1,4 @@
-import { StateEnum, type IVector3 } from "../defines";
+import { StateEnum } from "../defines";
 import type { Entity } from "../entity/Entity";
 import { find_direction } from "../entity/find_frame_direction";
 import { abs } from "../utils";
@@ -73,7 +73,7 @@ export class CharacterState_Falling extends CharacterState_Base {
     e.fallinjury = 0;
     e.throwinjury = 0;
   }
-  override on_landing(e: Entity, velocity: IVector3): void {
+  override on_landing(e: Entity): void {
     const { on_landing } = e.frame;
     if (on_landing) {
       e.enter_frame(on_landing);
@@ -89,7 +89,7 @@ export class CharacterState_Falling extends CharacterState_Base {
       find_direction(f, indexes?.falling) ||
       find_direction(f, indexes?.critical_hit) ||
       facing;
-    const { y: vy, x: vx } = velocity;
+    const { y: vy, x: vx } = e.landing_velocity;
     if (
       !e.bounced && (
         vy <= e.world.dataset.cha_bc_tst_spd_y ||

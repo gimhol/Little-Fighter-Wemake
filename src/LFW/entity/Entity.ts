@@ -77,7 +77,7 @@ export class Entity {
   readonly position: IVector3 = Ditto.vec3(0, 0, 0);
   readonly prev_velocity: IVector3 = Ditto.vec3(0, 0, 0);
   readonly velocity: IVector3 = Ditto.vec3(0, 0, 0);
-  protected readonly _temp_v: IVector3 = Ditto.vec3(0, 0, 0);
+  readonly landing_velocity: IVector3 = Ditto.vec3(0, 0, 0);
 
   /**
    * 影分身
@@ -1761,12 +1761,13 @@ export class Entity {
     if (just_land) {
       this.is_on_ground = true;
       this.position.y = _ground_y;
-      this._temp_v.x = this.velocity.x
-      this._temp_v.y = this.velocity.y
-      this._temp_v.z = this.velocity.z
+      this.landing_velocity.x = this.velocity.x
+      this.landing_velocity.y = this.velocity.y
+      this.landing_velocity.z = this.velocity.z
       this.velocity.y = 0;
       this.prev_velocity.y = 0;
-      this._state?.on_landing?.(this, this._temp_v);
+      this._state?.on_landing?.(this);
+
       this.play_sound(this._data.base.drop_sounds);
       if (this.throwinjury) {
         this.hp -= this.throwinjury;
@@ -1904,7 +1905,9 @@ export class Entity {
     this.prev_cpoint_a = cp_a;
 
     const { throwvx: tx = 0, throwvy: ty = 0, throwvz: tz = 0, throwinjury: ti = 0 } = cp_a;
-    if (ti > 0) this.throwinjury = ti;
+    if (ti > 0) {
+      this.throwinjury = ti;
+    }
     if (tx || ty || tz) {
       this.follow_catcher();
       this.catcher = null;

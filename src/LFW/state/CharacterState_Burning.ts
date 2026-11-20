@@ -1,5 +1,4 @@
 
-import { type IVector3 } from "../defines/IVector3";
 import { StateEnum } from "../defines/StateEnum";
 import type { Entity } from "../entity/Entity";
 import { abs } from "../utils/math";
@@ -23,13 +22,13 @@ export class CharacterState_Burning extends CharacterState_Base {
     super.leave(e);
     e.bounced = false;
   }
-  override on_landing(e: Entity, velocity: IVector3): void {
+  override on_landing(e: Entity): void {
     const { on_landing } = e.frame;
     if (on_landing) {
       e.enter_frame(on_landing);
       return;
     }
-    const { y: vy, x: vx } = velocity;
+    const { landing_velocity: { y: vy, x: vx } } = e
     const {
       data: { indexes },
     } = e;

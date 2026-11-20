@@ -1,4 +1,4 @@
-import type { IFrameInfo, INextFrame, IVector3 } from "../defines";
+import type { IFrameInfo, INextFrame } from "../defines";
 import { Entity } from "../entity/Entity";
 import { is_ball, is_fighter, is_weapon } from "../entity/type_check";
 import { BallState_Base } from "./BallState_Base";
@@ -45,8 +45,8 @@ export class StateBase_Proxy extends State_Base implements Required<State_Base> 
   override update(e: Entity): void {
     return this.get_proxy(e).update(e);
   }
-  override on_landing(e: Entity, velocity: IVector3): void {
-    return this.get_proxy(e).on_landing?.(e, velocity);
+  override on_landing(e: Entity): void {
+    return this.get_proxy(e).on_landing?.(e);
   }
   override on_dead(e: Entity): void {
     return this.get_proxy(e).on_dead?.(e);

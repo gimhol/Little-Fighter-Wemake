@@ -1,5 +1,4 @@
 import { FrameBehavior } from "../defines/FrameBehavior";
-import { type IVector3 } from "../defines/IVector3";
 import type { Entity } from "../entity/Entity";
 import { round_float as rt } from "../utils/math/round_float";
 import { WeaponState_Base } from "./WeaponState_Base";
@@ -20,14 +19,14 @@ export class WeaponState_Throwing extends WeaponState_Base {
       e.set_velocity(e.velocity.x * 0.6)
     }
   }
-  override on_landing(e: Entity, velocity: IVector3): void {
+  override on_landing(e: Entity): void {
     const { on_landing } = e.frame;
     if (on_landing) {
       e.enter_frame(on_landing);
       return;
     }
     const { indexes } = e.data;
-    this.hit_ground_rebouncing(e, indexes?.throw_on_ground || indexes?.just_on_ground, velocity);
+    this.hit_ground_rebouncing(e, indexes?.throw_on_ground || indexes?.just_on_ground, e.landing_velocity);
   }
   override update(e: Entity): void {
     e.handle_ground_velocity_decay();
