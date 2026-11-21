@@ -516,7 +516,7 @@ export class BotController extends BaseController {
           return false; // 不补血的不喝
         if (me.hp >= round_float(2 * me.hp_max / 3))
           return false; // 血多的不喝
-        if (!this.world.has_players_alive)
+        if (!this.world.alive_players_count_by_team.get(me.team))
           break; // “大将”已死，挣扎之
         if (this.behavior != BotBehavior.Stay)
           return false; // 仅在Stay喝
@@ -936,7 +936,7 @@ export class BotController extends BaseController {
     } else if (
       other.data.id === OID.Criminal &&
       me.team != this.stage.team &&
-      !this.world.has_players_alive
+      !this.world.alive_players_count_by_team.get(me.team)
     ) {
       this.chasings.look(this.entity, other);
     } else {

@@ -109,8 +109,9 @@ export class World {
   pairs_compared: number = 0;
   render_cost: number = 0;
   protected readonly _pair_collisions = new NestedMultiMap<string, string, Collision>();
-  private _alive_players = new Set<Entity>();
-  public has_players_alive: boolean = false;
+  public alive_players_count: number = 0;
+  public readonly alive_players_count_by_team = new Map<string, number>();
+  private readonly _alive_players_by_team = new Map<string, number>();
   public TU: number = 1;
   /** 追帧：每次更新时额外连续推进的最大帧数（网络重连回放用，0 = 关闭） */
   public extra_steps: number = 0;
@@ -271,7 +272,6 @@ export class World {
       else this.entities.push(e);
       this.entity_map.set(e.id, e)
       this.renderer.add_entity(e);
-      this.mark_players_alive(e, is_human_ctrl(e.ctrl) && e.hp > 0);
     }
   }
 
@@ -649,12 +649,6 @@ export class World {
     if (lcmds.length) CMDS.handle(this, lcmds);
   }
 
-  mark_players_alive(e: Entity, is_alive: boolean) {
-    if (is_alive) this._alive_players.add(e);
-    else this._alive_players.delete(e);
-    this.has_players_alive = this._alive_players.size > 0;
-  }
-
   protected collect_dead_buff(buff: Buff): void {
     buff.update(this.dataset.atom_time);
     if (buff.dead) this._dead_buffs.push(buff);
@@ -691,6 +685,9 @@ export class World {
     }
 
     let offset = 0;
+    let alive_players_count = 0;
+    const alive_players_by_team = this._alive_players_by_team;
+    alive_players_by_team.clear();
     let puppet_x_sum = 0;
     let puppet_z_sum = 0;
     let puppet_y_sum = 0;
@@ -726,6 +723,11 @@ export class World {
         continue;
       }
       a.update();
+      if (a.hp > 0 && is_human_ctrl(a.ctrl)) {
+        alive_players_count++;
+        const team = a.team;
+        alive_players_by_team.set(team, (alive_players_by_team.get(team) ?? 0) + 1);
+      }
 
       if (is_fighter(a)) {
         if (a.hp > 0) {
@@ -853,7 +855,6 @@ export class World {
 
     for (const entity of this._gones) {
       this.entity_map.delete(entity.id)
-      this.mark_players_alive(entity, false)
       if (is_fighter(entity))
         this.callbacks.call("on_fighter_del", entity);
       const player = this.lfw.players.get(entity.ctrl.player_id)
@@ -867,6 +868,10 @@ export class World {
       this.lfw.factory.recycle_entity(entity)
     }
     this._gones.clear()
+    this.alive_players_count = alive_players_count;
+    this.alive_players_count_by_team.clear();
+    for (const [team, count] of alive_players_by_team)
+      this.alive_players_count_by_team.set(team, count);
     this.stage.update();
   }
 
@@ -985,8 +990,9 @@ export class World {
     this.stop_render();
     this.del_entities(Array.from(this.entities));
     this.del_entities(Array.from(this.ghosts));
-    this._alive_players.clear();
-    this.has_players_alive = false;
+    this.alive_players_count = 0;
+    this.alive_players_count_by_team.clear();
+    this._alive_players_by_team.clear();
     this.renderer.dispose();
     this.callbacks.clear()
   }
@@ -1011,8 +1017,9 @@ export class World {
       this.stage.change_bg(Defines.VOID_BG)
     this.paused = false;
     this.camera.reset()
-    this._alive_players.clear();
-    this.has_players_alive = false;
+    this.alive_players_count = 0;
+    this.alive_players_count_by_team.clear();
+    this._alive_players_by_team.clear();
     this.callbacks.call('on_counts');
     this._counts.clear()
   }

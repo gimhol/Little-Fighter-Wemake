@@ -424,8 +424,6 @@ export class Entity {
     if (v < o && !is_independent(this.team)) summary_mgr.get(this.team).hp_lost += o - v;
 
     this.callbacks.call("on_hp_changed", this, v, o);
-    if (is_human_ctrl(this.ctrl) && (o > 0) !== (v > 0))
-      this.world.mark_players_alive(this, v > 0);
     if (o > 0 && v <= 0) {
       this.callbacks.call("on_dead", this);
       this._state?.on_dead?.(this);
@@ -540,7 +538,6 @@ export class Entity {
     const prev = this._ctrl
     this._ctrl = v;
     this.callbacks.call('on_ctrl_changed', v, prev, this)
-    this.world.mark_players_alive(this, is_human_ctrl(v) && this.hp > 0);
     if (prev) this.lfw.factory.release_ctrl(prev);
   }
   as_key_role(v: unknown): void {
