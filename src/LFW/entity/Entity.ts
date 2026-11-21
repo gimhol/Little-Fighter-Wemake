@@ -261,8 +261,8 @@ export class Entity {
    */
   readonly collided_list: Collision[] = [];
 
-  protected _ground_y: number = 0;
-  protected _prev_ground_y: number = 0;
+  public ground_y: number = 0;
+  public prev_ground_y: number = 0;
   /** 是否在地面上 */
   is_on_ground: boolean = false;
 
@@ -298,9 +298,6 @@ export class Entity {
   set mix_strength(v: number) { this._mix_strength = v; this._render_effect_time++; }
   get greyscale(): number { return this._greyscale; }
   set greyscale(v: number) { this._greyscale = v; this._render_effect_time++; }
-
-  get ground_y(): number { return this._ground_y }
-
   get data(): IEntityData { return this._data };
   get origin_data_id(): string { return this._origin_data_id || this._data.id };
   get group() { return this._data.base.group };
@@ -610,7 +607,7 @@ export class Entity {
     this._motionless_ticks = 0;
     this._lifetime = 0;
     this.fallinjury = 0;
-    this._ground_y = 0;
+    this.ground_y = 0;
     this.variant = 0;
     this.transforms = null;
     this.transform_index = 0;
@@ -1737,7 +1734,7 @@ export class Entity {
    * 处理与地面的交互
    */
   protected update_landable() {
-    const { _ground_y, is_on_ground } = this;
+    const { ground_y: _ground_y, is_on_ground } = this;
 
     /** itr/bdy与地面的碰撞 */
     const { __hit_ground_bdys, __hit_ground_itrs } = this.frame
@@ -1804,7 +1801,7 @@ export class Entity {
     for (const itr of itrs) {
       if (!itr.on_hit_ground) continue;
       const { y = 0, h = 0 } = itr;
-      if ((this.position.y + this.frame.centery - y - h) > this._ground_y)
+      if ((this.position.y + this.frame.centery - y - h) > this.ground_y)
         continue;
       this.enter_frame(itr.on_hit_ground);
     }
@@ -2403,7 +2400,7 @@ export class Entity {
         this.enter_frame(this.frame.on_restrict)
       this._state?.on_restrict?.(this, x, y, z);
     }
-    this._ground_y = this.world.terrain.y(this.terrain, this.position.x, this.position.z);
+    this.ground_y = this.world.terrain.y(this.terrain, this.position.x, this.position.z);
   }
 
   /** 离地 */
@@ -2542,8 +2539,8 @@ export class Entity {
     nums[NSlot.JUMP_Z] = this.jumping.z;
     nums[NSlot.JUMP_T] = this.jumping.t;
 
-    nums[NSlot.GROUND_Y] = this._ground_y;
-    nums[NSlot.PREV_GROUND_Y] = this._prev_ground_y;
+    nums[NSlot.GROUND_Y] = this.ground_y;
+    nums[NSlot.PREV_GROUND_Y] = this.prev_ground_y;
 
     nums[NSlot.AABB_MIN_X] = this.aabb_min_x;
     nums[NSlot.AABB_MAX_X] = this.aabb_max_x;
@@ -2657,8 +2654,8 @@ export class Entity {
     this.jumping.z = nums[NSlot.JUMP_Z];
     this.jumping.t = nums[NSlot.JUMP_T];
 
-    this._ground_y = nums[NSlot.GROUND_Y];
-    this._prev_ground_y = nums[NSlot.PREV_GROUND_Y];
+    this.ground_y = nums[NSlot.GROUND_Y];
+    this.prev_ground_y = nums[NSlot.PREV_GROUND_Y];
 
     this.aabb_min_x = nums[NSlot.AABB_MIN_X];
     this.aabb_max_x = nums[NSlot.AABB_MAX_X];
