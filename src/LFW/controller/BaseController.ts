@@ -178,7 +178,7 @@ export class BaseController {
       is_hurt_like_state(d0.fstate) ||
       is_hurt_like_state(d1.fstate) ||
       is_hurt_like_state(entity.frame.state) ||
-      is_hurt_like_state(entity.get_prev_frame()?.state)
+      is_hurt_like_state(entity.prev_frame?.state)
     ) {
       dbc.step();
       return false;

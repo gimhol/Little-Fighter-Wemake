@@ -17,7 +17,7 @@ export class CharacterState_Jump extends CharacterState_Base {
   override update(e: Entity): void {
     e.handle_ground_velocity_decay();
     if (!float_equal(e.position.y, e.ground_y)) return;
-    const { jump_flag } = e.get_prev_frame();
+    const { jump_flag } = e.prev_frame;
     const { atom_time } = e.world.dataset;
     if (is_bot_ctrl(e.ctrl)) {
       e.jumping.t = rf(e.jumping.t + atom_time);

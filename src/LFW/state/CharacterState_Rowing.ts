@@ -15,7 +15,7 @@ export class CharacterState_Rowing extends CharacterState_Base {
     super(state)
   }
   override enter(e: Entity): void {
-    const prev_frame = e.get_prev_frame();
+    const prev_frame = e.prev_frame;
     if (prev_frame.state !== SE.Falling) return;
     const vx = e.dataset('rowing_distance') * e.dataset('bfall_x_f')
     const vy = e.dataset('rowing_height') * e.dataset('bfall_h_f')

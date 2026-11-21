@@ -127,7 +127,7 @@ export class Entity {
   /** TODO: 感觉可以考虑用scale来表达这个，这样还可以搞其他事情。 -Gim */
   public facing: TFace = 1;
   public frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
-  protected _prev_frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
+  public prev_frame: Readonly<IFrameInfo> = EMPTY_FRAME_INFO;
   public catching: Entity | null = null;
   public catcher: Entity | null = null;
   protected _states: States;
@@ -641,7 +641,7 @@ export class Entity {
     this.throwinjury = 0;
     this.facing = 1;
     this.frame = EMPTY_FRAME_INFO;
-    this._prev_frame = EMPTY_FRAME_INFO;
+    this.prev_frame = EMPTY_FRAME_INFO;
     this.set_catching(null)
     this.catcher = null
     this.wakeup_invuln = 0;
@@ -782,11 +782,11 @@ export class Entity {
       }
       opoints.length = slow;
     }
-    this._prev_frame = this.frame;
+    this.prev_frame = this.frame;
     this._landing_frame = null;
     this.frame = v;
     if (!v.itr?.length) this.arest = 0
-    const prev_state_code = this._prev_frame.state;
+    const prev_state_code = this.prev_frame.state;
     const next_state_code = this.state;
     if (prev_state_code !== next_state_code) {
       this.set_state(next_state_code)
@@ -1912,7 +1912,7 @@ export class Entity {
 
     const { throwvx: tx = 0, throwvy: ty = 0, throwvz: tz = 0, throwinjury: ti = 0 } = cp_a;
     if (ti > 0) this.throwinjury = this.fallinjury = ti;
-  
+
     if (tx || ty || tz) {
       this.follow_catcher();
       this.catcher = null;
@@ -2357,19 +2357,12 @@ export class Entity {
       case FrameId.Gone:
         return GONE_FRAME_INFO;
     }
-    if (!this._data.frames[id]) {
-      Ditto.warn(
-        Entity.TAG + "::find_frame_by_id",
-        "frame not find! id:",
-        id,
-      );
-      return this.find_auto_frame();
-    }
-    return this._data.frames[id];
+    const ret = this._data.frames[id]
+    if (ret) return ret;
+    Ditto.warn(`[${Entity.TAG}::find_frame_by_id] frame not find! id: ${id}`);
+    return this.find_auto_frame();
   }
-  get_prev_frame() {
-    return this._prev_frame;
-  }
+
   set_velocity(_x?: number | null, _y?: number | null, _z?: number | null) {
     // eslint-disable-next-line no-debugger
     if (is_f_num(_x) || is_f_num(_y) || is_f_num(_z)) debugger;
@@ -2583,7 +2576,7 @@ export class Entity {
     strs[SSlot.ID] = this.id;
     strs[SSlot.DATA_ID] = this._data.id;
     strs[SSlot.FRAME_ID] = this.frame.id;
-    strs[SSlot.PREV_FRAME_ID] = this._prev_frame.id;
+    strs[SSlot.PREV_FRAME_ID] = this.prev_frame.id;
     strs[SSlot.LANDING_FRAME_ID] = this._landing_frame?.id ?? '';
     strs[SSlot.CATCHING_ID] = this.catching?.id ?? '';
     strs[SSlot.CATCHER_ID] = this.catcher?.id ?? '';
@@ -2698,7 +2691,7 @@ export class Entity {
     const data = this.lfw.datas.find(strs[SSlot.DATA_ID]);
     if (data) this._data = data;
     this.frame = this.find_frame_by_id(strs[SSlot.FRAME_ID]) ?? this.frame;
-    this._prev_frame = this.find_frame_by_id(strs[SSlot.PREV_FRAME_ID]) ?? this._prev_frame;
+    this.prev_frame = this.find_frame_by_id(strs[SSlot.PREV_FRAME_ID]) ?? this.prev_frame;
     this._landing_frame = strs[SSlot.LANDING_FRAME_ID]
       ? (this.find_frame_by_id(strs[SSlot.LANDING_FRAME_ID]) ?? null)
       : null;

@@ -6,7 +6,7 @@ export class CharacterState_Dash extends CharacterState_Base {
     super(state)
   }
   override enter(e: Entity): void {
-    const prev_frame = e.get_prev_frame();
+    const prev_frame = e.prev_frame;
     if (e.position.y > e.ground_y && e.velocity.y !== 0) return;
     const { x: vx, z: vz } = e.velocity;
     let next_vx = vx;
