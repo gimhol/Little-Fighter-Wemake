@@ -8,6 +8,7 @@ export class Ewents {
   static readonly CLICK_SIGNAL: string = 'ewents-click'
   private _mounted: boolean = false;
   private _location: string = ''
+  private _page: string = ''
   private _seq: number = -1
   private _src_history_push_state: typeof history.pushState | null = null;
   private _new_history_push_state: typeof history.pushState | null = null;
@@ -76,6 +77,7 @@ export class Ewents {
     }
     this._mounted = false;
     this._location = ''
+    this._page = ''
     this._seq = -1;
     this._src_history_push_state = null;
     this._new_history_push_state = null;
@@ -86,6 +88,15 @@ export class Ewents {
     if (this._location == curr_location) return;
     this._location = curr_location;
     this.submit_any('visit', { uri: curr_location });
+  }
+
+  submit_page(page_id?: string) {
+    if (!this._mounted) return
+    const page = page_id ?? ''
+    if (this._page === page) return
+    this._page = page
+    if (!page) return
+    this.submit_any('visit', { uri: location.toString(), page })
   }
 
   submit_click(el: HTMLElement) {

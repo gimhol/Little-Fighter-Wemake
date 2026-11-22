@@ -44,6 +44,7 @@ import * as Paths from "./Paths";
 import { PlayerRow } from "./PlayerRow";
 import SettingsRows from "./SettingsRows";
 import { download } from "./Utils/download";
+import { ewents } from "./Utils/ewents";
 import { open_file } from "./Utils/open_file";
 import img_btn_0_3 from "./assets/btn_0_3.png";
 import img_btn_0_4 from "./assets/btn_0_4.png";
@@ -507,11 +508,23 @@ function App() {
       window.addEventListener('focus', focus);
       lfw.sounds.set_muted(!document.hasFocus() || document.hidden);
 
+      // 游戏内页面跳转也上报访问：游戏内换页不改浏览器地址，
+      // 把当前最上层可见 UI（页面/弹窗/设置页、聊天浮层等覆盖层）的 id 作为 page 字段随 visit 上报
+      const report_page_visit = () => ewents.submit_page(lfw.layers.ui?.id)
+      const del_page_visit = lfw.layers.callback.add({
+        on_set: report_page_visit,
+        on_push: report_page_visit,
+        on_pop: report_page_visit,
+        on_modal_open: report_page_visit,
+        on_modal_close: report_page_visit,
+      })
+
       return () => {
         window.removeEventListener("touchstart", on_touchstart)
         document.removeEventListener('visibilitychange', visibilitychange);
         window.removeEventListener('blur', blur);
         window.removeEventListener('focus', focus);
+        del_page_visit();
         del_lf2_callback();
       };
     },

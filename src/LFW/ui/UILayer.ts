@@ -318,9 +318,21 @@ export class UILayer {
 }
 export class UILayers {
   readonly lfw: LFW;
+  readonly callback = new Callbacks<IUILayersCallback>();
   protected _all: UILayer[] = [];
   constructor(lfw: LFW) {
     this.lfw = lfw;
+  }
+  protected _create_layer(index: number): UILayer {
+    const ret = new UILayer(this.lfw, index)
+    ret.callback.add({
+      on_set: (curr, prev, layer) => this.callback.call('on_set', curr, prev, layer),
+      on_push: (curr, prev, layer) => this.callback.call('on_push', curr, prev, layer),
+      on_pop: (curr, poppeds, layer) => this.callback.call('on_pop', curr, poppeds, layer),
+      on_modal_open: (opened, prev, layer) => this.callback.call('on_modal_open', opened, prev, layer),
+      on_modal_close: (curr, closed, layer) => this.callback.call('on_modal_close', curr, closed, layer),
+    })
+    return ret
   }
   get pages(): UINode[] {
     const ret: UINode[] = [];
@@ -350,7 +362,7 @@ export class UILayers {
     return this._all.length
   }
   push(): UILayer {
-    const ret = new UILayer(this.lfw, 0)
+    const ret = this._create_layer(0)
     this._all.push(ret)
     return ret;
   }
@@ -370,7 +382,7 @@ export class UILayers {
   }
   ensure(index: number): UILayer {
     let ret = this._all[index]
-    if (!ret) ret = this._all[index] = new UILayer(this.lfw, index)
+    if (!ret) ret = this._all[index] = this._create_layer(index)
     return ret
   }
   at(index: number): UILayer | undefined {
