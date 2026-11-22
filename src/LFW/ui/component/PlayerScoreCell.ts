@@ -1,4 +1,5 @@
 import { summary_mgr } from "../../entity/SummaryMgr";
+import { round } from "../../utils/math/base";
 import { Style } from "../Style";
 import { PlayerScore } from "./PlayerScore";
 import { UIComponent } from "./UIComponent";
@@ -40,17 +41,18 @@ export class PlayerScoreCell extends UIComponent {
     const s = this.player_score;
     const c = this.player_score?.fighter;
     if (!s || !c) return "-";
+    const sum = summary_mgr.get(c.id);
     switch (this.kind) {
       case "kill":
-        return "" + summary_mgr.get(c.id).kill_sum;
+        return "" + round(sum.kill_sum);
       case "attack":
-        return "" + summary_mgr.get(c.id).damage_sum;
+        return "" + round(sum.damage_sum);
       case "hp_lost":
-        return "" + summary_mgr.get(c.id).hp_lost;
+        return "" + round(sum.hp_lost);
       case "mp_usage":
-        return "" + summary_mgr.get(c.id).mp_usage;
+        return "" + round(sum.mp_usage);
       case "picking":
-        return "" + summary_mgr.get(c.id).picking_sum
+        return "" + round(sum.picking_sum)
       case "status": {
         if (c.hp > 0) return this.node.get_value("win_alive_txt");
         else if (s.lose) return this.node.get_value("lose_txt");
