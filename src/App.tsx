@@ -510,7 +510,7 @@ function App() {
 
       // 游戏内页面跳转也上报访问：游戏内换页不改浏览器地址，
       // 把当前最上层可见 UI（页面/弹窗/设置页、聊天浮层等覆盖层）的 id 作为 page 字段随 visit 上报
-      const report_page_visit = () => ewents.submit_visit({ page: lfw.layers.ui?.id })
+      const report_page_visit = () => ewents.submit_visit(lfw.layers.ui?.id)
       const del_page_visit = lfw.layers.callback.add({
         on_set: report_page_visit,
         on_push: report_page_visit,
