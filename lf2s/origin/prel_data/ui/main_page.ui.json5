@@ -335,7 +335,7 @@
       center: "0,0",
       template: "builtin_data/launch/main_text_button.ui.json",
       values: {
-        text: "Any idea?",
+        text: "any_idea",
         style_normal: { font: "bold 12px Arial", fill_style: "#FFD24A" },
         style_hover: { font: "bold 12px Arial", fill_style: "white", underline_color: "white", underline_width: 2 },
       },
@@ -346,3 +346,4 @@
     }
   ]
 }
+

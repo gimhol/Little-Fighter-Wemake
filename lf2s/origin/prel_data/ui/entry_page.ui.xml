@@ -74,7 +74,7 @@
 
   <node id="btn_any_idea" size="130,22" center="0,0" template="builtin_data/launch/main_text_button.ui.json" alignment="left:left; top:top">
     <values>
-      <string name="text">Any idea?</string>
+      <string name="text">any_idea</string>
       <style name="style_normal" font="bold 12px Arial" fill_style="#FFD24A"/>
       <style name="style_hover" font="bold 12px Arial" fill_style="white" underline_color="white" underline_width="2"/>
     </values>
@@ -84,3 +84,4 @@
     </actions>
   </node>
 </node>
+
