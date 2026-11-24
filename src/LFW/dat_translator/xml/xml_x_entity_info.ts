@@ -19,6 +19,7 @@ export function xml_x_entity_info(xml: IXML, info: IEntityInfo, tag: string): IX
   ret.set_attr("small", info.small);
   ret.set_attr("ce", info.ce);
   ret.set_attr("weight", info.weight);
+  ret.set_attr("ghosted", info.ghosted);
   ret.set_attr("group", info.group?.join());
   xml_x_picture_info_map(xml, info.files, "file")?.forEach(v => ret.insert(v))
   xml_x_model_info_map(xml, info.models, "model")?.forEach(v => ret.insert(v))
@@ -50,6 +51,7 @@ export function xml_2_entity_info(el: IXMLElement): IEntityInfo {
   ret.small /**/ = el.get_str("small", ret.small);
   ret.ce /**/ = el.get_num("ce", ret.ce);
   ret.weight /**/ = el.get_num("weight", ret.weight);
+  ret.ghosted /**/ = el.get_num("ghosted", ret.ghosted);
   ret.group /**/ = el.get_str_arr("group");
   ret.files /**/ = xml_2_picture_info_map(el, 'file');
   ret.models /**/ = xml_2_model_info_map(el, 'model');

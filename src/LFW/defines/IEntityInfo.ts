@@ -1,5 +1,4 @@
 import { todo, fields, fields_map_2_fields_obj, flt, int, str } from "../fields";
-import type { WorldDataset } from "../WorldDataset";
 import { ALL_ENTITY_ENUM, ENTITY_ENUM_DESC_MAP, ENTITY_ENUM_LABEL_MAP, EntityEnum } from "./EntityEnum";
 import { ALL_ENTITY_GROUP, ENTITY_GROUP_DESC_MAP, ENTITY_GROUP_LABEL_MAP } from "./EntityGroup";
 import type { IArmorInfo } from "./IArmorInfo";
@@ -58,6 +57,19 @@ export interface IEntityInfo extends Partial<IWorldDataset> {
    * （也许角色也可以考虑用这个属性？）
    */
   weight?: number
+
+  /**
+   * 残影
+   *
+   * 为1时，该数据生成的实体挂载后即为残影（ghosted）：
+   * - 不参与实体间的普通碰撞与攻击判定；
+   * - 位置不被地形/边界限制。
+   *
+   * 默认：0
+   *
+   * @type {?number}
+   */
+  ghosted?: number
 
   /**
    * 所属组
@@ -242,6 +254,9 @@ export const entity_info_fields = fields<IEntityInfo>({
   dead_sounds: todo,
   armor: todo,
   weight: flt('重量', '目前为武器重量', { nullable: true }),
+  ghosted: int('残影', '为1时，该数据生成的实体即为残影：不参与普通碰撞，位置不受地形限制', {
+    nullable: true, min: 0, max: 1
+  }),
   bot_id: todo,
   bot: todo,
   bot_ignore: int('BOT忽略', '为1时，BOT不会尝试也无法拾取该武器', { nullable: true }),

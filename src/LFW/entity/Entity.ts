@@ -1057,11 +1057,12 @@ export class Entity {
     return this;
   }
 
-  attach(ghost: unknown = false): this {
+  attach(ghost?: unknown): this {
     if (this._mounted) return this;
     this._spawn_time = this.world.game_time;
     this._mounted = 1;
-    this._ghosted = ghost ? 1 : 0;
+    // 参数优先；未指定时使用数据里的 ghosted（残影数据）
+    this._ghosted = (ghost ?? this._data.base.ghosted) ? 1 : 0;
     if (this._ghosted) this.motionless = this.shaking = 0;
     this.world.add_entities(this);
 
