@@ -1,4 +1,4 @@
-import { EntityVal, OID } from "../../defines";
+import { BotVal, EntityVal, OID, StateEnum } from "../../defines";
 import { bot_ball_dfa } from "./bot_ball_dfa";
 import { bot_ball_dfj } from "./bot_ball_dfj";
 import { bot_chasing_skill_action } from "./bot_chasing_skill_action";
@@ -20,12 +20,16 @@ export function make_bot_data_freeze(): BotMaker {
     }),
 
     // d>j
-    bot_ball_dfj(150, void 0, 50, 300)(e => {
-      e.e_ray?.push(
-        { ...e.e_ray![0], z: 0.2 },
-        { ...e.e_ray![0], z: -0.2 }
+    bot_ball_dfj(150, void 0, 50, 300)((a, c) => {
+      a.e_ray?.push(
+        { ...a.e_ray![0], z: 0.2 },
+        { ...a.e_ray![0], z: -0.2 }
       );
-      return e;
+      a.expression = c
+        .and(BotVal.EnemyState, '!=', StateEnum.Frozen)
+        .and(BotVal.EnemyState, '!=', StateEnum.Falling)
+        .done();
+      return a;
     }),
 
     // dvj
