@@ -25,6 +25,10 @@ const breakfall_j_expression = new CondMaker<EV>()
   .and(EV.CAUGHT, "!=", 1)
   .done()
 
+const lying_roll_expression = new CondMaker<EV>()
+  .add(EV.HP, ">", 0)
+  .done()
+
 /** 举重时不响应离地跳转 */
 const leave_ground_expression = new CondMaker<EV>()
   .add(EV.HoldingHeavy, "!=", 1)
@@ -134,6 +138,19 @@ export function preprocess_frame(ctx: IFrameInfoContext): IFrameInfo {
           expression: leave_ground_expression,
         };
         break;
+    }
+    if (frame.state === StateEnum.Lying && data.frames?.["102"]) {
+      frame.hit = { ...frame.hit };
+      frame.hit.FF ??= {
+        id: "102",
+        facing: FF.Ctrl,
+        expression: lying_roll_expression,
+      };
+      frame.hit.BB ??= {
+        id: "102",
+        facing: FF.Ctrl,
+        expression: lying_roll_expression,
+      };
     }
   }
 

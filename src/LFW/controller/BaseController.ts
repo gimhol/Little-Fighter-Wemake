@@ -9,6 +9,7 @@ import type { World } from "../World";
 import { ControllerDoubleClicks } from "./ControllerDoubleClicks";
 import { ControllerKeyStatus } from "./ControllerKeyStatus";
 import { ControllerResult } from "./ControllerResult";
+import type { IControllerDoubleClickData } from "./IControllerDoubleClickData";
 import type { KeyStatus } from "./KeyStatus";
 import { SeqKeys } from "./SeqKeys";
 enum Status {
@@ -18,11 +19,30 @@ enum Status {
 }
 
 /**
- * 受伤、破防、倒地、被击飞：这些状态下不能行动，双击奔跑也不成立
+ * 双击时，两次点击是否满足状态要求
+ *
+ * - 倒地（翻滚起身）：两次点击都必须是倒地
+ * - 其它（双击奔跑）：
+ *   - 两次点击都发生在站立/行走；或
+ *   - 首次点击不在站立/行走，但两次朝向一致
  */
-function is_hurt_like_state(state: number | undefined): boolean {
-  return state === SE.Injured || state === SE.BrokenDefend ||
-    state === SE.Lying || state === SE.Falling;
+function is_dbl_state_ok(
+  current: number | undefined,
+  d0: IControllerDoubleClickData,
+  d1: IControllerDoubleClickData
+): boolean {
+  // TODO: 如何数据驱动控制双击是否起效？
+  switch (current) {
+    case SE.Lying: // 倒地双击左右进入滚动
+      return d0.fstate === SE.Lying && d1.fstate === SE.Lying;
+    default: { // 奔跑的判定
+      const d0_run = d0.fstate === SE.Standing || d0.fstate === SE.Walking;
+      const d1_run = d1.fstate === SE.Standing || d1.fstate === SE.Walking;
+      if (d0_run && d1_run) return true;
+      // 首次点击不在站立/行走时，两次朝向一致也可
+      return !d0_run && d0.facing === d1.facing;
+    }
+  }
 }
 
 /**
@@ -173,21 +193,12 @@ export class BaseController {
     if (!ret) return false
     const { entity } = this;
 
-    if (
-      !d0 || !d1 ||
-      is_hurt_like_state(d0.fstate) ||
-      is_hurt_like_state(d1.fstate) ||
-      is_hurt_like_state(entity.frame.state) ||
-      is_hurt_like_state(entity.prev_frame?.state)
-    ) {
+    if (!d0 || !d1) {
       dbc.step();
       return false;
     }
-    if (k === GK.L && (d0.facing !== -1 || d1.facing !== -1)) {
-      dbc.step();
-      return false;
-    }
-    if (k === GK.R && (d0.facing !== 1 || d1.facing !== 1)) {
+
+    if (!is_dbl_state_ok(entity.state, d0, d1)) {
       dbc.step();
       return false;
     }
