@@ -4,6 +4,7 @@ export enum BotStateEnum {
   Chasing = 'Chasing',
   Following = 'Following',
   StageEnd = 'StageEnd',
+  Lying = 'Lying',
   Dead = 'Dead'
 }
 export const BotStateEnumDescriptions: Record<BotStateEnum, string> = {
@@ -12,6 +13,7 @@ export const BotStateEnumDescriptions: Record<BotStateEnum, string> = {
   [BotStateEnum.Chasing]: "",
   [BotStateEnum.Following]: "",
   [BotStateEnum.StageEnd]: "",
+  [BotStateEnum.Lying]: "",
   [BotStateEnum.Dead]: "",
 }
 export type BSE = BotStateEnum;

@@ -16,6 +16,7 @@ export class BotState_StageEnd extends BotState_Base {
   }
   override update(dt: number): BSE | undefined {
     if (this.me.hp <= 0) return BSE.Dead;
+    if (this.me.state === SE.Lying) return BSE.Lying;
     const { c, me, stage } = this
     this.handle_block();
 

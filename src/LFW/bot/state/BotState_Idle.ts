@@ -32,6 +32,7 @@ export class BotState_Idle extends BotState_Base {
   }
   override update() {
     if (this.me.hp <= 0) return BSE.Dead;
+    if (this.me.state === SE.Lying) return BSE.Lying;
     if (this.stage.is_stage_finish)
       return BSE.StageEnd;
     const { c, me } = this;

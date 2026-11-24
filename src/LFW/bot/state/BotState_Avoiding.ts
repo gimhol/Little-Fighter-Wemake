@@ -14,6 +14,7 @@ export class BotState_Avoiding extends BotState_Base {
   }
   override update(): BSE | undefined {
     if (this.me.hp <= 0) return BSE.Dead;
+    if (this.me.state === StateEnum.Lying) return BSE.Lying;
     const { s } = this;
     if (s.is_chapter_finish)
       return BSE.Idle;

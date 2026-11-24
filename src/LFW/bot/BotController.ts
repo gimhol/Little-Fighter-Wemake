@@ -30,6 +30,7 @@ import { BotState_Chasing } from './state/BotState_Chasing';
 import { BotState_Dead } from "./state/BotState_Dead";
 import { BotState_Following } from "./state/BotState_Following";
 import { BotState_Idle } from './state/BotState_Idle';
+import { BotState_Lying } from './state/BotState_Lying';
 import { BotState_StageEnd } from "./state/BotState_StageEnd";
 import { is_ray_hit } from "./utils/is_ray_hit";
 import { BotTerrain, step_probe_new } from "./terrain/BotTerrain";
@@ -66,6 +67,7 @@ export class BotController extends BaseController {
       new BotState_Avoiding(this),
       new BotState_Following(this),
       new BotState_StageEnd(this),
+      new BotState_Lying(this),
       new BotState_Dead(this)
     )
 
@@ -1029,7 +1031,9 @@ export class BotController extends BaseController {
       this._case(`bot_update_${this.me.id}_${this.me.name}`)
     this.check_bot();
     if (this._jump_hold > 0) {
-      if (--this._jump_hold > 0) this.key_down(GK.j);
+      /* 倒地时不按键：起跳保持直接作废 */
+      if (this.entity.state === StateEnum.Lying) this._jump_hold = 0;
+      else if (--this._jump_hold > 0) this.key_down(GK.j);
       else this.key_up(GK.j);
     }
     if (this.watching?.mounted == 0)
@@ -1077,6 +1081,7 @@ export class BotController extends BaseController {
     }
     return ret;
   }
+
   lock_when_stand_and_rest() {
     if (
       this.entity.state === StateEnum.Standing &&

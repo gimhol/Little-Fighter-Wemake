@@ -9,6 +9,7 @@ export class BotState_Following extends BotState_Base {
   }
   override update() {
     if (this.me.hp <= 0) return BSE.Dead;
+    if (this.me.state === StateEnum.Lying) return BSE.Lying;
     const { s } = this;
     if (s.is_chapter_finish)
       return BSE.Idle;
