@@ -1,14 +1,17 @@
 
+interface IVisitInfo {
+  uri?: string;
+  page?: string;
+}
 export class Ewents {
-
   static readonly TAG: string = 'Events'
   static readonly VERSION: string = '2'
   static readonly VERSION_KEY: string = `events_fingerprint#version`
   static readonly DATA_KEY: string = `events_fingerprint#data`
   static readonly CLICK_SIGNAL: string = 'ewents-click'
   private _mounted: boolean = false;
-  private _location: string = ''
-  private _page: string = ''
+  private _prev_visit: IVisitInfo = {}
+  private _fingerprint: string = '';
   private _seq: number = -1
   private _src_history_push_state: typeof history.pushState | null = null;
   private _new_history_push_state: typeof history.pushState | null = null;
@@ -18,7 +21,6 @@ export class Ewents {
     }
   }
   private _handle_popstate = () => this.submit_visit()
-  private _fingerprint: string = '';
   filter: <T extends object>(type: string, event: T) => Promise<boolean> = () => Promise.resolve(true);
 
   constructor() {
@@ -70,33 +72,25 @@ export class Ewents {
   }
   unmount() {
     if (!this._mounted) return
-    window.removeEventListener('popstate', this.submit_visit);
+    window.removeEventListener('popstate', () => this.submit_visit());
     document.removeEventListener(`click`, this._handle_click);
     if (history.pushState == this._new_history_push_state && this._src_history_push_state) {
       history.pushState = this._src_history_push_state
     }
     this._mounted = false;
-    this._location = ''
-    this._page = ''
+    delete this._prev_visit.uri;
+    delete this._prev_visit.page;
     this._seq = -1;
     this._src_history_push_state = null;
     this._new_history_push_state = null;
   }
 
-  submit_visit() {
-    const curr_location = location.toString();
-    if (this._location == curr_location) return;
-    this._location = curr_location;
-    this.submit_any('visit', { uri: curr_location });
-  }
-
-  submit_page(page_id?: string) {
-    if (!this._mounted) return
-    const page = page_id ?? ''
-    if (this._page === page) return
-    this._page = page
-    if (!page) return
-    this.submit_any('visit', { uri: location.toString(), page })
+  submit_visit(page?: string) {
+    const l = location.toString();
+    if (this._prev_visit.uri == l && this._prev_visit.page == page) return;
+    this._prev_visit.uri = l;
+    this._prev_visit.page = page
+    this.submit_any('visit', { uri: l, page });
   }
 
   submit_click(el: HTMLElement) {
