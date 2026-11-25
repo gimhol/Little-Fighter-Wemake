@@ -31,6 +31,7 @@ import { BotState_Dead } from "./state/BotState_Dead";
 import { BotState_Following } from "./state/BotState_Following";
 import { BotState_Idle } from './state/BotState_Idle';
 import { BotState_Lying } from './state/BotState_Lying';
+import { BotState_Picking } from './state/BotState_Picking';
 import { BotState_StageEnd } from "./state/BotState_StageEnd";
 import { is_ray_hit } from "./utils/is_ray_hit";
 import { BotTerrain, step_probe_new } from "./terrain/BotTerrain";
@@ -64,6 +65,7 @@ export class BotController extends BaseController {
     .add(
       new BotState_Idle(this),
       new BotState_Chasing(this),
+      new BotState_Picking(this),
       new BotState_Avoiding(this),
       new BotState_Following(this),
       new BotState_StageEnd(this),

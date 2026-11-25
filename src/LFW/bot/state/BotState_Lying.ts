@@ -1,5 +1,5 @@
 import { AGK, BSE, Defines, Difficulty, GK, StateEnum } from "../../defines";
-import type { Entity } from "../../entity";
+import { is_weapon, type Entity } from "../../entity";
 import { BotState_Base } from "./BotState";
 
 /** 疯狂难度下，倒地时每帧尝试翻滚的概率 */
@@ -36,7 +36,7 @@ export class BotState_Lying extends BotState_Base {
     const { en, av } = this;
     const closest = this.closest(en, av);
     if (av && av === closest) return BSE.Avoiding;
-    if (en && en === closest) return BSE.Chasing;
+    if (en && en === closest) return is_weapon(en) ? BSE.Picking : BSE.Chasing;
     return BSE.Idle;
   }
   /** 当前难度下，倒地翻滚的概率（0 表示不滚） */

@@ -1,5 +1,6 @@
 import { AGK, Defines, GK, SE, WeaponEnum as WT } from "../../defines";
 import { BSE } from "../../defines/BotStateEnum";
+import { is_weapon } from "../../entity";
 import { round } from '../../utils/math/base';
 import { clamp } from '../../utils/math/clamp';
 import { BotBehavior } from "../BotController";
@@ -89,7 +90,7 @@ export class BotState_Idle extends BotState_Base {
 
     const closest = this.closest(en, av)
     if (av && av == closest) return BSE.Avoiding;
-    if (en && en == closest) return BSE.Chasing;
+    if (en && en == closest) return is_weapon(en) ? BSE.Picking : BSE.Chasing;
   }
 
 }
