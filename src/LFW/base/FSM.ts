@@ -34,6 +34,7 @@ export class FSM<
   protected _prev_state?: S;
   protected _state?: S;
   protected _time: number = 0;
+  /** 状态的持续时长，从enter开始计时 */
   protected _state_time: number = 0;
 
   log?(msg: string): void
@@ -48,6 +49,7 @@ export class FSM<
   }
   get time(): number { return this._time }
   set time(v: number) { this._time = v }
+  /** 状态的持续时长，从enter开始计时 */
   get state_time(): number { return this._state_time }
   get prev_state(): S | undefined {
     return this._prev_state;
