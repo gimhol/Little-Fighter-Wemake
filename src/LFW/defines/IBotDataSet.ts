@@ -128,7 +128,7 @@ export class BotDataSet implements Required<IBotDataSet> {
   r_atk_max_z = 15;
   /** 冲跳攻触发范围X(敌人正对) */
   d_atk_min_x = 0;
-  d_atk_max_x = 100;
+  d_atk_max_x = 150;
   /** 冲跳攻触发范围Z */
   d_atk_min_z = -60;
   d_atk_max_z = 60;
