@@ -99,6 +99,6 @@ export class BotState_Picking extends BotState_Base {
     }
 
     /* 只走不跑 */
-    c.walk_toward(tx, tz, 0);
+    c.walk_toward(tx, tz);
   }
 }

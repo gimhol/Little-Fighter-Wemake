@@ -721,12 +721,13 @@ export class BotController extends BaseController {
    *
    * @param tx 目标X
    * @param tz 目标Z
-   * @param deadzone 死区
+   * @param deadzonex 死区
+   * @param deadzonez 死区
    */
-  walk_toward(tx: number, tz: number, deadzone: number = 10): void {
+  walk_toward(tx: number, tz: number, deadzonex: number = 10, deadzonez: number = deadzonex): void {
     const { x, z } = this.me.position;
-    const dx: -1 | 0 | 1 = tx > x + deadzone ? 1 : tx < x - deadzone ? -1 : 0;
-    const dz: -1 | 0 | 1 = tz > z + deadzone ? 1 : tz < z - deadzone ? -1 : 0;
+    const dx: -1 | 0 | 1 = tx > x + deadzonex ? 1 : tx < x - deadzonex ? -1 : 0;
+    const dz: -1 | 0 | 1 = tz > z + deadzonez ? 1 : tz < z - deadzonez ? -1 : 0;
     this._drive(dx, dz);
   }
 
