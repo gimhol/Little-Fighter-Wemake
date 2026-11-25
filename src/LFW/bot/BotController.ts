@@ -1,6 +1,7 @@
 import { FSM } from "../base/FSM";
 import { BaseController } from "../controller/BaseController";
 import {
+  AGK,
   ATTCKING_ITR_KINDS,
   ATTCKING_STATES,
   BotDataSet,
@@ -1065,6 +1066,7 @@ export class BotController extends BaseController {
     if (this.lfw.mt.debugging && this.queue.length)
       this._case(`bot_keys`, this.queue.join(';'))
     const ret = super.update();
+    this.clear_single_clicks();
     if (this.lfw.mt.debugging) {
       const a = this.avoidings.targets;
       const c = this.chasings.targets;
@@ -1083,6 +1085,18 @@ export class BotController extends BaseController {
       if (nf) ret.fire2(nf, this.time, '', 'bot')
     }
     return ret;
+  }
+
+  /**
+   * 清掉没凑成双击的落单按键
+   *
+   * Bot 动作、走位时会连续"按一下"方向键，这些单击如果跨帧累计，
+   * 就会被当成玩家那样的双击(奔跑/翻滚)。真正要双击的地方用 db_hit/dbl_click，
+   * 同一帧内就完成了判定，不需要跨帧累计。
+   */
+  private clear_single_clicks(): void {
+    for (const k of AGK)
+      if (this.dbc[k].time < 0) this.dbc[k].reset();
   }
 
   lock_when_stand_and_rest() {

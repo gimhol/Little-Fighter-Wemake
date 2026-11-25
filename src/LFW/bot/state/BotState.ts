@@ -131,7 +131,20 @@ export abstract class BotState_Base implements IState<BotStateEnum> {
     if (!result) return false;
 
     if (Array.isArray(result)) {
-      this.ctrl.key_up(...result).start(...result).end(...result)
+      /*
+        动作键是"按一下"：重复写的键(如 Davis 的 ["F","F"])是在明确要双击(起跑)，
+        直接走 db_hit；其它键单击。Bot 的单击不会跨帧累计成双击，见 BotController.update。
+      */
+      const single: LGK[] = [];
+      const dbl: LGK[] = [];
+      const seen = new Set<LGK>();
+      for (const k of result) {
+        if (seen.has(k)) dbl.push(k);
+        else { seen.add(k); single.push(k); }
+      }
+      this.ctrl.key_up(...result);
+      if (dbl.length) this.ctrl.db_hit(...dbl).end(...dbl);
+      if (single.length) this.ctrl.start(...single).end(...single);
       me.lfw.mt.case('keys', result.join())
     } else {
       this.ctrl.bot_frame = result

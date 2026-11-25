@@ -164,12 +164,16 @@ export class BaseController {
 
   /**
    * 指定按键直接进入"双击"状态(结尾不会抬起)
-   * like: ⬇+⬆+⬇
+   * like: ⬆+⬇+⬆+⬇
+   *
+   * 开头先抬一次：按键已经被按住(比如正在走)时，第一个 start 会被忽略，
+   * 双击就只剩一次按下，判定不出来
    * @param keys 指定按键
    * @returns {this}
    */
   db_hit(...keys: LGK[]): this {
-    this.start(...keys)
+    this.end(...keys)
+      .start(...keys)
       .end(...keys)
       .start(...keys);
     return this;
@@ -223,7 +227,7 @@ export class BaseController {
   }
   dbl_click(...keys: LGK[]): this {
     for (const k of keys)
-      this.start(k).end(k).start(k).end(k);
+      this.end(k).start(k).end(k).start(k).end(k);
     return this;
   }
   /** 
