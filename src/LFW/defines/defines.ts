@@ -469,6 +469,16 @@ export namespace Defines {
   export const AI_FOLLOWING_RANGE_OUT_X = 250;
   export const AI_FOLLOWING_RANGE_OUT_Z = 250;
 
+  /**
+   * bot 主动去拾取武器的最大 X 距离
+   */
+  export const AI_PICK_WEAPON_RANGE_X = 400;
+
+  /**
+   * bot 主动去拾取武器的最大 Z 距离
+   */
+  export const AI_PICK_WEAPON_RANGE_Z = 200;
+
   export const AI_MAX_CHASINGS_ENEMIES = 1;
   export const AI_MAX_AVOIDING_ENEMIES = 1;
   export const AI_MAX_DEFENDS_ENEMIES = 3;

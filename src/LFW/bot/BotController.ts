@@ -488,7 +488,7 @@ export class BotController extends BaseController {
     if (me.catching && me.catching.hp > 0) return false;
 
 
-    const { x: en_x } = e.position;
+    const { x: en_x, z: en_z } = e.position;
     const { player_l, player_r } = this.world;
     if (en_x < player_l || en_x > player_r) return false
 
@@ -507,6 +507,8 @@ export class BotController extends BaseController {
       if (this.difficulty === Difficulty.Normal && e.base_type === WT.Drink) return false; // 普通难度不拾取饮料
       if (me.holding)
         return false;
+      if (abs_dx > D.AI_PICK_WEAPON_RANGE_X) return false;
+      if (abs(en_z - me.position.z) > D.AI_PICK_WEAPON_RANGE_Z) return false;
       if (this.is_leave_goto_range(e))
         return false
       do {
