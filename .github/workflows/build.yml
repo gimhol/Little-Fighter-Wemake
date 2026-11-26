@@ -1,38 +1,20 @@
 name: Build
 
+# 唯一会构建的 workflow。手动触发的运行跑在 main 上（head_sha 不是 tag 的提交），
+# 所以用运行名带上 tag，让之后的手动发布能按 tag 找回这次构建
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('build {0}', inputs.tag) || github.event.head_commit.message || github.ref_name }}
+
 on:
   # 打 v* tag（如 v0.1.56-preview-1）时自动构建并发布 GitHub Release；正式版本 tag（不含 -）另外发 Pages
   push:
     tags:
       - "v*"
-  # 手动触发：可指定 tag，并单独勾选要执行的部署（Release / Pages / lf.gim.ink），三者互不绑定；
-  # 勾了 skip_build 时不做构建，按 tag 取上一次成功运行的产物来执行勾选的部署
+  # 手动触发 = 为指定 tag 构建一次并上传产物，不发布。发布走各自 workflow 的手动入口，产物按 tag 复用
   workflow_dispatch:
     inputs:
       tag:
-        description: 发布用的 tag（留空 = v<package.json 版本>；不存在时基于当前分支创建）
-        required: false
-        default: ""
-      release:
-        description: 发布 GitHub Release（安装包 / 免安装版 / Web 7z；tag 带 preview 时自动标为预发布）
-        type: boolean
-        default: false
-      pages:
-        description: 发布 GitHub Pages（预览站）
-        type: boolean
-        default: false
-      publish:
-        description: 发布到 lf.gim.ink（前端 <version>/ + latest.json + desktop/ 安装包）
-        type: boolean
-        default: false
-      dry_run:
-        description: 配合 publish：只打印上传命令，不真的上传（不需要 secret）
-        type: boolean
-        default: false
-      skip_build:
-        description: 复用已有构建产物（按 tag 取上一次成功的运行），不重新构建；可与任意部署目标组合
-        type: boolean
-        default: false
+        description: 要构建哪个 tag（必填，例如 v0.1.67-preview-2）
+        required: true
 
 permissions:
   contents: write
@@ -42,30 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # 手动触发先校验输入：没勾任何部署目标时提醒；勾了 skip_build 但没有任何目标时直接报错（否则白跑一次）
-  guard:
-    name: Check inputs
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Validate inputs
-        run: |
-          any=false
-          if [ "${{ inputs.release }}" = "true" ] || [ "${{ inputs.pages }}" = "true" ] || [ "${{ inputs.publish }}" = "true" ]; then any=true; fi
-          if [ "$any" = "false" ]; then
-            if [ "${{ inputs.skip_build }}" = "true" ]; then
-              echo "::error::勾了『复用已有构建产物』但没勾任何部署目标（release / pages / publish），这次会什么都不做。"
-              exit 1
-            fi
-            echo "::warning::没勾任何部署目标：本次只构建并上传 Artifacts，不会发布 Release / Pages / lf.gim.ink。"
-          fi
-          if [ "${{ inputs.dry_run }}" = "true" ] && [ "${{ inputs.publish }}" != "true" ]; then
-            echo "::warning::dry_run 只在勾了 publish 时才有意义。"
-          fi
-
   build:
-    # 勾了 skip_build 时不做构建，交给各部署 job 复用已有产物
-    if: ${{ !inputs.skip_build }}
     runs-on: windows-latest
     timeout-minutes: 90
     env:
@@ -77,6 +36,8 @@ jobs:
       - name: Checkout (with LFS)
         uses: actions/checkout@v7
         with:
+          # 手动构建时检出 tag 指向的提交；其余情况留空，checkout 会回退到本次触发的 ref
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
           lfs: true
 
       - name: Setup Node
@@ -177,294 +138,32 @@ jobs:
             release/Little Fighter Wemake Web v*.7z
           retention-days: 14
 
-  # 发布 GitHub Release：tag 推送时自动执行；手动触发时勾选 release 才执行。
-  # 默认用本次构建的产物；勾了 skip_build 则按 tag 去上一次成功的运行里取产物
+  # —— 下面两个只是 tag 推送时的自动发布（调用可复用工作流）；手动发布走各自 workflow 的手动入口 ——
+
+  # 发布 GitHub Release：tag 推送时自动执行
   release:
     name: Publish GitHub Release
     needs: build
-    if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.release) && (inputs.skip_build || needs.build.result == 'success') }}
-    runs-on: ubuntu-latest
+    # build 只在 tag 推送时跑，手动触发时它是 skipped，所以这里判 !failure() 而不是 == 'success'
+    if: ${{ !cancelled() && !failure() && github.event_name != 'workflow_dispatch' }}
     permissions:
       actions: read
       contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ github.ref_name }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      - name: Find the run to reuse
-        if: inputs.skip_build
-        id: src
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          version=$(node -p "require('./package.json').version")
-          ref="${{ inputs.tag }}"
-          if [ -z "$ref" ]; then ref="v$version"; fi
-          id=$(gh run list --workflow build.yml --branch "$ref" --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-          if [ -z "$id" ]; then
-            echo "::error::在 $ref 上找不到成功的构建运行；请在 tag 一栏填上有成功构建的 tag（如 v$version-preview-1）"
-            exit 1
-          fi
-          echo "复用运行 $id（$ref）"
-          echo "run_id=$id" >> "$GITHUB_OUTPUT"
-
-      - name: Download build artifacts (reused run)
-        if: inputs.skip_build
-        uses: actions/download-artifact@v4
-        with:
-          name: desktop-win
-          path: artifacts
-          run-id: ${{ steps.src.outputs.run_id }}
-          github-token: ${{ github.token }}
-
-      - name: Download build artifacts (this run)
-        if: ${{ !inputs.skip_build }}
-        uses: actions/download-artifact@v4
-        with:
-          name: desktop-win
-          path: artifacts
-
-      - name: Locate release files
-        id: files
-        run: |
-          set -e
-          version=$(node -p "require('./package.json').version")
-          latest_yml=$(find artifacts -name latest.yml | head -1)
-          zip=$(find artifacts -name "Little Fighter Wemake_$version.zip" | head -1)
-          web7z=$(find artifacts -name "Little Fighter Wemake Web v$version.7z" | head -1)
-          if [ -z "$latest_yml" ] || [ -z "$zip" ] || [ -z "$web7z" ]; then
-            echo "::error::产物不完整：installer / 免安装 zip / Web 7z 没有齐"
-            exit 1
-          fi
-          echo "installer_dir=$(dirname "$latest_yml")" >> "$GITHUB_OUTPUT"
-          echo "zip=$zip" >> "$GITHUB_OUTPUT"
-          echo "web7z=$web7z" >> "$GITHUB_OUTPUT"
-
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -e
-          version=$(node -p "require('./package.json').version")
-          tag="${{ inputs.tag }}"
-          if [ -z "$tag" ]; then tag="${{ github.ref_type == 'tag' && github.ref_name || '' }}"; fi
-          if [ -z "$tag" ]; then tag="v$version"; fi
-          case "$tag" in
-            "v$version"*) ;;
-            *) echo "::warning::tag $tag 与 package.json 版本 $version 不一致" ;;
-          esac
-
-          args=(--title "$tag")
-          zh="docs/changelog/v$version/zh.md"
-          en="docs/changelog/v$version/en.md"
-          if [ -f "$zh" ]; then
-            # 中英双语：两边都去掉标题/作者/git-range 前 6 行，用分隔线拼接
-            { tail -n +7 "$zh"; if [ -f "$en" ]; then printf '\n---\n\n'; tail -n +7 "$en"; fi; } > release_notes.md
-            args+=(--notes-file release_notes.md)
-          else
-            args+=(--generate-notes)
-          fi
-
-          files=()
-          while IFS= read -r f; do files+=("$f"); done < <(find "${{ steps.files.outputs.installer_dir }}" -maxdepth 1 -type f)
-          files+=("${{ steps.files.outputs.zip }}" "${{ steps.files.outputs.web7z }}")
-
-          if gh release view "$tag" > /dev/null 2>&1; then
-            gh release upload "$tag" "${files[@]}" --clobber
-            # 已有 Release（例如移动 tag 后重跑）也把中英双语说明刷新一遍
-            if [ -f release_notes.md ]; then gh release edit "$tag" --notes-file release_notes.md; fi
-          else
-            case "$tag" in *preview*) args+=(--prerelease) ;; esac
-            gh release create "$tag" "${args[@]}" "${files[@]}"
-          fi
-
-  # 只负责上传，不重新构建：默认用本次构建的产物；勾了 skip_build 则去同一 tag 上一次成功的运行里取产物
-  publish:
-    name: Publish to lf.gim.ink
-    needs: build
-    if: ${{ !cancelled() && inputs.publish && (inputs.skip_build || needs.build.result == 'success') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      # deploy 脚本要用 fdeploy（@fimagine/frontend_deployer）与 ali-oss
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Find the run to reuse
-        id: src
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # 默认按 package.json 的版本找对应的 tag（而不是当前分支，否则可能取到旧版本的产物）
-          version=$(node -p "require('./package.json').version")
-          if [ "${{ inputs.skip_build }}" = "true" ]; then
-            ref="${{ inputs.tag }}"
-            if [ -z "$ref" ]; then ref="v$version"; fi
-            id=$(gh run list --workflow build.yml --branch "$ref" --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-            if [ -z "$id" ]; then
-              echo "::error::在 $ref 上找不到成功的构建运行；先推一次 v$version 的 tag，或取消勾选『复用已有构建产物』"
-              exit 1
-            fi
-            echo "复用运行 $id（$ref）"
-          else
-            id="${{ github.run_id }}"
-            echo "使用本次运行的产物（run $id）"
-          fi
-          echo "run_id=$id" >> "$GITHUB_OUTPUT"
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: desktop-win
-          path: artifacts
-          run-id: ${{ steps.src.outputs.run_id }}
-          github-token: ${{ github.token }}
-
-      # artifact 里的层级跟上传时的 glob 有关，这里按文件名找回来再摆到脚本期望的位置
-      - name: Restore dist & release/installer
-        run: |
-          set -e
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq p7zip-full
-          version=$(node -p "require('./package.json').version")
-          web7z=$(find artifacts -name "Little Fighter Wemake Web v$version.7z" | head -1)
-          latest_yml=$(find artifacts -name latest.yml | head -1)
-          if [ -z "$web7z" ] || [ -z "$latest_yml" ]; then
-            echo "::error::产物里找不到 Web 7z 或 latest.yml（run ${{ steps.src.outputs.run_id }}）"
-            exit 1
-          fi
-          mkdir -p dist release/installer
-          7z x "$web7z" -odist -y > /dev/null
-          cp "$(dirname "$latest_yml")"/* release/installer/
-          dist_ver=$(node -p "require('./dist/version.json').version")
-          if [ "$dist_ver" != "$version" ]; then
-            echo "::error::产物是 v$dist_ver，但当前检出的是 v$version —— 请把上面的 'Use workflow from' 选成对应 tag"
-            exit 1
-          fi
-          echo "产物版本 v$dist_ver，installer 文件：" && ls -1 release/installer
-
-      - name: Write deploy credentials
-        if: ${{ !inputs.dry_run }}
-        env:
-          DEPLOYER_PRIVATE_JSON5: ${{ secrets.DEPLOYER_PRIVATE_JSON5 }}
-        run: |
-          if [ -z "$DEPLOYER_PRIVATE_JSON5" ]; then
-            echo "::error::缺少仓库 secret DEPLOYER_PRIVATE_JSON5（内容 = deployer.private.json5 的全文）"
-            exit 1
-          fi
-          printf '%s\n' "$DEPLOYER_PRIVATE_JSON5" > deployer.private.json5
-
-      # dry_run 走环境变量：`npm run deploy -- --dry` 里的 --dry 会被 npm 吞掉
-      - name: Publish web frontend to lf.gim.ink/<version>/
-        env:
-          DEPLOY_DRY: ${{ inputs.dry_run && '1' || '' }}
-        run: npm run deploy
-
-      - name: Publish latest.json
-        run: node scripts/deploy-latest.mjs ${{ inputs.dry_run && '--dry' || '' }}
-
-      - name: Publish installer to lf.gim.ink/desktop/
-        run: node scripts/deploy-installer.mjs ${{ inputs.dry_run && '--dry' || '' }}
-
+  # 发布 GitHub Pages：tag 推送时自动发正式版本（tag 不含 -），预览 tag 跳过；
+  # 手动发布请直接触发 Publish GitHub Pages 那个 workflow
   pages:
     name: Deploy to GitHub Pages
     needs: build
-    # tag 推送：正式版本（tag 不含 -）自动发 Pages，预览 tag 跳过
-    # 手动触发：勾了 pages 才发；勾了 skip_build 时复用指定 tag 上次成功运行的产物
-    if: ${{ !cancelled() && (inputs.skip_build || needs.build.result == 'success') && ((github.event_name == 'workflow_dispatch' && inputs.pages) || (github.event_name != 'workflow_dispatch' && !contains(github.ref_name, '-'))) }}
-    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && !failure() && github.event_name != 'workflow_dispatch' && !contains(github.ref_name, '-') }}
     permissions:
       actions: read
       contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Checkout
-        if: inputs.skip_build
-        uses: actions/checkout@v7
-
-      - name: Setup Node
-        if: inputs.skip_build
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      # 复用逻辑与 release / publish 的 skip_build 同款：按 tag 找最近一次成功的构建运行
-      - name: Find the run to reuse
-        if: inputs.skip_build
-        id: src
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          version=$(node -p "require('./package.json').version")
-          ref="${{ inputs.tag }}"
-          if [ -z "$ref" ]; then ref="v$version"; fi
-          id=$(gh run list --workflow build.yml --branch "$ref" --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-          if [ -z "$id" ]; then
-            echo "::error::在 $ref 上找不到成功的构建运行；请在 tag 一栏填上有成功构建的 tag（如 v$version-preview-1）"
-            exit 1
-          fi
-          echo "复用运行 $id（$ref）"
-          echo "run_id=$id" >> "$GITHUB_OUTPUT"
-
-      - name: Download build artifacts
-        if: inputs.skip_build
-        uses: actions/download-artifact@v4
-        with:
-          name: desktop-win
-          path: artifacts
-          run-id: ${{ steps.src.outputs.run_id }}
-          github-token: ${{ github.token }}
-
-      - name: Restore dist from the web archive
-        if: inputs.skip_build
-        run: |
-          set -e
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq p7zip-full
-          version=$(node -p "require('./package.json').version")
-          web7z=$(find artifacts -name "Little Fighter Wemake Web v$version.7z" | head -1)
-          if [ -z "$web7z" ]; then
-            echo "::error::产物里找不到 Web 7z（run ${{ steps.src.outputs.run_id }}）"
-            exit 1
-          fi
-          mkdir -p dist
-          7z x "$web7z" -odist -y > /dev/null
-          dist_ver=$(node -p "require('./dist/version.json').version")
-          if [ "$dist_ver" != "$version" ]; then
-            echo "::error::产物是 v$dist_ver，但当前检出的是 v$version —— 请在 tag 一栏填对应 tag"
-            exit 1
-          fi
-          touch dist/.nojekyll
-          echo "产物版本 v$dist_ver，准备发布 Pages"
-
-      - name: Upload Pages artifact
-        if: inputs.skip_build
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-          include-hidden-files: true
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+    uses: ./.github/workflows/pages.yml
+    with:
+      tag: ${{ github.ref_name }}

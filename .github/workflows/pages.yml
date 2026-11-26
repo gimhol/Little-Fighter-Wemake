@@ -1,0 +1,62 @@
+name: Publish GitHub Pages
+
+# tag 推送时由 build.yml 调用（可复用工作流）；也可以手动触发，按 tag 复用已有构建发 Pages
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 复用时用哪个 tag 的产物；留空 = v<package.json 版本>
+        type: string
+        default: ""
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 发布哪个 tag 的产物（留空 = v<package.json 版本>）；必须已有成功构建
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  pages:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # 手动触发（只发布）时产物要自己准备：取复用运行的 Web 7z，解出 dist 再上传成 github-pages；
+      # tag 推送时产物已由 build 作业上传，这里只部署
+      - name: Checkout
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Restore build artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: ./.github/actions/restore-build
+        with:
+          reuse: true
+          tag: ${{ inputs.tag }}
+          dist: true
+
+      - name: Upload Pages artifact
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+          include-hidden-files: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

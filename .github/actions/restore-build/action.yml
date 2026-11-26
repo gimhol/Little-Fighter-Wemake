@@ -1,0 +1,128 @@
+name: Restore build artifacts
+description: >-
+  取构建产物：默认用本次运行的 desktop-win，复用时按 tag 找上一次成功的运行；
+  再按需从里面的 Web 7z 还原 dist、把 electron-builder 产物还原到 release/installer。
+  release / publish / pages 三个作业共用这一份实现，不要在各自的 steps 里重抄。
+
+inputs:
+  reuse:
+    description: "true = 按 tag 找最近一次成功的构建运行并用它的产物；false = 用本次运行的产物"
+    required: false
+    default: "false"
+  tag:
+    description: 复用时用哪个 tag；留空则用 v<package.json 版本>
+    required: false
+    default: ""
+  dist:
+    description: "true = 从 Web 7z 还原 dist（含 .nojekyll），并校验版本与当前检出一致"
+    required: false
+    default: "false"
+  installer:
+    description: "true = 把 electron-builder 产物还原到 release/installer"
+    required: false
+    default: "false"
+
+outputs:
+  run-id:
+    description: 产物来自哪次运行
+    value: ${{ steps.src.outputs.run_id }}
+
+runs:
+  using: composite
+  steps:
+    # 复用逻辑：解析 tag 指向的提交，再找最近一次成功的构建运行（按提交、或按 `build <tag>` 的运行名）。
+    # 不按运行所在的分支找，这样「在 main 上为某个 tag 手动构建」的运行也能被复用。
+    - name: Resolve the run
+      id: src
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [ "${{ inputs.reuse }}" = "true" ]; then
+          repo="${{ github.repository }}"
+          version=$(node -p "require('./package.json').version")
+          ref="${{ inputs.tag }}"
+          if [ -z "$ref" ]; then ref="v$version"; fi
+
+          obj=$(gh api "repos/$repo/git/ref/tags/$ref" --jq '.object | "\(.type) \(.sha)"' 2>/dev/null || true)
+          type=${obj%% *}; sha=${obj#* }
+          if [ -z "$sha" ] || [ "$sha" = "$obj" ]; then
+            echo "::error::tag $ref 不存在；手动触发不会从源码构建，请填一个已有成功构建的 tag"
+            exit 1
+          fi
+          # 附注标签要先解出它指向的提交
+          if [ "$type" = "tag" ]; then
+            sha=$(gh api "repos/$repo/git/tags/$sha" --jq '.object.sha')
+          fi
+
+          # 两种运行都要能找到：推 tag 触发的（head_sha = tag 的提交），
+          # 以及在 main 上为该 tag 手动构建的（跑在 main 上，只能靠运行名 `build <tag>` 认出来）
+          id=$(gh run list --workflow build.yml --status success --limit 100 \
+                 --json databaseId,headSha,displayTitle \
+                 --jq "[.[] | select(.headSha == \"$sha\" or .displayTitle == \"build $ref\")][0].databaseId")
+          if [ -z "$id" ] || [ "$id" = "null" ]; then
+            echo "::error::$ref（${sha:0:7}）没有成功的构建运行可以复用；推一次该 tag 触发构建，或手动触发时勾『构建』为它重建一次"
+            exit 1
+          fi
+          echo "复用运行 $id（$ref @ ${sha:0:7}）"
+        else
+          id="${{ github.run_id }}"
+          echo "使用本次运行的产物（run $id）"
+        fi
+        echo "run_id=$id" >> "$GITHUB_OUTPUT"
+
+    # 本次运行：走 download-artifact 的本地通道（每次 tag 推送都在用，最稳）
+    - name: Download desktop-win (this run)
+      if: inputs.reuse != 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: desktop-win
+        path: artifacts
+
+    # 复用其他运行：只能走 API，需要 token 与 actions:read
+    - name: Download desktop-win (reused run)
+      if: inputs.reuse == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: desktop-win
+        path: artifacts
+        run-id: ${{ steps.src.outputs.run_id }}
+        github-token: ${{ github.token }}
+
+    # artifact 里的层级跟上传时的 glob 有关，按文件名找回来再摆到脚本期望的位置
+    - name: Restore dist
+      if: inputs.dist == 'true'
+      shell: bash
+      run: |
+        set -e
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq p7zip-full
+        version=$(node -p "require('./package.json').version")
+        web7z=$(find artifacts -name "Little Fighter Wemake Web v$version.7z" | head -1)
+        if [ -z "$web7z" ]; then
+          echo "::error::产物里找不到 Web 7z（run ${{ steps.src.outputs.run_id }}）"
+          exit 1
+        fi
+        mkdir -p dist
+        7z x "$web7z" -odist -y > /dev/null
+        dist_ver=$(node -p "require('./dist/version.json').version")
+        if [ "$dist_ver" != "$version" ]; then
+          echo "::error::产物是 v$dist_ver，但当前检出的是 v$version —— 版本不一致不能混着发：把工作流选到产物对应的 tag 再发，或改用当前版本的产物"
+          exit 1
+        fi
+        touch dist/.nojekyll
+        echo "产物版本 v$dist_ver"
+
+    - name: Restore release/installer
+      if: inputs.installer == 'true'
+      shell: bash
+      run: |
+        set -e
+        latest_yml=$(find artifacts -name latest.yml | head -1)
+        if [ -z "$latest_yml" ]; then
+          echo "::error::产物里找不到 latest.yml（run ${{ steps.src.outputs.run_id }}）"
+          exit 1
+        fi
+        mkdir -p release/installer
+        cp "$(dirname "$latest_yml")"/* release/installer/
+        echo "installer 文件：" && ls -1 release/installer
